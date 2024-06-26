@@ -1,0 +1,37 @@
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[user]
+	name = giocaizzi
+	email = giocaizzi@gmail.com
+[core]
+	excludesfile = /Users/giorgiocaizzi/.gitignore_global
+[commit]
+	template = /Users/giorgiocaizzi/.stCommitMsg
+[init]
+	defaultBranch = main
+[diff]
+  	tool = meld
+[difftool]
+  	prompt = false
+[difftool "meld"]
+  	trustExitCode = true
+  	cmd = open -W -a Meld --args \"$LOCAL\" \"$PWD/$REMOTE\"
+[difftool "sourcetree"]
+	cmd = /Applications/Meld.app/Contents/MacOS/Meld \"$LOCAL\" \"$REMOTE\"
+	path = 
+[mergetool "sourcetree"]
+	cmd = /Applications/Meld.app/Contents/MacOS/Meld \"$LOCAL\" \"$MERGED\" \"$REMOTE\" --auto-merge --output=\"$MERGED\"
+	trustExitCode = true
+[merge]
+  	tool = meld
+[mergetool]
+  	prompt = false
+[mergetool "meld"]
+    	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
+[credential]
+	helper = store
+[alias]
+	squash-all = "!f(){ git reset $(git commit-tree HEAD^{tree} -m \"${1:-A new start}\");};f"
