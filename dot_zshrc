@@ -113,4 +113,4 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 # OH-MY-POSH
-eval "$(oh-my-posh --init --shell zsh --config ~/Documents/Github/oh-my-posh-theme/mytheme.omp.json)"
+eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"

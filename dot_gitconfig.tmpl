@@ -4,8 +4,8 @@
 	process = git-lfs filter-process
 	required = true
 [user]
-	name = giocaizzi
-	email = giocaizzi@gmail.com
+	name = {{ .gitUser | quote }}
+	email = {{ .gitEmail | quote }}
 [core]
 	excludesfile = /Users/giorgiocaizzi/.gitignore_global
 [commit]
