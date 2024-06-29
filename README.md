@@ -9,7 +9,7 @@ Using [chezmoi](https://www.chezmoi.io/)
 Will be prompted for local data, like name and email.
 
 ```shell
-chezmoi init https://github.com/giocaizzi/dotfiles.git
+chezmoi init gh:giocaizzi/dotfiles.git
 ```
 
 ## File structure
