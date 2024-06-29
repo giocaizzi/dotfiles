@@ -14,8 +14,8 @@ chezmoi init gh:giocaizzi/dotfiles.git
 
 ## File structure
 
-- chezmoi repository
-- chezmoi local configuration
+- chezmoi repository: `~/.local/share/chezmoi`
+- chezmoi local configuration and state: `~/.config/chezmoi`
 
 ## Usage
 
