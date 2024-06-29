@@ -1,3 +1,4 @@
+{{- if eq .chezmoi.os "darwin" }}
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
@@ -35,3 +36,18 @@
 	helper = store
 [alias]
 	squash-all = "!f(){ git reset $(git commit-tree HEAD^{tree} -m \"${1:-A new start}\");};f"
+{{- end }}
+{{- if eq .chezmoi.os "windows" }}
+[user]
+	name = {{ .gitUser | quote }}
+	email = {{ .gitEmail | quote }}
+[difftool "sourcetree"]
+	cmd = "'' "
+[mergetool "sourcetree"]
+	cmd = "'' "
+	trustExitCode = true
+[credential]
+	helper = wincred
+[init]
+	defaultBranch = main
+{{- end }}
