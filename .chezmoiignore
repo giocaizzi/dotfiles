@@ -1,1 +1,6 @@
 README.md
+
+{{- if eq .chezmoi.os "windows" }}
+.zshrc
+.vimrc
+{{- end }}
