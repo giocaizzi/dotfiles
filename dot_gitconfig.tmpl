@@ -1,53 +1,28 @@
-{{- if eq .chezmoi.os "darwin" }}
-[filter "lfs"]
-	clean = git-lfs clean -- %f
-	smudge = git-lfs smudge -- %f
-	process = git-lfs filter-process
-	required = true
 [user]
 	name = {{ .gitUser | quote }}
 	email = {{ .gitEmail | quote }}
+
+{{- if eq .chezmoi.os "darwin" }}
 [core]
 	excludesfile = /Users/giorgiocaizzi/.gitignore_global
 [commit]
 	template = /Users/giorgiocaizzi/.stCommitMsg
+{{- end }}
+
 [init]
-	defaultBranch = main
-[diff]
-  	tool = meld
-[difftool]
-  	prompt = false
-[difftool "meld"]
-  	trustExitCode = true
-  	cmd = open -W -a Meld --args \"$LOCAL\" \"$PWD/$REMOTE\"
-[difftool "sourcetree"]
-	cmd = /Applications/Meld.app/Contents/MacOS/Meld \"$LOCAL\" \"$REMOTE\"
-	path = 
-[mergetool "sourcetree"]
-	cmd = /Applications/Meld.app/Contents/MacOS/Meld \"$LOCAL\" \"$MERGED\" \"$REMOTE\" --auto-merge --output=\"$MERGED\"
-	trustExitCode = true
-[merge]
-  	tool = meld
-[mergetool]
-  	prompt = false
-[mergetool "meld"]
-    	cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
+	defaultBranch = mains
+
+{{- if eq .chezmoi.os "darwin" }}
 [credential]
-	helper = store
-[alias]
-	squash-all = "!f(){ git reset $(git commit-tree HEAD^{tree} -m \"${1:-A new start}\");};f"
+	helper = stores
 {{- end }}
 {{- if eq .chezmoi.os "windows" }}
-[user]
-	name = {{ .gitUser | quote }}
-	email = {{ .gitEmail | quote }}
+[credential]
+	helper = wincred
+{{- end }}
+
 [difftool "sourcetree"]
 	cmd = "'' "
 [mergetool "sourcetree"]
 	cmd = "'' "
 	trustExitCode = true
-[credential]
-	helper = wincred
-[init]
-	defaultBranch = main
-{{- end }}
