@@ -2,7 +2,9 @@ README.md
 
 {{- if eq .chezmoi.os "windows" }}
 .zshrc
+run_onchange-set-env-vars.sh
 {{- end }}
 {{- if eq .chezmoi.os "darwin" }}
 "OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
+run_onchange-set-env-vars.ps1
 {{- end }}
