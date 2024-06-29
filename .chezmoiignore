@@ -3,3 +3,6 @@ README.md
 {{- if eq .chezmoi.os "windows" }}
 .zshrc
 {{- end }}
+{{- if eq .chezmoi.os "darwin" }}
+"OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
+{{- end }}
