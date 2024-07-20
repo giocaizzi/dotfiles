@@ -14,7 +14,7 @@
 
 {{- if eq .chezmoi.os "darwin" }}
 [credential]
-	helper = store
+	helper = osxkeychain
 {{- end }}
 {{- if eq .chezmoi.os "windows" }}
 [credential]
@@ -22,7 +22,7 @@
 {{- end }}
 
 [difftool "sourcetree"]
-	cmd = "'' "
+	cmd = ""
 [mergetool "sourcetree"]
-	cmd = "'' "
+	cmd = ""
 	trustExitCode = true
