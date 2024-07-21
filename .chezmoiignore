@@ -11,3 +11,7 @@ Library/Application Support/Code/User/settings.json
 .chezmoiscripts/set-env-vars.ps1
 {{- end }}
 
+settings.json
+{{ if ne .chezmoi.os "darwin" }}
+Library/Application Support/Code/User/settings.json
+{{ end }}
