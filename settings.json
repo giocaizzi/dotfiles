@@ -1,21 +1,32 @@
 {
-    "git.autofetch": true,
-    "github.copilot.enable": {
-        "*": true,
-        "plaintext": true,
-        "markdown": "true",
-        "scminput": false
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[yaml]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "githubPullRequests.pullBranch": "never",
-    "[json]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    // python docstring color
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "string.quoted.docstring.multi.python",
+                "settings": {
+                    "foreground": "#acacac"
+                }
+            }
+        ]
     },
-    "terminal.integrated.inheritEnv": false,
+    "git.autofetch": true,
+    "github.copilot.enable": {
+        "*": true,
+        "markdown": "true",
+        "plaintext": true,
+        "scminput": false
+    },
+    "githubPullRequests.pullBranch": "never",
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
-    "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    }
+    "terminal.integrated.inheritEnv": false
 }
