@@ -1,6 +1,7 @@
 README.md
 
 {{- if eq .chezmoi.os "windows" }}
+Library/Application Support/Code/User/settings.json
 .zshrc
 .chezmoiscripts/set-env-vars.sh
 {{- end }}
@@ -9,3 +10,4 @@ README.md
 "OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
 .chezmoiscripts/set-env-vars.ps1
 {{- end }}
+
