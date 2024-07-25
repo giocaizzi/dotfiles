@@ -1,13 +1,18 @@
 {
+    // json
     "[json]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
+    // YAML FILES
     "[yaml]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "redhat.vscode-yaml"
     },
+    "azureFunctions.showProjectWarning": false,
+    // group azure resources by resource group
+    "azureResourceGroups.groupBy": "resourceGroup",
     // python docstring color
     "editor.tokenColorCustomizations": {
         "textMateRules": [
@@ -19,7 +24,11 @@
             }
         ]
     },
+    // word wrap
+    "editor.wordWrap": "on",
+    // git
     "git.autofetch": true,
+    // github
     "github.copilot.enable": {
         "*": true,
         "markdown": "true",
@@ -27,6 +36,7 @@
         "scminput": false
     },
     "githubPullRequests.pullBranch": "never",
+    // terminal
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": false
 }
