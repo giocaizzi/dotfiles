@@ -22,6 +22,16 @@
           }
         },
         {
+          "type": "az",
+          "style": "plain",
+          "template": "[\uebd8 {{ .Name }}]"
+        },
+        {
+          "type": "azd",
+          "style": "plain",
+          "template": "[\uebd8 {{ .DefaultEnvironment }}]"
+        },
+        {
           "type": "aws",
           "style": "plain",
           "foreground": "#ffa5d8",
