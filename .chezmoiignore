@@ -4,14 +4,18 @@ README.md
 # --- darwin ---
 # if not on mac, ignore these files
 {{ if ne .chezmoi.os "darwin" }}
+## zsh
 .zshrc
+## Set environment variables
 .chezmoiscripts/set-env-vars.sh
 {{ end }}
 
 # --- windows ---
 # if not on windows, ignore these files
 {{ if ne .chezmoi.os "windows" }}
+## PowerShell profile
 "OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
+## Set environment variables
 .chezmoiscripts/set-env-vars.ps1
 {{ end }}
 
