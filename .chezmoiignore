@@ -1,22 +1,26 @@
+# --- REPOSITORY ---
 README.md
 
-# --- windows ---
-{{- if eq .chezmoi.os "windows" }}
+# --- darwin ---
+# if not on mac, ignore these files
+{{ if ne .chezmoi.os "darwin" }}
 .zshrc
 .chezmoiscripts/set-env-vars.sh
-{{- end }}
+{{ end }}
 
-# --- darwin ---
-{{- if eq .chezmoi.os "darwin" }}
+# --- windows ---
+# if not on windows, ignore these files
+{{ if ne .chezmoi.os "windows" }}
 "OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
 .chezmoiscripts/set-env-vars.ps1
-{{- end }}
+{{ end }}
 
 # --- VSCODE settings ---
 settings.json
 {{ if ne .chezmoi.os "darwin" }}
-Library/Application Support/Code/User/settings.json
+Library/Application Support/Code/User
 {{ end }}
+
 {{ if ne .chezmoi.os "windows" }}
-AppData/Roaming/Code/User/settings.json
+AppData/Roaming/Code/User
 {{ end}}
