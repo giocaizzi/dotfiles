@@ -13,11 +13,11 @@
 	defaultBranch = main
 
 {{- if eq .chezmoi.os "darwin" }}
-[credentials]
+[credential]
 	helper = osxkeychain
 {{- end }}
 {{- if eq .chezmoi.os "windows" }}
-[credentials]
+[credential]
 	helper = wincred
 {{- end }}
 
