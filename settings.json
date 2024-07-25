@@ -1,18 +1,19 @@
 {
-    // json
+    // --- JSON ---
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
     "[jsonc]": {
         "editor.defaultFormatter": "vscode.json-language-features"
     },
-    // YAML FILES
+    // --- YAML ---
     "[yaml]": {
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
-    "azureFunctions.showProjectWarning": false,
+    // --- Azure
     // group azure resources by resource group
     "azureResourceGroups.groupBy": "resourceGroup",
+    // --- Editor ---
     // python docstring color
     "editor.tokenColorCustomizations": {
         "textMateRules": [
@@ -26,9 +27,9 @@
     },
     // word wrap
     "editor.wordWrap": "on",
-    // git
+    // --- Git ---
     "git.autofetch": true,
-    // github
+    // --- GitHub ---
     "github.copilot.enable": {
         "*": true,
         "markdown": true,
@@ -36,7 +37,8 @@
         "scminput": false
     },
     "githubPullRequests.pullBranch": "never",
-    // terminal
+    // --- Terminal ---
+    // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": false
 }
