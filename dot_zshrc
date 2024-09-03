@@ -113,5 +113,11 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+
+
 # OH-MY-POSH
 eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"
+# ZSH 
+# fix of permission denied
+# as of https://apple.stackexchange.com/questions/148901/why-does-my-brew-installation-not-work
+-eval "$(/opt/homebrew/bin/brew shellenv)"
