@@ -1,8 +1,6 @@
 [user]
-	name = {{ .gitUser | quote }}
-	email = {{ .gitEmail | quote }}
-
-{{- if eq .chezmoi.os "darwin" }}
+	name = "Giorgio Caizzi"
+	email = "giocaizzi@gmail.com"
 [core]
 	excludesfile = /Users/giorgiocaizzi/.gitignore_global
 [commit]
@@ -22,7 +20,8 @@
 {{- end }}
 
 [difftool "sourcetree"]
-	cmd = ""
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path = 
 [mergetool "sourcetree"]
-	cmd = ""
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 	trustExitCode = true
