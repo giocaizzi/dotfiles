@@ -120,3 +120,5 @@ source $ZSH/oh-my-zsh.sh
 
 # OH-MY-POSH
 eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"
+# Created by `pipx` on 2024-09-08 10:21:46
+export PATH="$PATH:/Users/giorgiocaizzi/.local/bin"
