@@ -1,6 +1,8 @@
 [user]
-	name = "Giorgio Caizzi"
-	email = "giocaizzi@gmail.com"
+	name = {{ .gitUser | quote }}
+	email = {{ .gitEmail | quote }}
+
+{{- if eq .chezmoi.os "darwin" }}
 [core]
 	excludesfile = /Users/giorgiocaizzi/.gitignore_global
 [commit]
