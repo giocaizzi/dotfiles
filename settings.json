@@ -36,11 +36,12 @@
         "plaintext": true,
         "scminput": false
     },
+    "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.pullBranch": "never",
+    // --- Python ---
+    "python.defaultInterpreterPath": "/opt/miniconda3/bin/python",
     // --- Terminal ---
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
-    "terminal.integrated.inheritEnv": false,
-    "python.defaultInterpreterPath": "/opt/miniconda3/bin/python",
-    "githubPullRequests.createOnPublishBranch": "never"
+    "terminal.integrated.inheritEnv": false
 }
