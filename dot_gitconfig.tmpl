@@ -1,6 +1,6 @@
 [user]
-	name = {{ .gitUser | quote }}
-	email = {{ .gitEmail | quote }}
+	name = "{{ .gitUser | quote }}"
+	email = "{{ .gitEmail | quote }}"
 
 {{- if eq .chezmoi.os "darwin" }}
 [core]
