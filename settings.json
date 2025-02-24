@@ -10,9 +10,14 @@
     "[yaml]": {
         "editor.defaultFormatter": "redhat.vscode-yaml"
     },
-    // --- Azure
+    // --- Azure ---
+    "@azure.argTenant": "efd43e52-58c9-417a-9059-96780f094db0",
+    // show python venv warning
+    "azureFunctions.showPythonVenvWarning": true,
     // group azure resources by resource group
     "azureResourceGroups.groupBy": "resourceGroup",
+    // --- Chat ---
+    "chat.editing.alwaysSaveWithGeneratedChanges": true,
     // --- Editor ---
     // python docstring color
     "editor.tokenColorCustomizations": {
@@ -25,10 +30,15 @@
             }
         ]
     },
+    // --- Editor ---
     // word wrap
     "editor.wordWrap": "on",
+    // --- Explorer ---
+    "explorer.confirmDelete": false,
     // --- Git ---
     "git.autofetch": true,
+    "git.enableSmartCommit": true,
+    "git.replaceTagsWhenPull": true,
     // --- GitHub ---
     "github.copilot.enable": {
         "*": true,
@@ -38,12 +48,34 @@
     },
     "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.pullBranch": "never",
-    // --- Python ---
-    "python.defaultInterpreterPath": "/opt/miniconda3/bin/python",
+    // --- mssql ---
+    "mssql.connections": [
+        {
+            "accountId": "d955e9d8-cfb5-494b-9565-9dbdd628e748.efd43e52-58c9-417a-9059-96780f094db0",
+            "applicationName": "vscode-mssql",
+            "authenticationType": "AzureMFA",
+            "azureAccountToken": "",
+            "commandTimeout": 30,
+            "connectTimeout": 30,
+            "database": "SDE_GEOAI",
+            "email": "giorgio.caizzi@jakala.com",
+            "encrypt": "Mandatory",
+            "expiresOn": 1737122438,
+            "password": "",
+            "profileName": "GEOAI",
+            "server": "vl-arcgis-test-sql.database.windows.net",
+            "tenantId": "efd43e52-58c9-417a-9059-96780f094db0",
+            "user": "Giorgio Caizzi - giorgio.caizzi@jakala.com"
+        }
+    ],
+    "mssql.enableRichExperiences": true,
+    // --- Notebooks ---
+    "notebook.lineNumbers": "on",
     // --- Terminal ---
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": false,
+    // --- Jupyter ---
     "jupyter.widgetScriptSources": [
         "jsdelivr.com",
         "unpkg.com"
