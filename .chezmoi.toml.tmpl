@@ -11,3 +11,23 @@
     autoAdd = true
     autoCommit = true
     autoPush = true
+
+[merge]
+{{- if eq .chezmoi.os "windows" }}
+    command = "vim"
+    args = [
+        "-d",
+        {{ printf "%q" "{{ .Destination }}" }},
+        {{ printf "%q" "{{ .Source }}" }},
+        {{ printf "%q" "{{ .Target }}" }},
+    ]
+{{- end }}
+{{- if eq .chezmoi.os "darwin" }}
+    command = "vimdiff"
+    args = [
+        {{ printf "%q" "{{ .Destination }}" }},
+        {{ printf "%q" "{{ .Source }}" }},
+        {{ printf "%q" "{{ .Target }}" }},
+    ]
+{{- end }}
+    
