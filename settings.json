@@ -60,12 +60,22 @@
             "database": "SDE_GEOAI",
             "email": "giorgio.caizzi@jakala.com",
             "encrypt": "Mandatory",
-            "expiresOn": 1737122438,
+            "expiresOn": 1740674245,
             "password": "",
             "profileName": "GEOAI",
             "server": "vl-arcgis-test-sql.database.windows.net",
             "tenantId": "efd43e52-58c9-417a-9059-96780f094db0",
             "user": "Giorgio Caizzi - giorgio.caizzi@jakala.com"
+        },
+        {
+            "server": "vl-arcgis-test-sql.database.windows.net",
+            "database": "Nielsen",
+            "authenticationType": "SqlLogin",
+            "user": "nielsen",
+            "password": "",
+            "emptyPasswordInput": false,
+            "savePassword": true,
+            "profileName": "Nielsen"
         }
     ],
     "mssql.enableRichExperiences": true,
