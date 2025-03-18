@@ -27,11 +27,9 @@ settings.json
 {{ if ne .chezmoi.os "darwin" }}
 **/Library/
 **/Library/**/*
-**/Library/Application Support/Code/User
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
 **/AppData/
 **/AppData/**/*
-**/AppData/Roaming/Code/User
 {{ end}}
