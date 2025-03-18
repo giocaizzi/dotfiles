@@ -11,21 +11,48 @@
 
 [init]
 	defaultBranch = main
+[submodule]
+	recurse = true
 
+[credential]
 {{- if eq .chezmoi.os "darwin" }}
-[credential]
 	helper = osxkeychain
-{{- end }}
-{{- if eq .chezmoi.os "windows" }}
-[credential]
+{{- else if eq .chezmoi.os "windows" }}
 	helper = wincred
 {{- end }}
 
-[difftool "sourcetree"]
-	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-	path = 
-[mergetool "sourcetree"]
-	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+[difftool "vimdiff"]
+{{- if eq .chezmoi.os "windows" }}
+    cmd = vim -d "$LOCAL" "$REMOTE"
+{{- else if eq .chezmoi.os "darwin" }}
+	cmd = vimdiff "$LOCAL" "$REMOTE"
+{{- end }}
+
+[mergetool "vimdiff"]
+{{- if eq .chezmoi.os "windows" }}
+	cmd = vim -d "$LOCAL" "$REMOTE" "$MERGED"
+{{- else if eq .chezmoi.os "darwin" }}
+	cmd = vimdiff "$LOCAL" "$REMOTE" "$MERGED"
+{{- end }}
 	trustExitCode = true
-[submodule]
-	recurse = true
+
+[diff]
+	tool = vimdiff
+
+[merge]
+    tool = vimdiff
+
+[difftool "sourcetree"]
+{{- if eq .chezmoi.os "darwin" }}
+    cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+{{- else if eq .chezmoi.os "windows" }}
+    cmd = vim -d \"$LOCAL\" \"$REMOTE\"
+{{- end }}
+
+[mergetool "sourcetree"]
+{{- if eq .chezmoi.os "darwin" }}
+    cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+{{- else if eq .chezmoi.os "windows" }}
+    cmd = vim -d \"$LOCAL\" \"$REMOTE\"
+{{- end }}
+	trustExitCode = true
