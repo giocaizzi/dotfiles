@@ -9,7 +9,7 @@
           "properties": {
             "cache_duration": "none"
           },
-          "template": "\u250f[<#ffffff>\ueb99</> {{ .UserName }} from <#ffffff>\uf108</> {{ .HostName }}]",
+          "template": "\u250c[<#ffffff>\ueb99</> {{ .UserName }} from <#ffffff>\uf108</> {{ .HostName }}]",
           "foreground": "#7eb8da",
           "type": "session",
           "style": "plain"
@@ -35,6 +35,13 @@
           "template": "[\uebd8 {{ .DefaultEnvironment }}]",
           "type": "azd",
           "style": "plain"
+        },
+        {
+          "type": "gcp",
+          "style": "plain",
+          "foreground": "#ffffff",
+          "background": "#47888d",
+          "template": "  {{.Project}} :: {{.Account}} "
         },
         {
           "properties": {
@@ -132,6 +139,9 @@
       "alignment": "left",
       "segments": [
         {
+          "type": "path",
+          "template": "| [<#ffffff>\uf07c</>  {{ .Path }}]",
+          "foreground": "#7eb8da",
           "properties": {
             "cache_duration": "none",
             "style": "full"
