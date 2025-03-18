@@ -1,6 +1,9 @@
 # --- REPOSITORY ---
 README.md
 
+# Note: Conditions are logically inverted
+# so that the files are ignored on the platform they are not intended for
+
 # --- darwin ---
 # if not on mac, ignore these files
 {{ if ne .chezmoi.os "darwin" }}
@@ -22,9 +25,13 @@ README.md
 # --- VSCODE settings ---
 settings.json
 {{ if ne .chezmoi.os "darwin" }}
-Library/Application Support/Code/User
+**/Library/
+**/Library/**/*
+**/Library/Application Support/Code/User
 {{ end }}
 
 {{ if ne .chezmoi.os "windows" }}
-AppData/Roaming/Code/User
+**/AppData/
+**/AppData/**/*
+**/AppData/Roaming/Code/User
 {{ end}}
