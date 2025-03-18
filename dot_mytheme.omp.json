@@ -127,8 +127,11 @@
         {
           "properties": {
             "cache_duration": "none",
-            "time_format": "Monday at 3:04:05 PM"
-          }
+            "time_format": "15:04 PM Mon 02 Jan"
+          },
+          "style": "plain",
+          "template": "[{{ .CurrentDate | date .Format }}]",
+          "type": "time"
         }
       ],
       "type": "prompt"
