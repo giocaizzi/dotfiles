@@ -118,7 +118,7 @@ source $ZSH/oh-my-zsh.sh
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias python=python3
-alias private="/Users/giorgiocaizzi/Documents/private-project/private-project/start.sh"
+alias private="/Users/giorgiocaizzi/Documents/private-project/private-project/private.sh"
 
 # OH-MY-POSH
 eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"
