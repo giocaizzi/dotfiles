@@ -48,46 +48,18 @@
     },
     "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.pullBranch": "never",
-    // --- mssql ---
-    "mssql.connections": [
-        {
-            "accountId": "d955e9d8-cfb5-494b-9565-9dbdd628e748.efd43e52-58c9-417a-9059-96780f094db0",
-            "applicationName": "vscode-mssql",
-            "authenticationType": "AzureMFA",
-            "azureAccountToken": "",
-            "commandTimeout": 30,
-            "connectTimeout": 30,
-            "database": "SDE_GEOAI",
-            "email": "giorgio.caizzi@jakala.com",
-            "encrypt": "Mandatory",
-            "expiresOn": 1740674245,
-            "password": "",
-            "profileName": "GEOAI",
-            "server": "vl-arcgis-test-sql.database.windows.net",
-            "tenantId": "efd43e52-58c9-417a-9059-96780f094db0",
-            "user": "Giorgio Caizzi - giorgio.caizzi@jakala.com"
-        },
-        {
-            "server": "vl-arcgis-test-sql.database.windows.net",
-            "database": "Nielsen",
-            "authenticationType": "SqlLogin",
-            "user": "nielsen",
-            "password": "",
-            "emptyPasswordInput": false,
-            "savePassword": true,
-            "profileName": "Nielsen"
-        }
-    ],
-    "mssql.enableRichExperiences": true,
     // --- Notebooks ---
     "notebook.lineNumbers": "on",
     // --- Terminal ---
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
-    "terminal.integrated.inheritEnv": false,
+    "terminal.integrated.inheritEnv": true,
     // --- Jupyter ---
     "jupyter.widgetScriptSources": [
         "jsdelivr.com",
         "unpkg.com"
-    ]
+    ],
+    "redhat.telemetry.enabled": true,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "docker.extension.dockerEngineAvailabilityPrompt": false
 }

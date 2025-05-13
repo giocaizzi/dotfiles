@@ -95,12 +95,18 @@
       "newline": true,
       "segments": [
         {
+          "template": "| ",
+          "foreground": "#7eb8da",
+          "style": "plain",
+          "type":"text"
+        },
+        {
           "properties": {
             "cache_duration": "none"
           },
           "foreground": "#7eb8da",
           "style": "plain",
-          "template": "| [<#ffffff>\uebd8</> {{.User.Name}}::{{ .Name }}]",
+          "template": "[<#ffffff>\uebd8</> {{.User.Name}}::{{ .Name }}]",
           "type": "az"
         },
         {
