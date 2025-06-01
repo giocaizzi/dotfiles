@@ -119,7 +119,7 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias python=python3
 alias private="/Users/giorgiocaizzi/Documents/private-project/private-project/private.sh"
-
+alias copyfiles="/Users/giorgiocaizzi/Documents/utils/copy_to_clipboard.sh"
 # OH-MY-POSH
 eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"
 
