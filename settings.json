@@ -8,7 +8,14 @@
     },
     // --- YAML ---
     "[yaml]": {
-        "editor.defaultFormatter": "redhat.vscode-yaml"
+        "editor.defaultFormatter": "redhat.vscode-yaml",
+        "editor.autoIndent": "advanced"
+    },
+    "[dockercompose]": {
+    "editor.autoIndent": "advanced"
+    },
+    "[github-actions-workflow]": {
+    "editor.autoIndent": "advanced"
     },
     // --- Azure ---
     "@azure.argTenant": "00000000-0000-0000-0000-000000000000",
@@ -61,5 +68,7 @@
     ],
     "redhat.telemetry.enabled": true,
     "diffEditor.ignoreTrimWhitespace": false,
-    "docker.extension.dockerEngineAvailabilityPrompt": false
+    "docker.extension.dockerEngineAvailabilityPrompt": false,
+    "hediet.vscode-drawio.resizeImages": null,
+    "docker.extension.enableComposeLanguageServer": false
 }
