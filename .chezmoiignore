@@ -20,7 +20,6 @@ README.md
 # if not on windows, ignore these files
 {{ if ne .chezmoi.os "windows" }}
 ## PowerShell profile lives in OneDrive Docs
-"OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
 **/OneDrive - Jakala Spa/
 **/OneDrive - Jakala Spa/**/*
 # VSCode settings
