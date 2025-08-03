@@ -1,3 +1,14 @@
+# Ensure ~/bin is in PATH early
+export PATH="$HOME/bin:$PATH"
+
+# nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# oh-my-posh init
+if command -v oh-my-posh >/dev/null 2>&1; then
+  eval "$(oh-my-posh init bash --config ~/.mytheme.omp.json)"
+else
+  echo "oh-my-posh not found in PATH"
+fi
