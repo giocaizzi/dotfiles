@@ -1,18 +1,28 @@
-# --- REPOSITORY ---
+# --- chezmoi repo  ---
 README.md
+
+# vscode settings main file
+# each system uses symlinks to this
+settings.json
+
+# --- OS specific ---
 
 # Note: Conditions are logically inverted
 # so that the files are ignored on the platform they are not intended for
-
 # --- darwin ---
 # if not on mac, ignore these files
 {{ if ne .chezmoi.os "darwin" }}
 ## zsh
 .zshrc
-# vscode settings
+# vscode settings are in Library
 **/Library/
 **/Library/**/*
 ## Set environment variables
+.chezmoiscripts/set-env-vars.sh
+{{ end }}
+
+# --- Linux ---
+{{ if ne .chezmoi.os "linux" }}
 .chezmoiscripts/set-env-vars.sh
 {{ end }}
 
@@ -22,14 +32,9 @@ README.md
 ## PowerShell profile lives in OneDrive Docs
 **/OneDrive - Jakala SpA/
 **/OneDrive - Jakala SpA/**/*
-# VSCode settings
+# VSCode settings in app data
 **/AppData/
 **/AppData/**/*
 ## Scripts
 .chezmoiscripts/set-env-vars.ps1
 {{ end }}
-
-# vscode settings main file
-# each system uses symlinks to this
-settings.json
-
