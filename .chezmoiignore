@@ -9,6 +9,9 @@ README.md
 {{ if ne .chezmoi.os "darwin" }}
 ## zsh
 .zshrc
+# vscode settings
+**/Library/
+**/Library/**/*
 ## Set environment variables
 .chezmoiscripts/set-env-vars.sh
 {{ end }}
@@ -16,20 +19,18 @@ README.md
 # --- windows ---
 # if not on windows, ignore these files
 {{ if ne .chezmoi.os "windows" }}
-## PowerShell profile
+## PowerShell profile lives in OneDrive Docs
 "OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1"
-## Set environment variables
+**/OneDrive - Jakala Spa/
+**/OneDrive - Jakala Spa/**/*
+# VSCode settings
+**/AppData/
+**/AppData/**/*
+## Scripts
 .chezmoiscripts/set-env-vars.ps1
 {{ end }}
 
-# --- VSCODE settings ---
+# vscode settings main file
+# each system uses symlinks to this
 settings.json
-{{ if ne .chezmoi.os "darwin" }}
-**/Library/
-**/Library/**/*
-{{ end }}
 
-{{ if ne .chezmoi.os "windows" }}
-**/AppData/
-**/AppData/**/*
-{{ end}}
