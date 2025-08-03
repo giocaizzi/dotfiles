@@ -17,13 +17,13 @@ settings.json
 # vscode settings are in Library
 **/Library/
 **/Library/**/*
-## Set environment variables
-.chezmoiscripts/set-env-vars.sh
+## Scripts
+.chezmoiscripts/env.sh
 {{ end }}
 
 # --- Linux ---
 {{ if ne .chezmoi.os "linux" }}
-.chezmoiscripts/set-env-vars.sh
+.chezmoiscripts/env.sh
 {{ end }}
 
 # --- windows ---
@@ -36,5 +36,5 @@ settings.json
 **/AppData/
 **/AppData/**/*
 ## Scripts
-.chezmoiscripts/set-env-vars.ps1
+.chezmoiscripts/env.ps1
 {{ end }}
