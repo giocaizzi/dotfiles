@@ -8,6 +8,8 @@ eval "$(/opt/homebrew/bin/brew shellenv)"
 
 # Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
+
+# Source bash profile
 source ~/.bash_profile
 
 # Set name of the theme to load --- if set to "random", it will
@@ -88,8 +90,6 @@ plugins=(
 	zsh-autosuggestions
 )
 
-source $ZSH/oh-my-zsh.sh
-
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
@@ -120,7 +120,7 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias python=python3
 alias ikas="/Users/giorgiocaizzi/Documents/iknowaspot/iknowaspot/ikas.sh"
-alias copyfiles="/Users/giorgiocaizzi/Documents/utils/copy_to_clipboard.sh"
+
 # OH-MY-POSH
 eval "$(oh-my-posh --init --shell zsh --config ~/.mytheme.omp.json)"
 
