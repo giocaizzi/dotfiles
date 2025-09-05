@@ -71,5 +71,6 @@
     "docker.extension.dockerEngineAvailabilityPrompt": false,
     "hediet.vscode-drawio.resizeImages": null,
     "docker.extension.enableComposeLanguageServer": false,
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "terminal.integrated.defaultProfile.osx": "zsh"
 }
