@@ -1,4 +1,19 @@
 {
+    "[dockercompose]": {
+        "editor.autoIndent": "advanced",
+        "editor.defaultFormatter": "redhat.vscode-yaml",
+        "editor.insertSpaces": true,
+        "editor.quickSuggestions": {
+            "comments": false,
+            "other": true,
+            "strings": true
+        },
+        "editor.tabSize": 2
+    },
+    "[github-actions-workflow]": {
+        "editor.autoIndent": "advanced",
+        "editor.defaultFormatter": "redhat.vscode-yaml"
+    },
     // --- JSON ---
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
@@ -8,14 +23,8 @@
     },
     // --- YAML ---
     "[yaml]": {
-        "editor.defaultFormatter": "redhat.vscode-yaml",
-        "editor.autoIndent": "advanced"
-    },
-    "[dockercompose]": {
-    "editor.autoIndent": "advanced"
-    },
-    "[github-actions-workflow]": {
-    "editor.autoIndent": "advanced"
+        "editor.autoIndent": "advanced",
+        "editor.defaultFormatter": "redhat.vscode-yaml"
     },
     // --- Azure ---
     "@azure.argTenant": "efd43e52-58c9-417a-9059-96780f094db0",
@@ -24,7 +33,110 @@
     // group azure resources by resource group
     "azureResourceGroups.groupBy": "resourceGroup",
     // --- Chat ---
+    "chat.agent.maxRequests": 1000,
+    "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
+    "chat.promptFilesRecommendations": {},
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /workspaces/ticky/backend && make openapi$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && pytest tests/ticky/auth/api/phone/ -v --tb=short$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && pytest tests/ticky/users/api/test_get_user_auth_required\\.py::TestAuthenticationRequired::test_requires_authorization_header -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && ruff check src/ticky/auth/ src/ticky/users/ src/ticky_shared/domain/value_objects/email\\.py --fix$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && ruff format src/ticky/auth/ src/ticky/users/ src/ticky_shared/domain/value_objects/email\\.py$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && uv run pytest tests/api/auth/ -v$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cd /workspaces/ticky/backend && uv run ruff check \\. --fix$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "cp": true,
+        "gh": true,
+        "grep": true,
+        "mkdir": true,
+        "mv": true,
+        "npm install": true,
+        "npm list": true,
+        "npm run build": true,
+        "npm run dev": true,
+        "npm run knip": true,
+        "npm run lint": true,
+        "npm run test": true,
+        "npm run type-check": true,
+        "npm run typecheck": true,
+        "npm test": true,
+        "npm uninstall": true,
+        "npx": true,
+        "poetry": true,
+        "sed": true,
+        "ssh": true,
+        "tlmgr": true,
+        "uv": true
+    },
+    "chat.tools.urls.autoApprove": {
+        "https://*.google.com": true,
+        "https://developer.hashicorp.com": true,
+        "https://docs.firefly-iii.org": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://duckduckgo.com": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://fastapi.tiangolo.com": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://github.com": true,
+        "https://grafana.com": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://next-intl.dev": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://raw.githubusercontent.com": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://registry.terraform.io": true,
+        "https://stackoverflow.com": true,
+        "https://www.hashicorp.com": {
+            "approveRequest": true,
+            "approveResponse": true
+        },
+        "https://www.infracost.io": true,
+        "https://zod.dev": {
+            "approveRequest": true,
+            "approveResponse": true
+        }
+    },
+    "chat.useAgentSkills": true,
+    "chat.useNestedAgentsMdFiles": true,
+    "chat.viewSessions.orientation": "stacked",
+    // --- Diff Editor ---
+    "diffEditor.ignoreTrimWhitespace": false,
+    // --- Docker ---
+    "docker.extension.dockerEngineAvailabilityPrompt": false,
+    "docker.extension.enableComposeLanguageServer": false,
     // --- Editor ---
     // python docstring color
     "editor.tokenColorCustomizations": {
@@ -37,7 +149,6 @@
             }
         ]
     },
-    // --- Editor ---
     // word wrap
     "editor.wordWrap": "on",
     // --- Explorer ---
@@ -46,31 +157,41 @@
     "git.autofetch": true,
     "git.enableSmartCommit": true,
     "git.replaceTagsWhenPull": true,
-    // --- GitHub ---
+    // --- GitHub Copilot ---
+    "github.copilot.chat.codesearch.enabled": true,
+    "github.copilot.chat.customAgents.showOrganizationAndEnterpriseAgents": true,
+    "github.copilot.chat.generateTests.codeLens": true,
     "github.copilot.enable": {
         "*": true,
         "markdown": true,
         "plaintext": true,
         "scminput": false
     },
+    "github.copilot.nextEditSuggestions.enabled": true,
+    // --- GitHub Pull Requests ---
     "githubPullRequests.createOnPublishBranch": "never",
     "githubPullRequests.pullBranch": "never",
-    // --- Notebooks ---
-    "notebook.lineNumbers": "on",
-    // --- Terminal ---
-    // ohmyposh https://ohmyposh.dev/docs/installation/fonts
-    "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
-    "terminal.integrated.inheritEnv": true,
+    // --- Draw.io ---
+    "hediet.vscode-drawio.resizeImages": null,
     // --- Jupyter ---
     "jupyter.widgetScriptSources": [
         "jsdelivr.com",
         "unpkg.com"
     ],
+    // --- Makefile ---
+    "makefile.configureOnOpen": true,
+    // --- Mermaid ---
+    "mermaid-chat.enabled": true,
+    // --- Notebooks ---
+    "notebook.lineNumbers": "on",
+    // --- Red Hat YAML ---
     "redhat.telemetry.enabled": true,
-    "diffEditor.ignoreTrimWhitespace": false,
-    "docker.extension.dockerEngineAvailabilityPrompt": false,
-    "hediet.vscode-drawio.resizeImages": null,
-    "docker.extension.enableComposeLanguageServer": false,
-    "github.copilot.nextEditSuggestions.enabled": true,
-    "terminal.integrated.defaultProfile.osx": "zsh"
+    // --- Remote ---
+    "remote.autoForwardPortsSource": "hybrid",
+    // --- Terminal ---
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    // ohmyposh https://ohmyposh.dev/docs/installation/fonts
+    "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
+    "terminal.integrated.inheritEnv": true,
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
