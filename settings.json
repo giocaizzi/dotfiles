@@ -38,39 +38,17 @@
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
-        "/^cd /workspaces/ticky/backend && make openapi$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && pytest tests/ticky/auth/api/phone/ -v --tb=short$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && pytest tests/ticky/users/api/test_get_user_auth_required\\.py::TestAuthenticationRequired::test_requires_authorization_header -v$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && ruff check src/ticky/auth/ src/ticky/users/ src/ticky_shared/domain/value_objects/email\\.py --fix$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && ruff format src/ticky/auth/ src/ticky/users/ src/ticky_shared/domain/value_objects/email\\.py$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && uv run pytest tests/api/auth/ -v$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
-        "/^cd /workspaces/ticky/backend && uv run ruff check \\. --fix$/": {
-            "approve": true,
-            "matchCommandLine": true
-        },
+        // shell commands
         "cp": true,
         "gh": true,
         "grep": true,
         "mkdir": true,
+        "sed": true,
+        "ssh": true,
+        "tlmgr": true,
         "mv": true,
+        "make": true,
+        // nodejs
         "npm install": true,
         "npm list": true,
         "npm run build": true,
@@ -83,11 +61,14 @@
         "npm test": true,
         "npm uninstall": true,
         "npx": true,
+        // python
+        "python": true,
         "poetry": true,
-        "sed": true,
-        "ssh": true,
-        "tlmgr": true,
-        "uv": true
+        "uv": true,
+        "pytest": true,
+        "ruff": true,
+        "mypy": true,
+        "pip install": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
