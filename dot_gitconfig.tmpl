@@ -46,6 +46,7 @@
 [difftool "sourcetree"]
 {{- if eq .chezmoi.os "darwin" }}
     cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+    path = 
 {{- else if eq .chezmoi.os "windows" }}
     cmd = vim -d \"$LOCAL\" \"$REMOTE\"
 {{- end }}
