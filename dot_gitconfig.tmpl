@@ -1,6 +1,6 @@
 [user]
-	name = {{ .gitUser | quote }}
-	email = {{ .gitEmail | quote }}
+	name = "{{ .gitUser }}"
+	email = "{{ .gitEmail }}"
 
 {{- if eq .chezmoi.os "darwin" }}
 [core]
@@ -45,16 +45,16 @@
 
 [difftool "sourcetree"]
 {{- if eq .chezmoi.os "darwin" }}
-    cmd = opendiff \"$LOCAL\" \"$REMOTE\"
-    path = 
+	cmd = opendiff \"$LOCAL\" \"$REMOTE\"
+	path =
 {{- else if eq .chezmoi.os "windows" }}
-    cmd = vim -d \"$LOCAL\" \"$REMOTE\"
+	cmd = vim -d \"$LOCAL\" \"$REMOTE\"
 {{- end }}
 
 [mergetool "sourcetree"]
 {{- if eq .chezmoi.os "darwin" }}
-    cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
+	cmd = /Applications/Sourcetree.app/Contents/Resources/opendiff-w.sh \"$LOCAL\" \"$REMOTE\" -ancestor \"$BASE\" -merge \"$MERGED\"
 {{- else if eq .chezmoi.os "windows" }}
-    cmd = vim -d \"$LOCAL\" \"$REMOTE\"
+	cmd = vim -d \"$LOCAL\" \"$REMOTE\"
 {{- end }}
 	trustExitCode = true
