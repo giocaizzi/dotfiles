@@ -73,42 +73,17 @@
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
         "https://developer.hashicorp.com": true,
-        "https://docs.firefly-iii.org": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
-        "https://duckduckgo.com": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
-        "https://fastapi.tiangolo.com": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
+        "https://docs.firefly-iii.org": true,
+        "https://duckduckgo.com": true,
+        "https://fastapi.tiangolo.com": true,
         "https://github.com": true,
-        "https://grafana.com": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
-        "https://next-intl.dev": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
-        "https://raw.githubusercontent.com": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
+        "https://grafana.com":true,
+        "https://next-intl.dev": true,
         "https://registry.terraform.io": true,
         "https://stackoverflow.com": true,
-        "https://www.hashicorp.com": {
-            "approveRequest": true,
-            "approveResponse": true
-        },
+        "https://www.hashicorp.com": true,
         "https://www.infracost.io": true,
-        "https://zod.dev": {
-            "approveRequest": true,
-            "approveResponse": true
-        }
+        "https://zod.dev": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
