@@ -1,3 +1,11 @@
+# ------------- General -------------
+# This is a .chezmoiignore file, which specifies files and directories that are to be ignored by chezmoi.
+# For more information, see https://chezmoi.io/docs/reference/chezmoiignore/
+# Note: Conditions are logically inverted
+# so that the files are ignored on the platform they are not intended for
+# ------------------------------------
+
+
 # --- chezmoi repo  ---
 README.md
 
@@ -5,11 +13,9 @@ README.md
 # each system uses symlinks to this
 settings.json
 
-# --- OS specific ---
-
-# Note: Conditions are logically inverted
-# so that the files are ignored on the platform they are not intended for
-# --- darwin ---
+# ------------------------------------
+# macOS
+# ------------------------------------
 # if not on mac, ignore these files
 {{ if ne .chezmoi.os "darwin" }}
 ## zsh
@@ -21,12 +27,17 @@ settings.json
 .chezmoiscripts/env.sh
 {{ end }}
 
-# --- Linux ---
+
+# ------------------------------------
+# linux
+# ------------------------------------
 {{ if ne .chezmoi.os "linux" }}
 .chezmoiscripts/env.sh
 {{ end }}
 
-# --- windows ---
+# ------------------------------------
+# windows 
+# ------------------------------------
 # if not on windows, ignore these files
 {{ if ne .chezmoi.os "windows" }}
 ## PowerShell profile lives in OneDrive Docs
