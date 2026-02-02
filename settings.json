@@ -72,5 +72,19 @@
     "hediet.vscode-drawio.resizeImages": null,
     "docker.extension.enableComposeLanguageServer": false,
     "github.copilot.nextEditSuggestions.enabled": true,
-    "terminal.integrated.defaultProfile.osx": "zsh"
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "chat.tools.terminal.autoApprove": {
+        ".\\.venv\\Scripts\\Activate.ps1": true
+    },
+    "chat.tools.urls.autoApprove": {
+        "https://langchain-ai.github.io": {
+            "approveRequest": true,
+            "approveResponse": false
+        },
+        "https://docs.langchain.com": {
+            "approveRequest": false,
+            "approveResponse": true
+        }
+    },
+    "chat.viewSessions.orientation": "stacked"
 }
