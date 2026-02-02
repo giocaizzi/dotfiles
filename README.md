@@ -62,3 +62,16 @@ chezmoi diff
 chezmoi merge
 chezmoi merge --all
 ```
+
+## Scripts
+
+`chezmoi` offers the ability to run custom scripts during multiple phases of its operation. 
+
+The scripts are saved in `.chezmoiscripts` directory, and they are executed at specific points in the process of applying changes to the target system.
+The filenames indicate when they are executed:
+- `run_` prefix: executed everytime `chezmoi apply` is run.
+- `run_onchange_` prefix: if their content changed since last time they were successfully run.
+
+## Documentation
+
+See the official [chezmoi documentation](https://www.chezmoi.io/docs/) for more details and advanced usage.
