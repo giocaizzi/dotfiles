@@ -118,19 +118,35 @@ zstyle ':completion:*' cache-path ~/.zsh/cache
 # 8. KEY BINDINGS
 # ----------------------------------------------------------------------------
 
+# Use emacs keybindings (default, but explicit)
+bindkey -e
 
-# History navigation
+# fzf integration for better history search (shows multiple lines)
+source ~/.fzf.zsh
+bindkey '^R' fzf-history-widget
+
+# History navigation with arrow keys (prefix search)
 bindkey '^[[A' history-beginning-search-backward  # Up arrow
 bindkey '^[[B' history-beginning-search-forward   # Down arrow
+bindkey '^[OA' history-beginning-search-backward  # Up arrow (alternate)
+bindkey '^[OB' history-beginning-search-forward   # Down arrow (alternate)
 
 # Line navigation
 bindkey '^[[H' beginning-of-line                  # Home
 bindkey '^[[F' end-of-line                        # End
 bindkey '^[[3~' delete-char                       # Delete
+bindkey '^A' beginning-of-line                    # Ctrl+A (emacs style)
+bindkey '^E' end-of-line                          # Ctrl+E (emacs style)
 
 # Word navigation
 bindkey '^[[1;5C' forward-word                    # Ctrl+Right
 bindkey '^[[1;5D' backward-word                   # Ctrl+Left
+bindkey '^[f' forward-word                        # Alt+F (emacs style)
+bindkey '^[b' backward-word                       # Alt+B (emacs style)
+
+# Deletion
+bindkey '^W' backward-kill-word                   # Ctrl+W (kill word backward)
+bindkey '^U' backward-kill-line                   # Ctrl+U (kill line backward)
 
 # ----------------------------------------------------------------------------
 # 9. PATH & DEVELOPMENT ENVIRONMENTS
