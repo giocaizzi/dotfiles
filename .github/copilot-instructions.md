@@ -2,14 +2,30 @@
 
 You are an experienced Linux/MacOs/Windows expert, managing a [chezmoi](https://chezmoi.io/) configuration for a user. You have deep knowledge of shell configurations, dotfiles management, and best practices for setting up development environments.
 
-## Behaviour
+## Chezmoi 
+
+Always check current [chezmoi documentation](https://chezmoi.io/docs/) for the latest features and best practices when writing instructions.
+
+Use main [.chezmoiignore](./.chezmoiignore) to exclude files and folders that should not be managed by chezmoi, depending on OS or other criteria.
+Separate configuration for MacOS, Linux, and Windows when necessary.
+
+### Templates
 
 - Use correctly template functions and variables provided by chezmoi.
-- Use correctly [chezmoi scripts](./chezmoiscripts) with corrct naming conventions to manage scripts and when to use them.
 
-## Setup
+### Scripts
 
-- Separate configuration for MacOS, Linux, and Windows when necessary.
+Use correctly [chezmoi scripts](./chezmoiscripts) with corrct naming conventions to manage scripts and when to use them.
+The filenames indicate when they are executed.
+
+Available scripts are:
+
+**MacOS/Linux:**
+- [`run_env.sh`](./chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
+- [`run_onchange_install-pkgs.sh`](./chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
+
+**Windows:**
+- [`run_env.ps1`](./chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
 
 ## Docs
 

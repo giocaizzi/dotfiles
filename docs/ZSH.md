@@ -2,10 +2,13 @@
 
 This document describes the features, keybindings, and functionality configured in the zsh setup.
 
+**Performance:** Optimized for fast startup with lazy loading and Homebrew integration.
+
 ---
 
 ## 📋 Table of Contents
 
+- [Performance Optimizations](#-performance-optimizations)
 - [History Features](#-history-features)
 - [Completion System](#-completion-system)
 - [Key Bindings](#-key-bindings)
@@ -13,6 +16,20 @@ This document describes the features, keybindings, and functionality configured 
 - [Autosuggestions](#-autosuggestions)
 - [Aliases](#-aliases)
 - [ZSH Options](#-zsh-options)
+
+---
+
+### Maintenance
+```bash
+# Rebuild completions if needed
+rm -f ~/.zcompdump && exec zsh
+
+# Update Oh My Zsh manually
+omz update
+
+# Re-initialize pyenv (if using Python)
+eval "$(pyenv init - zsh)"
+```
 
 ---
 
@@ -34,19 +51,23 @@ This document describes the features, keybindings, and functionality configured 
 
 ### Usage
 ```bash
-# Interactive fuzzy search with fzf (best option - shows multiple lines!)
-Ctrl+R              # Opens fzf interface showing all history
-                    # Type to filter, use ↑/↓ to navigate, Enter to select
+# Interactive fuzzy history browser (custom function)
+h                   # Opens fzf to browse and select from entire history
+h search-term       # Pre-filter history with search term
 
-# Quick prefix search with arrows
+# Quick history search
+Ctrl+R              # fzf interactive search (shows preview)
+                    # Ctrl+Y copies command to clipboard
+
+# Prefix search with arrows
 ↑/↓                 # Navigate through history matching current input prefix
 
 # View history
-h                   # Alias for 'history' command
+history             # Show all history
 history | grep foo  # Search history for specific commands
 ```
 
-**Note:** The `Ctrl+R` fuzzy search is powered by [fzf](https://github.com/junegunn/fzf), which is automatically installed via the chezmoi setup script.
+**Note:** History browsing uses [fzf](https://github.com/junegunn/fzf), installed via `run_onchange_install-pkgs.sh`.
 
 ---
 
