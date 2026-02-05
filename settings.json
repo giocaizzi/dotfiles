@@ -112,6 +112,13 @@
     "editor.wordWrap": "on",
     // --- Explorer ---
     "explorer.confirmDelete": false,
+    // --- Files ---
+    "files.associations": {
+        // dotenv files
+        ".env*": "dotenv",
+        // terraform secret files
+        "*.secret.tfvars": "terraform_secrets"
+    },
     // --- Git ---
     "git.autofetch": true,
     "git.enableSmartCommit": true,
@@ -124,7 +131,10 @@
         "*": true,
         "markdown": true,
         "plaintext": true,
-        "scminput": false
+        "scminput": false,
+        // disable on sensitive file types
+        "dotenv": false,
+        "terraform_secrets": false
     },
     "github.copilot.nextEditSuggestions.enabled": true,
     // --- GitHub Pull Requests ---
