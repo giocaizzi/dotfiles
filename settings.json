@@ -77,13 +77,16 @@
         "https://duckduckgo.com": true,
         "https://fastapi.tiangolo.com": true,
         "https://github.com": true,
-        "https://grafana.com":true,
+        "https://grafana.com": true,
         "https://next-intl.dev": true,
         "https://registry.terraform.io": true,
         "https://stackoverflow.com": true,
         "https://www.hashicorp.com": true,
         "https://www.infracost.io": true,
-        "https://zod.dev": true
+        "https://zod.dev": true,
+        "https://zsh.sourceforge.io/Doc": true,
+        "https://wiki.archlinux.org": true,
+        "https://*.archlinux.org": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
@@ -149,6 +152,19 @@
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": true,
+    // Enable shell integration for better completions
+    "terminal.integrated.shellIntegration.enabled": true,
+    // Show completion suggestions in terminal
+    "terminal.integrated.suggest.enabled": true,
+    "terminal.integrated.suggest.quickSuggestions": true,
+    // Enable terminal command history
+    "terminal.integrated.commandHistory.enabled": true,
+    "terminal.integrated.commandHistory.limit": 1000,
+    // Smooth cursor animation
+    "terminal.integrated.smoothScrolling": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
+    "terminal.integrated.shellIntegration.environmentReporting": true,
+    "terminal.integrated.suggest.selectionMode": "always"
 }
