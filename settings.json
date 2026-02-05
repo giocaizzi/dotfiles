@@ -131,7 +131,8 @@
         "*": true,
         "markdown": true,
         "plaintext": true,
-        "scminput": false,
+        // enable for Source Control Management (SCM) input box to get suggestions in commit messages
+        "scminput": true,
         // disable on sensitive file types
         "dotenv": false,
         "terraform_secrets": false
