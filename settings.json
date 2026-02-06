@@ -66,9 +66,9 @@
         "ruff": true,
         "mypy": true,
         "pip install": true,
-        // disable potentially destructive commands by default
         "terraform apply": false,
-        "terraform destroy": false
+        "terraform destroy": false,
+        "terraform plan": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
