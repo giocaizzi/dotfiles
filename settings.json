@@ -76,7 +76,8 @@
         "gcloud logging read": true,
         "gcloud * list": true,
         "gcloud * get-iam-policy": true,
-        "gcloud * describe": true
+        "gcloud * describe": true,
+        "gcloud run services describe": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
