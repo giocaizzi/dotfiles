@@ -71,7 +71,8 @@
         "terraform destroy": false,
         "terraform plan": true,
         "terraform fmt": true,
-        "terraform validate": true
+        "terraform validate": true,
+        "gcloud logging read": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
