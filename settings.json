@@ -73,7 +73,7 @@
         "terraform fmt": true,
         "terraform validate": true,
         "gcloud logging read": true,
-        "gcloud services list": true,
+        "gcloud * list": true,
         "gcloud * get-iam-policy": true
     },
     "chat.tools.urls.autoApprove": {
