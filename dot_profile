@@ -144,6 +144,8 @@ export FZF_DEFAULT_OPTS='
   --padding=1
   --preview-window=right:60%:wrap
   --bind ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down
+  --color fg:252,bg:233,hl:67,fg+:252,bg+:235,hl+:81
+  --color info:144,prompt:161,spinner:135,pointer:135,marker:118
 '
 
 # fzf Ctrl+R history search configuration
