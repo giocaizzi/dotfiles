@@ -10,15 +10,11 @@ if [ -z "$PROFILE_SOURCED" ]; then
 fi
 
 # ----------------------------------------------------------------------------
-# PYENV (Lazy Loading)
+# PYENV
 # ----------------------------------------------------------------------------
 
-if command -v pyenv &> /dev/null; then
-	function pyenv() {
-		unset -f pyenv
-		eval "$(command pyenv init - zsh)"
-		pyenv "$@"
-	}
+if command -v pyenv >/dev/null 2>&1; then
+	eval "$(pyenv init - zsh)"
 fi
 
 # ----------------------------------------------------------------------------
