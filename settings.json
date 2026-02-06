@@ -72,7 +72,8 @@
         "terraform plan": true,
         "terraform fmt": true,
         "terraform validate": true,
-        "gcloud logging read": true
+        "gcloud logging read": true,
+        "gcloud projects get-iam-policy": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
