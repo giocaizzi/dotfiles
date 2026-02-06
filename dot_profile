@@ -93,6 +93,19 @@ alias gp='git push'
 alias gl='git pull'
 alias glog='git log --oneline --decorate --graph'
 
+# History search with fzf
+h() {
+	local selected
+	selected=$(fc -l 1 | fzf --tac --no-sort +m --query "$*" --prompt="History> " | sed 's/^[ ]*[0-9]*\*\?[ ]*//')
+	if [ -n "$selected" ]; then
+		# Try to insert into command line (zsh) or just print (bash)
+		print -z "$selected" 2>/dev/null || printf '%s\n' "$selected"
+	fi
+}
+
+# Create hist alias as well (history is a built-in that can't be easily overridden)
+alias hist='h'
+
 # ----------------------------------------------------------------------------
 # 4. TOOL INITIALIZATION
 # ----------------------------------------------------------------------------
@@ -127,9 +140,6 @@ export FZF_DEFAULT_OPTS='
   --padding=1
   --preview-window=right:60%:wrap
   --bind ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down
-  --color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796
-  --color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6
-  --color=marker:#f4dbd6,fg+:#cad3f5,prompt:#c6a0f6,hl+:#ed8796
 '
 
 # fzf Ctrl+R history search configuration
@@ -137,7 +147,6 @@ export FZF_CTRL_R_OPTS="
   --preview 'echo {}' --preview-window up:3:hidden:wrap
   --bind 'ctrl-/:toggle-preview'
   --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
-  --color header:italic
   --header 'Press CTRL-Y to copy command to clipboard'
 "
 
