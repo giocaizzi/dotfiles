@@ -41,6 +41,7 @@
         "cp": true,
         "gh": true,
         "grep": true,
+        "pgrep": true,
         "mkdir": true,
         "sed": true,
         "ssh": true,
@@ -74,7 +75,8 @@
         "terraform validate": true,
         "gcloud logging read": true,
         "gcloud * list": true,
-        "gcloud * get-iam-policy": true
+        "gcloud * get-iam-policy": true,
+        "gcloud * describe": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
