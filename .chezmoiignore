@@ -9,6 +9,9 @@
 # --- chezmoi repo  ---
 README.md
 
+# docs
+docs
+
 # vscode settings main file
 # each system uses symlinks to this
 settings.json
@@ -25,6 +28,7 @@ settings.json
 **/Library/**/*
 ## Scripts
 .chezmoiscripts/env.sh
+.chezmoiscripts/install-pkgs.sh
 {{ end }}
 
 
