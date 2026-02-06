@@ -2,6 +2,18 @@
 set -e
 
 # ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+VERBOSE=true  # Set to false for minimal output
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+# ============================================================================
 # PACKAGE DEFINITIONS (Single Source of Truth)
 # ============================================================================
 
@@ -24,6 +36,19 @@ ZSH_PACKAGES=(
 	"zsh-autosuggestions"
 )
 
+# Linux-specific packages (vim not needed on macOS - already included)
+LINUX_PACKAGES=(
+	"vim"           # Text editor
+)
+
+# Additional tools (cross-platform)
+ADDITIONAL_TOOLS=(
+	"pyenv"
+	"pipx"
+	"cookiecutter"
+	"oh-my-posh"
+)
+
 # ============================================================================
 # PACKAGE NAME MAPPING (apt names differ from Homebrew)
 # ============================================================================
@@ -37,74 +62,132 @@ map_package_name() {
 }
 
 # ============================================================================
+# TOOL INSTALLATION FUNCTIONS
+# ============================================================================
+
+install_tool_macos() {
+	local tool=$1
+	if command -v "$tool" >/dev/null 2>&1; then
+		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $tool already installed"
+	else
+		echo -e "${BLUE}Installing${NC} $tool..."
+		brew install "$tool"
+	fi
+}
+
+install_tool_linux() {
+	local tool=$1
+	if command -v "$tool" >/dev/null 2>&1; then
+		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $tool already installed"
+		return
+	fi
+	
+	echo -e "${BLUE}Installing${NC} $tool..."
+	case "$tool" in
+		"pyenv")
+			curl https://pyenv.run | bash
+			;;
+		"pipx")
+			python3 -m pip install --user pipx
+			python3 -m pipx ensurepath
+			;;
+		"cookiecutter")
+			pipx install cookiecutter
+			;;
+		"oh-my-posh")
+			curl -s https://ohmyposh.dev/install.sh | bash -s
+			;;
+		*)
+			echo "Warning: No installation method for $tool" >&2
+			;;
+	esac
+}
+
+# ============================================================================
 # INSTALLATION
 # ============================================================================
 
 {{- if eq .chezmoi.os "darwin" }}
 # macOS: Use Homebrew
+echo -e "${BLUE}Installing required packages...${NC}"
+
 if ! command -v brew >/dev/null 2>&1; then
 	echo "Homebrew is required but not installed" >&2
 	echo "Install it from: https://brew.sh" >&2
 	exit 1
 fi
 
-echo "Installing packages via Homebrew..."
-ALL_PACKAGES=("${CORE_PACKAGES[@]}" "${BASH_PACKAGES[@]}" "${ZSH_PACKAGES[@]}")
-for pkg in "${ALL_PACKAGES[@]}"; do
-	if ! brew list "$pkg" >/dev/null 2>&1; then
-		echo "Installing $pkg..."
+# Core packages
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Core packages:${NC}"
+fi
+for pkg in "${CORE_PACKAGES[@]}"; do
+	if brew list "$pkg" >/dev/null 2>&1; then
+		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
+	else
+		echo -e "${BLUE}Installing${NC} $pkg..."
+		brew install "$pkg"
+	fi
+done
+
+# Bash packages
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Bash packages:${NC}"
+fi
+for pkg in "${BASH_PACKAGES[@]}"; do
+	if brew list "$pkg" >/dev/null 2>&1; then
+		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
+	else
+		echo -e "${BLUE}Installing${NC} $pkg..."
+		brew install "$pkg"
+	fi
+done
+
+# Zsh packages
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Zsh packages:${NC}"
+fi
+for pkg in "${ZSH_PACKAGES[@]}"; do
+	if brew list "$pkg" >/dev/null 2>&1; then
+		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
+	else
+		echo -e "${BLUE}Installing${NC} $pkg..."
 		brew install "$pkg"
 	fi
 done
 
 # Setup fzf key bindings
 if [ -f "$(brew --prefix)/opt/fzf/install" ]; then
-	echo "Setting up fzf key bindings..."
-	"$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc
+	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Setting up fzf key bindings...${NC}"
+	"$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc >/dev/null 2>&1
 fi
 
-# Install tools not in package managers
-# pyenv
-if ! command -v pyenv >/dev/null 2>&1; then
-	echo "Installing pyenv..."
-	brew install pyenv
+# Additional tools
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Additional tools:${NC}"
 fi
 
-# pipx
-if ! command -v pipx >/dev/null 2>&1; then
-	echo "Installing pipx..."
-	brew install pipx
-fi
-
-# cookiecutter
-if ! command -v cookiecutter >/dev/null 2>&1; then
-	echo "Installing cookiecutter..."
-	brew install cookiecutter
-fi
-
-# oh-my-posh
-if ! command -v oh-my-posh >/dev/null 2>&1; then
-	echo "Installing oh-my-posh..."
-	brew install oh-my-posh
-fi
+for tool in "${ADDITIONAL_TOOLS[@]}"; do
+	install_tool_macos "$tool"
+done
 
 # Oh My Zsh
 OHMYZSH_DIR="$HOME/.oh-my-zsh"
 if [ -d "$OHMYZSH_DIR" ]; then
-	echo "✓ Oh My Zsh already installed"
+	[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} Oh My Zsh already installed"
 else
-	echo "Installing Oh My Zsh..."
+	echo -e "${BLUE}Installing${NC} Oh My Zsh..."
 	git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OHMYZSH_DIR"
 fi
 {{- end }}
 
 {{- if eq .chezmoi.os "linux" }}
 # Linux: Use apt-get (bash only, no zsh)
-echo "Installing packages via apt-get..."
+echo -e "${BLUE}Installing required packages...${NC}"
 
 # Install GitHub CLI repo (gh requires special setup)
 if ! command -v gh >/dev/null 2>&1; then
-	echo "Adding GitHub CLI repository..."
+	[ "$VERBOSE" = true ] && echo -e "${YELLOW}Adding GitHub CLI repository...${NC}"
 	(type -p wget >/dev/null || (sudo apt-get update && sudo apt-get install wget -y)) \
 		&& sudo mkdir -p -m 755 /etc/apt/keyrings \
 		&& wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
@@ -113,41 +196,33 @@ if ! command -v gh >/dev/null 2>&1; then
 fi
 
 # Build package list with apt name mapping
-ALL_PACKAGES=("${CORE_PACKAGES[@]}" "${BASH_PACKAGES[@]}")
+ALL_PACKAGES=("${CORE_PACKAGES[@]}" "${BASH_PACKAGES[@]}" "${LINUX_PACKAGES[@]}")
 APT_PKGS=("curl" "python3-pip")  # Additional dependencies
 for pkg in "${ALL_PACKAGES[@]}"; do
 	APT_PKGS+=("$(map_package_name "$pkg")")
 done
 
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Core & Bash packages:${NC}"
+fi
 sudo apt-get update
 sudo apt-get install -y "${APT_PKGS[@]}"
 
-# Install tools not in apt or need special handling
-if ! command -v pipx >/dev/null 2>&1; then
-	echo "Installing pipx..."
-	python3 -m pip install --user pipx
-	python3 -m pipx ensurepath
+# Additional tools
+if [ "$VERBOSE" = true ]; then
+	echo -e "\n${YELLOW}Additional tools:${NC}"
 fi
 
-if ! command -v cookiecutter >/dev/null 2>&1; then
-	echo "Installing cookiecutter..."
-	pipx install cookiecutter
-fi
-
-if ! command -v pyenv >/dev/null 2>&1; then
-	echo "Installing pyenv..."
-	curl https://pyenv.run | bash
-fi
-
-if ! command -v oh-my-posh >/dev/null 2>&1; then
-	echo "Installing oh-my-posh..."
-	curl -s https://ohmyposh.dev/install.sh | bash -s
-fi
+for tool in "${ADDITIONAL_TOOLS[@]}"; do
+	install_tool_linux "$tool"
+done
 
 # Create fd symlink (fd-find -> fd) for consistency with macOS
 if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+	[ "$VERBOSE" = true ] && echo -e "${BLUE}Creating${NC} fd symlink..."
 	mkdir -p "$HOME/.local/bin"
 	ln -sf "$(which fdfind)" "$HOME/.local/bin/fd"
 fi
 
-echo "✓ All packages installed successfully"
+echo -e "\n${GREEN}✓ All packages installed successfully${NC}"
+{{- end }}
