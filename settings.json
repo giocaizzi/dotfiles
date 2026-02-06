@@ -69,7 +69,9 @@
         "pip install": true,
         "terraform apply": false,
         "terraform destroy": false,
-        "terraform plan": true
+        "terraform plan": true,
+        "terraform fmt": true,
+        "terraform validate": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
