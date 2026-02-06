@@ -81,5 +81,14 @@ if [[ -n "$HOMEBREW_PREFIX" && -f "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zs
 fi
 
 # ----------------------------------------------------------------------------
+# PROMPT (oh-my-posh)
+# ----------------------------------------------------------------------------
+# Must be loaded AFTER oh-my-zsh to avoid being overridden
+
+if command -v oh-my-posh &> /dev/null; then
+	eval "$(oh-my-posh init zsh --config ~/.mytheme.omp.json)"
+fi
+
+# ----------------------------------------------------------------------------
 # End of .zshrc
 # ----------------------------------------------------------------------------
