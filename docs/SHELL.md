@@ -17,6 +17,9 @@ This document describes the centralized shell configuration shared between bash 
 - [Autosuggestions](#-autosuggestions)
 - [Aliases](#-aliases)
 - [Shell Options](#-shell-options)
+- [Tools & Plugins](#-tools--plugins)
+- [Python Version Management (pyenv)](#-python-version-management-pyenv)
+- [Tips & Tricks](#-tips--tricks)
 
 ---
 
@@ -354,6 +357,7 @@ glog                # git log --oneline --decorate --graph
 ## 🎨 Tools & Plugins
 
 ### Shared Tools (Both Shells)
+- **pyenv** - Python version manager for managing multiple Python versions
 - **fzf** - Fuzzy finder for history, files (Ctrl+R for history search)
 - **oh-my-posh** - Customizable prompt theme
 
@@ -372,7 +376,54 @@ glog                # git log --oneline --decorate --graph
 
 ---
 
-## 🚀 Tips & Tricks
+## � Python Version Management (pyenv)
+
+### Configuration
+pyenv is initialized in both bash and zsh to manage Python versions:
+- PATH setup in `.profile` with `pyenv init --path`
+- Full initialization in `.bashrc` and `.zshrc` with `pyenv init - <shell>`
+- Global Python version set via `~/.python-version` file (currently 3.13)
+
+### Common Commands
+```bash
+# List installed versions
+pyenv versions
+
+# Install a new Python version
+pyenv install 3.13.0
+
+# Set global Python version
+pyenv global 3.13
+
+# Set local project version (creates .python-version in current dir)
+pyenv local 3.11.0
+
+# Show current active version
+pyenv version
+
+# List available versions to install
+pyenv install --list
+```
+
+### Version Priority
+pyenv checks for Python versions in this order:
+1. `PYENV_VERSION` environment variable
+2. `.python-version` file in current directory (local project)
+3. `~/.python-version` file (global default - managed by chezmoi)
+4. System Python
+
+### Updating pyenv
+```bash
+# via Homebrew (recommended on macOS)
+brew upgrade pyenv
+
+# Or update Python build definitions
+cd $(pyenv root) && git pull
+```
+
+---
+
+## �🚀 Tips & Tricks
 
 ### History Power User (Both Shells)
 ```bash

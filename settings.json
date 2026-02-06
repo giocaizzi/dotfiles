@@ -45,6 +45,7 @@
         "sed": true,
         "ssh": true,
         "tlmgr": true,
+        "jq": true,
         "mv": true,
         "make": true,
         "npm install": true,
