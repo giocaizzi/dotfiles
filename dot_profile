@@ -1,0 +1,166 @@
+# ============================================================================
+# POSIX SHELL CONFIGURATION (Core)
+# ============================================================================
+# This file contains POSIX-compliant configuration shared between bash and zsh.
+# It is sourced by both .bashrc and .zshrc to avoid duplication.
+#
+# IMPORTANT: Keep this file POSIX-compliant - no bash/zsh-specific syntax!
+# Test with: shellcheck -s sh ~/.profile
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# 1. ENVIRONMENT VARIABLES
+# ----------------------------------------------------------------------------
+
+# Default editor
+export EDITOR='vim'
+export VISUAL='vim'
+
+# ----------------------------------------------------------------------------
+# 2. PATH CONFIGURATION
+# ----------------------------------------------------------------------------
+
+# Homebrew (macOS - Intel and Apple Silicon)
+if [ -f /opt/homebrew/bin/brew ]; then
+	eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -f /usr/local/bin/brew ]; then
+	eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# pipx
+export PATH="$HOME/.local/bin:$PATH"
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+if [ -d "$PYENV_ROOT/bin" ]; then
+	export PATH="$PYENV_ROOT/bin:$PATH"
+fi
+
+# Android SDK
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
+
+# ----------------------------------------------------------------------------
+# 3. UNIVERSAL ALIASES (POSIX-safe)
+# ----------------------------------------------------------------------------
+
+# Directory Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# File Operations (POSIX-safe flags)
+alias ll='ls -lah'
+alias la='ls -A'
+alias l='ls -CF'
+alias mkdir='mkdir -p'
+
+# System (POSIX-safe)
+alias df='df -h'
+alias du='du -h'
+
+# Search with color (if supported)
+if ls --color=auto >/dev/null 2>&1; then
+	# GNU ls (Linux)
+	alias ls='ls --color=auto'
+	alias grep='grep --color=auto'
+	alias fgrep='fgrep --color=auto'
+	alias egrep='egrep --color=auto'
+else
+	# BSD ls (macOS)
+	alias ls='ls -G'
+	alias grep='grep --color=auto'
+	alias fgrep='fgrep --color=auto'
+	alias egrep='egrep --color=auto'
+fi
+
+# macOS memory info
+if [ "$(uname)" = "Darwin" ]; then
+	alias free='top -l 1 -s 0 | grep PhysMem'
+fi
+
+# Python3 as default python
+if command -v python3 >/dev/null 2>&1; then
+	alias python='python3'
+fi
+
+# Git shortcuts (universal)
+alias gs='git status'
+alias ga='git add'
+alias gc='git commit -v'
+alias gd='git diff'
+alias gp='git push'
+alias gl='git pull'
+alias glog='git log --oneline --decorate --graph'
+
+# ----------------------------------------------------------------------------
+# 4. TOOL INITIALIZATION
+# ----------------------------------------------------------------------------
+
+# Google Cloud SDK (if installed)
+if [ -f "$HOME/Downloads/google-cloud-sdk/path.sh.inc" ]; then
+	. "$HOME/Downloads/google-cloud-sdk/path.sh.inc"
+fi
+
+if [ -f "$HOME/Downloads/google-cloud-sdk/completion.bash.inc" ]; then
+	. "$HOME/Downloads/google-cloud-sdk/completion.bash.inc"
+fi
+
+# ----------------------------------------------------------------------------
+# 4. PROJECT-SPECIFIC ALIASES
+# ----------------------------------------------------------------------------
+
+# Project shortcuts
+alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
+
+# ----------------------------------------------------------------------------
+# 5. FZF CONFIGURATION (Shared)
+# ----------------------------------------------------------------------------
+
+# fzf default options (works in both bash and zsh)
+export FZF_DEFAULT_OPTS='
+  --height=40%
+  --layout=reverse
+  --info=inline
+  --border
+  --margin=1
+  --padding=1
+  --preview-window=right:60%:wrap
+  --bind ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down
+  --color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796
+  --color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6
+  --color=marker:#f4dbd6,fg+:#cad3f5,prompt:#c6a0f6,hl+:#ed8796
+'
+
+# fzf Ctrl+R history search configuration
+export FZF_CTRL_R_OPTS="
+  --preview 'echo {}' --preview-window up:3:hidden:wrap
+  --bind 'ctrl-/:toggle-preview'
+  --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
+  --color header:italic
+  --header 'Press CTRL-Y to copy command to clipboard'
+"
+
+# Use fd for file search if available
+if command -v fd >/dev/null 2>&1; then
+	export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+	export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+fi
+
+# ----------------------------------------------------------------------------
+# 6. PROMPT CONFIGURATION (oh-my-posh)
+# ----------------------------------------------------------------------------
+
+# oh-my-posh prompt (works in both bash and zsh)
+if command -v oh-my-posh >/dev/null 2>&1; then
+	# Detect shell and initialize accordingly
+	if [ -n "$BASH_VERSION" ]; then
+		eval "$(oh-my-posh init bash --config ~/.mytheme.omp.json)"
+	elif [ -n "$ZSH_VERSION" ]; then
+		eval "$(oh-my-posh init zsh --config ~/.mytheme.omp.json)"
+	fi
+fi
+
+# ----------------------------------------------------------------------------
+# End of .profile
+# ----------------------------------------------------------------------------
