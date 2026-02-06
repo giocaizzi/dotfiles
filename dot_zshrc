@@ -90,5 +90,15 @@ if command -v oh-my-posh &> /dev/null; then
 fi
 
 # ----------------------------------------------------------------------------
+# CUSTOM OVERRIDES
+# ----------------------------------------------------------------------------
+
+# Override oh-my-zsh's history alias with fzf version (h function is defined in ~/.profile)
+unalias history 2>/dev/null
+function history() {
+	h "$@"
+}
+
+# ----------------------------------------------------------------------------
 # End of .zshrc
 # ----------------------------------------------------------------------------
