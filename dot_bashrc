@@ -1,11 +1,60 @@
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# ============================================================================
+# BASH CONFIGURATION (Minimal)
+# ============================================================================
+# Shell-specific features only. Universal config is in ~/.profile
 
-# oh-my-posh init
-if command -v oh-my-posh >/dev/null 2>&1; then
-  eval "$(oh-my-posh init bash --config ~/.mytheme.omp.json)"
-else
-  echo "oh-my-posh not found in PATH"
+# Source shared configuration
+if [ -z "$PROFILE_SOURCED" ]; then
+	export PROFILE_SOURCED=1
+	[ -f "$HOME/.profile" ] && . "$HOME/.profile"
 fi
+
+# ----------------------------------------------------------------------------
+# HISTORY
+# ----------------------------------------------------------------------------
+
+HISTSIZE=50000
+HISTFILESIZE=50000
+HISTFILE="$HOME/.bash_history"
+HISTCONTROL=ignoreboth:erasedups
+
+shopt -s histappend cmdhist
+PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
+
+# ----------------------------------------------------------------------------
+# BASH OPTIONS
+# ----------------------------------------------------------------------------
+
+# Completion
+if ! shopt -oq posix; then
+	[ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
+	[ -f /etc/bash_completion ] && . /etc/bash_completion
+fi
+
+# Globbing & Navigation
+shopt -s checkwinsize nocaseglob extglob globstar 2>/dev/null
+shopt -s cdspell dirspell 2>/dev/null
+
+# ----------------------------------------------------------------------------
+# FZF & NVM
+# ----------------------------------------------------------------------------
+
+# FZF key bindings (options set in ~/.profile)
+if [ -n "$HOMEBREW_PREFIX" ]; then
+	[ -f "$HOMEBREW_PREFIX/opt/fzf/shell/completion.bash" ] && . "$HOMEBREW_PREFIX/opt/fzf/shell/completion.bash"
+	[ -f "$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.bash" ] && . "$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.bash"
+elif [ -f ~/.fzf.bash ]; then
+	. ~/.fzf.bash
+fi
+
+# nvm (Node Version Manager)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# Homebrew bash-completion
+[ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ] && . "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
+
+# ----------------------------------------------------------------------------
+# End of .bashrc
+# ----------------------------------------------------------------------------

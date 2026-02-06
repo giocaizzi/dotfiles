@@ -25,7 +25,6 @@ settings.json
 **/Library/**/*
 ## Scripts
 .chezmoiscripts/env.sh
-.chezmoiscripts/run_onchange_install-packages.sh
 {{ end }}
 
 
