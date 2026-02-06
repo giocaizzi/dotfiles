@@ -38,7 +38,6 @@
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
-        // shell commands
         "cp": true,
         "gh": true,
         "grep": true,
@@ -48,7 +47,6 @@
         "tlmgr": true,
         "mv": true,
         "make": true,
-        // nodejs
         "npm install": true,
         "npm list": true,
         "npm run build": true,
@@ -61,14 +59,16 @@
         "npm test": true,
         "npm uninstall": true,
         "npx": true,
-        // python
         "python": true,
         "poetry": true,
         "uv": true,
         "pytest": true,
         "ruff": true,
         "mypy": true,
-        "pip install": true
+        "pip install": true,
+        // disable potentially destructive commands by default
+        "terraform apply": false,
+        "terraform destroy": false
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
