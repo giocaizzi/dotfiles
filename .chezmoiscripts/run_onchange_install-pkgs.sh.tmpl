@@ -17,35 +17,29 @@ NC='\033[0m' # No Color
 # PACKAGE DEFINITIONS (Single Source of Truth)
 # ============================================================================
 
-# Core packages for ALL platforms/shells
+# Core packages for ALL platforms
 CORE_PACKAGES=(
 	"fzf"           # Fuzzy finder
 	"git"           # Version control
 	"vim"           # Text editor
-	"fd"            # Modern find (used by fzf)
-	"gh"            # GitHub CLI (used in Oh My Zsh plugins)
+	"fd"            # Modern find alternative
+	"gh"            # GitHub CLI
 )
 
-# Bash-specific packages for ALL platforms
-BASH_PACKAGES=(
-	"bash-completion"
-)
-
-# Zsh-specific packages (macOS only)
-ZSH_PACKAGES=(
+# Shell-specific packages (macOS uses zsh, Linux uses bash)
+SHELL_PACKAGES_MACOS=(
 	"zsh-autosuggestions"
 )
 
-# Linux-specific packages (vim not needed on macOS - already included)
-LINUX_PACKAGES=(
-	"vim"           # Text editor
+SHELL_PACKAGES_LINUX=(
+	"bash-completion"
 )
 
-# Additional tools (cross-platform)
+# Additional tools (cross-platform, custom installation)
 ADDITIONAL_TOOLS=(
 	"pyenv"
 	"pipx"
-	"cookiecutter"
+	{{/* "cookiecutter" */}}
 	"oh-my-posh"
 )
 
@@ -117,37 +111,14 @@ if ! command -v brew >/dev/null 2>&1; then
 	exit 1
 fi
 
-# Core packages
-if [ "$VERBOSE" = true ]; then
-	echo -e "\n${YELLOW}Core packages:${NC}"
-fi
-for pkg in "${CORE_PACKAGES[@]}"; do
-	if brew list "$pkg" >/dev/null 2>&1; then
-		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
-	else
-		echo -e "${BLUE}Installing${NC} $pkg..."
-		brew install "$pkg"
-	fi
-done
+# Install packages via Homebrew
+ALL_BREW_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_MACOS[@]}")
 
-# Bash packages
 if [ "$VERBOSE" = true ]; then
-	echo -e "\n${YELLOW}Bash packages:${NC}"
+	echo -e "\n${YELLOW}Installing packages via Homebrew:${NC}"
 fi
-for pkg in "${BASH_PACKAGES[@]}"; do
-	if brew list "$pkg" >/dev/null 2>&1; then
-		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
-	else
-		echo -e "${BLUE}Installing${NC} $pkg..."
-		brew install "$pkg"
-	fi
-done
 
-# Zsh packages
-if [ "$VERBOSE" = true ]; then
-	echo -e "\n${YELLOW}Zsh packages:${NC}"
-fi
-for pkg in "${ZSH_PACKAGES[@]}"; do
+for pkg in "${ALL_BREW_PACKAGES[@]}"; do
 	if brew list "$pkg" >/dev/null 2>&1; then
 		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $pkg already installed"
 	else
@@ -196,14 +167,14 @@ if ! command -v gh >/dev/null 2>&1; then
 fi
 
 # Build package list with apt name mapping
-ALL_PACKAGES=("${CORE_PACKAGES[@]}" "${BASH_PACKAGES[@]}" "${LINUX_PACKAGES[@]}")
+ALL_APT_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_LINUX[@]}")
 APT_PKGS=("curl" "python3-pip")  # Additional dependencies
-for pkg in "${ALL_PACKAGES[@]}"; do
+for pkg in "${ALL_APT_PACKAGES[@]}"; do
 	APT_PKGS+=("$(map_package_name "$pkg")")
 done
 
 if [ "$VERBOSE" = true ]; then
-	echo -e "\n${YELLOW}Core & Bash packages:${NC}"
+	echo -e "\n${YELLOW}Installing packages via apt:${NC}"
 fi
 sudo apt-get update
 sudo apt-get install -y "${APT_PKGS[@]}"
