@@ -74,7 +74,6 @@
         "https://*.google.com": true,
         "https://developer.hashicorp.com": true,
         "https://docs.firefly-iii.org": true,
-        "https://duckduckgo.com": true,
         "https://fastapi.tiangolo.com": true,
         "https://github.com": true,
         "https://grafana.com": true,
@@ -86,7 +85,8 @@
         "https://zod.dev": true,
         "https://zsh.sourceforge.io/Doc": true,
         "https://wiki.archlinux.org": true,
-        "https://*.archlinux.org": true
+        "https://*.archlinux.org": true,
+        "https://*.chezmoi.io": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
