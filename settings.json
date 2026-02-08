@@ -95,11 +95,11 @@
         "https://zsh.sourceforge.io/Doc": true,
         "https://wiki.archlinux.org": true,
         "https://*.archlinux.org": true,
-        "https://*.chezmoi.io": true
+        "https://*.chezmoi.io": true,
+        "https://docs.github.com": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
-    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
