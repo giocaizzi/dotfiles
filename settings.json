@@ -106,6 +106,9 @@
     "docker.extension.dockerEngineAvailabilityPrompt": false,
     "docker.extension.enableComposeLanguageServer": false,
     // --- Editor ---
+    // disable accepting suggestions on Enter to prevent accidental completions
+    "editor.acceptSuggestionOnEnter": "off",
+
     // python docstring color
     "editor.tokenColorCustomizations": {
         "textMateRules": [
