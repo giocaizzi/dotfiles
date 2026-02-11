@@ -77,7 +77,8 @@
         "gcloud * list": true,
         "gcloud * get-iam-policy": true,
         "gcloud * describe": true,
-        "gcloud run services describe": true
+        "gcloud run services describe": true,
+        "git": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.google.com": true,
@@ -189,5 +190,6 @@
     "typescript.updateImportsOnFileMove.enabled": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     "terminal.integrated.shellIntegration.environmentReporting": true,
-    "terminal.integrated.suggest.selectionMode": "always"
+    "terminal.integrated.suggest.selectionMode": "always",
+    "chat.viewSessions.orientation": "stacked"
 }
