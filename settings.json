@@ -49,6 +49,7 @@
         "jq": true,
         "mv": true,
         "make": true,
+        "wc": true,
         "npm install": true,
         "npm list": true,
         "npm run *": true,
