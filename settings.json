@@ -51,6 +51,7 @@
         "make": true,
         "npm install": true,
         "npm list": true,
+        "npm run *": true,
         "npm run build": true,
         "npm run dev": true,
         "npm run knip": true,
@@ -191,5 +192,5 @@
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     "terminal.integrated.shellIntegration.environmentReporting": true,
     "terminal.integrated.suggest.selectionMode": "always",
-    "chat.viewSessions.orientation": "stacked"
+    "awesome-copilot.showTreeView": true
 }
