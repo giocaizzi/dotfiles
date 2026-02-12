@@ -99,7 +99,8 @@
         "https://wiki.archlinux.org": true,
         "https://*.archlinux.org": true,
         "https://*.chezmoi.io": true,
-        "https://docs.github.com": true
+        "https://docs.github.com": true,
+        "https://m3.material.io": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
