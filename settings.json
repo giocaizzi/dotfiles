@@ -28,6 +28,7 @@
     },
     // --- Azure ---
     "@azure.argTenant": "efd43e52-58c9-417a-9059-96780f094db0",
+    "awesome-copilot.showTreeView": true,
     // show python venv warning
     "azureFunctions.showPythonVenvWarning": true,
     // group azure resources by resource group
@@ -39,17 +40,19 @@
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
         "cp": true,
+        "gcloud * describe": true,
+        "gcloud * get-iam-policy": true,
+        "gcloud * list": true,
+        "gcloud logging read": true,
+        "gcloud run services describe": true,
         "gh": true,
+        "git": true,
         "grep": true,
-        "pgrep": true,
-        "mkdir": true,
-        "sed": true,
-        "ssh": true,
-        "tlmgr": true,
         "jq": true,
-        "mv": true,
         "make": true,
-        "wc": true,
+        "mkdir": true,
+        "mv": true,
+        "mypy": true,
         "npm install": true,
         "npm list": true,
         "npm run *": true,
@@ -63,47 +66,56 @@
         "npm test": true,
         "npm uninstall": true,
         "npx": true,
-        "python": true,
-        "poetry": true,
-        "uv": true,
-        "pytest": true,
-        "ruff": true,
-        "mypy": true,
+        "pgrep": true,
         "pip install": true,
+        "poetry": true,
+        "pytest": true,
+        "python": true,
+        "ruff": true,
+        "sed": true,
+        "ssh": true,
         "terraform apply": false,
         "terraform destroy": false,
-        "terraform plan": true,
         "terraform fmt": true,
+        "terraform plan": true,
         "terraform validate": true,
-        "gcloud logging read": true,
-        "gcloud * list": true,
-        "gcloud * get-iam-policy": true,
-        "gcloud * describe": true,
-        "gcloud run services describe": true,
-        "git": true
+        "tlmgr": true,
+        "uv": true,
+        "wc": true
     },
     "chat.tools.urls.autoApprove": {
+        "https://*.apple.com": true,
+        "https://*.archlinux.org": true,
+        "https://*.chezmoi.io": true,
+        "https://*.expo.dev": true,
+        "https://*.figma.com": true,
         "https://*.google.com": true,
+        "https://*.readthedocs.io": true,
+        "https://developer.apple.com": true,
         "https://developer.hashicorp.com": true,
         "https://docs.firefly-iii.org": true,
+        "https://docs.github.com": true,
         "https://fastapi.tiangolo.com": true,
         "https://github.com": true,
         "https://grafana.com": true,
+        "https://m3.material.io": true,
         "https://next-intl.dev": true,
+        "https://pypi.org": true,
         "https://registry.terraform.io": true,
         "https://stackoverflow.com": true,
+        "https://storybook.js.org": true,
+        "https://storybookjs.github.io": true,
+        "https://wiki.archlinux.org": true,
         "https://www.hashicorp.com": true,
         "https://www.infracost.io": true,
+        "https://www.npmjs.com": true,
+        "https://www.w3.org": true,
         "https://zod.dev": true,
-        "https://zsh.sourceforge.io/Doc": true,
-        "https://wiki.archlinux.org": true,
-        "https://*.archlinux.org": true,
-        "https://*.chezmoi.io": true,
-        "https://docs.github.com": true,
-        "https://m3.material.io": true
+        "https://zsh.sourceforge.io/Doc": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
+    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
@@ -112,7 +124,6 @@
     // --- Editor ---
     // disable accepting suggestions on Enter to prevent accidental completions
     "editor.acceptSuggestionOnEnter": "off",
-
     // python docstring color
     "editor.tokenColorCustomizations": {
         "textMateRules": [
@@ -145,12 +156,12 @@
     "github.copilot.chat.generateTests.codeLens": true,
     "github.copilot.enable": {
         "*": true,
+        // disable on sensitive file types
+        "dotenv": false,
         "markdown": true,
         "plaintext": true,
         // enable for Source Control Management (SCM) input box to get suggestions in commit messages
         "scminput": true,
-        // disable on sensitive file types
-        "dotenv": false,
         "terraform_secrets": false
     },
     "github.copilot.nextEditSuggestions.enabled": true,
@@ -175,24 +186,23 @@
     // --- Remote ---
     "remote.autoForwardPortsSource": "hybrid",
     // --- Terminal ---
+    // Enable terminal command history
+    "terminal.integrated.commandHistory.enabled": true,
+    "terminal.integrated.commandHistory.limit": 1000,
     "terminal.integrated.defaultProfile.osx": "zsh",
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": true,
     // Enable shell integration for better completions
     "terminal.integrated.shellIntegration.enabled": true,
+    "terminal.integrated.shellIntegration.environmentReporting": true,
+    // Smooth cursor animation
+    "terminal.integrated.smoothScrolling": true,
     // Show completion suggestions in terminal
     "terminal.integrated.suggest.enabled": true,
     "terminal.integrated.suggest.quickSuggestions": true,
-    // Enable terminal command history
-    "terminal.integrated.commandHistory.enabled": true,
-    "terminal.integrated.commandHistory.limit": 1000,
-    // Smooth cursor animation
-    "terminal.integrated.smoothScrolling": true,
-    // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
-    "terminal.integrated.shellIntegration.environmentReporting": true,
     "terminal.integrated.suggest.selectionMode": "always",
-    "awesome-copilot.showTreeView": true
+    "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
+    // --- TypeScript ---
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
