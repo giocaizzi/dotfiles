@@ -46,6 +46,8 @@
         "gcloud logging read": true,
         "gcloud run services describe": true,
         "gh": true,
+        "gh pr view": true,
+        "gh run view": true,
         "git": true,
         "grep": true,
         "jq": true,
@@ -115,7 +117,6 @@
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
-    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
