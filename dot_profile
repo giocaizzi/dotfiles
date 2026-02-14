@@ -27,6 +27,16 @@ elif [ -f /usr/local/bin/brew ]; then
 	eval "$(/usr/local/bin/brew shellenv)"
 fi
 
+# Homebrew PostgreSQL (keg-only formulas need explicit PATH)
+if [ -n "$HOMEBREW_PREFIX" ]; then
+	for pg_formula in postgresql@17 postgresql@16 postgresql@15 postgresql; do
+		if [ -d "$HOMEBREW_PREFIX/opt/$pg_formula/bin" ]; then
+			export PATH="$HOMEBREW_PREFIX/opt/$pg_formula/bin:$PATH"
+			break
+		fi
+	done
+fi
+
 # pipx
 export PATH="$HOME/.local/bin:$PATH"
 
