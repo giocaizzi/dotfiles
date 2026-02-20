@@ -12,8 +12,10 @@ README.md
 # docs
 docs
 
+# symlinks
+# claude
+claude_*
 # vscode settings main file
-# each system uses symlinks to this
 settings.json
 
 # ------------------------------------
