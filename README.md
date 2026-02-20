@@ -72,6 +72,14 @@ The filenames indicate when they are executed:
 - `run_` prefix: executed everytime `chezmoi apply` is run.
 - `run_onchange_` prefix: if their content changed since last time they were successfully run.
 
+## Applications
+
+Using symlinks, the [apps](./apps/) folder contains configuration files for specific applications, which are linked to their expected locations in the filesystem.
+
+## Ignore files
+
+The [.chezmoiignore](./.chezmoiignore) file is used to exclude certain files or directories from being managed by `chezmoi`, ensuring that only the intended configuration files are tracked and applied. This will consider OS and other variables.
+
 ## Documentation
 
 See the official [chezmoi documentation](https://www.chezmoi.io/docs/) for more details and advanced usage.
