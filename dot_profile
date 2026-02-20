@@ -110,7 +110,7 @@ alias glog='git log --oneline --decorate --graph'
 # History search with fzf
 h() {
 	local selected
-	selected=$(fc -l 1 | fzf --tac --no-sort +m --query "$*" --prompt="History> " | sed 's/^[ ]*[0-9]*\*\?[ ]*//')
+	selected=$(fc -l 1 | fzf --tac --no-sort +m --query "$*" --prompt="History> " | sed -E 's/^[[:space:]]*[0-9]+[*]?[[:space:]]+//')
 	if [ -n "$selected" ]; then
 		# Try to insert into command line (zsh) or just print (bash)
 		print -z "$selected" 2>/dev/null || printf '%s\n' "$selected"
@@ -160,7 +160,7 @@ export FZF_DEFAULT_OPTS='
 
 # fzf Ctrl+R history search configuration
 export FZF_CTRL_R_OPTS="
-  --preview 'echo {}' --preview-window up:3:hidden:wrap
+  --preview 'echo {2..}' --preview-window up:3:hidden:wrap
   --bind 'ctrl-/:toggle-preview'
   --bind 'ctrl-y:execute-silent(echo -n {2..} | pbcopy)+abort'
   --header 'Press CTRL-Y to copy command to clipboard'
