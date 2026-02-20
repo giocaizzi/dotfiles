@@ -39,7 +39,6 @@ SHELL_PACKAGES_LINUX=(
 ADDITIONAL_TOOLS=(
 	"pyenv"
 	"pipx"
-	{{/* "cookiecutter" */}}
 	"oh-my-posh"
 )
 
@@ -84,9 +83,6 @@ install_tool_linux() {
 		"pipx")
 			python3 -m pip install --user pipx
 			python3 -m pipx ensurepath
-			;;
-		"cookiecutter")
-			pipx install cookiecutter
 			;;
 		"oh-my-posh")
 			curl -s https://ohmyposh.dev/install.sh | bash -s
