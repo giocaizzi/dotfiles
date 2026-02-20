@@ -113,7 +113,10 @@
         "https://www.npmjs.com": true,
         "https://www.w3.org": true,
         "https://zod.dev": true,
-        "https://zsh.sourceforge.io/Doc": true
+        "https://zsh.sourceforge.io/Doc": true,
+        "https://*.ticky.co": true,
+        "https://gorhom.dev": true,
+        "https://*.pydantic.dev": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
