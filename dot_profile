@@ -139,7 +139,11 @@ fi
 
 # Project shortcuts
 alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
-alias openclaw='PI_SSH_USER=giorgiocaizzi $HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh'
+
+# Openclaw with environment variable (function to properly handle args)
+openclaw() {
+	PI_SSH_USER=giorgiocaizzi "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh" "$@"
+}
 
 # ----------------------------------------------------------------------------
 # 5. FZF CONFIGURATION (Shared)
