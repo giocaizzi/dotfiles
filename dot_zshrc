@@ -2,12 +2,7 @@
 # ZSH CONFIGURATION (Minimal)
 # ============================================================================
 # Shell-specific features only. Universal config is in ~/.profile
-
-# Source shared configuration
-if [ -z "$PROFILE_SOURCED" ]; then
-	export PROFILE_SOURCED=1
-	[ -f "$HOME/.profile" ] && . "$HOME/.profile"
-fi
+# Note: .zprofile sources .profile for login shells
 
 # ----------------------------------------------------------------------------
 # PYENV

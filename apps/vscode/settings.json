@@ -193,7 +193,7 @@
     // Enable terminal command history
     "terminal.integrated.commandHistory.enabled": true,
     "terminal.integrated.commandHistory.limit": 1000,
-    "terminal.integrated.defaultProfile.osx": "zsh",
+    // "terminal.integrated.defaultProfile.osx": "zsh",
     // ohmyposh https://ohmyposh.dev/docs/installation/fonts
     "terminal.integrated.fontFamily": "MesloLGM Nerd Font",
     "terminal.integrated.inheritEnv": true,

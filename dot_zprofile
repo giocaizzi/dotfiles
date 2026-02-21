@@ -1,0 +1,9 @@
+# ============================================================================
+# ZSH PROFILE (Login shells only)
+# ============================================================================
+# Sourced for login shells before .zshrc
+# This sources the shared POSIX-compliant profile
+
+if [ -f "$HOME/.profile" ]; then
+	. "$HOME/.profile"
+fi
