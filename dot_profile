@@ -139,6 +139,7 @@ fi
 
 # Project shortcuts
 alias private="$HOME/Documents/private-project/private-project/private.sh"
+alias openclaw='PI_SSH_USER=giorgiocaizzi $HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh'
 
 # ----------------------------------------------------------------------------
 # 5. FZF CONFIGURATION (Shared)
