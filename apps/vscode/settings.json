@@ -83,7 +83,8 @@
         "terraform validate": true,
         "tlmgr": true,
         "uv": true,
-        "wc": true
+        "wc": true,
+        "openclaw": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.apple.com": true,
@@ -116,7 +117,16 @@
         "https://zsh.sourceforge.io/Doc": true,
         "https://*.ticky.co": true,
         "https://gorhom.dev": true,
-        "https://*.pydantic.dev": true
+        "https://*.pydantic.dev": true,
+        "https://openclaw.ai": true,
+        "https://openclaw.dev": true,
+        "https://docs.anthropic.com": {
+            "approveRequest": true,
+            "approveResponse": false
+        },
+        "https://*.openclaw.ai": true,
+        "https://*.claude.com": true,
+        "https://*.openai.com": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
@@ -208,5 +218,6 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "chat.viewSessions.orientation": "stacked"
 }
