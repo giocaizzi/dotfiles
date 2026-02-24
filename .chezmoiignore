@@ -22,6 +22,9 @@ apps/
 ## Scripts
 .chezmoiscripts/env.sh
 .chezmoiscripts/install-pkgs.sh
+# ZSH config files
+.zshrc
+.zprofile
 {{ end }}
 
 
