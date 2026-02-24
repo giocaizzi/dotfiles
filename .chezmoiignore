@@ -30,8 +30,8 @@ apps/
 # ------------------------------------
 # Ignore bash scripts on Windows (uses PowerShell)
 {{ if eq .chezmoi.os "windows" }}
-.chezmoiscripts/run_env.sh
-.chezmoiscripts/run_onchange_install-pkgs.sh
+.chezmoiscripts/env.sh
+.chezmoiscripts/install-pkgs.sh
 {{ end }}
 
 # ------------------------------------
@@ -46,5 +46,5 @@ apps/
 **/AppData/
 **/AppData/**/*
 ## Scripts
-.chezmoiscripts/run_env.ps1
+.chezmoiscripts/env.ps1
 {{ end }}
