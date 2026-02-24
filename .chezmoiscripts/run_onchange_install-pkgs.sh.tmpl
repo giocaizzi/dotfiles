@@ -81,8 +81,13 @@ install_tool_linux() {
 			curl https://pyenv.run | bash
 			;;
 		"pipx")
-			python3 -m pip install --user pipx
-			python3 -m pipx ensurepath
+			# Use system package manager on Debian-based systems (avoids PEP 668 error)
+			if command -v apt >/dev/null 2>&1; then
+					sudo apt install -y pipx
+			else
+					python3 -m pip install --user pipx
+			fi
+			pipx ensurepath
 			;;
 		"oh-my-posh")
 			curl -s https://ohmyposh.dev/install.sh | bash -s
