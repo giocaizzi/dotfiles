@@ -4,9 +4,9 @@
 
 {{- if eq .chezmoi.os "darwin" }}
 [core]
-	excludesfile = /Users/giorgiocaizzi/.gitignore_global
+	excludesfile = {{ .chezmoi.homeDir }}/.gitignore_global
 [commit]
-	template = /Users/giorgiocaizzi/.stCommitMsg
+	template = {{ .chezmoi.homeDir }}/.stCommitMsg
 {{- end }}
 
 [init]
