@@ -14,14 +14,11 @@ apps/
 # ------------------------------------
 # macOS
 # ------------------------------------
-# if not on mac, ignore these files
+# if not on mac, ignore these macos specific files
 {{ if ne .chezmoi.os "darwin" }}
 # vscode settings are in Library
 **/Library/
 **/Library/**/*
-## Scripts
-.chezmoiscripts/env.sh
-.chezmoiscripts/install-pkgs.sh
 # ZSH config files
 .zshrc
 .zprofile
@@ -29,17 +26,18 @@ apps/
 
 
 # ------------------------------------
-# linux
+# Unix-like systems (macOS + Linux)
 # ------------------------------------
-{{ if ne .chezmoi.os "linux" }}
-.chezmoiscripts/env.sh
-.chezmoiscripts/install-pkgs.sh
+# Ignore bash scripts on Windows (uses PowerShell)
+{{ if eq .chezmoi.os "windows" }}
+.chezmoiscripts/run_env.sh
+.chezmoiscripts/run_onchange_install-pkgs.sh
 {{ end }}
 
 # ------------------------------------
 # windows 
 # ------------------------------------
-# if not on windows, ignore these files
+# if not on windows, ignore Windows-specific files
 {{ if ne .chezmoi.os "windows" }}
 ## PowerShell profile lives in OneDrive Docs
 **/OneDrive - Jakala SpA/
@@ -48,5 +46,5 @@ apps/
 **/AppData/
 **/AppData/**/*
 ## Scripts
-.chezmoiscripts/env.ps1
+.chezmoiscripts/run_env.ps1
 {{ end }}
