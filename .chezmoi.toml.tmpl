@@ -1,11 +1,9 @@
 {{- $user := promptStringOnce . "user" "User name" -}}
 {{- $email := promptStringOnce . "email" "Email address" -}}
-{{- $ghuser := promptStringOnce . "ghuser" "GitHub username" -}}
 
 [data]
     gitUser = {{ $user | quote }}
     gitEmail = {{ $email | quote }}
-    githubUsername = {{ $ghuser | quote}}
 
 [git]
     autoAdd = true
