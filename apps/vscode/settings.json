@@ -37,6 +37,7 @@
     "chat.agent.maxRequests": 1000,
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
+    "chat.experimental.useSkillAdherencePrompt": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
         "cp": true,
@@ -68,6 +69,7 @@
         "npm test": true,
         "npm uninstall": true,
         "npx": true,
+        "openclaw": true,
         "pgrep": true,
         "pip install": true,
         "poetry": true,
@@ -83,26 +85,34 @@
         "terraform validate": true,
         "tlmgr": true,
         "uv": true,
-        "wc": true,
-        "openclaw": true
+        "wc": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.apple.com": true,
         "https://*.archlinux.org": true,
         "https://*.chezmoi.io": true,
+        "https://*.claude.com": true,
         "https://*.expo.dev": true,
         "https://*.figma.com": true,
         "https://*.google.com": true,
+        "https://*.openai.com": true,
+        "https://*.openclaw.ai": true,
+        "https://*.pydantic.dev": true,
         "https://*.readthedocs.io": true,
+        "https://*.ticky.co": true,
         "https://developer.apple.com": true,
         "https://developer.hashicorp.com": true,
+        "https://docs.anthropic.com": true,
         "https://docs.firefly-iii.org": true,
         "https://docs.github.com": true,
         "https://fastapi.tiangolo.com": true,
         "https://github.com": true,
+        "https://gorhom.dev": true,
         "https://grafana.com": true,
         "https://m3.material.io": true,
         "https://next-intl.dev": true,
+        "https://openclaw.ai": true,
+        "https://openclaw.dev": true,
         "https://pypi.org": true,
         "https://registry.terraform.io": true,
         "https://stackoverflow.com": true,
@@ -114,22 +124,11 @@
         "https://www.npmjs.com": true,
         "https://www.w3.org": true,
         "https://zod.dev": true,
-        "https://zsh.sourceforge.io/Doc": true,
-        "https://*.ticky.co": true,
-        "https://gorhom.dev": true,
-        "https://*.pydantic.dev": true,
-        "https://openclaw.ai": true,
-        "https://openclaw.dev": true,
-        "https://docs.anthropic.com": {
-            "approveRequest": true,
-            "approveResponse": false
-        },
-        "https://*.openclaw.ai": true,
-        "https://*.claude.com": true,
-        "https://*.openai.com": true
+        "https://zsh.sourceforge.io/Doc": true
     },
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
+    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
@@ -164,10 +163,14 @@
     "git.autofetch": true,
     "git.enableSmartCommit": true,
     "git.replaceTagsWhenPull": true,
+    "github.copilot.chat.anthropic.contextEditing.enabled": true,
     // --- GitHub Copilot ---
     "github.copilot.chat.codesearch.enabled": true,
+    "github.copilot.chat.copilotMemory.enabled": true,
     "github.copilot.chat.customAgents.showOrganizationAndEnterpriseAgents": true,
     "github.copilot.chat.generateTests.codeLens": true,
+    "github.copilot.chat.githubMcpServer.enabled": true,
+    "github.copilot.chat.switchAgent.enabled": true,
     "github.copilot.enable": {
         "*": true,
         // disable on sensitive file types
@@ -218,6 +221,5 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "chat.viewSessions.orientation": "stacked"
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
