@@ -20,8 +20,6 @@ apps/
 # ------------------------------------
 # if not on mac, ignore these files
 {{ if ne .chezmoi.os "darwin" }}
-## zsh
-.zshrc
 # vscode settings are in Library
 **/Library/
 **/Library/**/*
@@ -36,6 +34,7 @@ apps/
 # ------------------------------------
 {{ if ne .chezmoi.os "linux" }}
 .chezmoiscripts/env.sh
+.chezmoiscripts/install-pkgs.sh
 {{ end }}
 
 # ------------------------------------
