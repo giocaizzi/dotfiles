@@ -8,11 +8,7 @@
 
 # --- chezmoi repo  ---
 README.md
-
-# docs
 docs
-
-# apps - source files for symlinks
 apps/
 
 # ------------------------------------
