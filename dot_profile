@@ -50,6 +50,11 @@ if [ -d "$PYENV_ROOT/bin" ]; then
 	fi
 fi
 
+# User binaries (oh-my-posh and other tools)
+if [ -d "$HOME/bin" ]; then
+	export PATH="$HOME/bin:$PATH"
+fi
+
 # Android SDK
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
