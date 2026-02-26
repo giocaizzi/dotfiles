@@ -15,17 +15,18 @@ Separate configuration for MacOS, Linux, and Windows when necessary.
 
 ### Scripts
 
-Use correctly [chezmoi scripts](./chezmoiscripts) with corrct naming conventions to manage scripts and when to use them.
+Use correctly [chezmoi scripts](./.chezmoiscripts) with correct naming conventions to manage scripts and when to use them.
 The filenames indicate when they are executed.
 
 Available scripts are:
 
 **MacOS/Linux:**
-- [`run_env.sh`](./chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
-- [`run_onchange_install-pkgs.sh`](./chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
+- [`run_env.sh`](./.chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
+- [`run_onchange_install-pkgs.sh`](./.chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
+- [`run_once_before_10-init-submodules.sh`](./.chezmoiscripts/run_once_before_10-init-submodules.sh.tmpl): Initialize git submodules (e.g., skills repository).
 
 **Windows:**
-- [`run_env.ps1`](./chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
+- [`run_env.ps1`](./.chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
 
 ## Docs
 
