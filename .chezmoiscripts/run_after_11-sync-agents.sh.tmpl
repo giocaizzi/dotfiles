@@ -11,15 +11,15 @@ mkdir -p "{{ .chezmoi.homeDir }}/.copilot"
 
 # If agents doesn't exist or is not a git repo, clone it
 if [ ! -d "$AGENTS_TARGET/.git" ]; then
-    echo "📦 Cloning ralph-vscode repository (agents)..."
+    echo "📦 Cloning vscode-ralph repository (agents)..."
     
     # Remove if it exists but is not a git repo
     if [ -d "$AGENTS_TARGET" ]; then
         rm -rf "$AGENTS_TARGET"
     fi
     
-    # Clone the ralph-vscode repository
-    if git clone -q git@github.com:giocaizzi/ralph-vscode.git "$AGENTS_TARGET" 2>/dev/null; then
+    # Clone the vscode-ralph repository
+    if git clone -q git@github.com:giocaizzi/vscode-ralph.git "$AGENTS_TARGET" 2>/dev/null; then
         echo "✅ Agents repository cloned successfully"
         # Remove README.md to avoid confusion with main repo
         if [ -f "$AGENTS_TARGET/README.md" ]; then
