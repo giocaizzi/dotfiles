@@ -11,10 +11,16 @@ README.md
 docs
 apps/
 
-# --- git submodules ---
-# Ignore submodules - they are managed via scripts
+# --- AI Assistants (optional) ---
+{{ if not .syncAIAssistants }}
+# User opted out of AI assistant setup
+.claude/**
+.copilot/**
+{{ else }}
+# Ignore skills/agents - they are managed via scripts
 .claude/skills/**
 .copilot/agents/**
+{{ end }}
 
 # ------------------------------------
 # macOS

@@ -3,6 +3,12 @@
 
 set -e
 
+# Check if user wants AI assistants synced
+{{ if not (default true .syncAIAssistants) }}
+echo "Skipping agents sync (disabled in config)"
+exit 0
+{{ end }}
+
 # ==================== Configuration ====================
 REPO_OWNER="giocaizzi"
 BRANCH="main"

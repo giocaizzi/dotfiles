@@ -1,9 +1,11 @@
 {{- $user := promptStringOnce . "user" "User name" -}}
 {{- $email := promptStringOnce . "email" "Email address" -}}
+{{- $syncAI := promptBoolOnce . "syncAIAssistants" "Setup AI coding assistants ( Skills & Copilot agents)" -}}
 
 [data]
     gitUser = {{ $user | quote }}
     gitEmail = {{ $email | quote }}
+    syncAIAssistants = {{ $syncAI }}
 
 [git]
     autoAdd = true
