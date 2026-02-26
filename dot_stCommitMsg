@@ -1,0 +1,12 @@
+
+
+# <type>:<description>
+#
+# Types:
+#   feat:     new feature
+#   fix:      bug fix
+#   docs:     documentation
+#   style:    formatting
+#   refactor: code restructure
+#   test:     tests
+#   chore:    build/tooling
