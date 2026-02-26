@@ -40,6 +40,7 @@
     "chat.experimental.useSkillAdherencePrompt": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
+        "chezmoi": true,
         "cp": true,
         "gcloud * describe": true,
         "gcloud * get-iam-policy": true,
@@ -85,9 +86,9 @@
         "terraform validate": true,
         "tlmgr": true,
         "uv": true,
-        "wc": true,
-        "chezmoi": true
+        "wc": true
     },
+    "chat.tools.terminal.outputLocation": "chat",
     "chat.tools.urls.autoApprove": {
         "https://*.apple.com": true,
         "https://*.archlinux.org": true,
@@ -222,5 +223,8 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "chat.agentFilesLocations": {
+        "~/.copilot/agents": true
+    }
 }
