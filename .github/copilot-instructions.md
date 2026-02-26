@@ -31,6 +31,9 @@ Available scripts are:
 
 ## Docs
 
-Keep a simple, essential documentation in [./docs](./docs) folder, with markdown files for different topics (e.g., ZSH, Neovim, Git, etc.).
+Keep documentation easy to read yet comprehensive.
 
-Keep them minimal, easy to read, with all quick tips and tricks the user may need to remember later.
+Keep a simple, essential documentation in [./docs](./docs) folder, with markdown files for different topics. Ensure to keep them updated with the latest changes, and to cover all the necessary information for the user to understand how to use and manage their chezmoi configuration.
+
+Keep also the main [README.md](./README.md) file updated with everyday usage instructions. Ensure always up to date with the latest changes.
+
