@@ -2,12 +2,10 @@
 	name = "{{ .gitUser }}"
 	email = "{{ .gitEmail }}"
 
-{{- if eq .chezmoi.os "darwin" }}
 [core]
 	excludesfile = {{ .chezmoi.homeDir }}/.gitignore_global
 [commit]
 	template = {{ .chezmoi.homeDir }}/.stCommitMsg
-{{- end }}
 
 [init]
 	defaultBranch = main
