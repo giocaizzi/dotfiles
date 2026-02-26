@@ -1,20 +1,22 @@
 #!/bin/bash
-# Sync Copilot agents repository with latest changes
+# Sync Copilot agents repositories with latest changes
 
 set -e
 
 # ==================== Configuration ====================
-REPO_NAME="vscode-ralph"
 REPO_OWNER="giocaizzi"
-REPO_URL_SSH="git@github.com-giocaizzi:${REPO_OWNER}/${REPO_NAME}.git"
-REPO_URL_HTTPS="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
-TARGET_DIR="{{ .chezmoi.homeDir }}/.copilot/agents"
 BRANCH="main"
-EXCLUDE_FILES=("README.md")  # Files to exclude from sync
-# =======================================================
+BASE_TARGET_DIR="{{ .chezmoi.homeDir }}/.copilot/agents"
 
-TEMP_DIR="$(mktemp -d)"
-trap 'rm -rf "$TEMP_DIR"' EXIT
+# Array of repositories to sync: "repo_name:target_subdir:exclude_files"
+# If target_subdir is ".", files go directly to BASE_TARGET_DIR
+# exclude_files is comma-separated list (optional)
+REPOS=(
+    "ralph-copilot:.:README.md"
+    # Add more repos here as needed:
+    # "another-agent-repo:subdir:README.md,LICENSE"
+)
+# =======================================================
 
 # Clone repository with SSH fallback to HTTPS
 clone_repo() {
@@ -55,27 +57,63 @@ get_content_hash() {
     find "$dir" -type f -not -path "*/\.git/*" -exec shasum {} \; 2>/dev/null | sort | shasum | cut -d' ' -f1
 }
 
-# Main logic
-mkdir -p "$(dirname "$TARGET_DIR")"
-
-echo "📦 Syncing ${REPO_NAME} repository..."
-
-if clone_repo "$REPO_URL_SSH" "$REPO_URL_HTTPS" "$TEMP_DIR"; then
-    # Store old hash if target exists
-    OLD_HASH=""
-    [ -d "$TARGET_DIR" ] && OLD_HASH=$(get_content_hash "$TARGET_DIR")
+# Sync a single repository
+sync_repo() {
+    local repo_name="$1"
+    local target_subdir="$2"
+    local exclude_str="$3"
     
-    # Copy content (excluding .git and specified files)
-    copy_content "$TEMP_DIR" "$TARGET_DIR" "${EXCLUDE_FILES[@]}"
-    
-    # Check if content changed
-    NEW_HASH=$(get_content_hash "$TARGET_DIR")
-    if [ "$OLD_HASH" != "$NEW_HASH" ]; then
-        echo "✅ ${REPO_NAME} synced successfully"
-    else
-        echo "✅ ${REPO_NAME} already up to date"
+    # Parse exclude files
+    local exclude_files=()
+    if [ -n "$exclude_str" ]; then
+        IFS=',' read -ra exclude_files <<< "$exclude_str"
     fi
-else
-    echo "⚠️  Failed to sync ${REPO_NAME} repository"
-    exit 0
-fi
+    
+    # Build URLs
+    local repo_url_ssh="git@github.com-giocaizzi:${REPO_OWNER}/${repo_name}.git"
+    local repo_url_https="https://github.com/${REPO_OWNER}/${repo_name}.git"
+    
+    # Determine target directory
+    local target_dir
+    if [ "$target_subdir" = "." ]; then
+        target_dir="$BASE_TARGET_DIR"
+    else
+        target_dir="$BASE_TARGET_DIR/$target_subdir"
+    fi
+    
+    # Create temp directory for this repo
+    local temp_dir="$(mktemp -d)"
+    
+    echo "📦 Syncing ${repo_name}..."
+    
+    if clone_repo "$repo_url_ssh" "$repo_url_https" "$temp_dir"; then
+        # Store old hash if target exists
+        local old_hash=""
+        [ -d "$target_dir" ] && old_hash=$(get_content_hash "$target_dir")
+        
+        # Copy content (excluding .git and specified files)
+        copy_content "$temp_dir" "$target_dir" "${exclude_files[@]}"
+        
+        # Check if content changed
+        local new_hash=$(get_content_hash "$target_dir")
+        if [ "$old_hash" != "$new_hash" ]; then
+            echo "✅ ${repo_name} synced successfully"
+        else
+            echo "✅ ${repo_name} already up to date"
+        fi
+    else
+        echo "⚠️  Failed to sync ${repo_name} repository"
+    fi
+    
+    # Cleanup temp directory
+    rm -rf "$temp_dir"
+}
+
+# Main logic
+mkdir -p "$BASE_TARGET_DIR"
+
+# Process each repository
+for repo_entry in "${REPOS[@]}"; do
+    IFS=':' read -r repo_name target_subdir exclude_files <<< "$repo_entry"
+    sync_repo "$repo_name" "$target_subdir" "$exclude_files"
+done
