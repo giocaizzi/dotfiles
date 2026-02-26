@@ -85,7 +85,8 @@
         "terraform validate": true,
         "tlmgr": true,
         "uv": true,
-        "wc": true
+        "wc": true,
+        "chezmoi": true
     },
     "chat.tools.urls.autoApprove": {
         "https://*.apple.com": true,
