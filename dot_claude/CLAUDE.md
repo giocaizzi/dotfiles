@@ -27,6 +27,7 @@
 - NEVER WRITE WRITE EXTRA DOCUMENTATION explaining your changes, overviews, examples.
 - when writing docstrings, be clear, concise, and explain **what** and **why**, not how. 
 - Follow current language docstring conventions.
+- If possible and relevant, use graph tooling (like mermaid) to generate diagrams for complex flows, architectures, or data models.
 
 ---
 
