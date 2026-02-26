@@ -1,0 +1,47 @@
+#!/bin/bash
+# Sync AI skills repository with latest changes
+
+set -e
+
+{{ if ne .chezmoi.os "windows" }}
+SKILLS_TARGET="{{ .chezmoi.homeDir }}/.claude/skills"
+
+# Create .claude directory if it doesn't exist
+mkdir -p "{{ .chezmoi.homeDir }}/.claude"
+
+# If skills doesn't exist or is not a git repo, clone it
+if [ ! -d "$SKILLS_TARGET/.git" ]; then
+    echo "📦 Cloning skills repository..."
+    
+    # Remove if it exists but is not a git repo
+    if [ -d "$SKILLS_TARGET" ]; then
+        rm -rf "$SKILLS_TARGET"
+    fi
+    
+    # Clone the skills repository
+    if git clone -q git@github.com:giocaizzi/skills.git "$SKILLS_TARGET" 2>/dev/null; then
+        echo "✅ Skills repository cloned successfully"
+    else
+        echo "⚠️  Failed to clone skills repository (check SSH keys)"
+        exit 0  # Don't fail chezmoi apply
+    fi
+else
+    # Repository exists, check for updates
+    cd "$SKILLS_TARGET"
+    
+    # Fetch updates quietly
+    if git fetch -q origin main 2>/dev/null; then
+        LOCAL=$(git rev-parse @)
+        REMOTE=$(git rev-parse @{u})
+        
+        if [ "$LOCAL" != "$REMOTE" ]; then
+            echo "🔄 Updating skills repository..."
+            if git pull -q origin main 2>/dev/null; then
+                echo "✅ Skills updated successfully"
+            else
+                echo "⚠️  Failed to update skills (may have local changes)"
+            fi
+        fi
+    fi
+fi
+{{ end }}
