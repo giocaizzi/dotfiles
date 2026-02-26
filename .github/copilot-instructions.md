@@ -24,6 +24,7 @@ Available scripts are:
 - [`run_env.sh`](./.chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
 - [`run_onchange_install-pkgs.sh`](./.chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
 - [`run_after_10-sync-skills.sh`](./.chezmoiscripts/run_after_10-sync-skills.sh.tmpl): Sync the skills repository on every chezmoi apply.
+- [`run_after_11-sync-agents.sh`](./.chezmoiscripts/run_after_11-sync-agents.sh.tmpl): Sync the Copilot agents from ralph-vscode repository on every chezmoi apply (excludes README).
 
 **Windows:**
 - [`run_env.ps1`](./.chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.

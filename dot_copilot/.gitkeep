@@ -1,0 +1,5 @@
+# GitHub Copilot Configuration
+
+This directory contains GitHub Copilot configuration files.
+
+The `agents` subfolder is synchronized from the [ralph-vscode](https://github.com/giocaizzi/ralph-vscode) repository.
