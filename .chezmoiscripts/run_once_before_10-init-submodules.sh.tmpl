@@ -1,0 +1,30 @@
+#!/bin/bash
+# Initialize git submodules for dotfiles
+
+set -e
+
+{{ if ne .chezmoi.os "windows" }}
+# Initialize the skills submodule
+DOTFILES_DIR="{{ .chezmoi.sourceDir }}"
+SKILLS_TARGET="{{ .chezmoi.homeDir }}/.claude/skills"
+
+# Create .claude directory if it doesn't exist
+mkdir -p "{{ .chezmoi.homeDir }}/.claude"
+
+# If skills doesn't exist or is not a git repo, clone the submodule
+if [ ! -d "$SKILLS_TARGET/.git" ]; then
+    echo "Initializing skills submodule..."
+    
+    # Remove if it exists but is not a git repo
+    if [ -d "$SKILLS_TARGET" ]; then
+        rm -rf "$SKILLS_TARGET"
+    fi
+    
+    # Clone the skills repository
+    git clone git@github.com:giocaizzi/skills.git "$SKILLS_TARGET"
+    echo "Skills submodule initialized successfully"
+else
+    echo "Skills submodule already initialized, updating..."
+    cd "$SKILLS_TARGET" && git pull origin main
+fi
+{{ end }}
