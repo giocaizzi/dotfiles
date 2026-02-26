@@ -1,3 +1,0 @@
-[submodule "dot_claude/skills"]
-	path = dot_claude/skills
-	url = git@github.com:giocaizzi/skills.git
