@@ -1,16 +1,16 @@
 #!/bin/bash
-# Sync AI skills repository with latest changes
+# Sync Copilot agents repository with latest changes
 
 set -e
 
 # ==================== Configuration ====================
-REPO_NAME="skills"
+REPO_NAME="vscode-ralph"
 REPO_OWNER="giocaizzi"
 REPO_URL_SSH="git@github.com-giocaizzi:${REPO_OWNER}/${REPO_NAME}.git"
 REPO_URL_HTTPS="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
-TARGET_DIR="{{ .chezmoi.homeDir }}/.claude/skills"
+TARGET_DIR="{{ .chezmoi.homeDir }}/.copilot/agents"
 BRANCH="main"
-EXCLUDE_FILES=()  # Additional files to exclude (e.g., "README.md")
+EXCLUDE_FILES=("README.md")  # Files to exclude from sync
 # =======================================================
 
 TEMP_DIR="$(mktemp -d)"
