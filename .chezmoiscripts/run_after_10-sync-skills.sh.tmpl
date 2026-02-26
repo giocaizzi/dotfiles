@@ -3,6 +3,12 @@
 
 set -e
 
+# Check if user wants AI assistants synced
+{{ if not (default true .syncAIAssistants) }}
+echo "Skipping skills sync (disabled in config)"
+exit 0
+{{ end }}
+
 # ==================== Configuration ====================
 REPO_NAME="skills"
 REPO_OWNER="giocaizzi"
