@@ -68,6 +68,8 @@ export NVM_DIR="$HOME/.nvm"
 # ----------------------------------------------------------------------------
 
 if command -v oh-my-posh &> /dev/null; then
+	# Force color support for oh-my-posh
+	export COLORTERM=truecolor
 	eval "$(oh-my-posh init bash --config ~/.mytheme.omp.json)"
 fi
 
