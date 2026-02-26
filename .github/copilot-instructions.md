@@ -23,7 +23,7 @@ Available scripts are:
 **MacOS/Linux:**
 - [`run_env.sh`](./.chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
 - [`run_onchange_install-pkgs.sh`](./.chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
-- [`run_once_before_10-init-submodules.sh`](./.chezmoiscripts/run_once_before_10-init-submodules.sh.tmpl): Initialize git submodules (e.g., skills repository).
+- [`run_after_10-sync-skills.sh`](./.chezmoiscripts/run_after_10-sync-skills.sh.tmpl): Sync the skills repository on every chezmoi apply.
 
 **Windows:**
 - [`run_env.ps1`](./.chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
