@@ -29,3 +29,11 @@
 - Follow current language docstring conventions.
 
 ---
+
+## Git
+
+- Always write clear, concise commit messages that explain the **what** and **why**, not how.
+- See if a commit template is available and follow it, else follow `<type>(<scope>): <subject>` format, where:
+  - `type` is the type of change (feat, fix, refactor, docs, test, chore)
+  - `scope` is the area of code affected (optional)
+  - `subject` is a brief description of the change

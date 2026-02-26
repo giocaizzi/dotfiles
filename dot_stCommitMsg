@@ -1,6 +1,6 @@
 
 
-# <type>:<description>
+# <type>(<scope>): <subject>
 #
 # Types:
 #   feat:     new feature
@@ -10,3 +10,6 @@
 #   refactor: code restructure
 #   test:     tests
 #   chore:    build/tooling
+#
+# Example: feat(auth): add login validation
+# Example: fix(parser): resolve null pointer error
