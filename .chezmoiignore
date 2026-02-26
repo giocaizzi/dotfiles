@@ -11,6 +11,10 @@ README.md
 docs
 apps/
 
+# --- git submodules ---
+# Ignore submodules - they are managed via scripts
+.claude/skills/**
+
 # ------------------------------------
 # macOS
 # ------------------------------------
