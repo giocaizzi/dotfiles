@@ -10,18 +10,19 @@ exit 0
 {{ end }}
 
 # ==================== Configuration ====================
-REPO_OWNER="giocaizzi"
 BRANCH="main"
 BASE_TARGET_DIR="{{ .chezmoi.homeDir }}/.copilot/agents"
 
-# Array of repositories to sync: "repo_name:target_subdir:exclude_files"
-# If target_subdir is ".", files go directly to BASE_TARGET_DIR
-# exclude_files is comma-separated list (optional)
+# Array of repositories to sync: "owner/repo:source_subdir:target_subdir:exclude_files"
+# - owner/repo: GitHub repository in owner/repo format
+# - source_subdir: subdirectory within repo to sync from (use "." for root)
+# - target_subdir: subdirectory within BASE_TARGET_DIR (use "." for root)
+# - exclude_files: comma-separated list (optional)
 REPOS=(
-    "ralph-copilot:.:README.md",
-    "copilot-agents:.:README.md"
+    "giocaizzi/ralph-copilot:agents:.:README.md",
+    "giocaizzi/copilot-agents:agents:.:README.md"
     # Add more repos here as needed:
-    # "another-agent-repo:subdir:README.md,LICENSE"
+    # "owner/another-agent-repo:agents:subdir:README.md,LICENSE"
 )
 # =======================================================
 
@@ -67,9 +68,14 @@ get_content_hash() {
 
 # Sync a single repository
 sync_repo() {
-    local repo_name="$1"
-    local target_subdir="$2"
-    local exclude_str="$3"
+    local repo_full="$1"
+    local source_subdir="$2"
+    local target_subdir="$3"
+    local exclude_str="$4"
+    
+    # Parse owner/repo
+    local owner="${repo_full%%/*}"
+    local repo_name="${repo_full##*/}"
     
     # Parse exclude files
     local exclude_files=()
@@ -78,8 +84,8 @@ sync_repo() {
     fi
     
     # Build URLs
-    local repo_url_ssh="git@github.com-giocaizzi:${REPO_OWNER}/${repo_name}.git"
-    local repo_url_https="https://github.com/${REPO_OWNER}/${repo_name}.git"
+    local repo_url_ssh="git@github.com-${owner}:${repo_full}.git"
+    local repo_url_https="https://github.com/${repo_full}.git"
     
     # Determine target directory
     local target_dir
@@ -92,25 +98,38 @@ sync_repo() {
     # Create temp directory for this repo
     local temp_dir="$(mktemp -d)"
     
-    echo "📦 Syncing ${repo_name}..."
+    echo "📦 Syncing ${repo_full}..."
     
     if clone_repo "$repo_url_ssh" "$repo_url_https" "$temp_dir"; then
+        # Determine source directory within the repo
+        local source_dir="$temp_dir"
+        if [ "$source_subdir" != "." ]; then
+            source_dir="$temp_dir/$source_subdir"
+            
+            # Check if source subdirectory exists
+            if [ ! -d "$source_dir" ]; then
+                echo "⚠️  Source subdirectory '$source_subdir' not found in ${repo_full}"
+                rm -rf "$temp_dir"
+                return 1
+            fi
+        fi
+        
         # Store old hash if target exists
         local old_hash=""
         [ -d "$target_dir" ] && old_hash=$(get_content_hash "$target_dir")
         
         # Copy content (excluding .git and specified files)
-        copy_content "$temp_dir" "$target_dir" "${exclude_files[@]}"
+        copy_content "$source_dir" "$target_dir" "${exclude_files[@]}"
         
         # Check if content changed
         local new_hash=$(get_content_hash "$target_dir")
         if [ "$old_hash" != "$new_hash" ]; then
-            echo "✅ ${repo_name} synced successfully"
+            echo "✅ ${repo_full} synced successfully"
         else
-            echo "✅ ${repo_name} already up to date"
+            echo "✅ ${repo_full} already up to date"
         fi
     else
-        echo "⚠️  Failed to sync ${repo_name} repository"
+        echo "⚠️  Failed to sync ${repo_full} repository"
     fi
     
     # Cleanup temp directory
@@ -122,6 +141,6 @@ mkdir -p "$BASE_TARGET_DIR"
 
 # Process each repository
 for repo_entry in "${REPOS[@]}"; do
-    IFS=':' read -r repo_name target_subdir exclude_files <<< "$repo_entry"
-    sync_repo "$repo_name" "$target_subdir" "$exclude_files"
+    IFS=':' read -r repo_full source_subdir target_subdir exclude_files <<< "$repo_entry"
+    sync_repo "$repo_full" "$source_subdir" "$target_subdir" "$exclude_files"
 done
