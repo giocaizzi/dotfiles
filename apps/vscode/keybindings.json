@@ -1,0 +1,47 @@
+[
+    {
+        "command": "workbench.action.terminal.openNativeConsole",
+        "key": "shift+cmd+t",
+        "when": "!terminalFocus && isMac"
+    },
+    {
+        "command": "workbench.action.terminal.openNativeConsole",
+        "key": "shift+ctrl+t",
+        "when": "!terminalFocus && !isMac"
+    },
+    {
+        "command": "-workbench.action.terminal.openNativeConsole",
+        "key": "shift+cmd+c",
+        "when": "!terminalFocus && isMac"
+    },
+    {
+        "command": "-workbench.action.terminal.openNativeConsole",
+        "key": "shift+ctrl+c",
+        "when": "!terminalFocus && !isMac"
+    },
+    {
+        "command": "workbench.action.terminal.new",
+        "key": "cmd+t",
+        "when": "isMac"
+    },
+    {
+        "command": "workbench.action.terminal.new",
+        "key": "ctrl+t",
+        "when": "!isMac"
+    },
+    {
+        "command": "-editor.action.inlineSuggest.trigger",
+        "key": "alt+\\",
+        "when": "config.github.copilot.inlineSuggest.enable && editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    },
+    {
+        "command": "editor.action.inlineSuggest.trigger",
+        "key": "shift+alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    },
+    {
+        "command": "-editor.action.inlineSuggest.trigger",
+        "key": "alt+\\",
+        "when": "editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    }
+]
