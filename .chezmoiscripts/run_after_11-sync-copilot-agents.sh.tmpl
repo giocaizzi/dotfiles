@@ -50,7 +50,8 @@ copy_content() {
     mkdir -p "$dest"
     
     # Build rsync exclude pattern
-    local rsync_opts=(-a --delete --exclude=".git")
+    # Note: --delete is NOT used to allow multiple repos to coexist in the same directory
+    local rsync_opts=(-a --exclude=".git")
     for file in "${exclude_files[@]}"; do
         rsync_opts+=(--exclude="$file")
     done
