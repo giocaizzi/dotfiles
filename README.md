@@ -65,12 +65,53 @@ chezmoi merge --all
 
 ## Scripts
 
-`chezmoi` offers the ability to run custom scripts during multiple phases of its operation. 
+Scripts in [`.chezmoiscripts/`](./.chezmoiscripts) run during `chezmoi apply` based on filename prefixes.
 
-The scripts are saved in `.chezmoiscripts` directory, and they are executed at specific points in the process of applying changes to the target system.
-The filenames indicate when they are executed:
-- `run_` prefix: executed everytime `chezmoi apply` is run.
-- `run_onchange_` prefix: if their content changed since last time they were successfully run.
+### Execution Order
+
+1. Read source/destination → compute changes → `run_before_*` → update files → `run_after_*`  
+2. Scripts execute **alphabetically** within each phase (use numeric prefixes like `10-`, `20-` for explicit ordering)
+
+### Script Prefixes
+
+| Prefix | When Executed | Use For |
+|--------|--------------|---------|
+| `run_` | Every `chezmoi apply` | Environment setup, always-run tasks |
+| `run_once_` | Once per unique content | One-time initialization |
+| `run_onchange_` | When content changes | Package installs, syncing |
+| `run_before_` | Before file updates | Pre-setup, validation |
+| `run_after_` | After file updates | Services restart, post-setup |
+
+**Combine prefixes:** `run_once_before_`, `run_onchange_after_`. All scripts must be idempotent.
+
+### Templates & Conditionals
+
+Scripts with `.tmpl` suffix access chezmoi variables: `{{ .chezmoi.os }}`, `{{ .chezmoi.arch }}`, `{{ .chezmoi.homeDir }}`. Empty templates don't execute.
+
+**Prefer simplicity:** Use `.chezmoiignore` for conditional execution and plain scripts (`.sh`) over templates (`.tmpl`) when possible. Templates add complexity—only use when dynamic content generation is required.
+
+### Current Scripts
+
+**MacOS/Linux:**
+- `run_env.sh` - Environment variables (every apply)
+- `run_onchange_install-pkgs.sh.tmpl` - Package management (when list changes)
+- `run_after_10-sync-skills.sh` - Clone/pull `~/.claude/skills`
+- `run_after_11-sync-copilot-agents.sh` - Clone/pull copilot agents to `$HOME`
+
+**Windows:** `run_env.ps1` - PowerShell environment
+
+### State Management
+
+Reset script execution tracking:
+```bash
+chezmoi state delete-bucket --bucket=entryState   # run_onchange_
+chezmoi state delete-bucket --bucket=scriptState  # run_once_
+```
+
+### Best Practices
+
+✅ Idempotent, numeric ordering, `set -e`, user feedback  
+❌ Don't modify source/dest state, avoid externals in `run_before_`, no exit codes for warnings
 
 ## Applications
 
