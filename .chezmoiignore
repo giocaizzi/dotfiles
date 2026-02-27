@@ -16,10 +16,12 @@ apps/
 # User opted out of AI assistant setup
 .claude/**
 .copilot/**
+.chezmoiscripts/run_after_10-sync-skills.sh
+.chezmoiscripts/run_after_11-sync-copilot-agents.sh
 {{ else }}
-# Ignore skills/agents - they are managed via scripts
+# Ignore managed repos - they are cloned/pulled via scripts
 .claude/skills/**
-.copilot/agents/**
+.copilot/*
 {{ end }}
 
 # ------------------------------------

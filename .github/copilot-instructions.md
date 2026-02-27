@@ -23,8 +23,8 @@ Available scripts are:
 **MacOS/Linux:**
 - [`run_env.sh`](./.chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
 - [`run_onchange_install-pkgs.sh`](./.chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
-- [`run_after_10-sync-skills.sh`](./.chezmoiscripts/run_after_10-sync-skills.sh.tmpl): Sync the skills repository on every chezmoi apply.
-- [`run_after_11-sync-copilot-agents.sh`](./.chezmoiscripts/run_after_11-sync-copilot-agents.sh.tmpl): Sync Copilot agent repositories on every chezmoi apply. The script clones each repository and syncs its `/agents` subfolder to `~/.copilot/agents`. Currently syncs: ralph-copilot and copilot-agents; supports multiple repos.
+- [`run_after_10-sync-skills.sh`](./.chezmoiscripts/run_after_10-sync-skills.sh): Clones/pulls the skills repository to `~/.claude/skills` with full git history. Runs on every chezmoi apply.
+- [`run_after_11-sync-copilot-agents.sh`](./.chezmoiscripts/run_after_11-sync-copilot-agents.sh): Clones/pulls copilot agent repositories to `$HOME` with full git history. Currently syncs: ralph-copilot and copilot-agents. Runs on every chezmoi apply.
 
 **Windows:**
 - [`run_env.ps1`](./.chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
