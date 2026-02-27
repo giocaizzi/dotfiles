@@ -93,12 +93,12 @@ Scripts with `.tmpl` suffix access chezmoi variables: `{{ .chezmoi.os }}`, `{{ .
 ### Current Scripts
 
 **MacOS/Linux:**
-- `run_env.sh` - Environment variables (every apply)
+- `run_onchange_env.sh` - Environment variables (when changed)
 - `run_onchange_install-pkgs.sh.tmpl` - Package management (when list changes)
-- `run_after_10-sync-skills.sh` - Clone/pull `~/.claude/skills`
-- `run_after_11-sync-copilot-agents.sh` - Clone/pull copilot agents to `$HOME`
+- `run_after_03a-sync-skills.sh` - Clone/pull skills repo to `~/skills`, symlink to `~/.claude/skills`
+- `run_after_03b-sync-copilot-agents.sh` - Clone/pull `~/ralph-copilot` and `~/copilot-agents`
 
-**Windows:** `run_env.ps1` - PowerShell environment
+**Windows:** `run_onchange_env.ps1` - PowerShell environment
 
 ### State Management
 
@@ -107,6 +107,21 @@ Reset script execution tracking:
 chezmoi state delete-bucket --bucket=entryState   # run_onchange_
 chezmoi state delete-bucket --bucket=scriptState  # run_once_
 ```
+
+### SSH Configuration
+
+Sync scripts use SSH host aliases from `~/.ssh/config` to manage multiple GitHub accounts. This configuration allows using different SSH keys for different GitHub accounts.
+
+**Example `~/.ssh/config` entry:**
+```ssh
+Host github.com-giocaizzi
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_github_giocaizzi
+  IdentitiesOnly yes
+```
+
+The scripts use `git@github.com-giocaizzi:giocaizzi/<repo>.git` URLs, which automatically match the SSH config entry above.
 
 ### Best Practices
 

@@ -2,11 +2,17 @@
 set -e
 
 # Sync copilot agent repositories
+# Repository structures: both repos contain agents/<agent_name> subdirectory
+# Clone repos to $HOME, final paths: ~/ralph-copilot/agents/ and ~/copilot-agents/agents/
+#
+# SSH Configuration:
+# Uses SSH config host alias 'github.com-giocaizzi' from ~/.ssh/config
+# This allows managing multiple GitHub accounts with different SSH keys
 RALPH_DIR="$HOME/ralph-copilot"
 COPILOT_AGENTS_DIR="$HOME/copilot-agents"
 
-RALPH_URL="https://github.com/giocaizzi/ralph-copilot.git"
-COPILOT_AGENTS_URL="https://github.com/giocaizzi/copilot-agents.git"
+RALPH_URL="git@github.com-giocaizzi:giocaizzi/ralph-copilot.git"
+COPILOT_AGENTS_URL="git@github.com-giocaizzi:giocaizzi/copilot-agents.git"
 
 if [ -d "$RALPH_DIR/.git" ]; then
   git -C "$RALPH_DIR" pull --ff-only --no-tags --no-rebase --depth=1000000
