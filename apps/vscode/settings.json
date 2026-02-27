@@ -35,6 +35,9 @@
     "azureResourceGroups.groupBy": "resourceGroup",
     // --- Chat ---
     "chat.agent.maxRequests": 1000,
+    "chat.agentFilesLocations": {
+        "~/.copilot/agents": true
+    },
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.experimental.useSkillAdherencePrompt": true,
@@ -128,6 +131,7 @@
         "https://zod.dev": true,
         "https://zsh.sourceforge.io/Doc": true
     },
+    "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
     "chat.viewSessions.orientation": "stacked",
@@ -223,8 +227,5 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "chat.agentFilesLocations": {
-        "~/.copilot/agents": true
-    }
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
