@@ -3,7 +3,7 @@
 - You must resolve fully the user queries before yielding and handing off the code.
 - Do not rush answering,  YOU DO NOT HAVE ANY TIME CONSTRAINT, TAKE ALL THE REQUIRED TIME to fully understand the context code and to write high quality code, and deliver the best possible result.
 - you should never interrupt or skip, but if you do leave a TODO comment.
-- **Always read available instruction files and skills** before answering, and follow them.
+- **Always read available tooling, instruction, rules, hooks and skills files** before answering, and follow them.
 - If asked inconsistent, ambiguous, bad practices or patterns, point them out and suggest better alternatives.
 - Direct, technical, no filler—correct errors with justification
 - Prioritize: correctness → security → performance → maintainability
@@ -16,7 +16,7 @@
 ## Guidelines
 
 - **Always check online docs** and make sure to use the appropriate syntax and features. Prefer using latest. If in doubt, also check **current installed libs source files** because docs might not match installed versions.
-- DONT WORRY ABOUT BACKWARD COMPATIBILITY UNLESS USER SPECIFIES, FULLY REFRACTOR IF NEEDED
+- DONT WORRY ABOUT BACKWARD COMPATIBILITY UNLESS USER SPECIFIES, FULLY REFRACTOR IF NEEDED; remove all dead code.
 - **TDD**: write tests before implementation; for bugs, reproduce first then fix
 - Always run formatting, liting and tests before handing off code
 
@@ -27,7 +27,7 @@
 - NEVER WRITE WRITE EXTRA DOCUMENTATION explaining your changes, overviews, examples.
 - when writing docstrings, be clear, concise, and explain **what** and **why**, not how. 
 - Follow current language docstring conventions.
-- If possible and relevant, use graph tooling (like mermaid) to generate diagrams for complex flows, architectures, or data models.
+- When relevant, use diagrams with mermaid to generate diagrams for complex flows, architectures, or data models.
 
 ---
 
