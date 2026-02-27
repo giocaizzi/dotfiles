@@ -21,13 +21,13 @@ The filenames indicate when they are executed.
 Available scripts are:
 
 **MacOS/Linux:**
-- [`run_env.sh`](./.chezmoiscripts/run_env.sh): Main script to setup the environment on MacOS and Linux.
-- [`run_onchange_install-pkgs.sh`](./.chezmoiscripts/run_onchange_install-pkgs.sh): Script to install required packages.
-- [`run_after_03a-sync-skills.sh`](./.chezmoiscripts/run_after_03a-sync-skills.sh): Clones/pulls the skills repository to `~/.claude/skills` with full git history. Runs on every chezmoi apply.
-- [`run_after_03b-sync-copilot-agents.sh`](./.chezmoiscripts/run_after_03b-sync-copilot-agents.sh): Clones/pulls copilot agent repositories to `$HOME` with full git history. Currently syncs: ralph-copilot and copilot-agents. Runs on every chezmoi apply.
+- [`run_onchange_env.sh`](./.chezmoiscripts/run_onchange_env.sh): Main script to setup the environment on MacOS and Linux.
+- [`run_onchange_install-pkgs.sh.tmpl`](./.chezmoiscripts/run_onchange_install-pkgs.sh.tmpl): Script to install required packages.
+- [`run_after_03a-sync-skills.sh`](./.chezmoiscripts/run_after_03a-sync-skills.sh): Clones/pulls the skills repository to `~/skills` with symlink to `~/.claude/skills`. Skills are accessed at `~/.claude/skills/<skill_name>/SKILL.md`. Uses SSH host alias `github.com-giocaizzi` from `~/.ssh/config`. Runs on every chezmoi apply.
+- [`run_after_03b-sync-copilot-agents.sh`](./.chezmoiscripts/run_after_03b-sync-copilot-agents.sh): Clones/pulls copilot agent repositories to `$HOME` with full git history. Currently syncs: ralph-copilot (agents at `~/ralph-copilot/agents/`) and copilot-agents (agents at `~/copilot-agents/agents/`). Uses SSH host alias `github.com-giocaizzi` from `~/.ssh/config`. Runs on every chezmoi apply.
 
 **Windows:**
-- [`run_env.ps1`](./.chezmoiscripts/run_env.ps1): Main script to setup the environment on Windows.
+- [`run_onchange_env.ps1`](./.chezmoiscripts/run_onchange_env.ps1): Main script to setup the environment on Windows.
 
 ## Docs
 
