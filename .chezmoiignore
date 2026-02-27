@@ -4,13 +4,15 @@
 # Note: Conditions are logically inverted
 # so that the files are ignored on the platform they are not intended for
 # ------------------------------------
-
-
 # --- chezmoi repo  ---
 README.md
 docs
 apps/
 
+# ------------------------------------
+# Optionals:
+# These ignores depends upon user configuration choices prompted during setup. 
+# ------------------------------------
 # --- AI Assistants (optional) ---
 {{ if not .syncAIAssistants }}
 # User opted out of AI assistant setup
@@ -24,9 +26,12 @@ apps/
 .copilot/*
 {{ end }}
 
+
 # ------------------------------------
-# macOS
+# Machine specific ignores:
+# These files are specific to certain operating systems and should be ignored on others.
 # ------------------------------------
+# --- macOS ---
 # if not on mac, ignore these macos specific files
 {{ if ne .chezmoi.os "darwin" }}
 # vscode settings are in Library
@@ -38,18 +43,14 @@ apps/
 {{ end }}
 
 
-# ------------------------------------
-# Unix-like systems (macOS + Linux)
-# ------------------------------------
+# --- Unix-like systems (macOS + Linux) ---
 # Ignore bash scripts on Windows (uses PowerShell)
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiscripts/env.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}
 
-# ------------------------------------
-# windows 
-# ------------------------------------
+# --- windows ---
 # if not on windows, ignore Windows-specific files
 {{ if ne .chezmoi.os "windows" }}
 ## PowerShell profile lives in OneDrive Docs
