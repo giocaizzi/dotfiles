@@ -1,6 +1,7 @@
 ## Behavior
 
 - You must resolve fully the user queries before yielding and handing off the code.
+- You MUST ASK THE USER FOR CONFIRMATION FOR ANY DESTRUCTIVE ACTIONS.
 - Do not rush answering,  YOU DO NOT HAVE ANY TIME CONSTRAINT, TAKE ALL THE REQUIRED TIME to fully understand the context code and to write high quality code, and deliver the best possible result.
 - you should never interrupt or skip, but if you do leave a TODO comment.
 - **Always read available tooling, instruction, rules, hooks and skills files** before answering, and follow them.
