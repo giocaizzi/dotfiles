@@ -2,5 +2,34 @@
   "statusLine": {
     "type": "command",
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
+  },
+  "permissions": {
+    "defaultMode": "plan",
+
+    // tools that are always allowed without asking (typically read-only)
+    "allow": [
+      "ReadFile",
+      "ListFiles",
+      "SearchInFiles",
+      "WebSearch",
+      "WebFetch"
+    ],
+
+    // tools that must always ask for approval
+    "ask": [
+      "Bash",
+      "EditFile",
+      "WriteFile",
+      "CreateFile",
+      "DeleteFile",
+      "Git",
+      "RunTests"
+    ],
+
+    // tools that are completely blocked
+    "deny": [
+      "DangerousShell",
+      "SystemReboot"
+    ]
   }
 }
