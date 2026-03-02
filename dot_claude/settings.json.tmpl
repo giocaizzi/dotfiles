@@ -4,9 +4,6 @@
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
   },
   "permissions": {
-    "defaultMode": "plan",
-
-    // tools that are always allowed without asking (typically read-only)
     "allow": [
       "ReadFile",
       "ListFiles",
@@ -14,8 +11,6 @@
       "WebSearch",
       "WebFetch"
     ],
-
-    // tools that must always ask for approval
     "ask": [
       "Bash",
       "EditFile",
@@ -25,8 +20,6 @@
       "Git",
       "RunTests"
     ],
-
-    // tools that are completely blocked
     "deny": [
       "DangerousShell",
       "SystemReboot"
