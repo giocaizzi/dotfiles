@@ -6,13 +6,13 @@ set -e
 # Clone repos to $HOME, final paths: ~/ralph-copilot/agents/ and ~/copilot-agents/agents/
 #
 # SSH Configuration:
-# Uses SSH config host alias 'github.com-giocaizzi' from ~/.ssh/config
+# Uses SSH config host alias 'github.com' from ~/.ssh/config
 # This allows managing multiple GitHub accounts with different SSH keys
 RALPH_DIR="$HOME/ralph-copilot"
 COPILOT_AGENTS_DIR="$HOME/copilot-agents"
 
-RALPH_URL="git@github.com-giocaizzi:giocaizzi/ralph-copilot.git"
-COPILOT_AGENTS_URL="git@github.com-giocaizzi:giocaizzi/copilot-agents.git"
+RALPH_URL="git@github.com:giocaizzi/ralph-copilot.git"
+COPILOT_AGENTS_URL="git@github.com:giocaizzi/copilot-agents.git"
 
 if [ -d "$RALPH_DIR/.git" ]; then
   git -C "$RALPH_DIR" pull --ff-only --no-tags --no-rebase --depth=1000000

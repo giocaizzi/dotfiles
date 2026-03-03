@@ -114,14 +114,14 @@ Sync scripts use SSH host aliases from `~/.ssh/config` to manage multiple GitHub
 
 **Example `~/.ssh/config` entry:**
 ```ssh
-Host github.com-giocaizzi
+Host github.com
   HostName github.com
   User git
   IdentityFile ~/.ssh/id_ed25519_github_giocaizzi
   IdentitiesOnly yes
 ```
 
-The scripts use `git@github.com-giocaizzi:giocaizzi/<repo>.git` URLs, which automatically match the SSH config entry above.
+The scripts use `git@github.com:giocaizzi/<repo>.git` URLs, which automatically match the SSH config entry above.
 
 ### Best Practices
 

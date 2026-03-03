@@ -6,9 +6,9 @@ set -e
 # Clone repo to $HOME/skills, then symlink ~/.claude/skills -> $HOME/skills/skills
 #
 # SSH Configuration:
-# Uses SSH config host alias 'github.com-giocaizzi' from ~/.ssh/config
+# Uses SSH config host alias 'github.com' from ~/.ssh/config
 # This allows managing multiple GitHub accounts with different SSH keys
-REPO_URL="git@github.com-giocaizzi:giocaizzi/skills.git"
+REPO_URL="git@github.com:giocaizzi/skills.git"
 REPO_DIR="$HOME/skills"
 
 if [ -d "$REPO_DIR/.git" ]; then
