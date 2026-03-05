@@ -8,7 +8,6 @@
 README.md
 docs
 apps/
-.chezmoiscripts/**
 
 # ------------------------------------
 # Optionals:
@@ -18,13 +17,11 @@ apps/
 {{ if not .syncAIAssistants }}
 # User opted out of AI assistant setup
 .claude/**
-.copilot/**
 .chezmoiscripts/03-sync-ai-assistants.sh
 .chezmoiscripts/03-sync-ai-assistants.ps1
 {{ else }}
 # Ignore managed repos - they are cloned/pulled via scripts
 .claude/skills/**
-.copilot/*
 {{ end }}
 
 # ------------------------------------

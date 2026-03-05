@@ -1,15 +1,23 @@
 #!/bin/sh
 set -e
 
+# Sync AI assistant repositories into ~/ai-assistants/<repo>.
+# This script runs after chezmoi apply and is idempotent:
+# - pull when a repo already exists
+# - clone when a repo is missing
+# - create ~/.claude/skills symlink if it doesn't exist
+
 SKILLS_URL="git@github.com:giocaizzi/skills.git"
-SKILLS_DIR="$HOME/skills"
+BASE_DIR="$HOME/ai-assistants"
+SKILLS_DIR="$BASE_DIR/skills"
 
 RALPH_URL="git@github.com:giocaizzi/ralph-copilot.git"
-RALPH_DIR="$HOME/ralph-copilot"
+RALPH_DIR="$BASE_DIR/ralph-copilot"
 
 COPILOT_AGENTS_URL="git@github.com:giocaizzi/copilot-agents.git"
-COPILOT_AGENTS_DIR="$HOME/copilot-agents"
+COPILOT_AGENTS_DIR="$BASE_DIR/copilot-agents"
 
+# Keep each repository up to date without rewriting non-git directories.
 sync_repo() {
   repo_url="$1"
   repo_dir="$2"
@@ -23,11 +31,17 @@ sync_repo() {
   fi
 }
 
+# Ensure the base folder exists, then sync all managed repositories.
+mkdir -p "$BASE_DIR"
+
 sync_repo "$SKILLS_URL" "$SKILLS_DIR"
 sync_repo "$RALPH_URL" "$RALPH_DIR"
 sync_repo "$COPILOT_AGENTS_URL" "$COPILOT_AGENTS_DIR"
 
+# Expose skills to Claude at ~/.claude/skills when available.
 mkdir -p "$HOME/.claude"
-if [ -d "$SKILLS_DIR/skills" ] && [ ! -L "$HOME/.claude/skills" ] && [ ! -e "$HOME/.claude/skills" ]; then
-  ln -s "$SKILLS_DIR/skills" "$HOME/.claude/skills"
+if [ -d "$SKILLS_DIR/skills" ]; then
+  if [ ! -L "$HOME/.claude/skills" ] && [ ! -e "$HOME/.claude/skills" ]; then
+    ln -s "$SKILLS_DIR/skills" "$HOME/.claude/skills"
+  fi
 fi
