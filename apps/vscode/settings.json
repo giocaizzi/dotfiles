@@ -37,12 +37,13 @@
     "chat.agent.maxRequests": 1000,
     // additional custom agents
     "chat.agentFilesLocations": {
-        "~/ralph-copilot/agents": true,
-        "~/copilot-agents/agents": true
+        "~/copilot-agents/agents": true,
+        "~/ralph-copilot/agents": true
     },
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.experimental.useSkillAdherencePrompt": true,
+    "chat.mcp.gallery.enabled": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
         "chezmoi": true,
@@ -136,6 +137,7 @@
     "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
+    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
@@ -158,7 +160,7 @@
     // word wrap
     "editor.wordWrap": "on",
     // --- Explorer ---
-    "explorer.confirmDelete": true,
+    "explorer.confirmDelete": false,
     // --- Files ---
     "files.associations": {
         // dotenv files
@@ -228,6 +230,5 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "chat.viewSessions.orientation": "stacked"
+    "typescript.updateImportsOnFileMove.enabled": "always"
 }
