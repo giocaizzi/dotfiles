@@ -8,6 +8,7 @@
 README.md
 docs
 apps/
+.chezmoiscripts/**
 
 # ------------------------------------
 # Optionals:
@@ -18,14 +19,13 @@ apps/
 # User opted out of AI assistant setup
 .claude/**
 .copilot/**
-.chezmoiscripts/run_after_10-sync-skills.sh
-.chezmoiscripts/run_after_11-sync-copilot-agents.sh
+.chezmoiscripts/03-sync-ai-assistants.sh
+.chezmoiscripts/03-sync-ai-assistants.ps1
 {{ else }}
 # Ignore managed repos - they are cloned/pulled via scripts
 .claude/skills/**
 .copilot/*
 {{ end }}
-
 
 # ------------------------------------
 # Machine specific ignores:
@@ -46,6 +46,7 @@ apps/
 # --- Unix-like systems (macOS + Linux) ---
 # Ignore bash scripts on Windows (uses PowerShell)
 {{ if eq .chezmoi.os "windows" }}
+.chezmoiscripts/03-sync-ai-assistants.sh
 .chezmoiscripts/env.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}
@@ -60,5 +61,6 @@ apps/
 **/AppData/
 **/AppData/**/*
 ## Scripts
+.chezmoiscripts/03-sync-ai-assistants.ps1
 .chezmoiscripts/env.ps1
 {{ end }}
