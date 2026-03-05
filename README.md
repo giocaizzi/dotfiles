@@ -95,11 +95,11 @@ Scripts with `.tmpl` suffix access chezmoi variables: `{{ .chezmoi.os }}`, `{{ .
 **MacOS/Linux:**
 - `run_onchange_env.sh` - Environment variables (when changed)
 - `run_onchange_install-pkgs.sh.tmpl` - Package management (when list changes)
-- `run_after_03-sync-ai-assistants.sh` - Clone/pull `~/skills`, `~/ralph-copilot`, and `~/copilot-agents`; symlink `~/.claude/skills` to `~/skills/skills`
+- `run_after_03-sync-ai-assistants.sh` - Clone/pull `~/ai-assistants/skills`, `~/ai-assistants/ralph-copilot`, and `~/ai-assistants/copilot-agents`; symlink `~/.claude/skills` to `~/ai-assistants/skills/skills`
 
 **Windows:**
 - `run_onchange_env.ps1` - PowerShell environment
-- `run_after_03-sync-ai-assistants.ps1` - Clone/pull `~/skills`, `~/ralph-copilot`, and `~/copilot-agents`; create `~/.claude/skills` junction to `~/skills/skills`
+- `run_after_03-sync-ai-assistants.ps1` - Clone/pull `~/ai-assistants/skills`, `~/ai-assistants/ralph-copilot`, and `~/ai-assistants/copilot-agents`; create `~/.claude/skills` junction to `~/ai-assistants/skills/skills`
 
 ### State Management
 
