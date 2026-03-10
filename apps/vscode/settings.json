@@ -137,7 +137,6 @@
     "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
-    "chat.viewSessions.orientation": "stacked",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
@@ -230,5 +229,7 @@
     "terminal.integrated.suggest.selectionMode": "always",
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
-    "typescript.updateImportsOnFileMove.enabled": "always"
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "chat.viewSessions.orientation": "stacked",
+    "terminal.integrated.tabs.enabled": false
 }
