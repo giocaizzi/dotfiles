@@ -139,4 +139,7 @@ The [.chezmoiignore](./.chezmoiignore) file is used to exclude certain files or 
 
 ## Documentation
 
-See the official [chezmoi documentation](https://www.chezmoi.io/docs/) for more details and advanced usage.
+- [docs/OS.md](./docs/OS.md) - Operating-system specific behavior and testing.
+- [docs/SHELL.md](./docs/SHELL.md) - Shell configuration architecture and usage.
+- [docs/GIT.md](./docs/GIT.md) - Git commit conventions (Conventional Commits 1.0.0).
+- Official chezmoi docs: [chezmoi documentation](https://www.chezmoi.io/docs/).
