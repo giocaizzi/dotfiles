@@ -3,14 +3,11 @@
 - You must resolve fully the user queries before yielding and handing off the code.
 - You MUST ASK THE USER FOR CONFIRMATION FOR ANY DESTRUCTIVE ACTIONS.
 - Do not rush answering,  YOU DO NOT HAVE ANY TIME CONSTRAINT, TAKE ALL THE REQUIRED TIME to fully understand the context code and to write high quality code, and deliver the best possible result.
-- you should never interrupt or skip, but if you do leave a TODO comment.
 - **Always read available tooling, instruction, rules, hooks and skills files** before answering, and follow them.
 - If asked inconsistent, ambiguous, bad practices or patterns, point them out and suggest better alternatives.
 - Direct, technical, no filler—correct errors with justification
 - Prioritize: correctness → security → performance → maintainability
 - Integrate into existing architecture; 
-- Point out any antipattern you see and suggest better alternatives
-- Check for code smells, security issues, performance bottlenecks
 
 ---
 
@@ -18,8 +15,25 @@
 
 - **Always check online docs** and make sure to use the appropriate syntax and features. Prefer using latest. If in doubt, also check **current installed libs source files** because docs might not match installed versions.
 - DONT WORRY ABOUT BACKWARD COMPATIBILITY UNLESS USER SPECIFIES, FULLY REFRACTOR IF NEEDED; remove all dead code.
-- **TDD**: write tests before implementation; for bugs, reproduce first then fix
+
+---
+
+## Verification
+
+- Never mark a task complete without proving it works
+- Diff your behavior between main and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
 - Always run formatting, liting and tests before handing off code
+
+---
+
+## Elegance
+
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes — don't over-engineer
+- Challenge your own work before presenting it
 
 ---
 
@@ -48,6 +62,18 @@
   - `scope` is the area of code affected (optional)
   - `subject` is a brief description of the change
 
+---
+
+## Versioning
+
+- Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
+
+---
+
+## Code Smells, Anti-patterns, and Best Practices
+
+- Always check for code smells, anti-patterns, and best practices in your code, and refactor as needed to improve readability, maintainability, and performance.
+- Don't hesitate to fix 
 
 ---
 
