@@ -55,12 +55,13 @@
 ## Git
 
 - Always use git for version control, and commit often with small, focused commits.
+- Use Conventional Commits 1.0.0 for all commit messages.
+- Format headers as `<type>[optional scope][!]: <description>`.
+- You MAY include an optional body and optional footer(s), each separated by one blank line.
+- Use `feat` for new features and `fix` for bug fixes. Other types (for example `docs`, `refactor`, `test`, `chore`) are allowed.
+- Mark breaking changes with `!` in the header and/or a `BREAKING CHANGE: <description>` footer.
 - Always write clear, concise commit messages that explain the **what** and **why**, not how.
-- **Do not append to existing commit messages** as there might be defaults, always wite a new commit message.
-- See if a commit template is available and follow it, else follow `<type>(<scope>): <subject>` format, where:
-  - `type` is the type of change (feat, fix, refactor, docs, test, chore)
-  - `scope` is the area of code affected (optional)
-  - `subject` is a brief description of the change
+- **Do not append to existing commit messages** as there might be defaults, always write a new commit message.
 
 ---
 
