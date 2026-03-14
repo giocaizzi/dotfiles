@@ -1,14 +1,14 @@
 #!/bin/sh
 set -e
 
-# Sync AI assistant repositories into ~/ai-assistants/<repo>.
+# Sync AI assistant repositories into ~/.ai-assistants/<repo>.
 # This script runs after chezmoi apply and is idempotent:
 # - pull when a repo already exists
 # - clone when a repo is missing
 # - create ~/.claude/skills symlink if it doesn't exist
 
 SKILLS_URL="git@github.com:giocaizzi/skills.git"
-BASE_DIR="$HOME/ai-assistants"
+BASE_DIR="$HOME/.ai-assistants"
 SKILLS_DIR="$BASE_DIR/skills"
 
 RALPH_URL="git@github.com:giocaizzi/ralph-copilot.git"
@@ -41,7 +41,20 @@ sync_repo "$COPILOT_AGENTS_URL" "$COPILOT_AGENTS_DIR"
 # Expose skills to Claude at ~/.claude/skills when available.
 mkdir -p "$HOME/.claude"
 if [ -d "$SKILLS_DIR/skills" ]; then
-  if [ ! -L "$HOME/.claude/skills" ] && [ ! -e "$HOME/.claude/skills" ]; then
-    ln -s "$SKILLS_DIR/skills" "$HOME/.claude/skills"
+  CLAUDE_SKILLS_LINK="$HOME/.claude/skills"
+  DESIRED_TARGET="$SKILLS_DIR/skills"
+
+  if [ -L "$CLAUDE_SKILLS_LINK" ]; then
+    CURRENT_TARGET="$(readlink "$CLAUDE_SKILLS_LINK" || true)"
+    if [ "$CURRENT_TARGET" != "$DESIRED_TARGET" ]; then
+      # Update the symlink if it points to the wrong location.
+      rm "$CLAUDE_SKILLS_LINK"
+      ln -s "$DESIRED_TARGET" "$CLAUDE_SKILLS_LINK"
+    fi
+  elif [ ! -e "$CLAUDE_SKILLS_LINK" ]; then
+    # Create the symlink if it doesn't exist.
+    ln -s "$DESIRED_TARGET" "$CLAUDE_SKILLS_LINK"
+  else
+    echo "Warning: not updating $CLAUDE_SKILLS_LINK because it exists and is not a symlink" >&2
   fi
 fi

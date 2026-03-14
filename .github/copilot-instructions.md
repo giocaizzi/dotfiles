@@ -23,11 +23,11 @@ Available scripts are:
 **MacOS/Linux:**
 - [`run_onchange_env.sh`](./.chezmoiscripts/run_onchange_env.sh): Main script to setup the environment on MacOS and Linux.
 - [`run_onchange_install-pkgs.sh.tmpl`](./.chezmoiscripts/run_onchange_install-pkgs.sh.tmpl): Script to install required packages.
-- [`run_after_03-sync-ai-assistants.sh`](./.chezmoiscripts/run_after_03-sync-ai-assistants.sh): Clones/pulls the skills repository and copilot agent repositories to `~/ai-assistants/<repo>`, and creates symlink `~/.claude/skills` -> `~/ai-assistants/skills/skills`. Runs on every chezmoi apply.
+- [`run_after_03-sync-ai-assistants.sh`](./.chezmoiscripts/run_after_03-sync-ai-assistants.sh): Clones/pulls the skills repository and copilot agent repositories to `~/.ai-assistants/<repo>`, and creates symlink `~/.claude/skills` -> `~/.ai-assistants/skills/skills`. Runs on every chezmoi apply.
 
 **Windows:**
 - [`run_onchange_env.ps1`](./.chezmoiscripts/run_onchange_env.ps1): Main script to setup the environment on Windows.
-- [`run_after_03-sync-ai-assistants.ps1`](./.chezmoiscripts/run_after_03-sync-ai-assistants.ps1): Clones/pulls the skills repository and copilot agent repositories to `~/ai-assistants/<repo>`, and creates junction `~/.claude/skills` -> `~/ai-assistants/skills/skills`. Runs on every chezmoi apply.
+- [`run_after_03-sync-ai-assistants.ps1`](./.chezmoiscripts/run_after_03-sync-ai-assistants.ps1): Clones/pulls the skills repository and copilot agent repositories to `~/.ai-assistants/<repo>`, and creates junction `~/.claude/skills` -> `~/.ai-assistants/skills/skills`. Runs on every chezmoi apply.
 
 ## Docs
 
