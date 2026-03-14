@@ -1,8 +1,4 @@
 {
-  "statusLine": {
-    "type": "command",
-    "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
-  },
   "permissions": {
     "allow": [
       "ReadFile",
@@ -23,7 +19,12 @@
       "SystemReboot"
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
+  },
   "enabledPlugins": {
-    "ralph-loop@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true{{ if eq .chezmoi.os "darwin" }},
+    "frontend-design@claude-plugins-official": true{{ end }}
   }
 }
