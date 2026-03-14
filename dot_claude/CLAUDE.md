@@ -32,6 +32,12 @@
 
 ---
 
+## Commands
+
+- Always use centralized commands for common tasks, such as `make` or `npm scripts`, and follow existing patterns. If none exist, create them following best practices for the language and ecosystem.
+
+---
+
 ## Git
 
 - Always use git for version control, and commit often with small, focused commits.
@@ -41,3 +47,14 @@
   - `type` is the type of change (feat, fix, refactor, docs, test, chore)
   - `scope` is the area of code affected (optional)
   - `subject` is a brief description of the change
+
+
+---
+
+## Testing
+
+- Test functionality, edge cases, and error handling. Do not test implementation details or internal state. Focus on testing the public API and expected behavior.
+- Always test your code, and write tests before implementation (TDD). For bugs, reproduce first then fix.
+- Tests should be clear, concise, and cover both typical and edge cases. Use descriptive names for test functions and variables.
+- Test should be deterministic, isolated, and fast. Avoid external dependencies and side effects.
+- Use appropriate testing frameworks and tools for the language and ecosystem, and follow their best practices and conventions.
