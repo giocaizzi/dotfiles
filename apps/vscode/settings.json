@@ -131,7 +131,9 @@
         "https://www.npmjs.com": true,
         "https://www.w3.org": true,
         "https://zod.dev": true,
-        "https://zsh.sourceforge.io/Doc": true
+        "https://zsh.sourceforge.io/Doc": true,
+        "https://agentskills.io": true,
+        "https://*.claude.ai": true
     },
     "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
@@ -229,5 +231,8 @@
     "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
     // --- TypeScript ---
     "typescript.updateImportsOnFileMove.enabled": "always",
-    "chat.viewSessions.orientation": "stacked"
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "chat.autopilot.enabled": true
 }
