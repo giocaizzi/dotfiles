@@ -37,8 +37,8 @@
     "chat.agent.maxRequests": 1000,
     // additional custom agents
     "chat.agentFilesLocations": {
-        "~/ai-assistants/copilot-agents/agents": true,
-        "~/ai-assistants/ralph-copilot/agents": true
+        "~/.ai-assistants/copilot-agents/agents": true,
+        "~/.ai-assistants/ralph-copilot/agents": true
     },
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
