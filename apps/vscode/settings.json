@@ -37,12 +37,13 @@
     "chat.agent.maxRequests": 1000,
     // additional custom agents
     "chat.agentFilesLocations": {
-        "~/ralph-copilot/agents": true,
-        "~/copilot-agents/agents": true
+        "~/ai-assistants/copilot-agents/agents": true,
+        "~/ai-assistants/ralph-copilot/agents": true
     },
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.experimental.useSkillAdherencePrompt": true,
+    "chat.mcp.gallery.enabled": true,
     "chat.promptFilesRecommendations": {},
     "chat.tools.terminal.autoApprove": {
         "chezmoi": true,
@@ -160,7 +161,7 @@
     // word wrap
     "editor.wordWrap": "on",
     // --- Explorer ---
-    "explorer.confirmDelete": true,
+    "explorer.confirmDelete": false,
     // --- Files ---
     "files.associations": {
         // dotenv files
@@ -234,5 +235,7 @@
     "[html]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-    "chat.autopilot.enabled": true
+    "chat.autopilot.enabled": true,
+    "chat.viewSessions.orientation": "stacked",
+    "terminal.integrated.tabs.enabled": false
 }
