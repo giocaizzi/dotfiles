@@ -68,6 +68,7 @@
 ## Versioning
 
 - Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
+- Always update the version number when making changes.
 
 ---
 
