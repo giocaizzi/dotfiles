@@ -34,6 +34,7 @@
 
 ## Git
 
+- Always use git for version control, and commit often with small, focused commits.
 - Always write clear, concise commit messages that explain the **what** and **why**, not how.
 - **Do not append to existing commit messages** as there might be defaults, always wite a new commit message.
 - See if a commit template is available and follow it, else follow `<type>(<scope>): <subject>` format, where:
