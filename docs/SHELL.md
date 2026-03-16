@@ -461,39 +461,6 @@ ls *.PDF            # Matches .pdf files too (zsh and bash with nocaseglob)
 
 ---
 
-## ⚠️ Known Issues
-
-### macOS: Tilde (~) Not Working with Italian Keyboard in Terminal.app
-
-**Problem:** On macOS with Italian keyboard layout, pressing `Option+5` to type tilde (~) doesn't work in **Apple Terminal.app**, but works fine in VS Code terminal, iTerm2, and other terminal emulators.
-
-**Cause:** This is a **Terminal.app-specific limitation**, not a shell configuration issue. Apple Terminal has a built-in setting that intercepts the Option key for Meta key functionality, preventing Option-based keyboard shortcuts from producing special characters.
-
-**Solutions:**
-
-#### Option 1: Fix Terminal.app Settings (if you want to keep using Terminal.app)
-1. Open **Terminal.app** → **Preferences** (⌘,)
-2. Go to **Profiles** tab → Select your profile
-3. Go to **Keyboard** sub-tab
-4. **Uncheck** "Use Option as Meta key"
-5. Close Preferences and restart Terminal.app
-6. Test: `Option+5` should now produce `~`
-
-#### Option 2: Use a Better Terminal Emulator (Recommended)
-Apple Terminal.app has several limitations. Consider switching to:
-
-- **iTerm2** (most popular, feature-rich):
-  ```bash
-  brew install --cask iterm2
-  ```
-
-- **VS Code Integrated Terminal** (already works):
-  - Just continue using VS Code's terminal - it handles Italian keyboard correctly
-
-**Why VS Code terminal works:** VS Code's terminal implementation doesn't have the same Option key interception that Apple Terminal.app has, so Option-based keyboard shortcuts work as expected for typing special characters.
-
----
-
 ## 📖 Further Reading
 
 - [Bash Manual](https://www.gnu.org/software/bash/manual/)
@@ -502,7 +469,6 @@ Apple Terminal.app has several limitations. Consider switching to:
 - [fzf](https://github.com/junegunn/fzf)
 - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)
 - [oh-my-posh](https://ohmyposh.dev/)
-- [iTerm2](https://iterm2.com/)
 
 ---
 
