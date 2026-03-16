@@ -486,20 +486,6 @@ Apple Terminal.app has several limitations. Consider switching to:
   ```bash
   brew install --cask iterm2
   ```
-  - Better keyboard handling
-  - Split panes
-  - Search and instant replay
-  - Much more customizable
-
-- **Alacritty** (fast, GPU-accelerated):
-  ```bash
-  brew install --cask alacritty
-  ```
-
-- **Warp** (modern, AI-powered):
-  ```bash
-  brew install --cask warp
-  ```
 
 - **VS Code Integrated Terminal** (already works):
   - Just continue using VS Code's terminal - it handles Italian keyboard correctly
