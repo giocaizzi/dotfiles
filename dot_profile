@@ -12,11 +12,6 @@
 # 1. ENVIRONMENT VARIABLES
 # ----------------------------------------------------------------------------
 
-# Locale configuration (Italian with UTF-8)
-# This ensures proper keyboard input handling, including special characters like ~ on IT keyboard
-export LANG="it_IT.UTF-8"
-export LC_ALL="it_IT.UTF-8"
-
 # Default editor
 export EDITOR='vim'
 export VISUAL='vim'
