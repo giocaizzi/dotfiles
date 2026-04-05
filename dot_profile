@@ -12,6 +12,11 @@
 # 1. ENVIRONMENT VARIABLES
 # ----------------------------------------------------------------------------
 
+# Load secrets (untracked, user-managed)
+if [ -f "$HOME/.secrets" ]; then
+	. "$HOME/.secrets"
+fi
+
 # Default editor
 export EDITOR='vim'
 export VISUAL='vim'

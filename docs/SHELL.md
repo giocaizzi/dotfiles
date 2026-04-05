@@ -28,6 +28,7 @@ This document describes the centralized shell configuration shared between bash 
 ### File Hierarchy
 ```
 ~/
+├── .secrets          # Secret env vars (untracked, chmod 600)
 ├── .profile          # POSIX core (PATH, env vars, universal aliases)
 ├── .bashrc           # Bash-specific features
 ├── .zshrc            # Zsh-specific features
@@ -35,6 +36,11 @@ This document describes the centralized shell configuration shared between bash 
 ```
 
 ### What Goes Where
+
+**`.secrets`** (untracked, user-managed per machine):
+- Secret environment variables (API keys, tokens)
+- Created automatically on first `chezmoi apply` (mode 600)
+- Sourced at the top of `.profile` before anything else
 
 **`.profile`** (POSIX-compliant, sourced by both shells):
 - PATH management (Homebrew, pipx, pyenv, Android SDK)

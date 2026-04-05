@@ -6,6 +6,8 @@
 # ------------------------------------
 # --- chezmoi repo  ---
 README.md
+# --- secrets (user-managed, never tracked) ---
+.secrets
 CLAUDE.md
 AGENTS.md
 .claude

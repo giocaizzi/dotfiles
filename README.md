@@ -63,6 +63,17 @@ chezmoi merge
 chezmoi merge --all
 ```
 
+## Secrets
+
+Secret environment variables (API keys, tokens) are stored in `~/.secrets`, which is **never tracked** by chezmoi. It is created automatically on first `chezmoi apply` with mode `600` and sourced by `~/.profile`.
+
+Edit it directly on each machine:
+
+```shell
+vim ~/.secrets
+# export API_KEY="your-key"
+```
+
 ## Documentation
 
 - [docs/OS.md](./docs/OS.md) - Operating-system specific behavior and testing.
