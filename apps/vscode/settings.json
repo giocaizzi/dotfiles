@@ -147,6 +147,9 @@
     // --- Claude Code ---
     "claudeCode.preferredLocation": "panel",
     "claudeCode.useTerminal": true,
+    // --- Containers ---
+    "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
+    "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
     // --- Diff Editor ---
     "diffEditor.ignoreTrimWhitespace": false,
     // --- Docker ---
