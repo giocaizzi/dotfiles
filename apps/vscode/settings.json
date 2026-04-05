@@ -143,7 +143,6 @@
     "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
     "chat.useNestedAgentsMdFiles": true,
-    "chat.viewSessions.orientation": "stacked",
     // --- Claude Code ---
     "claudeCode.preferredLocation": "panel",
     "claudeCode.useTerminal": true,
