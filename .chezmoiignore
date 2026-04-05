@@ -7,6 +7,9 @@
 # --- chezmoi repo  ---
 README.md
 CLAUDE.md
+AGENTS.md
+.claude
+.agents
 docs
 apps/
 
