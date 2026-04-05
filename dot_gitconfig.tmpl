@@ -1,6 +1,6 @@
 [user]
-	name = "{{ .gitUser }}"
-	email = "{{ .gitEmail }}"
+	name = {{ .gitUser }}
+	email = {{ .gitEmail }}
 
 [core]
 	excludesfile = {{ .chezmoi.homeDir }}/.gitignore_global
