@@ -38,23 +38,29 @@ sync_repo "$SKILLS_URL" "$SKILLS_DIR"
 sync_repo "$RALPH_URL" "$RALPH_DIR"
 sync_repo "$COPILOT_AGENTS_URL" "$COPILOT_AGENTS_DIR"
 
-# Expose skills to Claude at ~/.claude/skills when available.
-mkdir -p "$HOME/.claude"
-if [ -d "$SKILLS_DIR/skills" ]; then
-  CLAUDE_SKILLS_LINK="$HOME/.claude/skills"
-  DESIRED_TARGET="$SKILLS_DIR/skills"
+# Expose skills to agent tools via symlinks when available.
+# ~/.claude/skills  — Claude Code, OpenCode
+# ~/.agents/skills  — VS Code Copilot (Agent Skills standard), npx skills
+ensure_skills_symlink() {
+  link="$1"
+  target="$2"
+  parent_dir="$(dirname "$link")"
 
-  if [ -L "$CLAUDE_SKILLS_LINK" ]; then
-    CURRENT_TARGET="$(readlink "$CLAUDE_SKILLS_LINK" || true)"
-    if [ "$CURRENT_TARGET" != "$DESIRED_TARGET" ]; then
-      # Update the symlink if it points to the wrong location.
-      rm "$CLAUDE_SKILLS_LINK"
-      ln -s "$DESIRED_TARGET" "$CLAUDE_SKILLS_LINK"
+  mkdir -p "$parent_dir"
+  if [ -L "$link" ]; then
+    current="$(readlink "$link" || true)"
+    if [ "$current" != "$target" ]; then
+      rm "$link"
+      ln -s "$target" "$link"
     fi
-  elif [ ! -e "$CLAUDE_SKILLS_LINK" ]; then
-    # Create the symlink if it doesn't exist.
-    ln -s "$DESIRED_TARGET" "$CLAUDE_SKILLS_LINK"
+  elif [ ! -e "$link" ]; then
+    ln -s "$target" "$link"
   else
-    echo "Warning: not updating $CLAUDE_SKILLS_LINK because it exists and is not a symlink" >&2
+    echo "Warning: not updating $link because it exists and is not a symlink" >&2
   fi
+}
+
+if [ -d "$SKILLS_DIR/skills" ]; then
+  ensure_skills_symlink "$HOME/.claude/skills" "$SKILLS_DIR/skills"
+  ensure_skills_symlink "$HOME/.agents/skills" "$SKILLS_DIR/skills"
 fi
