@@ -1,38 +1,39 @@
-## Behavior
+# Behavior
 
 - **Always read available tooling, instruction, rules, hooks and skills files** before answering, and follow them.
 - If asked inconsistent, ambiguous, bad practices or patterns, point them out and suggest better alternatives.
+- Ask the user for all necessary information to complete the task at 100% before starting, and clarify any ambiguities or uncertainties.
+- Switch freely to Plan mode when anything requires more thought, and use it to break down the problem, identify edge cases, and plan your implementation.
 - Direct, technical, no filler—correct errors with justification
 - Prioritize: correctness → security → performance → maintainability
 - Integrate into existing architecture; 
 - Do not do quickfixes or workarounds; solve all issues to the core with proper solutions.
-- Always ask the user to understand all you need to complete the task at 100%.
 
 ---
 
 ## Guidelines
 
+- Do not over-engineer. Follow DRY and KISS principles.
 - **Always check online docs** and make sure to use the appropriate syntax and features. Prefer using latest. If in doubt, also check **current installed libs source files** because docs might not match installed versions.
-- DONT WORRY ABOUT BACKWARD COMPATIBILITY UNLESS USER SPECIFIES, FULLY REFRACTOR IF NEEDED; remove all dead code.
+- Never account for backward compatibility unless user explicitly specifies it as a requirement. 
 
 ---
 
 ## Verification
 
 - Never mark a task complete without proving it works
-- Diff your behavior between main and your changes when relevant
-- Ask yourself: "Would a staff engineer approve this?"
+- Diff your behavior between target branch and your changes when relevant
+- For non-trivial changes: pause and ask "is there a more elegant way?". Plan when in doubt, and use it to break down the problem, identify edge cases, and plan your implementation.
 - Run tests, check logs, demonstrate correctness
-- Always run formatting, liting and tests before handing off code
+- Always run formatting, linting and tests before handing off code
+- Challenge your own work before presenting it
 
 ---
 
-## Elegance
+## Code Smells, Anti-patterns, and Best Practices
 
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes — don't over-engineer
-- Challenge your own work before presenting it
+- Always check for code smells, anti-patterns, and best practices in your code, and refactor as needed to improve readability, maintainability, and performance.
+- Don't hesitate to fix issues when identified.
 
 ---
 
@@ -66,15 +67,8 @@
 
 ## Versioning
 
-- Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
 - Always update the version number when making changes.
-
----
-
-## Code Smells, Anti-patterns, and Best Practices
-
-- Always check for code smells, anti-patterns, and best practices in your code, and refactor as needed to improve readability, maintainability, and performance.
-- Don't hesitate to fix 
+- Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
 
 ---
 
