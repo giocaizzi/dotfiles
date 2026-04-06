@@ -65,4 +65,5 @@ apps/
 ## Scripts
 .chezmoiscripts/03-sync-ai-assistants.ps1
 .chezmoiscripts/env.ps1
+.chezmoiscripts/init-untracked-env.ps1
 {{ end }}
