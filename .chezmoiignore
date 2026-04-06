@@ -10,7 +10,6 @@ README.md
 .secrets
 CLAUDE.md
 AGENTS.md
-.claude
 .agents
 docs
 apps/
