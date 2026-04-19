@@ -100,6 +100,8 @@
     },
     "chat.tools.terminal.outputLocation": "chat",
     "chat.tools.urls.autoApprove": {
+        "https://code.visualstudio.com": true,
+        "https://github.com/microsoft/vscode/wiki/*": true,
         "https://*.apple.com": true,
         "https://*.archlinux.org": true,
         "https://*.chezmoi.io": true,
@@ -138,7 +140,11 @@
         "https://www.npmjs.com": true,
         "https://www.w3.org": true,
         "https://zod.dev": true,
-        "https://zsh.sourceforge.io/Doc": true
+        "https://zsh.sourceforge.io/Doc": true,
+        "https://skills.sh": {
+            "approveRequest": false,
+            "approveResponse": true
+        }
     },
     "chat.unifiedAgentsBar.enabled": true,
     "chat.useAgentSkills": true,
