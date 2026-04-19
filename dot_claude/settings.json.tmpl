@@ -26,16 +26,10 @@
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "ddd@giocaizzi-skills": true,
-    "fastapi@giocaizzi-skills": true,
-    "sqlalchemy@giocaizzi-skills": true,
-    "python-development@giocaizzi-skills": true,
-    "python-testing@giocaizzi-skills": true,
-    "react@giocaizzi-skills": true,
-    "nextjs@giocaizzi-skills": true,
-    "javascript-typescript@giocaizzi-skills": true,
-    "smart-refactor@giocaizzi-skills": true,
+    "python@giocaizzi-skills": true,
+    "api@giocaizzi-skills": true,
     "agents@giocaizzi-skills": true{{ if eq .chezmoi.os "darwin" }},
+    "javascript@giocaizzi-skills": true,
     "frontend-design@claude-plugins-official": true,
     "figma@claude-plugins-official": true{{ end }}
   },
