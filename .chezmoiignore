@@ -15,21 +15,6 @@ docs
 apps/
 
 # ------------------------------------
-# Optionals:
-# These ignores depends upon user configuration choices prompted during setup. 
-# ------------------------------------
-# --- AI Assistants (optional) ---
-{{ if not .syncAIAssistants }}
-# User opted out of AI assistant setup
-.claude/**
-.chezmoiscripts/03-sync-ai-assistants.sh
-.chezmoiscripts/03-sync-ai-assistants.ps1
-{{ else }}
-# Ignore managed repos - they are cloned/pulled via scripts
-.claude/skills/**
-{{ end }}
-
-# ------------------------------------
 # Machine specific ignores:
 # These files are specific to certain operating systems and should be ignored on others.
 # ------------------------------------
@@ -48,7 +33,6 @@ apps/
 # --- Unix-like systems (macOS + Linux) ---
 # Ignore bash scripts on Windows (uses PowerShell)
 {{ if eq .chezmoi.os "windows" }}
-.chezmoiscripts/03-sync-ai-assistants.sh
 .chezmoiscripts/env.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}
@@ -63,7 +47,6 @@ apps/
 **/AppData/
 **/AppData/**/*
 ## Scripts
-.chezmoiscripts/03-sync-ai-assistants.ps1
 .chezmoiscripts/env.ps1
 .chezmoiscripts/init-untracked-env.ps1
 {{ end }}
