@@ -6,7 +6,7 @@
       "segments": [
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
@@ -15,7 +15,7 @@
         },
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
@@ -24,7 +24,7 @@
         },
         {
           "foreground": "#F05032",
-          "properties": {
+          "options": {
             "cache_duration": "none",
             "fetch_stash_count": true,
             "fetch_status": true,
@@ -36,7 +36,7 @@
         },
         {
           "foreground": "#ffffff",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
@@ -48,16 +48,17 @@
     },
     {
       "alignment": "right",
+      "overflow": "break",
       "segments": [
         {
           "foreground": "#ffffff",
           "foreground_templates": [
             "{{ if (gt (subf 1 (divf (.PhysicalFreeMemory|float64) (.PhysicalTotalMemory|float64))) 0.2) }}#fff34e{{else}}#ffa5d8{{end}}"
           ],
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
-          "style": "diamond",
+          "style": "plain",
           "template": "[<#ffffff>\ue266</> RAM: {{ (div ((sub .PhysicalTotalMemory .PhysicalFreeMemory)|float64) 1073741824.0) }}/{{ (div .PhysicalTotalMemory 1073741824.0) }}GB]",
           "type": "sysinfo"
         },
@@ -68,18 +69,18 @@
             "{{if eq \"Discharging\" .State.String}}#fff34e{{end}}",
             "{{if eq \"Full\" .State.String}}#33DD2D{{end}}"
           ],
-          "properties": {
+          "options": {
             "cache_duration": "none",
             "charged_icon": "\uf240 ",
             "charging_icon": "\uf1e6 ",
             "discharging_icon": "\ue234 "
           },
-          "style": "diamond",
+          "style": "plain",
           "template": "{{ if not .Error }}[{{ .Icon }}{{ .Percentage }}{{ end }}{{ .Error }}\uf295]",
           "type": "battery"
         },
         {
-          "properties": {
+          "options": {
             "cache_duration": "none",
             "time_format": "15:04 PM Mon 02 Jan"
           },
@@ -95,44 +96,44 @@
       "newline": true,
       "segments": [
         {
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "foreground": "#7eb8da",
           "style": "plain",
-          "template": "<#7eb8da>| </>[<#ffffff>\uebd8</> {{.User.Name}}::{{ .Name }}]",
+          "template": "{{ if .Name }}<#7eb8da>| </>[<#ffffff>\uebd8</> {{.User.Name}}::{{ .Name }}]{{ end }}",
           "type": "az"
         },
         {
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
-          "template": "[\uebd8 {{ .DefaultEnvironment }}]",
+          "template": "{{ if .DefaultEnvironment }}[\uebd8 {{ .DefaultEnvironment }}]{{ end }}",
           "type": "azd"
         },
         {
           "foreground": "#F4B400",
           "style": "plain",
-          "template": "[<#ffffff></> {{.Account}}::{{.Project}}]",
+          "template": "{{ if .Project }}[<#ffffff></> {{.Account}}::{{.Project}}]{{ end }}",
           "type": "gcp"
         },
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
-          "template": "[{{ .Profile }}{{if .Region}}@{{ .Region }}{{ end }}]",
+          "template": "{{ if .Profile }}[{{ .Profile }}{{if .Region}}@{{ .Region }}{{ end }}]{{ end }}",
           "type": "aws"
         },
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
-          "template": "[{{.Context}}{{if .Namespace}}::{{.Namespace}}{{end}}]",
+          "template": "{{ if .Context }}[{{.Context}}{{if .Namespace}}::{{.Namespace}}{{end}}]{{ end }}",
           "type": "kubectl"
         }
       ],
@@ -144,7 +145,7 @@
       "segments": [
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none",
             "style": "full"
           },
@@ -153,21 +154,21 @@
         },
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none",
             "style": "dallas",
             "threshold": 0
           },
-          "style": "diamond",
+          "style": "plain",
           "template": "[<#ffffff>\uf252</> {{ .FormattedMs }}s]",
           "type": "executiontime"
         },
         {
           "foreground": "#ffa5d8",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
-          "style": "powerline",
+          "style": "plain",
           "template": "[<#ffffff>\uea6c</> Error, check your command]",
           "type": "status"
         }
@@ -180,7 +181,7 @@
       "segments": [
         {
           "foreground": "#7eb8da",
-          "properties": {
+          "options": {
             "cache_duration": "none"
           },
           "style": "plain",
