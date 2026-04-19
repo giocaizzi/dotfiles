@@ -26,8 +26,6 @@
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    {{ if eq .chezmoi.os "darwin" }}"frontend-design@claude-plugins-official": true,
-    "figma@claude-plugins-official": true,
     "ddd@giocaizzi-skills": true,
     "fastapi@giocaizzi-skills": true,
     "sqlalchemy@giocaizzi-skills": true,
@@ -37,7 +35,9 @@
     "nextjs@giocaizzi-skills": true,
     "javascript-typescript@giocaizzi-skills": true,
     "smart-refactor@giocaizzi-skills": true,
-    "agents@giocaizzi-skills": true{{ end }}
+    "agents@giocaizzi-skills": true{{ if eq .chezmoi.os "darwin" }},
+    "frontend-design@claude-plugins-official": true,
+    "figma@claude-plugins-official": true{{ end }}
   },
   "extraKnownMarketplaces": {
     "giocaizzi-skills": {
