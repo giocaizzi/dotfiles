@@ -17,7 +17,8 @@
     "deny": [
       "DangerousShell",
       "SystemReboot"
-    ]
+    ],
+    "defaultMode": "auto"
   },
   "statusLine": {
     "type": "command",
@@ -25,6 +26,8 @@
   },
   "enabledPlugins": {
     "ralph-loop@claude-plugins-official": true{{ if eq .chezmoi.os "darwin" }},
-    "frontend-design@claude-plugins-official": true{{ end }}
-  }
+    "frontend-design@claude-plugins-official": true,
+    "figma@claude-plugins-official": true{{ end }}
+  },
+  "skipAutoPermissionPrompt": true
 }
