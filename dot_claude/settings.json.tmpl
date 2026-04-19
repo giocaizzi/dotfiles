@@ -27,15 +27,25 @@
   },
   "enabledPlugins": {
     {{ if eq .chezmoi.os "darwin" }}"frontend-design@claude-plugins-official": true,
-    "figma@claude-plugins-official": true{{ end }}
+    "figma@claude-plugins-official": true,
+    "ddd@giocaizzi-skills": true,
+    "fastapi@giocaizzi-skills": true,
+    "sqlalchemy@giocaizzi-skills": true,
+    "python-development@giocaizzi-skills": true,
+    "python-testing@giocaizzi-skills": true,
+    "react@giocaizzi-skills": true,
+    "nextjs@giocaizzi-skills": true,
+    "javascript-typescript@giocaizzi-skills": true,
+    "smart-refactor@giocaizzi-skills": true,
+    "agents@giocaizzi-skills": true{{ end }}
   },
-  {{ if eq .chezmoi.os "darwin" }}"extraKnownMarketplaces": {
+  "extraKnownMarketplaces": {
     "giocaizzi-skills": {
       "source": {
         "source": "github",
         "repo": "giocaizzi/skills"
       }
     }
-  },{{ end }}
+  },
   "skipAutoPermissionPrompt": true
 }
