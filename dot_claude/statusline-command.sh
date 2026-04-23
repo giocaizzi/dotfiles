@@ -17,6 +17,20 @@ cwd=$(echo "$input"         | jq -r '.workspace.current_dir // .cwd // empty')
 model=$(echo "$input"       | jq -r '.model.display_name // empty')
 used=$(echo "$input"        | jq -r '.context_window.used_percentage // empty')
 session=$(echo "$input"     | jq -r '.session_name // empty')
+rl_5h=$(echo "$input"       | jq -r '.rate_limits.five_hour.used_percentage // empty')
+rl_7d=$(echo "$input"       | jq -r '.rate_limits.seven_day.used_percentage // empty')
+
+# --- colour for a percentage (blue <50, yellow 50-79, red ≥80) ---
+pct_color() {
+    local pct=$1
+    if [ "$pct" -ge 80 ] 2>/dev/null; then
+        printf '\033[38;2;240;80;50m'
+    elif [ "$pct" -ge 50 ] 2>/dev/null; then
+        printf '\033[38;2;244;180;0m'
+    else
+        printf '\033[38;2;126;184;218m'
+    fi
+}
 
 # --- user / host ---
 user=$(whoami)
@@ -63,15 +77,19 @@ fi
 # --- context usage ---
 ctx_part=""
 if [ -n "$used" ]; then
-    used_int=${used%.*}   # strip decimals
-    if [ "$used_int" -ge 80 ] 2>/dev/null; then
-        ctx_color='\033[38;2;240;80;50m'   # red
-    elif [ "$used_int" -ge 50 ] 2>/dev/null; then
-        ctx_color='\033[38;2;244;180;0m'   # yellow
-    else
-        ctx_color='\033[38;2;126;184;218m' # blue
-    fi
-    ctx_part=$(printf " ${ctx_color}ctx:%s%%${RESET}" "$used_int")
+    used_int=${used%.*}
+    ctx_part=$(printf " $(pct_color "$used_int")ctx:%s%%${RESET}" "$used_int")
+fi
+
+# --- rate limits (Pro/Max only; field absent otherwise) ---
+rl_part=""
+if [ -n "$rl_5h" ]; then
+    rl_5h_int=${rl_5h%.*}
+    rl_part="${rl_part}$(printf " $(pct_color "$rl_5h_int")5h:%s%%${RESET}" "$rl_5h_int")"
+fi
+if [ -n "$rl_7d" ]; then
+    rl_7d_int=${rl_7d%.*}
+    rl_part="${rl_part}$(printf " $(pct_color "$rl_7d_int")7d:%s%%${RESET}" "$rl_7d_int")"
 fi
 
 # --- assemble ---
@@ -86,5 +104,6 @@ line1=$(printf "${BLUE}┌${RESET}[${WHITE}%s${RESET} from ${WHITE}%s${RESET}]" 
 line2=$(printf "${BLUE}└|${RESET} ${PINK}[%s]${RESET}" "$display_path")
 [ -n "$model_part" ] && line2="${line2}  ${model_part}"
 [ -n "$ctx_part" ]   && line2="${line2}${ctx_part}"
+[ -n "$rl_part" ]    && line2="${line2}${rl_part}"
 
 printf "%b\n%b\n" "$line1" "$line2"
