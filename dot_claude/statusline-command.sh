@@ -10,6 +10,7 @@ PINK='\033[38;2;255;165;216m'   # #ffa5d8
 WHITE='\033[38;2;255;255;255m'  # #ffffff
 RED='\033[38;2;240;80;50m'      # #F05032  (git)
 YELLOW='\033[38;2;244;180;0m'   # #F4B400  (gcp)
+GREY='\033[38;2;150;150;150m'   # #969696  (dim)
 RESET='\033[0m'
 
 # --- extract Claude JSON fields ---
@@ -18,7 +19,9 @@ model=$(echo "$input"       | jq -r '.model.display_name // empty')
 used=$(echo "$input"        | jq -r '.context_window.used_percentage // empty')
 session=$(echo "$input"     | jq -r '.session_name // empty')
 rl_5h=$(echo "$input"       | jq -r '.rate_limits.five_hour.used_percentage // empty')
+rl_5h_reset=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 rl_7d=$(echo "$input"       | jq -r '.rate_limits.seven_day.used_percentage // empty')
+rl_7d_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 
 # --- colour for a percentage (blue <50, yellow 50-79, red ≥80) ---
 pct_color() {
@@ -29,6 +32,28 @@ pct_color() {
         printf '\033[38;2;244;180;0m'
     else
         printf '\033[38;2;126;184;218m'
+    fi
+}
+
+# --- format epoch seconds as compact "until reset" string (e.g. 2h15m, 3d4h, 12m) ---
+fmt_remaining() {
+    local resets_at=$1
+    local now diff days hours minutes
+    now=$(date +%s)
+    diff=$((resets_at - now))
+    if [ "$diff" -le 0 ]; then
+        printf 'now'
+        return
+    fi
+    days=$((diff / 86400))
+    hours=$(( (diff % 86400) / 3600 ))
+    minutes=$(( (diff % 3600) / 60 ))
+    if [ "$days" -gt 0 ]; then
+        printf '%dd%dh' "$days" "$hours"
+    elif [ "$hours" -gt 0 ]; then
+        printf '%dh%dm' "$hours" "$minutes"
+    else
+        printf '%dm' "$minutes"
     fi
 }
 
@@ -86,10 +111,16 @@ rl_part=""
 if [ -n "$rl_5h" ]; then
     rl_5h_int=${rl_5h%.*}
     rl_part="${rl_part}$(printf " $(pct_color "$rl_5h_int")5h:%s%%${RESET}" "$rl_5h_int")"
+    if [ -n "$rl_5h_reset" ]; then
+        rl_part="${rl_part}$(printf "${GREY}/%s${RESET}" "$(fmt_remaining "$rl_5h_reset")")"
+    fi
 fi
 if [ -n "$rl_7d" ]; then
     rl_7d_int=${rl_7d%.*}
     rl_part="${rl_part}$(printf " $(pct_color "$rl_7d_int")7d:%s%%${RESET}" "$rl_7d_int")"
+    if [ -n "$rl_7d_reset" ]; then
+        rl_part="${rl_part}$(printf "${GREY}/%s${RESET}" "$(fmt_remaining "$rl_7d_reset")")"
+    fi
 fi
 
 # --- assemble ---
