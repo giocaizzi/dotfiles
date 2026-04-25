@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
     "allow": [
       "ReadFile",
@@ -20,10 +23,6 @@
     ],
     "defaultMode": "auto"
   },
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
-  },
-  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
@@ -40,9 +39,9 @@
       "source": {
         "source": "github",
         "repo": "giocaizzi/skills"
-      }    
+      }
     }
   },
-  "skipAutoPermissionPrompt": true,
-  "effortLevel": "xhigh"
+  "effortLevel": "xhigh",
+  "skipAutoPermissionPrompt": true
 }
