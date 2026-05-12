@@ -1,15 +1,16 @@
 # dotfiles
 
-My configuration files backup and syncronization system.
+My configuration files backup and synchronization system, managing macOS, Linux and Windows from a single source.
 
-Using [chezmoi](https://www.chezmoi.io/)
+Powered by [chezmoi](https://www.chezmoi.io/).
 
-## Init chezmoi on a machine
+## Init on a new machine
 
-Will be prompted for local data, like name and email.
+You will be prompted for `gitUser` and `gitEmail`.
 
 ```shell
 chezmoi init gh:giocaizzi/dotfiles.git
+chezmoi apply
 ```
 
 ## File structure

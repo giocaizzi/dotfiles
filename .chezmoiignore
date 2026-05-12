@@ -1,64 +1,68 @@
-# ------------- General -------------
-# This is a .chezmoiignore file, which specifies files and directories that are to be ignored by chezmoi.
-# For more information, see https://chezmoi.io/docs/reference/chezmoiignore/
-# Note: Conditions are logically inverted
-# so that the files are ignored on the platform they are not intended for
-# ------------------------------------
-# --- chezmoi repo  ---
-README.md
-# --- secrets (user-managed, never tracked) ---
-.secrets
-CLAUDE.md
-AGENTS.md
-.agents
-docs
-apps/
+# ============================================================================
+# .chezmoiignore — paths to EXCLUDE from chezmoi management
+# ============================================================================
+# Logic is INVERTED: list entries to ignore. Template-aware.
+# Reference: https://chezmoi.io/docs/reference/chezmoiignore/
+# ============================================================================
 
-# --- tool-owned files (intentionally unmanaged) ---
-# Sourcetree (and other GUIs) rewrite ~/.gitconfig directly; our managed git
-# config lives at ~/.config/git/config (XDG) instead. Both are read by git.
+# ----------------------------------------------------------------------------
+# Repo meta — never apply
+# ----------------------------------------------------------------------------
+README.md
+CLAUDE.md
+.agents
+.secrets
+docs
+
+# Symlink-only sources: files that exist in the source tree purely as targets
+# for symlinks on the OS that uses them, and should never be deployed as
+# regular files anywhere.
+.config/windows-terminal
+.config/powershell/profile.ps1
+
+# Sourcetree and other GUIs rewrite ~/.gitconfig directly. We manage git via
+# the XDG location (~/.config/git/config). Both are read by git.
 .gitconfig
 
-# ------------------------------------
-# Machine specific ignores:
-# These files are specific to certain operating systems and should be ignored on others.
-# ------------------------------------
-# --- macOS ---
-# if not on mac, ignore these macos specific files
+# ============================================================================
+# OS-conditional sections
+# Pattern: paths live under the OS's native location and are ignored elsewhere.
+#
+#   macOS    →  Library/Application Support/...
+#   Linux    →  .config/...
+#   Windows  →  AppData/... (+ OneDrive for PowerShell)
+# ============================================================================
+
+# --- not macOS ---
 {{ if ne .chezmoi.os "darwin" }}
-# vscode settings are in Library
-**/Library/
-**/Library/**/*
-# ZSH config files
+Library
 .zshrc
 .zprofile
 {{ end }}
 
-# --- Linux ---
-# Ghostty on Linux reads ~/.config/ghostty/config; on macOS it reads from
-# Library/Application Support/. Keep the Linux symlink only on Linux.
+# --- not Linux ---
+# VS Code (Code, Code - Insiders) and Ghostty live under ~/.config on Linux.
+# On macOS they live under Library; on Windows under AppData.
 {{ if ne .chezmoi.os "linux" }}
 .config/ghostty
+.config/Code
+.config/Code - Insiders
 {{ end }}
 
+# --- not Windows ---
+{{ if ne .chezmoi.os "windows" }}
+AppData
+OneDrive - Jakala SpA
+.config/powershell
+.chezmoiscripts/init-untracked-env.ps1
+.chezmoiscripts/install-pkgs.ps1
+{{ end }}
 
-# --- Unix-like systems (macOS + Linux) ---
-# Ignore bash scripts on Windows (uses PowerShell)
+# --- Windows only ---
+# Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
+# files (.profile, .bashrc, .bash_profile) ARE kept so Git Bash and WSL users
+# get the same aliases/PATH as native Unix.
 {{ if eq .chezmoi.os "windows" }}
 .chezmoiscripts/init-untracked-env.sh
 .chezmoiscripts/install-pkgs.sh
-{{ end }}
-
-# --- windows ---
-# if not on windows, ignore Windows-specific files
-{{ if ne .chezmoi.os "windows" }}
-## PowerShell profile lives in OneDrive Docs
-**/OneDrive - Jakala SpA/
-**/OneDrive - Jakala SpA/**/*
-# VSCode settings in app data
-**/AppData/
-**/AppData/**/*
-## Scripts
-.chezmoiscripts/init-untracked-env.ps1
-.chezmoiscripts/install-pkgs.ps1
 {{ end }}
