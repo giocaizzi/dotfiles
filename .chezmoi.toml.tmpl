@@ -10,6 +10,9 @@
     autoCommit = true
     autoPush = true
 
+# Configures `chezmoi merge`: the 3-way merge tool used to reconcile drift
+# between source (chezmoi), target (rendered) and destination (home) files.
+# Unrelated to git's merge configuration.
 [merge]
 {{- if eq .chezmoi.os "windows" }}
     command = "vim"
