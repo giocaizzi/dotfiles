@@ -32,7 +32,8 @@
     "api@giocaizzi-skills": true,
     "javascript@giocaizzi-skills": true,
     "frontend-design@claude-plugins-official": true{{ if eq .chezmoi.os "darwin" }},
-    "figma@claude-plugins-official": true{{ end }}
+    "figma@claude-plugins-official": true,
+    "expo@claude-plugins-official": true{{ end }}
   },
   "extraKnownMarketplaces": {
     "giocaizzi-skills": {
@@ -40,8 +41,16 @@
         "source": "github",
         "repo": "giocaizzi/skills"
       }
-    }
+    }{{ if .chezmoi.os eq "darwin" }},
+    "expo-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "expo/skills"
+      }
+    }{{ end }}
   },
   "effortLevel": "xhigh",
+  "remoteControlAtStartup": false,
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true
 }
