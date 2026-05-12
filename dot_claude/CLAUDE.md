@@ -67,7 +67,7 @@
 
 ## Versioning
 
-- Always update the version number when making changes.
+- Always ensure the current branch has the correct version number against the target release (most often main branch) when making changes.
 - Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
 
 ---
