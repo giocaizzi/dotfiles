@@ -233,6 +233,7 @@
     ],
     // --- Notebooks ---
     "notebook.lineNumbers": "on",
+    "python.terminal.useEnvFile": true,
     // --- Red Hat YAML ---
     "redhat.telemetry.enabled": true,
     // --- Remote ---
@@ -259,5 +260,6 @@
     "typescript.updateImportsOnFileMove.enabled": "always",
     // --- VSCode ---
     "workbench.colorTheme": "Dark Modern",
-    "git.confirmSync": false
+    "git.confirmSync": false,
+    "chat.viewSessions.orientation": "stacked"
 }
