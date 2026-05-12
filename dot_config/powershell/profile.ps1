@@ -50,6 +50,18 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
 }
 
 # ----------------------------------------------------------------------------
+# 3b. FILE-SYSTEM COLORS (PS 7.2+)
+# ----------------------------------------------------------------------------
+# Override defaults that use background colors (unreadable on dark terminals).
+# Use foreground-only ANSI so Get-ChildItem stays legible.
+
+if ($PSStyle) {
+    $PSStyle.FileInfo.Directory    = "`e[1;34m"   # bold blue
+    $PSStyle.FileInfo.SymbolicLink = "`e[1;36m"   # bold cyan
+    $PSStyle.FileInfo.Executable   = "`e[1;32m"   # bold green
+}
+
+# ----------------------------------------------------------------------------
 # 4. SHARED SNIPPETS
 # ----------------------------------------------------------------------------
 
