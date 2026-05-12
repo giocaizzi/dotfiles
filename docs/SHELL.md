@@ -28,7 +28,7 @@ profile.ps1       sources →  ~/.config/powershell/{aliases.ps1, fzf.ps1} + PSR
 | `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases (rendered from `shortcuts.toml`)                          | Unix + Git Bash     |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
 | `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from `shortcuts.toml`)                   | Windows             |
-| `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars                                                | Windows             |
+| `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
 | `.chezmoidata/shortcuts.toml`            | Single source for cross-shell shortcuts                                 | all                 |
 
 ## Adding a new shortcut
@@ -70,7 +70,7 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | `nvm`         |  ✓   |  —  |     —      | `.bashrc` only                                             |
 | `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `git docker gh`)                        |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
-| `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T parity with bash/zsh            |
+| `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
 
 ## Secrets
 
