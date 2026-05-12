@@ -14,8 +14,9 @@ export FZF_DEFAULT_OPTS='
   --padding=1
   --preview-window=right:60%:wrap
   --bind ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down
-  --color fg:252,bg:233,hl:67,fg+:252,bg+:235,hl+:81
-  --color info:144,prompt:161,spinner:135,pointer:135,marker:118
+  --color fg:#cdd6f4,bg:-1,hl:#89b4fa,fg+:#cdd6f4,bg+:-1,hl+:#89dceb
+  --color info:#94e2d5,prompt:#f5c2e7,spinner:#f5c2e7,pointer:#f38ba8,marker:#a6e3a1
+  --color border:#45475a,header:#f9e2af,gutter:-1
 '
 
 export FZF_CTRL_R_OPTS="
