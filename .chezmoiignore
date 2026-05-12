@@ -14,6 +14,11 @@ AGENTS.md
 docs
 apps/
 
+# --- tool-owned files (intentionally unmanaged) ---
+# Sourcetree (and other GUIs) rewrite ~/.gitconfig directly; our managed git
+# config lives at ~/.config/git/config (XDG) instead. Both are read by git.
+.gitconfig
+
 # ------------------------------------
 # Machine specific ignores:
 # These files are specific to certain operating systems and should be ignored on others.
@@ -33,7 +38,7 @@ apps/
 # --- Unix-like systems (macOS + Linux) ---
 # Ignore bash scripts on Windows (uses PowerShell)
 {{ if eq .chezmoi.os "windows" }}
-.chezmoiscripts/env.sh
+.chezmoiscripts/init-untracked-env.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}
 
@@ -47,6 +52,5 @@ apps/
 **/AppData/
 **/AppData/**/*
 ## Scripts
-.chezmoiscripts/env.ps1
 .chezmoiscripts/init-untracked-env.ps1
 {{ end }}
