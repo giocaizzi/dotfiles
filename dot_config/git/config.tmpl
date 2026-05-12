@@ -19,6 +19,8 @@
 	helper = osxkeychain
 {{- else if eq .chezmoi.os "windows" }}
 	helper = wincred
+{{- else if eq .chezmoi.os "linux" }}
+	helper = cache --timeout=3600
 {{- end }}
 
 [diff]
@@ -27,7 +29,7 @@
 [difftool "vimdiff"]
 {{- if eq .chezmoi.os "windows" }}
 	cmd = vim -d "$LOCAL" "$REMOTE"
-{{- else if eq .chezmoi.os "darwin" }}
+{{- else }}
 	cmd = vimdiff "$LOCAL" "$REMOTE"
 {{- end }}
 
@@ -38,7 +40,7 @@
 [mergetool "vimdiff"]
 {{- if eq .chezmoi.os "windows" }}
 	cmd = vim -d "$LOCAL" "$REMOTE" "$MERGED"
-{{- else if eq .chezmoi.os "darwin" }}
+{{- else }}
 	cmd = vimdiff "$LOCAL" "$REMOTE" "$MERGED"
 {{- end }}
 	trustExitCode = true

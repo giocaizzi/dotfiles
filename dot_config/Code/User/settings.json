@@ -260,6 +260,5 @@
     "typescript.updateImportsOnFileMove.enabled": "always",
     // --- VSCode ---
     "workbench.colorTheme": "Dark Modern",
-    "git.confirmSync": false,
-    "chat.viewSessions.orientation": "stacked"
+    "git.confirmSync": false
 }

@@ -159,17 +159,18 @@ Check ignored files: `chezmoi ignored`
 
 ## This Repository's Cross-Platform Structure
 
-Manages macOS, Linux, and Windows config in one source:
+Manages macOS, Linux, and Windows config in one source. Canonicals live under `dot_config/<xdg-path>/`; per-OS destinations are symlinks pointing back to them.
 
 ```
-apps/            ← Actual config files (vscode, ghostty, etc.)
-Library/         ← macOS app config paths (symlinks via templates)
-AppData/         ← Windows app config paths (symlinks via templates)
-.chezmoiignore   ← Excludes OS-specific dirs on wrong platform
-.chezmoiscripts/ ← Setup scripts
+dot_config/      ← canonical configs (vscode, ghostty, powershell, etc.)
+Library/         ← macOS destinations (symlinks via templates)
+AppData/         ← Windows destinations (symlinks via templates)
+.chezmoidata/    ← template data (e.g. shortcuts.toml for cross-shell aliases)
+.chezmoiignore   ← excludes per-OS paths on the wrong platform
+.chezmoiscripts/ ← setup + package install scripts (.sh / .ps1 variants)
 ```
 
-Symlink templates (e.g. `Library/Application Support/Code/User/symlink_settings.json.tmpl`) point to `apps/vscode/settings.json` for centralized management. The `.chezmoiignore` excludes `Library/` on non-macOS and `AppData/` on non-Windows.
+Symlink templates (e.g. `Library/Application Support/Code/User/symlink_settings.json.tmpl`) contain `{{ .chezmoi.sourceDir }}/dot_config/Code/User/settings.json`. On Linux the canonical file deploys directly to `~/.config/...`; `.chezmoiignore` excludes `Library/` on non-macOS, `AppData/` on non-Windows, and gates `dot_config/Code`/`dot_config/ghostty` to Linux only.
 
 ## Daily Operations
 
@@ -224,7 +225,7 @@ Create `.chezmoiscripts/run_once_before_10_setup.sh.tmpl`:
 
 ### Add config for a new OS-specific app path
 
-1. Place config in `apps/myapp/config`
-2. Create the OS-specific symlink source (e.g. `Library/Application Support/MyApp/symlink_config.tmpl`)
-3. Add exclusion to `.chezmoiignore` for other OSes
+1. Place canonical config under `dot_config/<xdg-path>/` (the Linux XDG location)
+2. Create OS-specific symlink sources (e.g. `Library/Application Support/MyApp/symlink_config.tmpl`) containing `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/config`
+3. If the canonical should NOT deploy directly on Linux (e.g. Windows-only apps), add it to `.chezmoiignore` unconditionally; otherwise gate it under `{{ if ne .chezmoi.os "linux" }}`
 4. Run `chezmoi apply -v -n` to verify
