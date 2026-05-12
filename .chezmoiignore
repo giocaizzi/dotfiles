@@ -60,4 +60,5 @@ apps/
 **/AppData/**/*
 ## Scripts
 .chezmoiscripts/init-untracked-env.ps1
+.chezmoiscripts/install-pkgs.ps1
 {{ end }}
