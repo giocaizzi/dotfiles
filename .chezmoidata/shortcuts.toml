@@ -1,0 +1,18 @@
+# ----------------------------------------------------------------------------
+# Cross-shell shortcuts — single source of truth
+# ----------------------------------------------------------------------------
+# Rendered into:
+#   ~/.config/shell/aliases.sh        (sourced by .profile)
+#   ~/.config/powershell/aliases.ps1  (sourced by PowerShell profile.ps1)
+#
+# Add a new shortcut here once; both shells get it on `chezmoi apply`.
+# ----------------------------------------------------------------------------
+
+[shortcuts.git]
+gs = "git status"
+ga = "git add"
+gc = "git commit -v"
+gd = "git diff"
+gp = "git push"
+gl = "git pull"
+glog = "git log --oneline --decorate --graph"

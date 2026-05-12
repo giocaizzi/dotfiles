@@ -1,54 +1,46 @@
 # OS-Specific Configuration
 
-This document describes which files are managed by chezmoi on each operating system.
+How each managed file maps to its destination per OS. Canonical sources live under `dot_config/` in the repo; OS-specific destinations symlink to them via `{{ .chezmoi.sourceDir }}/...`.
 
-## ✅ Configuration Summary
+## Destination matrix
 
-### 🍎 **macOS**
+| Canonical source (in repo)                          | macOS                                                       | Linux                                          | Windows                                                                            |
+| ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `dot_config/Code/User/{settings,keybindings,mcp}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
+| same + Insiders                                      | `~/Library/.../Code - Insiders/User/` (symlinks → stable)   | `~/.config/Code - Insiders/User/` (symlinks → stable) | `%APPDATA%\Code - Insiders\User\` (symlinks → stable)                       |
+| `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
+| `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
+| `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `~/OneDrive - Jakala SpA/Documenti/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks) |
+| `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
+| `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
+| `dot_mytheme.omp.json`                               | `~/.mytheme.omp.json`                                       | `~/.mytheme.omp.json`                          | `~/.mytheme.omp.json`                                                              |
+| `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
+| `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
+| `dot_vimrc`, `dot_gitignore_global`, `dot_stCommitMsg`, `dot_python-version`, `dot_claude/` | all OSes                                            | all OSes                                       | all OSes                                                                           |
 
-- Bash: `.bash_profile`, `.bashrc`, `.profile`
-- Zsh: `.zshrc`, `.zprofile` ✨ (default shell on macOS)
-- VSCode: `Library/Application Support/Code/User/settings.json`
-- Scripts: `.chezmoiscripts/run_env.sh`, `.chezmoiscripts/run_onchange_install-pkgs.sh`
-- Shared: `.gitconfig`, `.vimrc`, `.mytheme.omp.json`, `.python-version`, `.claude/`
+\* Symlink-target-only sources — never deployed as regular files anywhere (listed in `.chezmoiignore` unconditionally); only referenced via `{{ .chezmoi.sourceDir }}/...` from the Windows-specific symlinks.
 
-**Files ignored:** AppData, OneDrive, PowerShell scripts
+## Bootstrap scripts (`.chezmoiscripts/`)
 
----
+| Script                                       | macOS | Linux | Windows |
+| -------------------------------------------- | :---: | :---: | :-----: |
+| `run_once_init-untracked-env.sh`             |  ✓    |  ✓    |   —     |
+| `run_once_init-untracked-env.ps1`            |  —    |  —    |   ✓     |
+| `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
+| `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
 
-### 🐧 **Linux (Raspberry Pi)**
+## Asymmetries (by design)
 
-- Bash: `.bash_profile`, `.bashrc`, `.profile` ✨ (default shell on Linux)
-- Scripts: `.chezmoiscripts/run_env.sh`, `.chezmoiscripts/run_onchange_install-pkgs.sh`
-- Shared: `.gitconfig`, `.vimrc`, `.mytheme.omp.json`, `.python-version`, `.claude/`
+- **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font.
+- **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
+- **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
 
-**Files ignored:** `.zshrc`, `.zprofile`, Library, AppData, OneDrive, PowerShell scripts
+## Testing the ignore matrix
 
----
-
-### 🪟 **Windows**
-
-- Bash: `.bash_profile`, `.bashrc`, `.profile` (for Git Bash/WSL)
-- VSCode: `AppData/Roaming/Code/User/settings.json`
-- PowerShell: `OneDrive - Jakala SpA/Documenti/WindowsPowerShell/profile.ps1`
-- Scripts: `.chezmoiscripts/run_env.ps1`
-- Shared: `.gitconfig`, `.vimrc`, `.mytheme.omp.json`, `.python-version`, `.claude/`
-
-**Files ignored:** `.zshrc`, `.zprofile`, Library, bash scripts
-
----
-
-## 🎯 Testing Commands
-
-Test the template for different operating systems:
-
-```bash
-# Test template for macOS
-cat .chezmoiignore | chezmoi execute-template --override-data '{"chezmoi":{"os":"darwin"}}'
-
-# Test template for Linux
-cat .chezmoiignore | chezmoi execute-template --override-data '{"chezmoi":{"os":"linux"}}'
-
-# Test template for Windows
-cat .chezmoiignore | chezmoi execute-template --override-data '{"chezmoi":{"os":"windows"}}'
+```sh
+cat .chezmoiignore | chezmoi execute-template --init \
+  --promptString email=x --promptString gitUser=x --promptString gitEmail=x \
+  --override-data '{"chezmoi":{"os":"darwin"}}'   # or "linux" / "windows"
 ```
+
+For the live OS, `chezmoi managed` and `chezmoi ignored` show the actual split.
