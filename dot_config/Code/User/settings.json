@@ -261,6 +261,5 @@
     // --- TypeScript ---
     "js/ts.updateImportsOnFileMove.enabled": "always",
     // --- VSCode ---
-    "workbench.colorTheme": "Dark Modern",
-    "chat.viewSessions.orientation": "stacked"
+    "workbench.colorTheme": "Dark Modern"
 }
