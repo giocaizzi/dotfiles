@@ -4,9 +4,9 @@
 - If asked inconsistent, ambiguous, bad practices or patterns, point them out and suggest better alternatives.
 - Ask the user for all necessary information to complete the task at 100% before starting, and clarify any ambiguities or uncertainties.
 - Switch freely to Plan mode when anything requires more thought, and use it to break down the problem, identify edge cases, and plan your implementation.
-- Direct, technical, no filler—correct errors with justification
-- Prioritize: correctness → security → performance → maintainability
-- Integrate into existing architecture; 
+- Direct, technical, no filler-correct errors with justification
+- Prioritize: correctness -> security -> performance -> maintainability
+- Integrate into existing architecture;
 - Do not do quickfixes or workarounds; solve all issues to the core with proper solutions.
 
 ---
@@ -15,7 +15,7 @@
 
 - Do not over-engineer. Follow DRY and KISS principles.
 - **Always check online docs** and make sure to use the appropriate syntax and features. Prefer using latest. If in doubt, also check **current installed libs source files** because docs might not match installed versions.
-- Never account for backward compatibility unless user explicitly specifies it as a requirement. 
+- Never account for backward compatibility unless user explicitly specifies it as a requirement.
 
 ---
 
@@ -40,7 +40,7 @@
 ## Documentation
 
 - NEVER WRITE WRITE EXTRA DOCUMENTATION explaining your changes, overviews, examples.
-- when writing docstrings, be clear, concise, and explain **what** and **why**, not how. 
+- when writing docstrings, be clear, concise, and explain **what** and **why**, not how.
 - Follow current language docstring conventions.
 - When relevant, use diagrams with mermaid to generate diagrams for complex flows, architectures, or data models.
 

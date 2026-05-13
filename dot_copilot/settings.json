@@ -1,0 +1,27 @@
+{
+  "extraKnownMarketplaces": {
+    "giocaizzi-skills": {
+      "source": {
+        "source": "github",
+        "repo": "giocaizzi/skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "python@giocaizzi-skills": true,
+    "api@giocaizzi-skills": true,
+    "javascript@giocaizzi-skills": true
+  },
+  "firstLaunchAt": "2026-05-13T08:00:43.171Z",
+  "footer": {
+    "showModelEffort": true,
+    "showDirectory": true,
+    "showBranch": true,
+    "showContextWindow": true,
+    "showQuota": true,
+    "showAgent": true,
+    "showCodeChanges": false,
+    "showUsername": false,
+    "showCustom": true
+  }
+}
