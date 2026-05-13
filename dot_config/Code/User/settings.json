@@ -39,11 +39,9 @@
     // --- Chat ---
     "chat.agent.maxRequests": 1000,
     // additional custom agents
-    "chat.agentFilesLocations": {
-        "~/.ai-assistants/copilot-agents/agents": true,
-        "~/.ai-assistants/ralph-copilot/agents": true
-    },
+    "chat.agentFilesLocations": {},
     "chat.autopilot.enabled": true,
+    "chat.plugins.enabled": true,
     "chat.customAgentInSubagent.enabled": true,
     "chat.editing.alwaysSaveWithGeneratedChanges": true,
     "chat.experimental.useSkillAdherencePrompt": true,
