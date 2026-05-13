@@ -9,6 +9,7 @@
 # Repo meta — never apply
 # ----------------------------------------------------------------------------
 README.md
+AGENTS.md
 CLAUDE.md
 .agents
 .secrets
