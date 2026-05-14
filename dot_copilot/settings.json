@@ -9,8 +9,8 @@
   },
   "enabledPlugins": {
     "python@giocaizzi-skills": true,
-    "api@giocaizzi-skills": true,
-    "javascript@giocaizzi-skills": true
+    "javascript@giocaizzi-skills": true,
+    "api@giocaizzi-skills": true
   },
   "firstLaunchAt": "2026-05-13T08:00:43.171Z",
   "footer": {
