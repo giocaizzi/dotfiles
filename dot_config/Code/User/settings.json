@@ -266,5 +266,6 @@
   "terminal.integrated.suggest.selectionMode": "always",
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
-  "workbench.colorTheme": "Dark Modern"
+  "workbench.colorTheme": "Dark Modern",
+  "chat.viewSessions.orientation": "stacked"
 }
