@@ -43,6 +43,32 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`.
 
+## Style system
+
+All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latte light, auto-switching where supported).
+
+| Token | Mocha hex | Latte hex | Role |
+|---|---|---|---|
+| blue | `#89b4fa` | `#1e66f5` | headings, structural, OMP connectors |
+| mauve | `#cba6f7` | `#8839ef` | main accent, bold, OMP path/session |
+| red | `#f38ba8` | `#d20f39` | git, errors |
+| peach | `#fab387` | `#fe640b` | italic |
+| yellow | `#f9e2af` | `#df8e1d` | warnings, GCP, rate-limit ≥50% |
+| green | `#a6e3a1` | `#40a02b` | battery, math blocks |
+| text | `#cdd6f4` | `#4c4f69` | icons, labels |
+| overlay0 | `#6c7086` | `#9ca0b0` | dim/grey |
+
+**Sources of truth (edit these, then `chezmoi apply`):**
+- `dot_mytheme.omp.json` — oh-my-posh prompt
+- `dot_claude/statusline-command.sh` — Claude Code statusline
+- `dot_claude/settings.json.tmpl` — Claude Code theme (`"theme": "dark"`)
+- `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
+- `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
+- Obsidian vault `.obsidian/plugins/obsidian-style-settings/data.json` — Minimal theme colours
+- Obsidian vault `.obsidian/snippets/` — `html-example.css`, `math.css`
+
+When adding a new tool: use the Mocha/Latte hex values above. Never introduce new accent colours.
+
 ## Docs
 
 - [docs/OS.md](./docs/OS.md) — source → destination matrix per OS.
