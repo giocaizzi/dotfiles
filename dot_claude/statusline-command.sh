@@ -4,13 +4,13 @@
 
 input=$(cat)
 
-# --- colours (ANSI; terminal renders these dimmed) ---
-BLUE='\033[38;2;126;184;218m'   # #7eb8da
-PINK='\033[38;2;255;165;216m'   # #ffa5d8
-WHITE='\033[38;2;255;255;255m'  # #ffffff
-RED='\033[38;2;240;80;50m'      # #F05032  (git)
-YELLOW='\033[38;2;244;180;0m'   # #F4B400  (gcp)
-GREY='\033[38;2;150;150;150m'   # #969696  (dim)
+# --- colours (Catppuccin Mocha) ---
+BLUE='\033[38;2;137;180;250m'   # #89b4fa  blue
+PINK='\033[38;2;203;166;247m'   # #cba6f7  mauve
+WHITE='\033[38;2;205;214;244m'  # #cdd6f4  text
+RED='\033[38;2;243;139;168m'    # #f38ba8  red   (git)
+YELLOW='\033[38;2;249;226;175m' # #f9e2af  yellow (gcp / warnings)
+GREY='\033[38;2;108;112;134m'   # #6c7086  overlay0 (dim)
 RESET='\033[0m'
 
 # --- extract Claude JSON fields ---
@@ -27,11 +27,11 @@ rl_7d_reset=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
 pct_color() {
     local pct=$1
     if [ "$pct" -ge 80 ] 2>/dev/null; then
-        printf '\033[38;2;240;80;50m'
+        printf '\033[38;2;243;139;168m'   # red
     elif [ "$pct" -ge 50 ] 2>/dev/null; then
-        printf '\033[38;2;244;180;0m'
+        printf '\033[38;2;249;226;175m'   # yellow
     else
-        printf '\033[38;2;126;184;218m'
+        printf '\033[38;2;137;180;250m'   # blue
     fi
 }
 
