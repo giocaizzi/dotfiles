@@ -27,6 +27,11 @@ macos-window-shadow = true
 # --- Cursor ---
 cursor-style = block
 cursor-style-blink = false
+# Vivid mauve (Latte palette) chosen for cross-theme visibility: saturated enough
+# to stand out on both Mocha dark and Latte cream backgrounds, and high-contrast
+# against yellow vim diff highlights (DiffText/DiffChange).
+cursor-color = #8839ef
+cursor-text = #cdd6f4
 
 # --- Shell ---
 shell-integration = detect
