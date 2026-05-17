@@ -1,4 +1,8 @@
-:syntax on
-:colorscheme desert
-:set langmenu=en_US.UTF-8
-:language en_US.UTF-8
+syntax on
+if has('termguicolors')
+  set termguicolors
+endif
+set background=dark
+silent! colorscheme catppuccin_mocha
+set langmenu=en_US.UTF-8
+language en_US.UTF-8

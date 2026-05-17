@@ -1,0 +1,38 @@
+# ============================================================================
+# .chezmoiexternal.toml.tmpl — declarative external sources
+# ============================================================================
+# Drop-in-place upstream sources (vim/zsh plugins, themes) fetched by chezmoi
+# on `apply`, refreshed per `refreshPeriod`. Prefer this over a `git clone` in
+# .chezmoiscripts/ when the upstream is "just put this repo at this path" —
+# no build, no PATH wiring, no OS registration.
+#
+# Use install scripts for: tools needing a build step, PATH/registry setup, or
+# package-manager registration. Use symlinks for: canonical per-OS configs.
+#
+# Reference: https://chezmoi.io/reference/special-files-and-directories/chezmoiexternal-format/
+# ============================================================================
+
+# Catppuccin colorscheme for Vim — native vim8+ pack plugin.
+# `:colorscheme catppuccin_mocha` in dot_vimrc activates it.
+{{- if eq .chezmoi.os "windows" }}
+["vimfiles/pack/catppuccin/start/catppuccin"]
+{{- else }}
+[".vim/pack/catppuccin/start/catppuccin"]
+{{- end }}
+    type = "git-repo"
+    url = "https://github.com/catppuccin/vim.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+
+# Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
+# Windows uses PowerShell — both ignored in .chezmoiignore).
+# dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.
+{{- if eq .chezmoi.os "darwin" }}
+[".oh-my-zsh"]
+    type = "git-repo"
+    url = "https://github.com/ohmyzsh/ohmyzsh.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}

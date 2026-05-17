@@ -33,6 +33,18 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
 
+## Externals (`.chezmoiexternal.toml.tmpl`)
+
+Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per `refreshPeriod`. Prefer over an install-script `git clone` whenever the upstream is "drop this repo at this path" (no build, no PATH wiring).
+
+| Entry (target path)                                    | Upstream                                  | macOS | Linux | Windows |
+| ------------------------------------------------------ | ----------------------------------------- | :---: | :---: | :-----: |
+| `~/.vim/pack/catppuccin/start/catppuccin/`             | `github.com/catppuccin/vim`               |  ✓    |  ✓    |   —     |
+| `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
+| `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
+
+**When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), git-clone-plus-plugins flows (pyenv + virtualenv/doctor/update plugins), Registry/PATH setup (pyenv-win), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
+
 ## Asymmetries (by design)
 
 - **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font.
