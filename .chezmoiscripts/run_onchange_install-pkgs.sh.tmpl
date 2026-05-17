@@ -143,14 +143,7 @@ for tool in "${ADDITIONAL_TOOLS[@]}"; do
 	install_tool_macos "$tool"
 done
 
-# Oh My Zsh
-OHMYZSH_DIR="$HOME/.oh-my-zsh"
-if [ -d "$OHMYZSH_DIR" ]; then
-	[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} Oh My Zsh already installed"
-else
-	echo -e "${BLUE}Installing${NC} Oh My Zsh..."
-	git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OHMYZSH_DIR"
-fi
+# Oh My Zsh is fetched declaratively via .chezmoiexternal.toml.tmpl.
 {{- end }}
 
 {{- if eq .chezmoi.os "linux" }}
