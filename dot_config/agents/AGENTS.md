@@ -6,6 +6,7 @@
 - Switch freely to Plan mode when anything requires more thought, and use it to break down the problem, identify edge cases, and plan your implementation.
 - Direct, technical, no filler-correct errors with justification
 - Prioritize: correctness -> security -> performance -> maintainability
+- Never expose secrets, never inline secrets in the chat. Always use environment variables or secure vaults for secrets management, and follow best practices for handling sensitive information.
 - Integrate into existing architecture;
 - Do not do quickfixes or workarounds; solve all issues to the core with proper solutions.
 
