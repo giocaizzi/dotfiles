@@ -23,5 +23,8 @@
     "showCodeChanges": false,
     "showUsername": false,
     "showCustom": true
-  }
+  },
+  "allowedUrls": [
+    "https://docs.github.com"
+  ]
 }
