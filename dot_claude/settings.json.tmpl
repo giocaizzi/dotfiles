@@ -57,17 +57,7 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Read|Edit|Write|Grep|Glob|Bash|NotebookEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash {{ .chezmoi.homeDir }}/.claude/hooks/block-secrets.sh"
-          }
-        ]
-      }
-    ]
+    "PreToolUse": []
   },
   "statusLine": {
     "type": "command",
