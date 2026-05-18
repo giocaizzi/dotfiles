@@ -19,9 +19,55 @@
     ],
     "deny": [
       "DangerousShell",
-      "SystemReboot"
+      "SystemReboot",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.p12)",
+      "Read(**/*.pfx)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)",
+      "Read(**/.aws/credentials)",
+      "Read(**/.aws/config)",
+      "Read(**/.ssh/**)",
+      "Read(**/.netrc)",
+      "Read(**/.npmrc)",
+      "Read(**/.pypirc)",
+      "Read(**/credentials.json)",
+      "Read(**/service-account*.json)",
+      "Read(**/gcp-key*.json)",
+      "Read(**/*.kubeconfig)",
+      "Read(**/kubeconfig)",
+      "Edit(./.env)", "Edit(./.env.*)", "Edit(**/.env)", "Edit(**/.env.*)",
+      "Edit(**/secrets/**)", "Edit(**/.aws/credentials)", "Edit(**/.ssh/**)",
+      "Write(./.env)", "Write(./.env.*)", "Write(**/.env)", "Write(**/.env.*)",
+      "Write(**/secrets/**)", "Write(**/.aws/credentials)", "Write(**/.ssh/**)",
+      "Bash(env)",
+      "Bash(printenv:*)",
+      "Bash(cat:*.env*)",
+      "Bash(cat:*/secrets/*)",
+      "Bash(cat:*.pem)",
+      "Bash(cat:*.key)",
+      "Bash(cat:*id_rsa*)"
     ],
     "defaultMode": "auto"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Grep|Glob|Bash|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash {{ .chezmoi.homeDir }}/.claude/hooks/block-secrets.sh"
+          }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",
