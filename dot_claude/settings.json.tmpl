@@ -42,19 +42,19 @@
       "Read(**/gcp-key*.json)",
       "Read(**/*.kubeconfig)",
       "Read(**/kubeconfig)",
-      "Edit(./.env)", 
-      "Edit(./.env.*)", 
-      "Edit(**/.env)", 
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+      "Edit(**/.env)",
       "Edit(**/.env.*)",
-      "Edit(**/secrets/**)", 
-      "Edit(**/.aws/credentials)", 
+      "Edit(**/secrets/**)",
+      "Edit(**/.aws/credentials)",
       "Edit(**/.ssh/**)",
-      "Write(./.env)", 
-      "Write(./.env.*)", 
-      "Write(**/.env)", 
+      "Write(./.env)",
+      "Write(./.env.*)",
+      "Write(**/.env)",
       "Write(**/.env.*)",
-      "Write(**/secrets/**)", 
-      "Write(**/.aws/credentials)", 
+      "Write(**/secrets/**)",
+      "Write(**/.aws/credentials)",
       "Write(**/.ssh/**)",
       "Bash(env)",
       "Bash(printenv:*)"
@@ -83,6 +83,13 @@
       "source": {
         "source": "github",
         "repo": "giocaizzi/skills"
+      },
+      "autoUpdate": true
+    },
+    "obsidian-skills": {
+      "source": {
+        "source": "github",
+        "repo": "kepano/obsidian-skills"
       },
       "autoUpdate": true
     }{{ if eq .chezmoi.os "darwin" }},
