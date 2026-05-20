@@ -11,7 +11,7 @@
     "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "OTEL_LOG_TOOL_CONTENT": "0",
-    "OTEL_RESOURCE_ATTRIBUTES": "service.namespace=claude-code,deployment.environment.name=production"{{ if eq .chezmoi.os "windows" }},
+    "OTEL_RESOURCE_ATTRIBUTES": "service.namespace=claude-code,host.name={{ .chezmoi.hostname }},host.arch={{ .chezmoi.arch }},deployment.environment.name=production"{{ if eq .chezmoi.os "windows" }},
     "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1"{{ end }}
   },
   "permissions": {
