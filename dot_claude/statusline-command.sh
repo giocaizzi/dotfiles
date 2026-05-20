@@ -59,7 +59,7 @@ fmt_remaining() {
 
 # --- user / host ---
 user=$(whoami)
-host=$(hostname -s)
+host=${HOSTNAME%%.*}
 
 # --- path (replace $HOME with ~) ---
 if [ -n "$cwd" ]; then
@@ -137,4 +137,4 @@ line2=$(printf "${BLUE}└|${RESET} ${PINK}[%s]${RESET}" "$display_path")
 [ -n "$ctx_part" ]   && line2="${line2}${ctx_part}"
 [ -n "$rl_part" ]    && line2="${line2}${rl_part}"
 
-printf "%b\n%b\n" "$line1" "$line2"
+printf '%s\n%s\n' "$line1" "$line2"
