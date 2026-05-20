@@ -1,6 +1,15 @@
 {
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"{{ if eq .chezmoi.os "windows" }},
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_METRICS_EXPORTER": "otlp",
+    "OTEL_LOGS_EXPORTER": "otlp",
+    "OTEL_TRACES_EXPORTER": "otlp",
+    "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "https://otel.giocaizzi.xyz",
+    "OTEL_RESOURCE_ATTRIBUTES": "service.namespace=claude-code,deployment.environment.name=production"
+    {{ if eq .chezmoi.os "windows" }},
     "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1"{{ end }}
   },
   "permissions": {
