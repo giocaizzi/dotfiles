@@ -13,9 +13,16 @@ fi
 # PYENV
 # ----------------------------------------------------------------------------
 
-if command -v pyenv >/dev/null 2>&1; then
-	eval "$(pyenv init - bash)"
-fi
+case "${OSTYPE:-}" in
+	msys*|cygwin*)
+		;;
+	*)
+		if command -v pyenv >/dev/null 2>&1; then
+			pyenv_init="$(pyenv init - bash 2>/dev/null)" && eval "$pyenv_init"
+			unset pyenv_init
+		fi
+		;;
+esac
 
 # ----------------------------------------------------------------------------
 # HISTORY
