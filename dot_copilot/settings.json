@@ -26,6 +26,12 @@
     "showCustom": true
   },
   "allowedUrls": [
-    "https://docs.github.com"
-  ]
+    "https://docs.github.com",
+    "https://learn.microsoft.com"
+  ],
+  "ide": {
+    "autoConnect": false,
+    "openDiffOnEdit": false
+  },
+  "model": "gpt-5.4"
 }
