@@ -267,5 +267,10 @@
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
   "workbench.colorTheme": "Dark Modern",
-  "chat.viewSessions.orientation": "stacked"
+  "chat.viewSessions.orientation": "stacked",
+  "chat.mcp.serverSampling": {
+    "Azure MCP Server Provider: Azure MCP": {
+      "allowedDuringChat": true
+    }
+  }
 }
