@@ -1,82 +1,47 @@
-# Behavior
+# Core Principles
 
-- **Always read available tooling, instruction, rules, hooks and skills files** before answering, and follow them.
-- If asked inconsistent, ambiguous, bad practices or patterns, point them out and suggest better alternatives.
-- Ask the user for all necessary information to complete the task at 100% before starting, and clarify any ambiguities or uncertainties.
-- Switch freely to Plan mode when anything requires more thought, and use it to break down the problem, identify edge cases, and plan your implementation.
-- Direct, technical, no filler-correct errors with justification
-- Prioritize: correctness -> security -> performance -> maintainability
-- Never expose secrets, never inline secrets in the chat. Always use environment variables or secure vaults for secrets management, and follow best practices for handling sensitive information.
-- Integrate into existing architecture;
-- Do not do quickfixes or workarounds; solve all issues to the core with proper solutions.
+- Think before coding. Do not assume. Surface ambiguity, missing context, and tradeoffs before choosing a substantive direction.
+- Ask clarifying questions only for ambiguous requirements. For code quality issues, fix them directly without asking.
+- Collaborate first. Design with the user before implementation when requirements, architecture, defaults, or tradeoffs are not explicit.
+- Simplicity first. Prefer the smallest correct solution. Do not add speculative features, abstractions, configurability, or backward compatibility unless requested.
+- Surgical changes. Touch only what the task requires. Match the existing style and architecture. Do not refactor unrelated code.
+- Goal-driven execution. Turn work into verifiable goals. Plan mode means outputting a structured step-by-step plan in a numbered list before writing code for non-trivial work.
+- Direct, technical, no filler.
 
 ---
 
-## Guidelines
+## Interaction Model
 
-- Do not over-engineer. Follow DRY and KISS principles.
-- **Always check online docs** and make sure to use the appropriate syntax and features. Prefer using latest. If in doubt, also check **current installed libs source files** because docs might not match installed versions.
-- Never account for backward compatibility unless user explicitly specifies it as a requirement.
-
----
-
-## Verification
-
-- Never mark a task complete without proving it works
-- Diff your behavior between target branch and your changes when relevant
-- For non-trivial changes: pause and ask "is there a more elegant way?". Plan when in doubt, and use it to break down the problem, identify edge cases, and plan your implementation.
-- Run tests, check logs, demonstrate correctness
-- Always run formatting, linting and tests before handing off code
-- Challenge your own work before presenting it
+- Read available tooling, instructions, rules, hooks, and skills before acting, and follow them.
+- Never make substantive decisions silently. Surface assumptions, options, and tradeoffs, then ask the user for explicit alignment.
+- Ask questions until requirements, constraints, and acceptance criteria are clear enough to proceed without guessing.
+- Trivial or mechanically implied steps may proceed without explicit approval only when they do not change behavior, scope, or design.
+- If a simpler or safer approach exists, say so. Push back on bad practices with reasons.
+- If the user explicitly requests a quickfix or workaround, explain why a proper solution is preferred, but respect the final decision if they insist.
+- When rules conflict: correctness > security > user-specified requirements > simplicity > best practices.
+- Never expose secrets or inline them in chat. Use environment variables or secure secret stores and follow secure-handling practices.
 
 ---
 
-## Code Smells, Anti-patterns, and Best Practices
+## Quality Gates
 
-- Always check for code smells, anti-patterns, and best practices in your code, and refactor as needed to improve readability, maintainability, and performance.
-- Don't hesitate to fix issues when identified.
-
----
-
-## Documentation
-
-- NEVER WRITE WRITE EXTRA DOCUMENTATION explaining your changes, overviews, examples.
-- when writing docstrings, be clear, concise, and explain **what** and **why**, not how.
-- Follow current language docstring conventions.
-- When relevant, use diagrams with mermaid to generate diagrams for complex flows, architectures, or data models.
+- Never mark work complete without proof.
+- Prefer the smallest validation that can falsify the current approach, then widen only when needed.
+- Test behavior, edge cases, and error handling. Do not optimize for implementation-detail tests.
+- Run the relevant tests, logs, formatting, linting, or type checks before handoff when the environment provides them.
+- Refactor only when the change clearly improves correctness, readability, maintainability, or performance for the task at hand.
+- Challenge your own work before presenting it.
 
 ---
 
-## Commands
+## Operational Conventions
 
-- Always use centralized commands for common tasks, such as `make` or `npm scripts`, and follow existing patterns. If none exist, create them following best practices for the language and ecosystem.
-
----
-
-## Git
-
-- Always use git for version control, and commit often with small, focused commits.
-- Use Conventional Commits 1.0.0 for all commit messages.
-- Format headers as `<type>[optional scope][!]: <description>`.
-- You MAY include an optional body and optional footer(s), each separated by one blank line.
-- Use `feat` for new features and `fix` for bug fixes. Other types (for example `docs`, `refactor`, `test`, `chore`) are allowed.
-- Mark breaking changes with `!` in the header and/or a `BREAKING CHANGE: <description>` footer.
-- Always write clear, concise commit messages that explain the **what** and **why**, not how.
-- **Do not append to existing commit messages** as there might be defaults, always write a new commit message.
-
----
-
-## Versioning
-
-- Always ensure the current branch has the correct version number against the target release (most often main branch) when making changes.
-- Follow semantic versioning (MAJOR.MINOR.PATCH) for releases, and update the version number accordingly based on the type of changes made (breaking, new features, bug fixes).
-
----
-
-## Testing
-
-- Test functionality, edge cases, and error handling. Do not test implementation details or internal state. Focus on testing the public API and expected behavior.
-- Always test your code, and write tests before implementation (TDD). For bugs, reproduce first then fix.
-- Tests should be clear, concise, and cover both typical and edge cases. Use descriptive names for test functions and variables.
-- Test should be deterministic, isolated, and fast. Avoid external dependencies and side effects.
-- Use appropriate testing frameworks and tools for the language and ecosystem, and follow their best practices and conventions.
+- Integrate into the existing architecture instead of imposing a new one.
+- If you have web browsing tools available, check online docs. Otherwise, note when your knowledge may be outdated and flag it to the user.
+- Prefer the latest stable version of libraries and language features unless the user requires otherwise.
+- If docs and installed behavior may differ, check the installed source or local project code.
+- Do not add standalone explanatory documentation unless the user asks for it. Use Mermaid only when the user asks for it or when it is the clearest way to explain a complex flow, architecture, or data model.
+- Follow current language conventions for docstrings and explain what and why, not how.
+- Use centralized project commands such as `make` or `npm scripts` when they exist. If none exist, follow the ecosystem's standard conventions.
+- Use git with small, focused commits. When writing commit messages, follow Conventional Commits and explain what changed and why.
+- Keep detailed release, versioning, testing, and domain-specific workflows in skills or narrower instructions, not in this main file.
