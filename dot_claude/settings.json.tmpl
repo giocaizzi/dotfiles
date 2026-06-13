@@ -30,12 +30,13 @@
       "RunTests"
     ],
     "deny": [
-      "DangerousShell",
-      "SystemReboot",
-      "Read(./.env)",
-      "Read(./.env.*)",
       "Read(**/.env)",
-      "Read(**/.env.*)",
+      "Read(**/.env.local)",
+      "Read(**/.env.*.local)",
+      "Read(**/.env.development)",
+      "Read(**/.env.production)",
+      "Read(**/.env.staging)",
+      "Read(**/.env.test)",
       "Read(**/secrets/**)",
       "Read(**/*.pem)",
       "Read(**/*.key)",
@@ -54,17 +55,23 @@
       "Read(**/gcp-key*.json)",
       "Read(**/*.kubeconfig)",
       "Read(**/kubeconfig)",
-      "Edit(./.env)",
-      "Edit(./.env.*)",
       "Edit(**/.env)",
-      "Edit(**/.env.*)",
+      "Edit(**/.env.local)",
+      "Edit(**/.env.*.local)",
+      "Edit(**/.env.development)",
+      "Edit(**/.env.production)",
+      "Edit(**/.env.staging)",
+      "Edit(**/.env.test)",
       "Edit(**/secrets/**)",
       "Edit(**/.aws/credentials)",
       "Edit(**/.ssh/**)",
-      "Write(./.env)",
-      "Write(./.env.*)",
       "Write(**/.env)",
-      "Write(**/.env.*)",
+      "Write(**/.env.local)",
+      "Write(**/.env.*.local)",
+      "Write(**/.env.development)",
+      "Write(**/.env.production)",
+      "Write(**/.env.staging)",
+      "Write(**/.env.test)",
       "Write(**/secrets/**)",
       "Write(**/.aws/credentials)",
       "Write(**/.ssh/**)",
@@ -80,18 +87,16 @@
     "type": "command",
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
   },
-  {{ if eq .chezmoi.os "windows" }}
+  {{- if eq .chezmoi.os "windows" }}
   "defaultShell": "powershell",
-  {{ end }}
+  {{- end }}
   "enabledPlugins": {
     "python@giocaizzi-skills": true,
     "api@giocaizzi-skills": true,
     "javascript@giocaizzi-skills": true,
     "dev-tools@giocaizzi-skills": true,
     "frontend-design@claude-plugins-official": true,
-    "skill-creator@claude-plugins-official": true{{ if eq .chezmoi.os "darwin" }},
-    "greenhouse@greenhouse": true,
-    "firefly-iii@firefly-iii": true{{ end }}
+    "skill-creator@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "giocaizzi-skills": {
@@ -107,23 +112,10 @@
         "repo": "kepano/obsidian-skills"
       },
       "autoUpdate": true
-    }{{ if eq .chezmoi.os "darwin" }},
-    "greenhouse": {
-      "source": {
-        "source": "github",
-        "repo": "giocaizzi/greenhouse"
-      },
-      "autoUpdate": true
-    },
-    "firefly-iii": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/giocaizzi/firefly-iii.git",
-        "ref": "feat/mcp-integration"
-      }
-    }{{ end }}
+    }
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "high",
+  "tui": "default",
   "theme": "dark",
   "remoteControlAtStartup": false,
   "inputNeededNotifEnabled": true,
