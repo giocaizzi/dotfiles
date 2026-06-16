@@ -52,6 +52,11 @@
     "~/.copilot": true
   },
   "chat.mcp.gallery.enabled": true,
+  "chat.mcp.serverSampling": {
+    "Azure MCP Server Provider: Azure MCP": {
+      "allowedDuringChat": true
+    }
+  },
   "chat.plugins.enabled": true,
   "chat.promptFilesRecommendations": {},
   "chat.tools.terminal.autoApprove": {
@@ -151,6 +156,7 @@
   "chat.unifiedAgentsBar.enabled": true,
   "chat.useAgentSkills": true,
   "chat.useNestedAgentsMdFiles": true,
+  "chat.viewSessions.orientation": "stacked",
   // --- Claude Code ---
   "claudeCode.preferredLocation": "panel",
   "claudeCode.useTerminal": true,
@@ -238,6 +244,7 @@
   ],
   // --- Notebooks ---
   "notebook.lineNumbers": "on",
+  // --- Python ---
   "python.terminal.useEnvFile": true,
   // --- Red Hat YAML ---
   "redhat.telemetry.enabled": true,
@@ -266,11 +273,5 @@
   "terminal.integrated.suggest.selectionMode": "always",
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
-  "workbench.colorTheme": "Dark Modern",
-  "chat.viewSessions.orientation": "stacked",
-  "chat.mcp.serverSampling": {
-    "Azure MCP Server Provider: Azure MCP": {
-      "allowedDuringChat": true
-    }
-  }
+  "workbench.colorTheme": "Dark Modern"
 }
