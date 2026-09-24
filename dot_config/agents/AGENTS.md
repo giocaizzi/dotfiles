@@ -47,3 +47,4 @@
 - Use centralized project commands such as `make` or `npm scripts` when they exist. If none exist, follow the ecosystem's standard conventions.
 - Use git with small, focused commits. When writing commit messages, follow Conventional Commits and explain what changed and why.
 - Keep detailed release, versioning, testing, and domain-specific workflows in skills or narrower instructions, not in this main file.
+- Claude Code: to check your own usage limits (5h session, weekly), run `cd /tmp && claude -p "/usage"`. It is fresh and official; hooks and the status line cannot supply this reliably.
