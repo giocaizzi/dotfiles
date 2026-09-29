@@ -27,6 +27,10 @@
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
   },
+  // --- Python ---
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
   // --- YAML ---
   "[yaml]": {
     "editor.autoIndent": "advanced",
@@ -39,6 +43,10 @@
   "azureFunctions.showPythonVenvWarning": true,
   // group azure resources by resource group
   "azureResourceGroups.groupBy": "resourceGroup",
+  "azureTerraform.survey": {
+    "surveyPromptDate": "2026-10-03T08:25:45.051Z",
+    "surveyPromptIgnoredCount": 3
+  },
   // --- Chat ---
   "chat.agent.maxRequests": 1000,
   // additional custom agents
@@ -273,5 +281,16 @@
   "terminal.integrated.suggest.selectionMode": "always",
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
-  "workbench.colorTheme": "Dark Modern"
+  "workbench.colorTheme": "Dark Modern",
+  // --- YAML ---
+  "yaml.disableSchemaDetection": [
+    "**/.github/workflows/*.yml",
+    "**/.github/workflows/*.yaml",
+    "**/.gitea/workflows/*.yml",
+    "**/.gitea/workflows/*.yaml",
+    "**/.forgejo/workflows/*.yml",
+    "**/.forgejo/workflows/*.yaml",
+    "azure-pipelines.yml",
+    "azure-pipelines.yaml"
+  ]
 }
