@@ -13,7 +13,6 @@
     "api@giocaizzi-skills": true,
     "dev-tools@giocaizzi-skills": true
   },
-  "firstLaunchAt": "2026-05-13T08:00:43.171Z",
   "footer": {
     "showModelEffort": true,
     "showDirectory": true,
@@ -27,11 +26,12 @@
   },
   "allowedUrls": [
     "https://docs.github.com",
-    "https://learn.microsoft.com"
+    "https://learn.microsoft.com",
+    "https://github.com"
   ],
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false
   },
-  "model": "gpt-5.4"
+  "model": "gpt-5.6-terra"
 }
