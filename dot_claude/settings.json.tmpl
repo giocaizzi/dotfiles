@@ -16,18 +16,9 @@
   },
   "permissions": {
     "allow": [
-      "ReadFile",
-      "ListFiles",
-      "SearchInFiles",
       "WebSearch",
       "WebFetch",
-      "Bash",
-      "EditFile",
-      "WriteFile",
-      "CreateFile",
-      "DeleteFile",
-      "Git",
-      "RunTests"
+      "Bash"
     ],
     "deny": [
       "Read(**/.env)",
@@ -109,6 +100,12 @@
         "repo": "pbakaus/impeccable"
       },
       "autoUpdate": true
+    },
+    "anthropic-agent-skills": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/skills"
+      }
     }
   },
   "effortLevel": "high",
