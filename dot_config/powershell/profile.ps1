@@ -44,7 +44,7 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
     Set-PSReadLineOption -HistorySaveStyle SaveIncrementally
     Set-PSReadLineOption -HistoryNoDuplicates
-    Set-PSReadLineOption -PredictionSource History
+    Set-PSReadLineOption -PredictionSource History -ErrorAction SilentlyContinue
     Set-PSReadLineOption -EditMode Windows
     Set-PSReadLineKeyHandler -Key UpArrow   -Function HistorySearchBackward
     Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
