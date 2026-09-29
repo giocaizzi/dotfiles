@@ -43,5 +43,13 @@
         "command": "-editor.action.inlineSuggest.trigger",
         "key": "alt+\\",
         "when": "editorTextFocus && !editorHasSelection && !inlineSuggestionsVisible"
+    },
+    {
+        "key": "shift+enter",
+        "command": "workbench.action.terminal.sendSequence",
+        "args": {
+            "text": "\u001b\r"
+        },
+        "when": "terminalFocus"
     }
 ]

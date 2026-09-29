@@ -235,10 +235,7 @@
   // --- TypeScript ---
   "js/ts.updateImportsOnFileMove.enabled": "always",
   // --- Jupyter ---
-  "jupyter.widgetScriptSources": [
-    "jsdelivr.com",
-    "unpkg.com"
-  ],
+  "jupyter.widgetScriptSources": ["jsdelivr.com", "unpkg.com"],
   // --- Makefile ---
   "makefile.configureOnOpen": true,
   // --- Mermaid ---
@@ -292,5 +289,8 @@
     "**/.forgejo/workflows/*.yaml",
     "azure-pipelines.yml",
     "azure-pipelines.yaml"
-  ]
+  ],
+  // --- Terminal Performance ---
+  "terminal.integrated.mouseWheelScrollSensitivity": 3,
+  "terminal.integrated.gpuAcceleration": "off"
 }
