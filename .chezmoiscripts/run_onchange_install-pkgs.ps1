@@ -28,6 +28,11 @@ $AdditionalTools = @(
     @{ Name = 'pipx';       Id = $null;                     Cmd = 'pipx' }
 )
 
+# Fonts — no command to probe, so checked with `winget list`
+$Fonts = @(
+    @{ Name = 'JetBrainsMono Nerd Font'; Id = 'DEVCOM.JetBrainsMonoNerdFont' }
+)
+
 # PowerShell modules (parity with bash/zsh shell features)
 $PSModules = @(
     @{ Name = 'PSReadLine'; MinVersion = '2.2.0' }  # History/edit experience
@@ -115,6 +120,23 @@ foreach ($tool in $AdditionalTools) {
         Install-WingetPackage $tool.Name $tool.Id
     } else {
         Install-Custom $tool.Name
+    }
+}
+
+# ============================================================================
+# INSTALL FONTS
+# ============================================================================
+
+Write-Step "Fonts (winget)"
+foreach ($font in $Fonts) {
+    winget list --id $font.Id --exact --source winget *> $null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "$($font.Name) already installed"
+    } else {
+        # No --scope user: font installers may only offer machine scope
+        Write-Info "Installing $($font.Name) ($($font.Id)) via winget..."
+        winget install --id $font.Id --exact --silent `
+            --accept-package-agreements --accept-source-agreements --source winget | Out-Null
     }
 }
 

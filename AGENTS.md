@@ -61,10 +61,12 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 | text | `#cdd6f4` | `#4c4f69` | icons, labels |
 | overlay0 | `#6c7086` | `#9ca0b0` | dim/grey |
 
+**Font:** `JetBrainsMono Nerd Font` in Ghostty, VS Code terminal and Windows Terminal (installed by brew cask / winget / Linux external). These configs are symlink targets, so the name is kept identical by hand.
+
 **Sources of truth (edit these, then `chezmoi apply`):**
 - `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt
 - `dot_claude/statusline-command.sh` — Claude Code statusline
-- `dot_claude/settings.json.tmpl` — Claude Code theme (`"theme": "dark"`)
+- `.chezmoitemplates/claude-settings.json` — Claude Code theme (merged into `~/.claude/settings.json` by `dot_claude/modify_settings.json`, which keeps keys Claude Code writes itself) (`"theme": "dark"`)
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
 - `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
 - `dot_config/vim/vimrc` — `colorscheme catppuccin_mocha` (plugin fetched via `.chezmoiexternal.toml.tmpl`)

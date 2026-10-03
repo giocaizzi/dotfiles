@@ -50,7 +50,7 @@
             "experimental.retroTerminalEffect": false,
             "font": 
             {
-                "face": "MesloLGM Nerd Font",
+                "face": "JetBrainsMono Nerd Font",
                 "size": 11,
                 "weight": "normal"
             },
