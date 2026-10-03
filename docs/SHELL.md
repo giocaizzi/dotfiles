@@ -54,13 +54,14 @@ POSIX shell (`aliases.sh`):
 | `ll` `la` `l`         | `ls -lah`, `ls -A`, `ls -CF`             |
 | `mkdir`               | `mkdir -p`                               |
 | `df` `du`             | `df -h`, `du -h`                         |
-| `grep` `fgrep` `egrep`| `--color=auto`                           |
-| `python`              | `python3` (if available)                 |
+| `grep`                | `grep --color=auto`                      |
+| `python`              | `python3`, only where no `python` exists (uv provides it on full machines) |
+| `pipx`                | refuses; use `uv tool install` / `uvx`   |
 | `free` (macOS only)   | `top -l 1 -s 0 \| grep PhysMem`          |
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts (from `shortcuts.toml`) |
 | `hist` / `h`          | fzf history search                       |
 
-PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `function gs { git status @args }`).
+PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `function gs { git status @args }`), removing any same-named built-in alias first (`gc`, `gp`, `gl` are PowerShell built-ins and aliases outrank functions).
 
 ## Tools
 
@@ -69,7 +70,10 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | `fzf`         |  ✓   |  ✓  |     ✓      | env in `fzf.sh`/`fzf.ps1`; bindings in bashrc/zshrc/PSFzf  |
 | `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.config/oh-my-posh/theme.omp.json`|
 | `uv`          |  ✓   |  ✓  |     ✓      | Python + CLI tools in `~/.local/bin` (on PATH in `.profile` / `profile.ps1`) |
-| `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `git docker gh`)                        |
+| `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `docker gh`; no `git` plugin, the shared shortcuts cover git) |
+| readline      |  ✓   |  —  |     —      | `~/.config/readline/inputrc` via `$INPUTRC`: ↑/↓ prefix history search, case-insensitive completion |
+| `less`        |  ✓   |  ✓  |     —      | `PAGER`/`LESS`/`MANPAGER` in `.profile` (colour, quit if one screen, smart-case search) |
+| `tmux`        |  ✓   |  ✓  |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
 | `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
 
