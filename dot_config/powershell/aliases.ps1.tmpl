@@ -14,6 +14,10 @@ function .... { Set-Location ..\..\.. }
 function ll { Get-ChildItem -Force @args }
 function la { Get-ChildItem -Force -Hidden @args }
 
+# --- Python ---
+# CLI tools come from uv; refuse pipx (a function wins over a reinstalled exe)
+function pipx { Write-Error "pipx is not used here, use uv: uv tool install <pkg> | uvx <pkg> | uv tool upgrade --all" }
+
 # --- Git shortcuts (generated from .chezmoidata/shortcuts.toml) ---
 {{ range $name, $cmd := .shortcuts.git -}}
 function {{ $name }} { {{ $cmd }} @args }
