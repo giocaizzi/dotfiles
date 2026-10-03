@@ -68,7 +68,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 | `chezmoi merge <file>` | reconcile a file changed on both sides |
 | `chezmoi cd` | open a shell in the source repo |
 
-`autoCommit`/`autoPush` are on: `chezmoi edit`/`add` commit and push immediately. If a push fails, the next `chezmoi update` on another machine stops on diverged history — push from the machine that has the commits first.
+`autoCommit`/`autoPush` are on: `chezmoi edit`/`add` commit and push immediately, with Conventional Commit messages (`chore: add .ssh/config`, from `.commit-message.tmpl`). If a push fails, the next `chezmoi update` on another machine stops on diverged history — push from the machine that has the commits first.
 
 ## Secrets
 
