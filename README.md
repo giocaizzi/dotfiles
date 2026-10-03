@@ -4,26 +4,35 @@ My configuration for macOS, Linux and Windows from a single source, managed with
 
 ## Set up a new machine
 
-1. **Install chezmoi** into `~/.local/bin`:
+First decide the machine's role ([details](./docs/OS.md#machine-roles)): **personal** (full, your vault available), **work** (full, corporate; no personal vault) or **light** (headless box over SSH, e.g. the Raspberry Pi). Then:
+
+1. **Prerequisites**
+   - macOS: [Homebrew](https://brew.sh) (the install script stops without it).
+   - Windows: Developer Mode on (Settings → System → For developers), so chezmoi can create symlinks without admin; winget (App Installer).
+   - Linux: `sudo` for apt.
+
+2. **Install chezmoi** (and `bw` on personal machines; chezmoi's install script adds it later too, but you need it now for step 3):
 
    ```shell
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # macOS / Linux
+   brew install chezmoi bitwarden-cli                          # macOS
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # Linux (bw: see bitwarden.com/help/cli)
    winget install twpayne.chezmoi                              # Windows
    ```
 
-2. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only). Without it, `apply` stops at the first encrypted file (see [docs/OS.md](./docs/OS.md#encrypted-files-age)).
-   - **Personal machine:** fetch it from the Bitwarden vault (secure note `chezmoi age key`):
+3. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only) — every role needs it, or `apply` stops at the first encrypted file ([why](./docs/OS.md#encrypted-files-age)):
+   - **Personal:** from the vault (secure note `chezmoi age key`):
 
      ```shell
      bw login
      mkdir -p ~/.config/chezmoi && (umask 077; bw get notes "chezmoi age key" --session "$(bw unlock --raw)" > ~/.config/chezmoi/key.txt)
+     bw lock
      ```
 
-   - **Work machine:** copy it by hand over a secure channel (your personal vault doesn't go on a work PC) — never through this repo or chat.
+   - **Work / light:** copy it from a machine that has it over a secure channel, e.g. `ssh pi.local 'mkdir -p ~/.config/chezmoi' && scp ~/.config/chezmoi/key.txt pi.local:.config/chezmoi/ && ssh pi.local 'chmod 600 ~/.config/chezmoi/key.txt'` — never through this repo or chat.
 
-3. **Windows only:** turn on Developer Mode (Settings → System → For developers) so chezmoi can create symlinks without admin.
+4. **Create this machine's Secrets Manager token** (personal and work only; [details](./docs/OS.md#bitwarden)): in the Bitwarden **web app** → Secrets Manager → *Machine accounts* → new account named after the machine → *Projects*: **Can read** on `personal` (or `work`) → *Access tokens*: create one and copy it (shown once). Also copy the project's ID.
 
-4. **Init and apply:**
+5. **Init and apply:**
 
    ```shell
    chezmoi init --apply giocaizzi/dotfiles
@@ -31,14 +40,22 @@ My configuration for macOS, Linux and Windows from a single source, managed with
 
    `chezmoi init` asks once per machine and stores the answers only in that machine's `~/.config/chezmoi/chezmoi.toml`:
 
-   | Prompt | Answer |
-   |---|---|
-   | User name / Email address | git identity |
-   | Light install (shell, git, vim, prompt only) | yes for headless boxes over SSH (e.g. the Raspberry Pi) |
-   | Work computer (work git identity, no personal telemetry) | yes on the corporate PC; then asks the work repos folder and work email |
-   | Bitwarden Secrets Manager access token for this machine | this machine's own machine-account token (blank = keep the secrets file by hand); then the project ID. Not asked on light machines. Visible while typed. |
+   | Prompt | personal | work | light |
+   |---|---|---|---|
+   | User name / Email address | git identity | git identity | git identity |
+   | Light install (shell, git, vim, prompt only) | no | no | **yes** |
+   | Work computer (work git identity, no personal telemetry) | no | **yes** → work repos folder (real path) + work email | no |
+   | Bitwarden Secrets Manager access token / project ID | token + `personal` ID | token + `work` ID | not asked |
 
-   What each answer changes: [docs/OS.md → Machine roles](./docs/OS.md#machine-roles). To change answers later, run `chezmoi init --prompt` (asks every question again) — use this for the Bitwarden token so it never lands in shell history. For a single yes/no: `chezmoi init --promptBool "Light install (shell, git, vim, prompt only)=true"` (the flag matches the prompt text).
+   The token is visible while typed. To change answers later, `chezmoi init --prompt` (asks everything again; keeps the token out of shell history).
+
+6. **Apply once more** — the first apply downloads `bws`, the second renders the env secrets from Bitwarden:
+
+   ```shell
+   chezmoi apply && chezmoi status   # status prints nothing when done
+   ```
+
+   Open a new shell (Windows: a new PowerShell window). Light machines are done after step 5.
 
 ## Everyday use
 
