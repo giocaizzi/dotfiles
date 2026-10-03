@@ -48,7 +48,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓    |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 
-**When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), git-clone-plus-plugins flows (pyenv + virtualenv/doctor/update plugins), Registry/PATH setup (pyenv-win), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
+**When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), official installer scripts (uv), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
 
 ## Asymmetries (by design)
 

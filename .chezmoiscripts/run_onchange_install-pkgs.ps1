@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 # ============================================================================
 
 $Verbose = $true
+$PythonVersion = '3.13'  # global python, installed by uv
 
 # ============================================================================
 # PACKAGE DEFINITIONS (Single Source of Truth)
@@ -24,8 +25,7 @@ $CorePackages = @(
 
 $AdditionalTools = @(
     @{ Name = 'oh-my-posh'; Id = 'JanDeDobbeleer.OhMyPosh'; Cmd = 'oh-my-posh' }
-    @{ Name = 'pyenv-win';  Id = $null;                     Cmd = 'pyenv' }
-    @{ Name = 'pipx';       Id = $null;                     Cmd = 'pipx' }
+    @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }  # replaces pyenv-win/pipx
 )
 
 # Fonts — installed per user by oh-my-posh (no admin; managed PCs block the
@@ -60,22 +60,13 @@ function Install-WingetPackage([string]$name, [string]$id) {
 
 function Install-Custom([string]$name) {
     switch ($name) {
-        'pyenv-win' {
-            Write-Info "Installing pyenv-win..."
-            $installer = "$env:TEMP\install-pyenv-win.ps1"
-            Invoke-WebRequest -UseBasicParsing `
-                -Uri "https://raw.githubusercontent.com/pyenv-win/pyenv-win/master/pyenv-win/install-pyenv-win.ps1" `
-                -OutFile $installer
-            & $installer
-        }
-        'pipx' {
-            if (-not (Test-Command 'python')) {
-                Write-Warning "python not found; skipping pipx install"
-                return
-            }
-            Write-Info "Installing pipx..."
-            python -m pip install --user --upgrade pipx
-            python -m pipx ensurepath
+        'uv' {
+            # Official installer → ~\.local\bin, user-only (no admin; winget's
+            # user scope misplaces portable packages on managed PCs).
+            # UV_NO_MODIFY_PATH: profile.ps1 already puts ~\.local\bin on PATH.
+            Write-Info "Installing uv..."
+            $env:UV_NO_MODIFY_PATH = '1'
+            Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
         }
         default {
             Write-Warning "No custom installer defined for $name"
@@ -122,6 +113,20 @@ foreach ($tool in $AdditionalTools) {
     } else {
         Install-Custom $tool.Name
     }
+}
+
+# ============================================================================
+# PYTHON (uv)
+# ============================================================================
+
+Write-Step "Python $PythonVersion (uv)"
+$uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
+if (-not $uv) { $uv = Join-Path $HOME '.local\bin\uv.exe' }
+if (Test-Path $uv) {
+    # --default adds python.exe/python3.exe (marked experimental by uv)
+    & $uv python install $PythonVersion --default
+} else {
+    Write-Warning "uv not found; skipping Python install"
 }
 
 # ============================================================================
