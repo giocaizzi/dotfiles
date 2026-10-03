@@ -31,6 +31,5 @@
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false
-  },
-  "model": "gpt-5.4"
+  }
 }

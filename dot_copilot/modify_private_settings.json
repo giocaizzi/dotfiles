@@ -1,0 +1,9 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Managed keys (.chezmoitemplates/copilot-settings.json) win; keys Copilot
+       writes itself (e.g. model) stay local. allowedUrls is a union, so URLs
+       approved in Copilot survive alongside the managed baseline. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $managed := includeTemplate "copilot-settings.json" . | fromJson -}}
+{{- $urls := concat ($current.allowedUrls | default list) $managed.allowedUrls | uniq -}}
+{{- mergeOverwrite $current $managed | setValueAtPath "allowedUrls" $urls | toPrettyJson }}
