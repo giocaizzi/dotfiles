@@ -68,7 +68,7 @@ Two independent yes/no answers, asked once per machine by `chezmoi init` and sto
 | Flag | Prompt | When true |
 |---|---|---|
 | `light` | Light install (shell, git, vim, prompt only) | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, AGENTS.md and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux` + oh-my-posh (no uv/Python). |
-| `work` | Work computer (work git identity, no personal telemetry) | Asks the work repos folder and work email. Repos under that folder commit with the work email (`~/.config/git/config` → `includeIf "gitdir/i:<folder>/"` → `~/.config/git/work`); use the folder's real path, not a symlink. Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
+| `work` | Work computer (work git identity, no personal telemetry) | Asks the work email plus how to recognise work repos, either or both (blank = skip): a **work repos folder** (`includeIf "gitdir/i:<folder>/"`; use its real path, not a symlink) and/or **remote URL globs** (`includeIf "hasconfig:remote.*.url:<glob>"`, git ≥ 2.36), so repos in any folder with a matching remote get the work email via `~/.config/git/work`. In a glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. Repos without a matching remote keep the personal email. Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
