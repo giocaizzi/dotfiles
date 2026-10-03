@@ -47,6 +47,16 @@ ADDITIONAL_TOOLS=(
 	"oh-my-posh"
 )
 
+{{- if get . "light" }}
+
+# Light machines: core tools + the prompt only
+CORE_PACKAGES=("fzf" "git" "vim" "fd")
+SHELL_PACKAGES_MACOS=()
+SHELL_PACKAGES_LINUX=()
+FONTS_MACOS=()
+ADDITIONAL_TOOLS=("oh-my-posh")
+{{- end }}
+
 # ============================================================================
 # PACKAGE NAME MAPPING (apt names differ from Homebrew)
 # ============================================================================

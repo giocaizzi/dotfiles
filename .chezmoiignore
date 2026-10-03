@@ -63,6 +63,19 @@ vimfiles
 .chezmoiscripts/link-pwsh-profile.ps1
 {{ end }}
 
+# --- Light machines (data.light, asked once by `chezmoi init`) ---
+# Shell, git, vim and the prompt only: no editors, terminals, AI agents, fonts.
+# `get` tolerates configs created before the light key existed.
+{{ if get . "light" }}
+.claude
+.copilot
+.config/agents
+.config/Code
+.config/Code - Insiders
+.config/ghostty
+.local/share/fonts
+{{ end }}
+
 # --- Windows only ---
 # Vim on Windows reads ~/vimfiles/vimrc (symlink → dot_config/vim/vimrc), not
 # the XDG path. Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
