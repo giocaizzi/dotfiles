@@ -86,7 +86,7 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 - **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
 - **Why env vars**: project `.mcp.json` files expand `${VAR}` from the environment Claude Code is launched with, so MCP tokens must be exported here. Tools with their own credential store (e.g. `~/.config/gh/`, `~/.config/greenhouse/token`) keep it there.
 - **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`.
-- **Claude Code** is denied Read/Edit on both files (`dot_claude/settings.json.tmpl`).
+- **Claude Code** is denied Read/Edit on both files (`.chezmoitemplates/claude-settings.json`).
 
 ```sh
 vim ~/.config/shell/secrets.sh               # Unix

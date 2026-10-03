@@ -1,0 +1,6 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Managed keys (.chezmoitemplates/claude-settings.json) win; keys Claude Code
+       writes itself (e.g. autoMode) are kept local and never committed. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- mergeOverwrite $current (includeTemplate "claude-settings.json" . | fromJson) | toPrettyJson }}

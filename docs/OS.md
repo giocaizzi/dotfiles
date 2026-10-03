@@ -45,6 +45,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | ------------------------------------------------------ | ----------------------------------------- | :---: | :---: | :-----: |
 | `~/.config/vim/pack/catppuccin/start/catppuccin/`      | `github.com/catppuccin/vim`               |  ✓    |  ✓    |   —     |
 | `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
+| `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓    |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 
 **When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), git-clone-plus-plugins flows (pyenv + virtualenv/doctor/update plugins), Registry/PATH setup (pyenv-win), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
@@ -64,6 +65,8 @@ chezmoi target paths are literal (they can't be templated), so a few values stay
 - **Vendor paths** — `Library/Application Support/…`, `AppData/…`, the Windows Terminal package family name.
 - **`{{ .chezmoi.homeDir }}`** in templates — rendered per machine.
 - **Personal data** — plugin marketplaces, OTel endpoint, project aliases. Git identity is prompted at `chezmoi init`.
+
+`~/.claude/settings.json` is merged, not replaced: `dot_claude/modify_settings.json` overlays `.chezmoitemplates/claude-settings.json` onto the live file, so keys Claude Code writes (e.g. `autoMode`) stay local. Removing a managed key from the template doesn't delete it from the live file; delete it there once.
 
 Anything that genuinely differs per machine and can't be templated (e.g. a redirected Documents folder) is resolved at runtime by a script.
 
