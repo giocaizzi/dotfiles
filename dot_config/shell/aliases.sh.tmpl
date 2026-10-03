@@ -36,9 +36,7 @@ alias free='top -l 1 -s 0 | grep PhysMem'
 # --- Project-specific ---
 {{- if eq .chezmoi.os "darwin" }}
 alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
-openclaw() {
-	PI_SSH_USER=giorgiocaizzi "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh" "$@"
-}
+alias openclaw="$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"
 {{- end }}
 
 # --- Python ---

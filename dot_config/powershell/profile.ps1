@@ -32,7 +32,8 @@ Add-ToPath "$env:PYENV_ROOT\bin"
 Add-ToPath "$env:PYENV_ROOT\shims"
 
 # pipx
-Add-ToPath "$env:APPDATA\Python\Python313\Scripts"
+Get-ChildItem "$env:APPDATA\Python\Python3*\Scripts" -Directory -ErrorAction SilentlyContinue |
+    ForEach-Object { Add-ToPath $_.FullName }
 Add-ToPath "$HOME\.local\bin"
 
 # ----------------------------------------------------------------------------

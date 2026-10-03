@@ -11,7 +11,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/agents/AGENTS.md`                        | `~/.config/agents/AGENTS.md`                                | `~/.config/agents/AGENTS.md`                   | `~/.config/agents/AGENTS.md`                                                       |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
-| `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `~/OneDrive - Jakala SpA/Documenti/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks) |
+| `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
 | `dot_copilot/private_settings.json`                  | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
 | `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
@@ -34,6 +34,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
 | `run_once_after_migrate-xdg.sh` → moves history/viminfo/lesshst to `$XDG_STATE_HOME` |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
+| `run_after_link-pwsh-profile.ps1` → resolves the real Documents folder (OneDrive/locale) and links the profile |  —    |  —    |   ✓     |
 | `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
 
 ## Externals (`.chezmoiexternal.toml.tmpl`)
@@ -53,6 +54,18 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 - **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font.
 - **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
 - **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
+
+## Hardcoded by design
+
+chezmoi target paths are literal (they can't be templated), so a few values stay fixed on purpose:
+
+- **`~/.config`, `~/.local/{share,state}`, `~/.cache`** — chezmoi deploys to these exact paths, so `.profile` pins `XDG_*` to the spec defaults. Pointing `XDG_CONFIG_HOME` elsewhere would split config from where chezmoi writes it.
+- **Homebrew prefixes** `/opt/homebrew` (Apple Silicon) and `/usr/local` (Intel) — fixed by Homebrew.
+- **Vendor paths** — `Library/Application Support/…`, `AppData/…`, the Windows Terminal package family name.
+- **`{{ .chezmoi.homeDir }}`** in templates — rendered per machine.
+- **Personal data** — plugin marketplaces, OTel endpoint, project aliases. Git identity is prompted at `chezmoi init`.
+
+Anything that genuinely differs per machine and can't be templated (e.g. a redirected Documents folder) is resolved at runtime by a script.
 
 ## Testing the ignore matrix
 

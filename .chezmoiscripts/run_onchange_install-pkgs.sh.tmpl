@@ -87,7 +87,8 @@ install_tool_linux() {
 			else
 					python3 -m pip install --user pipx
 			fi
-			pipx ensurepath
+			# No `pipx ensurepath`: it appends to ~/.bashrc (chezmoi-managed);
+			# ~/.profile already puts ~/.local/bin on PATH.
 			;;
 		"oh-my-posh")
 			curl -s https://ohmyposh.dev/install.sh | bash -s

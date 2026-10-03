@@ -25,7 +25,8 @@ dot_config/windows-terminal/settings.json   (symlink-target-only, ignored)
     → AppData/Local/Packages/Microsoft.WindowsTerminal_*/LocalState/ (Windows)
 
 dot_config/powershell/profile.ps1           (symlink-target-only, ignored)
-    → OneDrive/Documenti/{PowerShell,WindowsPowerShell}/ (Windows)
+    → <real Documents>/{PowerShell,WindowsPowerShell}/ (Windows, symlinks made by
+      run_after_link-pwsh-profile.ps1 — Documents may be OneDrive-redirected)
 
 dot_config/powershell/{aliases.ps1.tmpl, fzf.ps1}  → ~/.config/powershell/ (Windows)
 dot_config/shell/{aliases.sh.tmpl, fzf.sh}         → ~/.config/shell/     (Unix + Git Bash)
