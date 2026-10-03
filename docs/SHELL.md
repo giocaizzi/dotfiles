@@ -62,6 +62,7 @@ POSIX shell (`aliases.sh`):
 | `python`              | `python3`, only where no `python` exists (uv provides it on full machines) |
 | `pipx`                | refuses; use `uv tool install` / `uvx`   |
 | `free` (macOS only)   | `top -l 1 -s 0 \| grep PhysMem`          |
+| `rp5-secrets` (macOS only) | `rp5-homeserver/scripts/create_secrets.sh` with this machine's Secrets Manager token, read from chezmoi per call and never exported (e.g. `rp5-secrets --all --dry-run`) |
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts (from `shortcuts.toml`) |
 | `hist` / `h`          | fzf history search                       |
 

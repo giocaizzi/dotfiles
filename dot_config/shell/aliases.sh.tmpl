@@ -35,6 +35,13 @@ alias free='top -l 1 -s 0 | grep PhysMem'
 {{- if eq .chezmoi.os "darwin" }}
 alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
 alias openclaw="$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"
+# Swarm secrets sync from Secrets Manager. The token is read from chezmoi when the
+# command runs and exists only in that process (never exported to the shell).
+rp5-secrets() {
+	BWS_ACCESS_TOKEN="$(chezmoi execute-template '{{ "{{" }} .bwsAccessToken {{ "}}" }}')" \
+		PI_SSH_USER="${PI_SSH_USER:-$USER}" \
+		"$HOME/Documents/github/rp5-homeserver/scripts/create_secrets.sh" "$@"
+}
 {{- end }}
 
 # --- Python ---
