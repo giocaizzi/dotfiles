@@ -14,9 +14,14 @@ CLAUDE.md
 .agents
 docs
 
-# Untracked per-machine secrets (created by run_once_init-untracked-env.*)
+# Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
+# bws token and bws is installed (the first apply fetches bws, the next one
+# renders); otherwise hand-edited and untracked (stub by run_once_init-untracked-env.*).
+{{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (ternary "bws.exe" "bws" (eq .chezmoi.os "windows")) }}
+{{ if not (and (get . "bwsAccessToken") (stat $bws)) }}
 .config/shell/secrets.sh
 .config/powershell/secrets.ps1
+{{ end }}
 
 # Symlink-only sources: files that exist in the source tree purely as targets
 # for symlinks on the OS that uses them, and should never be deployed as

@@ -1,0 +1,5 @@
+# Bitwarden Secrets Manager CLI, fetched by .chezmoiexternal.toml.tmpl into
+# ~/.local/bin. Pinned: the sdk-sm repo's "latest" release is the Python SDK,
+# not bws. Bump to update (releases: github.com/bitwarden/sdk-sm/releases).
+[bws]
+version = "2.1.0"
