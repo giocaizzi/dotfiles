@@ -74,6 +74,11 @@ if [ -d "$HOME/Library/Android/sdk" ]; then
 	export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
 fi
 
+# Maestro (if installed)
+if [ -d "$HOME/.maestro/bin" ]; then
+	export PATH="$PATH:$HOME/.maestro/bin"
+fi
+
 # Google Cloud SDK (if installed)
 if [ -f "$HOME/Downloads/google-cloud-sdk/path.sh.inc" ]; then
 	. "$HOME/Downloads/google-cloud-sdk/path.sh.inc"
