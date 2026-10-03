@@ -68,7 +68,7 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | ------------- | :--: | :-: | :--------: | ---------------------------------------------------------- |
 | `fzf`         |  ✓   |  ✓  |     ✓      | env in `fzf.sh`/`fzf.ps1`; bindings in bashrc/zshrc/PSFzf  |
 | `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.config/oh-my-posh/theme.omp.json`|
-| `pyenv`       |  ✓   |  ✓  |     ✓      | PATH in `.profile` / `profile.ps1`; `pyenv init` in rc     |
+| `uv`          |  ✓   |  ✓  |     ✓      | Python + CLI tools in `~/.local/bin` (on PATH in `.profile` / `profile.ps1`) |
 | `nvm`         |  ✓   |  —  |     —      | `.bashrc` only                                             |
 | `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `git docker gh`)                        |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |

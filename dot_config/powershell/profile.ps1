@@ -26,14 +26,7 @@ function Add-ToPath([string]$dir) {
     }
 }
 
-# pyenv-win
-$env:PYENV_ROOT = "$HOME\.pyenv\pyenv-win"
-Add-ToPath "$env:PYENV_ROOT\bin"
-Add-ToPath "$env:PYENV_ROOT\shims"
-
-# pipx
-Get-ChildItem "$env:APPDATA\Python\Python3*\Scripts" -Directory -ErrorAction SilentlyContinue |
-    ForEach-Object { Add-ToPath $_.FullName }
+# uv, uv-managed Python and uv tools
 Add-ToPath "$HOME\.local\bin"
 
 # ----------------------------------------------------------------------------

@@ -6,6 +6,7 @@ set -e
 # ============================================================================
 
 VERBOSE=true  # Set to false for minimal output
+PYTHON_VERSION="3.13"  # global python/python3, installed by uv
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,8 +43,7 @@ SHELL_PACKAGES_LINUX=(
 
 # Additional tools (cross-platform, custom installation)
 ADDITIONAL_TOOLS=(
-	"pyenv"
-	"pipx"
+	"uv"            # Python versions + CLI tools (replaces pyenv/pipx)
 	"oh-my-posh"
 )
 
@@ -92,18 +92,10 @@ install_tool_linux() {
 	
 	echo -e "${BLUE}Installing${NC} $tool..."
 	case "$tool" in
-		"pyenv")
-			curl https://pyenv.run | bash
-			;;
-		"pipx")
-			# Use system package manager on Debian-based systems (avoids PEP 668 error)
-			if command -v apt >/dev/null 2>&1; then
-					sudo apt install -y pipx
-			else
-					python3 -m pip install --user pipx
-			fi
-			# No `pipx ensurepath`: it appends to ~/.bashrc (chezmoi-managed);
-			# ~/.profile already puts ~/.local/bin on PATH.
+		"uv")
+			# Official installer → ~/.local/bin; UV_NO_MODIFY_PATH keeps it out
+			# of the chezmoi-managed rc files (~/.profile already has the PATH).
+			curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
 			;;
 		"oh-my-posh")
 			curl -s https://ohmyposh.dev/install.sh | bash -s
@@ -112,6 +104,16 @@ install_tool_linux() {
 			echo "Warning: No installation method for $tool" >&2
 			;;
 	esac
+}
+
+# Global python/python3 via uv (--default is marked experimental by uv).
+# Skipped where uv isn't installed (light machines).
+install_python() {
+	local uv
+	uv="$(command -v uv || echo "$HOME/.local/bin/uv")"
+	[ -x "$uv" ] || return 0
+	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Python ${PYTHON_VERSION} (uv):${NC}"
+	"$uv" python install "$PYTHON_VERSION" --default
 }
 
 # ============================================================================
@@ -153,6 +155,8 @@ for tool in "${ADDITIONAL_TOOLS[@]}"; do
 	install_tool_macos "$tool"
 done
 
+install_python
+
 # Oh My Zsh is fetched declaratively via .chezmoiexternal.toml.tmpl.
 {{- end }}
 
@@ -191,6 +195,8 @@ fi
 for tool in "${ADDITIONAL_TOOLS[@]}"; do
 	install_tool_linux "$tool"
 done
+
+install_python
 
 # Create fd symlink (fd-find -> fd) for consistency with macOS
 if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
