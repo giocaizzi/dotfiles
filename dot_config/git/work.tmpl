@@ -1,3 +1,10 @@
 # Included by ~/.config/git/config for repos under the work folder
 [user]
 	email = {{ .workEmail }}
+{{- with get . "workSshKey" }}
+
+# Work repos authenticate with the work key, even on the same Git host as
+# personal repos (git runs sshCommand through sh, so ~ expands)
+[core]
+	sshCommand = ssh -i {{ . }} -o IdentitiesOnly=yes
+{{- end }}
