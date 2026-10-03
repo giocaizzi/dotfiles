@@ -2,6 +2,8 @@
 
 Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in shared snippet files; rc files are thin orchestrators.
 
+**Rule of thumb:** environment variables go in `~/.profile` (loaded once, inherited by child processes); aliases and functions go in the snippets, which `.bashrc`/`.zshrc` load in *every* interactive shell (they aren't inherited).
+
 ## Architecture
 
 ```
@@ -22,16 +24,18 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 
 | File                                     | Role                                                                    | OS scope            |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `dot_profile`                            | POSIX core: `XDG_*`, PATH, env vars (`EDITOR`, `POSH_THEME`, `JAVA_HOME`), sources snippets | Unix + Git Bash |
+| `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `JAVA_HOME`; sources `secrets.sh` | Unix + Git Bash |
 | `dot_bash_profile`                       | Login-shell wrapper → sources `.bashrc` (which sources `.profile` once) | Unix                |
-| `dot_bashrc`                             | Bash: history, completion, FZF bindings, oh-my-posh init                | Unix                |
-| `dot_zshrc` / `dot_zprofile`             | Zsh: Oh My Zsh, history, plugins, FZF bindings, oh-my-posh init         | macOS only          |
+| `dot_bashrc`                             | Bash: loads `.profile` once, then **returns for non-interactive shells** (`ssh host cmd`, scp, rsync); snippets, history (timestamped), completion, FZF bindings, oh-my-posh | Unix + Git Bash |
+| `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` loads Oh My Zsh, then the snippets (so shared shortcuts win), history, FZF bindings, oh-my-posh | macOS only |
 | `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
 | `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases (rendered from `shortcuts.toml`)                          | Unix + Git Bash     |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
 | `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from `shortcuts.toml`)                   | Windows             |
 | `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
 | `.chezmoidata/shortcuts.toml`            | Single source for cross-shell shortcuts                                 | all                 |
+| `dot_config/readline/inputrc`            | Readline: ↑/↓ prefix history search, case-insensitive coloured completion | Unix + Git Bash   |
+| `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status)            | Unix                |
 
 ## Adding a new shortcut
 
@@ -89,6 +93,7 @@ PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `functio
 - **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
 - **Why env vars**: project `.mcp.json` files expand `${VAR}` from the environment Claude Code is launched with, so MCP tokens must be exported here. Tools with their own credential store (e.g. `~/.config/gh/`, `~/.config/greenhouse/token`) keep it there.
 - **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`.
+- **Secret files** (e.g. `~/.ssh/config`) are different: they're committed age-encrypted, see [OS.md](./OS.md#encrypted-files-age).
 - **Claude Code** is denied Read/Edit on both files (`.chezmoitemplates/claude-settings.json`).
 
 ```sh
