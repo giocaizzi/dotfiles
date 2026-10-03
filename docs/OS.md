@@ -67,7 +67,7 @@ Two independent yes/no answers, asked once per machine by `chezmoi init` and sto
 
 | Flag | Prompt | When true |
 |---|---|---|
-| `light` | Light install (shell, git, vim, prompt only) | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot and AGENTS.md; no Nerd Font download; the install script installs only `fzf git vim fd tmux` + oh-my-posh (no uv/Python). |
+| `light` | Light install (shell, git, vim, prompt only) | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, AGENTS.md and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux` + oh-my-posh (no uv/Python). |
 | `work` | Work computer (work git identity, no personal telemetry) | Asks the work repos folder and work email. Repos under that folder commit with the work email (`~/.config/git/config` → `includeIf "gitdir/i:<folder>/"` → `~/.config/git/work`); use the folder's real path, not a symlink. Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
@@ -95,7 +95,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Encrypted files (age)
 
-Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply`; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`.
+Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`.
 
 ## Hardcoded by design
 
