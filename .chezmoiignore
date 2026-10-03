@@ -84,9 +84,9 @@ vimfiles
 .ssh
 {{ end }}
 
-# Work git identity only where a work folder or remote is configured
-{{ if not (or (get . "workGitDir") (get . "workGitRemote")) }}
-.config/git/work
+# Personal-email override only where personal remotes are configured (work machines)
+{{ if not (get . "personalGitRemote") }}
+.config/git/personal
 {{ end }}
 
 # --- Windows only ---

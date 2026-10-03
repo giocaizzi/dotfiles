@@ -1,19 +1,17 @@
 [user]
 	name = {{ .gitUser }}
+{{- if get . "work" }}
+	email = {{ .workEmail }}
+{{- else }}
 	email = {{ .gitEmail }}
-
-{{- with get . "workGitDir" }}
-
-# Repos under the work folder use the work email (~/.config/git/work)
-[includeIf "gitdir/i:{{ . | replace "\\" "/" | trimSuffix "/" }}/"]
-	path = work
 {{- end }}
-{{- with get . "workGitRemote" }}
+{{- with get . "personalGitRemote" }}
 
-# Repos with a matching remote URL use the work email, wherever they live
+# Work machine: the work email is the default; repos with a matching remote
+# URL use the personal email (~/.config/git/personal), wherever they live
 {{- range splitList "," . }}{{ with trim . }}
 [includeIf "hasconfig:remote.*.url:{{ . }}"]
-	path = work
+	path = personal
 {{- end }}{{ end }}
 {{- end }}
 
