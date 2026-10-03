@@ -68,11 +68,21 @@ Two independent yes/no answers, asked once per machine by `chezmoi init` and sto
 | Flag | Prompt | When true |
 |---|---|---|
 | `light` | Light install (shell, git, vim, prompt only) | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, AGENTS.md and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux` + oh-my-posh (no uv/Python). |
-| `work` | Work computer (work git identity, no personal telemetry) | Asks the work email, which becomes the default `user.email` (`gitEmail` stays the personal one), and optional **personal remote URL globs** (blank = none). Each glob becomes `includeIf "hasconfig:remote.*.url:<glob>"` (git ≥ 2.36) → `~/.config/git/personal`, so repos in any folder with a matching remote commit with the personal email; everything else, including repos with no remote, uses the work email. In a glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. Keep the SSH key consistent with the identity through `~/.ssh/config.d/*` (e.g. `Host github.com` → personal key, a work alias → work key). Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
+| `work` | Work computer (work git identity, no personal telemetry) | Asks the work email, which becomes the default `user.email` (`gitEmail` stays the personal one), the **personal GitHub username** (`githubUser`) and optional **extra personal remote URL globs** (`personalGitRemote`, for other orgs or hosts; blank = none). The username expands to the four github.com URL forms (`git@github.com:<user>/**`, `ssh://git@github.com/<user>/**`, `https://github.com/<user>/**`, `https://*@github.com/<user>/**`); each of those and each extra glob becomes `includeIf "hasconfig:remote.*.url:<glob>"` (git ≥ 2.36) → `~/.config/git/personal`, so repos in any folder with a matching remote commit with the personal email. Everything else, including repos with no remote, uses the work email. In an extra glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. To add more later see [Adding personal remotes](#adding-personal-remotes). Keep the SSH key consistent with the identity through `~/.ssh/config.d/*` (e.g. `Host github.com` → personal key, a work alias → work key). Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
 Change an answer later by passing the prompt text: `chezmoi init --promptBool "Work computer (work git identity, no personal telemetry)=true"`, then `chezmoi apply`.
+
+### Adding personal remotes
+
+On a work machine, add another personal org or host by editing the local config (never the repo): in `~/.config/chezmoi/chezmoi.toml` under `[data]`, append a glob to `personalGitRemote` (comma-separated), then `chezmoi apply`:
+
+```toml
+personalGitRemote = "https://ghe.example.com/**,git@ghe.example.com:*/**,git@github.com:other-org/**,https://github.com/other-org/**"
+```
+
+`chezmoi init --prompt` also works but re-asks every prompt. Check a repo with `git config --show-origin user.email`. If the host is not github.com, give it a `Host` entry and a personal key in `~/.ssh/config.d/` so the SSH key matches the identity.
 
 The corporate-PC workarounds below are tied to Windows, not to `work`: they're harmless on any Windows machine.
 
