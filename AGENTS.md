@@ -69,6 +69,7 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 - `.chezmoitemplates/claude-settings.json` — Claude Code theme (merged into `~/.claude/settings.json` by `dot_claude/modify_settings.json`, which keeps keys Claude Code writes itself) (`"theme": "dark"`)
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
 - `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
+- `dot_config/tmux/tmux.conf` — status line and borders
 - `dot_config/vim/vimrc` — `colorscheme catppuccin_mocha` (plugin fetched via `.chezmoiexternal.toml.tmpl`)
 - Obsidian vault `.obsidian/plugins/obsidian-style-settings/data.json` — Minimal theme colours
 - Obsidian vault `.obsidian/snippets/` — `html-example.css`, `math.css`

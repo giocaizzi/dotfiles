@@ -25,6 +25,7 @@ CORE_PACKAGES=(
 	"vim"           # Text editor
 	"fd"            # Modern find alternative
 	"gh"            # GitHub CLI
+	"tmux"          # Terminal multiplexer
 )
 
 # Shell-specific packages (macOS uses zsh, Linux uses bash)
@@ -50,7 +51,7 @@ ADDITIONAL_TOOLS=(
 {{- if get . "light" }}
 
 # Light machines: core tools + the prompt only
-CORE_PACKAGES=("fzf" "git" "vim" "fd")
+CORE_PACKAGES=("fzf" "git" "vim" "fd" "tmux")
 SHELL_PACKAGES_MACOS=()
 SHELL_PACKAGES_LINUX=()
 FONTS_MACOS=()
