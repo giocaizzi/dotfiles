@@ -5,10 +5,12 @@
        this machine's local config only (never committed). */ -}}
 {{- $work := promptBoolOnce . "work" "Work computer (work git identity, no personal telemetry)" -}}
 {{- $workGitDir := "" -}}
+{{- $workGitRemote := "" -}}
 {{- $workEmail := "" -}}
 {{- $workSshKey := "" -}}
 {{- if $work }}
-{{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work" -}}
+{{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work (blank for none)" -}}
+{{- $workGitRemote = promptStringOnce . "workGitRemote" "Work remote URL globs, comma-separated; * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/** (blank for none)" -}}
 {{- $workEmail = promptStringOnce . "workEmail" "Work git email" -}}
 {{- $workSshKey = promptStringOnce . "workSshKey" "Work SSH key for repos in the work folder, e.g. ~/.ssh/id_ed25519_work (blank for none)" -}}
 {{- end }}
@@ -36,6 +38,7 @@ encryption = "age"
     light = {{ $light }}
     work = {{ $work }}
     workGitDir = {{ $workGitDir | quote }}
+    workGitRemote = {{ $workGitRemote | quote }}
     workEmail = {{ $workEmail | quote }}
     workSshKey = {{ $workSshKey | quote }}
     bwsAccessToken = {{ $bwsToken | quote }}
