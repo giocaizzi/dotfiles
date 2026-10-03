@@ -1,5 +1,5 @@
-{{- $user := promptStringOnce . "gitUser" "User name" -}}
-{{- $email := promptStringOnce . "gitEmail" "Email address" -}}
+{{- $user := promptStringOnce . "gitUser" "Git user name (your name, used for every commit)" -}}
+{{- $email := promptStringOnce . "gitEmail" "PERSONAL git email (default on personal machines; on a work machine only for the personal repos listed below)" -}}
 {{- $light := promptBoolOnce . "light" "Light install (shell, git, vim, prompt only)" -}}
 {{- /* Work machine: work git identity, no personal telemetry. Values stay in
        this machine's local config only (never committed). */ -}}
@@ -7,8 +7,8 @@
 {{- $workEmail := "" -}}
 {{- $personalGitRemote := "" -}}
 {{- if $work }}
-{{- $workEmail = promptStringOnce . "workEmail" "Work git email (default identity on this machine)" -}}
-{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "Personal remote URL globs, comma-separated (they get the personal email); * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/** (blank for none)" -}}
+{{- $workEmail = promptStringOnce . "workEmail" "WORK git email (default for every repo on this work machine)" -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "Remote URL globs of PERSONAL repos on this machine, comma-separated (they use the personal email, all other repos the work email; blank = none). * stays within one path segment, so end with /** or :*/**, e.g. https://github.com/<you>/**,git@github.com:<you>/**" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
