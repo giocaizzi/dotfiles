@@ -38,6 +38,14 @@ FONTS_MACOS=(
 	"font-jetbrains-mono-nerd-font"
 )
 
+# Bitwarden vault CLI (bw): personal full machines only, used to fetch the
+# chezmoi age key. bws comes from .chezmoiexternal.toml.tmpl.
+{{- if not (or (get . "light") (get . "work")) }}
+BITWARDEN_MACOS=("bitwarden-cli")
+{{- else }}
+BITWARDEN_MACOS=()
+{{- end }}
+
 SHELL_PACKAGES_LINUX=(
 	"bash-completion"
 )
@@ -134,7 +142,7 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 # Install packages via Homebrew
-ALL_BREW_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_MACOS[@]}" "${FONTS_MACOS[@]}")
+ALL_BREW_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_MACOS[@]}" "${FONTS_MACOS[@]}" "${BITWARDEN_MACOS[@]}")
 
 if [ "$VERBOSE" = true ]; then
 	echo -e "\n${YELLOW}Installing packages via Homebrew:${NC}"

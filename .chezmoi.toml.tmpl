@@ -10,6 +10,14 @@
 {{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work" -}}
 {{- $workEmail = promptStringOnce . "workEmail" "Work git email" -}}
 {{- end }}
+{{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
+       one project (personal or work); renders the env secrets files. */ -}}
+{{- $bwsToken := "" -}}
+{{- $bwsProject := "" -}}
+{{- if not $light }}
+{{- $bwsToken = promptStringOnce . "bwsAccessToken" "Bitwarden Secrets Manager access token for this machine (blank = secrets file by hand)" -}}
+{{- if $bwsToken }}{{ $bwsProject = promptStringOnce . "bwsProjectId" "Bitwarden Secrets Manager project ID" }}{{ end -}}
+{{- end }}
 
 # Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key
 # lives only at ~/.config/chezmoi/key.txt on each machine (copied by hand);
@@ -27,6 +35,8 @@ encryption = "age"
     work = {{ $work }}
     workGitDir = {{ $workGitDir | quote }}
     workEmail = {{ $workEmail | quote }}
+    bwsAccessToken = {{ $bwsToken | quote }}
+    bwsProjectId = {{ $bwsProject | quote }}
 
 [git]
     autoAdd = true
