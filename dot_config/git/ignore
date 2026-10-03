@@ -62,6 +62,7 @@ service-account*.json
 ehthumbs.db
 Thumbs.db
 desktop.ini
+*.stackdump
 
 # Logs that might contain sensitive data
 *.log
