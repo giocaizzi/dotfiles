@@ -1,0 +1,27 @@
+{{- /* Conventional Commit messages for chezmoi's autoCommit (git.commitMessageTemplateFile).
+       Adapted from chezmoi's default assets/templates/COMMIT_MESSAGE.tmpl:
+       one change → "chore: <verb> <path>"; several → "chore: update N files" + body. */ -}}
+{{- $lines := list -}}
+{{- with .chezmoi.status -}}
+{{- range .Ordinary -}}
+{{- if and (eq .X 'A') (eq .Y '.') }}{{ $lines = append $lines (printf "add %s" (.Path | targetRelPath)) }}
+{{- else if and (eq .X 'D') (eq .Y '.') }}{{ $lines = append $lines (printf "remove %s" (.Path | targetRelPath)) }}
+{{- else if and (eq .X 'M') (eq .Y '.') }}{{ $lines = append $lines (printf "update %s" (.Path | targetRelPath)) }}
+{{- else }}{{ warnf "unsupported XY: %c%c" .X .Y }}{{ end -}}
+{{- end -}}
+{{- range .RenamedOrCopied -}}
+{{- if and (eq .X 'R') (eq .Y '.') }}{{ $lines = append $lines (printf "change attributes of %s" (.Path | targetRelPath)) }}
+{{- else if and (eq .X 'C') (eq .Y '.') }}{{ $lines = append $lines (printf "copy %s to %s" (.OrigPath | targetRelPath) (.Path | targetRelPath)) }}
+{{- else }}{{ warnf "unsupported XY: %c%c" .X .Y }}{{ end -}}
+{{- end -}}
+{{- range .Unmerged }}{{ warnf "unmerged files" }}{{ end -}}
+{{- range .Untracked }}{{ warnf "untracked files" }}{{ end -}}
+{{- end -}}
+{{- if eq (len $lines) 1 -}}
+chore: {{ index $lines 0 }}
+{{ else -}}
+chore: update {{ len $lines }} files
+{{ range $lines }}
+- {{ . }}
+{{- end }}
+{{ end -}}
