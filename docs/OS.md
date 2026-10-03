@@ -56,6 +56,10 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 - **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
 - **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
 
+## Light machines
+
+`chezmoi init` asks once per machine whether it is a light install (stored as `data.light`). Light machines (e.g. the Raspberry Pi over SSH) get the shell, git, vim and the oh-my-posh prompt only: `.chezmoiignore` skips VS Code, Ghostty, Claude/Copilot and fonts, and the install script installs `fzf git vim fd` + oh-my-posh. Change it later with `chezmoi init --promptBool light=true|false`.
+
 ## Hardcoded by design
 
 chezmoi target paths are literal (they can't be templated), so a few values stay fixed on purpose:
