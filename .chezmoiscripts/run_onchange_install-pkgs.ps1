@@ -123,8 +123,9 @@ Write-Step "Python $PythonVersion (uv)"
 $uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
 if (-not $uv) { $uv = Join-Path $HOME '.local\bin\uv.exe' }
 if (Test-Path $uv) {
-    # --default adds python.exe/python3.exe (a uv preview feature, opted into explicitly)
-    & $uv python install $PythonVersion --default --preview-features python-install-default
+    # --no-bin: uv's python.exe launchers in ~\.local\bin are blocked on managed
+    # PCs; profile.ps1 puts the interpreter folder on PATH instead.
+    & $uv python install $PythonVersion --no-bin
 } else {
     Write-Warning "uv not found; skipping Python install"
 }
