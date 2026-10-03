@@ -279,6 +279,7 @@
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
   "workbench.colorTheme": "Dark Modern",
+  "security.workspace.trust.untrustedFiles": "open",
   // --- YAML ---
   "yaml.disableSchemaDetection": [
     "**/.github/workflows/*.yml",
