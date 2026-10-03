@@ -25,7 +25,7 @@ $CorePackages = @(
 
 $AdditionalTools = @(
     @{ Name = 'oh-my-posh'; Id = 'JanDeDobbeleer.OhMyPosh'; Cmd = 'oh-my-posh' }
-    @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }  # replaces pyenv-win/pipx
+    @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }
 )
 
 # Fonts — installed per user by oh-my-posh (no admin; managed PCs block the
