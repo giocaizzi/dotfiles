@@ -9,7 +9,7 @@
 # 1. SECRETS & ENV
 # ----------------------------------------------------------------------------
 
-$secretsFile = Join-Path $HOME ".secrets.ps1"
+$secretsFile = Join-Path $HOME ".config\powershell\secrets.ps1"
 if (Test-Path $secretsFile) { . $secretsFile }
 
 $env:EDITOR     = 'vim'
