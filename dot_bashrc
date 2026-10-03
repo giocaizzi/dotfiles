@@ -36,6 +36,7 @@ HISTSIZE=50000
 HISTFILESIZE=50000
 HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/bash/history"
 HISTCONTROL=ignoreboth:erasedups
+HISTTIMEFORMAT='%F %T '
 
 shopt -s histappend cmdhist
 PROMPT_COMMAND="history -a; $PROMPT_COMMAND"
