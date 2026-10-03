@@ -4,15 +4,11 @@
 {{- /* Work machine: work git identity, no personal telemetry. Values stay in
        this machine's local config only (never committed). */ -}}
 {{- $work := promptBoolOnce . "work" "Work computer (work git identity, no personal telemetry)" -}}
-{{- $workGitDir := "" -}}
-{{- $workGitRemote := "" -}}
 {{- $workEmail := "" -}}
-{{- $workSshKey := "" -}}
+{{- $personalGitRemote := "" -}}
 {{- if $work }}
-{{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work (blank for none)" -}}
-{{- $workGitRemote = promptStringOnce . "workGitRemote" "Work remote URL globs, comma-separated; * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/** (blank for none)" -}}
-{{- $workEmail = promptStringOnce . "workEmail" "Work git email" -}}
-{{- $workSshKey = promptStringOnce . "workSshKey" "Work SSH key for repos in the work folder, e.g. ~/.ssh/id_ed25519_work (blank for none)" -}}
+{{- $workEmail = promptStringOnce . "workEmail" "Work git email (default identity on this machine)" -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "Personal remote URL globs, comma-separated (they get the personal email); * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/** (blank for none)" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
@@ -37,10 +33,8 @@ encryption = "age"
     gitEmail = {{ $email | quote }}
     light = {{ $light }}
     work = {{ $work }}
-    workGitDir = {{ $workGitDir | quote }}
-    workGitRemote = {{ $workGitRemote | quote }}
     workEmail = {{ $workEmail | quote }}
-    workSshKey = {{ $workSshKey | quote }}
+    personalGitRemote = {{ $personalGitRemote | quote }}
     bwsAccessToken = {{ $bwsToken | quote }}
     bwsProjectId = {{ $bwsProject | quote }}
 
