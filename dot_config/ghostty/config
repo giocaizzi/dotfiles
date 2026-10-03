@@ -20,9 +20,10 @@ confirm-close-surface = false
 
 # --- macOS ---
 macos-titlebar-style = hidden
-# Italian layout: right ⌥ types @ # [ ] { } (like AltGr); left ⌥ is Alt for
-# terminal shortcuts (fzf Alt-C, readline Alt-B/F).
-macos-option-as-alt = left
+# Italian layout: both ⌥ keys type symbols (@ = ⌥ò, ~ = ⌥5, # [ ] { } `),
+# so neither is Alt. For Alt shortcuts press Esc then the key
+# (Esc b / Esc f: word back/forward; Esc c: fzf cd).
+macos-option-as-alt = false
 macos-icon = official
 macos-window-shadow = true
 
