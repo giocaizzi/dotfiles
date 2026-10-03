@@ -58,7 +58,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 
 ## Light machines
 
-`chezmoi init` asks once per machine whether it is a light install (stored as `data.light`). Light machines (e.g. the Raspberry Pi over SSH) get the shell, git, vim and the oh-my-posh prompt only: `.chezmoiignore` skips VS Code, Ghostty, Claude/Copilot and fonts, and the install script installs `fzf git vim fd` + oh-my-posh. Change it later with `chezmoi init --promptBool light=true|false`.
+`chezmoi init` asks once per machine whether it is a light install (stored as `data.light`). Light machines (e.g. the Raspberry Pi over SSH) get the shell, git, vim and the oh-my-posh prompt only: `.chezmoiignore` skips VS Code, Ghostty, Claude/Copilot and fonts, and the install script installs `fzf git vim fd` + oh-my-posh. Change it later with `chezmoi init --promptBool "Light install (shell, git, vim, prompt only)=true"` (the flag matches the prompt text, not the key).
 
 ## Hardcoded by design
 
