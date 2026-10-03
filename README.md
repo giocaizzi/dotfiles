@@ -74,7 +74,6 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 
 - **Environment variables** (API keys, tokens) live in `~/.config/shell/secrets.sh` (Windows: `~/.config/powershell/secrets.ps1`), owner-only, never committed. Machines with a Bitwarden Secrets Manager token get them **generated** from Bitwarden on `chezmoi apply` (edit them in Bitwarden); others edit the file by hand. See [docs/OS.md → Bitwarden](./docs/OS.md#bitwarden).
 - **Secret files** (e.g. `~/.ssh/config`) are committed age-encrypted: `chezmoi add --encrypt <file>`.
-- **Homeserver secrets** (the `rp5-homeserver` repo) live in their own Secrets Manager project, `rp5-homeserver`. On the Mac, run its sync with `rp5-secrets` (e.g. `rp5-secrets --all --dry-run`); see [docs/OS.md → Bitwarden](./docs/OS.md#bitwarden).
 
 ## Documentation
 
