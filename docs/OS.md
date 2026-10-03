@@ -12,7 +12,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
-| `dot_copilot/private_settings.json`                  | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
+| `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
 | `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
@@ -66,7 +66,7 @@ chezmoi target paths are literal (they can't be templated), so a few values stay
 - **`{{ .chezmoi.homeDir }}`** in templates — rendered per machine.
 - **Personal data** — plugin marketplaces, OTel endpoint, project aliases. Git identity is prompted at `chezmoi init`.
 
-`~/.claude/settings.json` is merged, not replaced: `dot_claude/modify_settings.json` overlays `.chezmoitemplates/claude-settings.json` onto the live file, so keys Claude Code writes (e.g. `autoMode`) stay local. Removing a managed key from the template doesn't delete it from the live file; delete it there once.
+`~/.claude/settings.json` and `~/.copilot/settings.json` are merged, not replaced: `modify_` templates overlay `.chezmoitemplates/{claude,copilot}-settings.json` onto the live file, so keys the app writes itself (Claude `autoMode`, Copilot `model`, approved `allowedUrls`) stay local. Removing a managed key from the template doesn't delete it from the live file; delete it there once.
 
 Anything that genuinely differs per machine and can't be templated (e.g. a redirected Documents folder) is resolved at runtime by a script.
 
