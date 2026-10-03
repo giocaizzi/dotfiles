@@ -76,6 +76,22 @@ Change an answer later by passing the prompt text: `chezmoi init --promptBool "W
 
 The corporate-PC workarounds below are tied to Windows, not to `work`: they're harmless on any Windows machine.
 
+## Bitwarden
+
+Two Bitwarden CLIs, used per machine role:
+
+| Role | `bw` (password vault) | `bws` (Secrets Manager) |
+|---|---|---|
+| full + personal (Mac) | Homebrew `bitwarden-cli`; fetches the age key at setup | own machine-account token → **personal** project |
+| light (Pi) | — | — (`secrets.sh` by hand) |
+| work (Windows PC) | — (personal vault stays off the work PC; age key copied by hand) | own machine-account token → **work** project |
+
+- **Env secrets** (`~/.config/shell/secrets.sh`, `~/.config/powershell/secrets.ps1`) are rendered by chezmoi from the machine's project (`bws secret list <project> --output json`, via `.chezmoitemplates/bws-secrets.json`): each secret's name becomes the variable name. Edit secrets in Bitwarden, then `chezmoi apply`. Names that aren't valid variable names are skipped.
+- **One token per machine**, created as a Bitwarden machine account with read access to one project, stored only in that machine's `~/.config/chezmoi/chezmoi.toml` (0600). Revoke a single machine's token in Bitwarden if it's lost.
+- **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (version pinned in `.chezmoidata/bws.toml`; bump to update). The first apply on a new machine fetches it; the next apply renders the secrets.
+- **Online needed:** on machines with a token, every `chezmoi status`/`diff`/`apply` calls `bws` once and fails offline.
+- No Bitwarden MCP server: it has no read-only mode and would give an AI agent full vault access.
+
 ## Encrypted files (age)
 
 Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply`; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`.

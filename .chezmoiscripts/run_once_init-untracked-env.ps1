@@ -19,6 +19,10 @@ if (-not (Test-Path $secretsFile)) {
 
 # Restrict access to current user only. icacls edits the DACL alone; Set-Acl
 # also rewrites the SACL, which needs SeSecurityPrivilege (absent on managed PCs).
+# The folder gets an inheritable ACL too: when secrets.ps1 is rendered from
+# Bitwarden, chezmoi replaces the file, and the new file inherits from the folder.
 $me = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+icacls (Split-Path $secretsFile) /inheritance:r /grant:r "${me}:(OI)(CI)F" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "icacls failed to restrict $(Split-Path $secretsFile)" }
 icacls $secretsFile /inheritance:r /grant:r "${me}:(F)" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "icacls failed to restrict $secretsFile" }

@@ -38,6 +38,20 @@
     refreshPeriod = "168h"
 {{- end }}
 
+# Bitwarden Secrets Manager CLI (bws) — full machines only; renders the env
+# secrets files (see docs/OS.md → Bitwarden). Into ~/.local/bin without sudo
+# (Bitwarden's install script prefers sudo → /usr/local/bin).
+{{- if not (get . "light") }}
+{{- $arch := get (dict "amd64" "x86_64" "arm64" "aarch64") .chezmoi.arch }}
+{{- $target := get (dict "darwin" "apple-darwin" "linux" "unknown-linux-gnu" "windows" "pc-windows-msvc") .chezmoi.os }}
+{{- $exe := ternary "bws.exe" "bws" (eq .chezmoi.os "windows") }}
+[".local/bin/{{ $exe }}"]
+    type = "archive-file"
+    url = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v{{ .bws.version }}/bws-{{ $arch }}-{{ $target }}-{{ .bws.version }}.zip"
+    path = "{{ $exe }}"
+    executable = true
+{{- end }}
+
 # Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
 # Windows uses PowerShell — both ignored in .chezmoiignore).
 # dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.

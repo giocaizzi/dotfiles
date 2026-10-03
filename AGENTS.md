@@ -88,7 +88,7 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 ## Docs
 
 - [README.md](./README.md) — new-machine setup and everyday chezmoi commands.
-- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, encryption, managed-Windows workarounds, hardcoded-by-design values.
+- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values.
 - [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, shortcuts.toml workflow, tools, secrets.
 - Commits follow Conventional Commits.
 
