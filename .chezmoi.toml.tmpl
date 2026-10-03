@@ -5,10 +5,12 @@
        this machine's local config only (never committed). */ -}}
 {{- $work := promptBoolOnce . "work" "Work computer (work git identity, no personal telemetry)" -}}
 {{- $workEmail := "" -}}
+{{- $githubUser := "" -}}
 {{- $personalGitRemote := "" -}}
 {{- if $work }}
 {{- $workEmail = promptStringOnce . "workEmail" "WORK git email (default for every repo on this work machine)" -}}
-{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "Remote URL globs of PERSONAL repos on this machine, comma-separated (they use the personal email, all other repos the work email; blank = none). * stays within one path segment, so end with /** or :*/**, e.g. https://github.com/<you>/**,git@github.com:<you>/**" -}}
+{{- $githubUser = promptStringOnce . "githubUser" "PERSONAL GitHub username (its repos on github.com use the personal email, all other repos the work email; blank = none)" -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "EXTRA remote URL globs of personal repos, comma-separated (other personal orgs or hosts; blank = none). * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
@@ -34,6 +36,7 @@ encryption = "age"
     light = {{ $light }}
     work = {{ $work }}
     workEmail = {{ $workEmail | quote }}
+    githubUser = {{ $githubUser | quote }}
     personalGitRemote = {{ $personalGitRemote | quote }}
     bwsAccessToken = {{ $bwsToken | quote }}
     bwsProjectId = {{ $bwsProject | quote }}

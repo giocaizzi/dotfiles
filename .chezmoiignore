@@ -85,7 +85,7 @@ vimfiles
 {{ end }}
 
 # Personal-email override only where personal remotes are configured (work machines)
-{{ if not (get . "personalGitRemote") }}
+{{ if not (or (get . "githubUser") (get . "personalGitRemote")) }}
 .config/git/personal
 {{ end }}
 
