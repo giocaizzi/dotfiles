@@ -25,6 +25,18 @@
     clone.args = ["--depth", "1"]
     pull.args = ["--ff-only"]
 
+# JetBrainsMono Nerd Font — Linux only (macOS: Homebrew cask, Windows: winget,
+# both in the install scripts). ~/.local/share/fonts is the XDG user font dir
+# fontconfig scans natively.
+{{- if eq .chezmoi.os "linux" }}
+[".local/share/fonts/JetBrainsMonoNerdFont"]
+    type = "archive"
+    url = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
+    include = ["*.ttf"]
+    exact = true
+    refreshPeriod = "168h"
+{{- end }}
+
 # Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
 # Windows uses PowerShell — both ignored in .chezmoiignore).
 # dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.

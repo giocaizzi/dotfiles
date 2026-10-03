@@ -31,6 +31,11 @@ SHELL_PACKAGES_MACOS=(
 	"zsh-autosuggestions"
 )
 
+# Fonts (Homebrew casks; Linux gets the same font via .chezmoiexternal.toml.tmpl)
+FONTS_MACOS=(
+	"font-jetbrains-mono-nerd-font"
+)
+
 SHELL_PACKAGES_LINUX=(
 	"bash-completion"
 )
@@ -114,7 +119,7 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 # Install packages via Homebrew
-ALL_BREW_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_MACOS[@]}")
+ALL_BREW_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_MACOS[@]}" "${FONTS_MACOS[@]}")
 
 if [ "$VERBOSE" = true ]; then
 	echo -e "\n${YELLOW}Installing packages via Homebrew:${NC}"
