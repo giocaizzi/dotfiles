@@ -66,12 +66,12 @@ chezmoi merge --all
 
 ## Secrets
 
-Secret environment variables (API keys, tokens) are stored in `~/.secrets`, which is **never tracked** by chezmoi. It is created automatically on first `chezmoi apply` with mode `600` and sourced by `~/.profile`.
+Secret environment variables (API keys, tokens) are stored in `~/.config/shell/secrets.sh` (Windows: `~/.config/powershell/secrets.ps1`), which is **never tracked** by chezmoi. It is created on first `chezmoi apply` with owner-only permissions and sourced by `~/.profile` / `profile.ps1`. A legacy `~/.secrets` is migrated automatically. See [docs/SHELL.md](./docs/SHELL.md#secrets).
 
 Edit it directly on each machine:
 
 ```shell
-vim ~/.secrets
+vim ~/.config/shell/secrets.sh
 # export API_KEY="your-key"
 ```
 

@@ -10,17 +10,17 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
         ├─ rendered into ──→  ~/.config/shell/aliases.sh          (bash + zsh)
         └─ rendered into ──→  ~/.config/powershell/aliases.ps1    (PowerShell)
 
-~/.profile        sources →  ~/.config/shell/{aliases.sh, fzf.sh}
+~/.profile        sources →  ~/.config/shell/{secrets.sh, aliases.sh, fzf.sh}
 ~/.bashrc         sources →  ~/.profile + bash-specific (history, completion, FZF bindings)
 ~/.zshrc          sources →  ~/.profile + Oh My Zsh + zsh-specific
-profile.ps1       sources →  ~/.config/powershell/{aliases.ps1, fzf.ps1} + PSReadLine
+profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, fzf.ps1} + PSReadLine
 ```
 
 ## Files
 
 | File                                     | Role                                                                    | OS scope            |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `dot_profile`                            | POSIX core: PATH, env vars (`EDITOR`, `POSH_THEME`), sources snippets   | Unix + Git Bash     |
+| `dot_profile`                            | POSIX core: PATH, env vars (`EDITOR`, `POSH_THEME`, `JAVA_HOME`), sources snippets | Unix + Git Bash |
 | `dot_bash_profile`                       | Login-shell wrapper → sources `.profile` + `.bashrc`                    | Unix                |
 | `dot_bashrc`                             | Bash: history, completion, FZF bindings, oh-my-posh init                | Unix                |
 | `dot_zshrc` / `dot_zprofile`             | Zsh: Oh My Zsh, history, plugins, FZF bindings, oh-my-posh init         | macOS only          |
@@ -74,9 +74,19 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 
 ## Secrets
 
-`~/.secrets` (Unix) and `~/.secrets.ps1` (Windows) are created on first apply with restrictive permissions and **never tracked**. Sourced at the top of `.profile` / `profile.ps1`. Edit on each machine separately:
+| OS      | File                               | Permissions        |
+| ------- | ---------------------------------- | ------------------ |
+| Unix    | `~/.config/shell/secrets.sh`       | `600`              |
+| Windows | `~/.config/powershell/secrets.ps1` | current user only  |
+
+- **Never tracked**: listed in `.chezmoiignore`; edit on each machine separately.
+- **Created / migrated** by `.chezmoiscripts/run_once_init-untracked-env.{sh,ps1}`: moves a legacy `~/.secrets` / `~\.secrets.ps1` into place if present, otherwise writes a stub, then enforces permissions.
+- **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
+- **Why env vars**: project `.mcp.json` files expand `${VAR}` from the environment Claude Code is launched with, so MCP tokens must be exported here. Tools with their own credential store (e.g. `~/.config/gh/`, `~/.config/greenhouse/token`) keep it there.
+- **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`.
+- **Claude Code** is denied Read/Edit on both files (`dot_claude/settings.json.tmpl`).
 
 ```sh
-vim ~/.secrets             # Unix
-notepad $HOME\.secrets.ps1 # Windows
+vim ~/.config/shell/secrets.sh               # Unix
+notepad $HOME\.config\powershell\secrets.ps1 # Windows
 ```
