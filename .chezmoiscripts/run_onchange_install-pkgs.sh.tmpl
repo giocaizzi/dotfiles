@@ -98,7 +98,8 @@ install_tool_linux() {
 			curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
 			;;
 		"oh-my-posh")
-			curl -s https://ohmyposh.dev/install.sh | bash -s
+			# -d: default would be ~/bin if it exists; keep user binaries in ~/.local/bin
+			curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
 			;;
 		*)
 			echo "Warning: No installation method for $tool" >&2
