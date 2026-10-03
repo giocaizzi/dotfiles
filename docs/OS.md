@@ -91,6 +91,7 @@ Two Bitwarden CLIs, used per machine role:
 - **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (version pinned in `.chezmoidata/bws.toml`; bump to update). The first apply on a new machine fetches it; the next apply renders the secrets.
 - **Online needed:** on machines with a token, every `chezmoi status`/`diff`/`apply` calls `bws` once and fails offline.
 - No Bitwarden MCP server: it has no read-only mode and would give an AI agent full vault access.
+- **Claude Code and `bw`:** every `bw` command Claude runs needs your approval (an `ask` rule in the managed Claude settings; ask rules beat the blanket Bash allow, also inside pipes and in auto mode). To let Claude act, unlock in your own terminal into a private file, `(umask 077; bw unlock --raw > <file>)`; Claude runs `bw --session "$(cat <file>)" …` and prints only non-secret fields. Finish with `bw lock` and delete the file. The rule matches the command as written, so it's an approval gate, not a security boundary.
 
 ## Encrypted files (age)
 
