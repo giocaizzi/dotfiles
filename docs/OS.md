@@ -107,6 +107,8 @@ Two Bitwarden CLIs, used per machine role:
 
 Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`, or edit one in place with `chezmoi edit --apply <file>` (decrypts to an editor, re-encrypts on save).
 
+**SSH key names (same on every machine):** the personal GitHub key is `~/.ssh/id_ed25519_github_<github-user>` (+ `.pub`), because the shared `~/.ssh/config` points `Host github.com` at it. Don't redefine `github.com` in `config.d/` (it would shadow the shared entry); rename the key instead. Work keys keep their own names and live in `config.d/<name>` (e.g. `id_ed25519_github_<work-account>` behind a `github-<work>` alias).
+
 **SSH hosts per machine:** the shared `~/.ssh/config` starts with `Include config.d/*`. Hosts that belong to one machine only — e.g. work hosts on the corporate PC — go in `~/.ssh/config.d/<name>` there; chezmoi doesn't manage that folder, so they never enter this repo, not even encrypted. Work keys are generated on the work machine itself. If a work Git host is the same as a personal one, give the work account its own `Host` alias in `config.d/<name>` (own key, `IdentitiesOnly yes`) and clone work repos through that alias.
 
 ## Hardcoded by design
