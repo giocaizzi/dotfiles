@@ -28,9 +28,10 @@ $AdditionalTools = @(
     @{ Name = 'pipx';       Id = $null;                     Cmd = 'pipx' }
 )
 
-# Fonts — no command to probe, so checked with `winget list`
+# Fonts — installed per user by oh-my-posh (no admin; managed PCs block the
+# machine-scope winget package). Probed by one of the font's files.
 $Fonts = @(
-    @{ Name = 'JetBrainsMono Nerd Font'; Id = 'DEVCOM.JetBrainsMonoNerdFont' }
+    @{ Name = 'JetBrainsMono Nerd Font'; Archive = 'JetBrainsMono'; File = 'JetBrainsMonoNerdFont-Regular.ttf' }
 )
 
 # PowerShell modules (parity with bash/zsh shell features)
@@ -127,16 +128,18 @@ foreach ($tool in $AdditionalTools) {
 # INSTALL FONTS
 # ============================================================================
 
-Write-Step "Fonts (winget)"
+Write-Step "Fonts (oh-my-posh, user scope)"
 foreach ($font in $Fonts) {
-    winget list --id $font.Id --exact --source winget *> $null
-    if ($LASTEXITCODE -eq 0) {
+    $installed = (Test-Path "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\$($font.File)") -or
+                 (Test-Path "$env:WINDIR\Fonts\$($font.File)")
+    if ($installed) {
         Write-Ok "$($font.Name) already installed"
+    } elseif (Test-Command 'oh-my-posh') {
+        Write-Info "Installing $($font.Name) via oh-my-posh..."
+        oh-my-posh font install $font.Archive
+        if ($LASTEXITCODE -ne 0) { Write-Warning "Font install failed: $($font.Name)" }
     } else {
-        # No --scope user: font installers may only offer machine scope
-        Write-Info "Installing $($font.Name) ($($font.Id)) via winget..."
-        winget install --id $font.Id --exact --silent `
-            --accept-package-agreements --accept-source-agreements --source winget | Out-Null
+        Write-Warning "oh-my-posh not found; skipping $($font.Name)"
     }
 }
 

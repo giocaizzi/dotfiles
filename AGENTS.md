@@ -61,7 +61,7 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 | text | `#cdd6f4` | `#4c4f69` | icons, labels |
 | overlay0 | `#6c7086` | `#9ca0b0` | dim/grey |
 
-**Font:** `JetBrainsMono Nerd Font` in Ghostty, VS Code terminal and Windows Terminal (installed by brew cask / winget / Linux external). These configs are symlink targets, so the name is kept identical by hand.
+**Font:** `JetBrainsMono Nerd Font` in Ghostty, VS Code terminal and Windows Terminal (installed by brew cask / oh-my-posh (user scope) / Linux external). These configs are symlink targets, so the name is kept identical by hand.
 
 **Sources of truth (edit these, then `chezmoi apply`):**
 - `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt
