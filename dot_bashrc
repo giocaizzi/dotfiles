@@ -10,6 +10,18 @@ if [ -z "$PROFILE_SOURCED" ]; then
 fi
 
 # ----------------------------------------------------------------------------
+# SHARED SNIPPETS
+# ----------------------------------------------------------------------------
+# Aliases (from .chezmoidata/shortcuts.toml) and fzf defaults + h(). Aliases and
+# functions aren't inherited by child shells, so load them in every
+# interactive shell rather than once in ~/.profile.
+
+for snippet in aliases fzf; do
+	[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/shell/$snippet.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/shell/$snippet.sh"
+done
+unset snippet
+
+# ----------------------------------------------------------------------------
 # HISTORY
 # ----------------------------------------------------------------------------
 

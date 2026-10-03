@@ -2,7 +2,8 @@
 # POSIX SHELL CONFIGURATION (Core)
 # ============================================================================
 # Shared between bash and zsh. POSIX-compliant — no bash/zsh-specific syntax.
-# Aliases live in ~/.config/shell/aliases.sh; FZF config in ~/.config/shell/fzf.sh.
+# Environment only (inherited by child processes). Aliases and functions are
+# loaded per interactive shell by .bashrc / .zshrc from ~/.config/shell/.
 # ============================================================================
 
 # ----------------------------------------------------------------------------
@@ -71,16 +72,6 @@ unset _jh
 if [ -d "$HOME/.maestro/bin" ]; then
 	export PATH="$PATH:$HOME/.maestro/bin"
 fi
-
-# ----------------------------------------------------------------------------
-# 3. SHARED SNIPPETS
-# ----------------------------------------------------------------------------
-
-# Aliases (rendered from .chezmoidata/shortcuts.toml)
-[ -f "$XDG_CONFIG_HOME/shell/aliases.sh" ] && . "$XDG_CONFIG_HOME/shell/aliases.sh"
-
-# FZF defaults (key bindings loaded by .bashrc / .zshrc)
-[ -f "$XDG_CONFIG_HOME/shell/fzf.sh" ] && . "$XDG_CONFIG_HOME/shell/fzf.sh"
 
 # ----------------------------------------------------------------------------
 # End of .profile
