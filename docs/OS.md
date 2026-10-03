@@ -22,7 +22,12 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/git/{ignore,commit-template}`            | `~/.config/git/`                                            | same                                           | same                                                                               |
 | `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
 | `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
-| `dot_claude/`                                        | all OSes                                            | all OSes                                       | all OSes                                                                           |
+| `dot_claude/modify_settings.json` (merge)            | `~/.claude/settings.json`                                   | same                                           | same                                                                               |
+| `dot_claude/statusline-command.sh`                   | `~/.claude/statusline-command.sh`                           | same                                           | same                                                                               |
+| `dot_config/git/work.tmpl` (work machines only)      | `~/.config/git/work`                                        | same                                           | same                                                                               |
+| `dot_config/readline/inputrc`                        | `~/.config/readline/inputrc` (via `$INPUTRC`)               | same                                           | same (Git Bash)                                                                    |
+| `dot_config/tmux/tmux.conf`                          | `~/.config/tmux/tmux.conf`                                  | same                                           | — (no tmux)                                                                        |
+| `private_dot_ssh/encrypted_private_config.age`       | `~/.ssh/config` (decrypted, owner-only)                     | same                                           | same                                                                               |
 
 \* Symlink-target-only sources — never deployed as regular files anywhere (listed in `.chezmoiignore` unconditionally); only referenced via `{{ .chezmoi.sourceDir }}/...` from the Windows-specific symlinks.
 
@@ -45,7 +50,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | ------------------------------------------------------ | ----------------------------------------- | :---: | :---: | :-----: |
 | `~/.config/vim/pack/catppuccin/start/catppuccin/`      | `github.com/catppuccin/vim`               |  ✓    |  ✓    |   —     |
 | `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
-| `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓    |   —     |
+| `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓ (not light) |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 
 **When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), official installer scripts (uv), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
@@ -56,13 +61,20 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 - **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
 - **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
 
-## Light machines
+## Machine roles
 
-`chezmoi init` asks once per machine whether it is a light install (stored as `data.light`). Light machines (e.g. the Raspberry Pi over SSH) get the shell, git, vim and the oh-my-posh prompt only: `.chezmoiignore` skips VS Code, Ghostty, Claude/Copilot and fonts, and the install script installs `fzf git vim fd` + oh-my-posh. Change it later with `chezmoi init --promptBool "Light install (shell, git, vim, prompt only)=true"` (the flag matches the prompt text, not the key).
+Two independent yes/no answers, asked once per machine by `chezmoi init` and stored only in that machine's `~/.config/chezmoi/chezmoi.toml` (`data.light`, `data.work`). Templates read them with `get . "light"` / `get . "work"`, which treats a missing key as false.
 
-## Work git identity
+| Flag | Prompt | When true |
+|---|---|---|
+| `light` | Light install (shell, git, vim, prompt only) | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot and AGENTS.md; no Nerd Font download; the install script installs only `fzf git vim fd tmux` + oh-my-posh (no uv/Python). |
+| `work` | Work computer (work git identity, no personal telemetry) | Asks the work repos folder and work email. Repos under that folder commit with the work email (`~/.config/git/config` → `includeIf "gitdir/i:<folder>/"` → `~/.config/git/work`); use the folder's real path, not a symlink. Claude Code sends no telemetry to the personal OTel endpoint (the keys are left out and stripped from the live file). |
 
-`chezmoi init` asks once per machine for a work repos folder and email (blank = none), stored only in that machine's `~/.config/chezmoi/chezmoi.toml`. Where set, `~/.config/git/config` includes `~/.config/git/work` for repos under that folder (`includeIf "gitdir/i:…"`), so they commit with the work email. Use the folder's real path, not a symlink.
+Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
+
+Change an answer later by passing the prompt text: `chezmoi init --promptBool "Work computer (work git identity, no personal telemetry)=true"`, then `chezmoi apply`.
+
+The corporate-PC workarounds below are tied to Windows, not to `work`: they're harmless on any Windows machine.
 
 ## Encrypted files (age)
 
@@ -76,18 +88,32 @@ chezmoi target paths are literal (they can't be templated), so a few values stay
 - **Homebrew prefixes** `/opt/homebrew` (Apple Silicon) and `/usr/local` (Intel) — fixed by Homebrew.
 - **Vendor paths** — `Library/Application Support/…`, `AppData/…`, the Windows Terminal package family name.
 - **`{{ .chezmoi.homeDir }}`** in templates — rendered per machine.
-- **Personal data** — plugin marketplaces, OTel endpoint, project aliases. Git identity is prompted at `chezmoi init`.
-
-`~/.claude/settings.json` and `~/.copilot/settings.json` are merged, not replaced: `modify_` templates overlay `.chezmoitemplates/{claude,copilot}-settings.json` onto the live file, so keys the app writes itself (Claude `autoMode`, Copilot `model`, approved `allowedUrls`) stay local. Removing a managed key from the template doesn't delete it from the live file; delete it there once.
+- **Personal data** — plugin marketplaces, the OTel endpoint (personal machines only), project aliases. Git identity is prompted at `chezmoi init`.
 
 Anything that genuinely differs per machine and can't be templated (e.g. a redirected Documents folder) is resolved at runtime by a script.
+
+## Files merged, not replaced
+
+`~/.claude/settings.json` and `~/.copilot/settings.json` are also written by the apps themselves, so chezmoi doesn't own them whole. `modify_` templates overlay `.chezmoitemplates/{claude,copilot}-settings.json` onto the live file: managed keys win, keys the app writes stay local and never reach this public repo (Claude `autoMode`, Copilot `model`; Copilot `allowedUrls` is the union of both). Removing a managed key from a template doesn't delete it from the live file; delete it there once (except the telemetry keys on work machines, which are stripped automatically).
+
+## Managed (corporate) Windows PCs
+
+Endpoint policies on the work PC block several defaults; the workarounds apply to every Windows machine:
+
+| Blocked | Workaround |
+|---|---|
+| Machine-wide installs (winget font package) | JetBrainsMono installed per user by `oh-my-posh font install` |
+| `Set-Acl` (needs SeSecurityPrivilege) | `icacls` restricts `secrets.ps1` |
+| uv's `python.exe` launchers in `~\.local\bin` (unsigned exe named python.exe) | `uv python install --no-bin`; `profile.ps1` puts uv's `cpython-3.NN-*` interpreter folder on PATH |
+| `New-Item -ItemType SymbolicLink` in Windows PowerShell 5.1 without admin | `mklink` (honours Developer Mode) in `run_after_link-pwsh-profile.ps1` |
+| Documents redirected to OneDrive and localised | profile link target resolved at runtime with `GetFolderPath('MyDocuments')` |
 
 ## Testing the ignore matrix
 
 ```sh
-cat .chezmoiignore | chezmoi execute-template --init \
-  --promptString email=x --promptString gitUser=x --promptString gitEmail=x \
-  --override-data '{"chezmoi":{"os":"darwin"}}'   # or "linux" / "windows"
+chezmoi execute-template \
+  --override-data '{"light":false,"work":false,"chezmoi":{"os":"darwin"}}' \
+  < .chezmoiignore   # vary os (darwin/linux/windows), light, work
 ```
 
 For the live OS, `chezmoi managed` and `chezmoi ignored` show the actual split.

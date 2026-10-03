@@ -1,10 +1,15 @@
 {{- $user := promptStringOnce . "gitUser" "User name" -}}
 {{- $email := promptStringOnce . "gitEmail" "Email address" -}}
 {{- $light := promptBoolOnce . "light" "Light install (shell, git, vim, prompt only)" -}}
-{{- /* Work identity: per machine, kept in local config only (never committed) */ -}}
-{{- $workGitDir := promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work (blank for none)" -}}
+{{- /* Work machine: work git identity, no personal telemetry. Values stay in
+       this machine's local config only (never committed). */ -}}
+{{- $work := promptBoolOnce . "work" "Work computer (work git identity, no personal telemetry)" -}}
+{{- $workGitDir := "" -}}
 {{- $workEmail := "" -}}
-{{- if $workGitDir }}{{ $workEmail = promptStringOnce . "workEmail" "Work git email" }}{{ end -}}
+{{- if $work }}
+{{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work" -}}
+{{- $workEmail = promptStringOnce . "workEmail" "Work git email" -}}
+{{- end }}
 
 # Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key
 # lives only at ~/.config/chezmoi/key.txt on each machine (copied by hand);
@@ -19,6 +24,7 @@ encryption = "age"
     gitUser = {{ $user | quote }}
     gitEmail = {{ $email | quote }}
     light = {{ $light }}
+    work = {{ $work }}
     workGitDir = {{ $workGitDir | quote }}
     workEmail = {{ $workEmail | quote }}
 

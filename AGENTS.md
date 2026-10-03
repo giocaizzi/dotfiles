@@ -34,6 +34,11 @@ dot_config/shell/{aliases.sh.tmpl, fzf.sh}         → ~/.config/shell/     (Uni
 dot_config/git/config.tmpl                         → ~/.config/git/config (all OSes)
 dot_config/oh-my-posh/theme.omp.json               → ~/.config/oh-my-posh/ (bash/zsh/pwsh)
 dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/vimfiles/vimrc symlink (Windows)
+dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
+dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
+dot_config/git/work.tmpl                           → ~/.config/git/work (work machines only)
+.chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
+private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo)
 ```
 
 Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell/profile.ps1`) are thin orchestrators that source the snippets under `~/.config/shell/` (POSIX) or `~/.config/powershell/` (PS).
@@ -44,6 +49,10 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Add a new git alias once in `.chezmoidata/shortcuts.toml` → it renders into both shells on `chezmoi apply`.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`.
+- Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
+- Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
+- The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
+- Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 
 ## Style system
@@ -78,9 +87,9 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 
 ## Docs
 
-- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS.
-- [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, shortcuts.toml workflow.
-- [docs/GIT.md](./docs/GIT.md) — commit conventions.
-- [README.md](./README.md) — everyday chezmoi commands.
+- [README.md](./README.md) — new-machine setup and everyday chezmoi commands.
+- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, encryption, managed-Windows workarounds, hardcoded-by-design values.
+- [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, shortcuts.toml workflow, tools, secrets.
+- Commits follow Conventional Commits.
 
 Keep docs short, factual, and updated with structural changes.
