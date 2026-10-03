@@ -64,7 +64,8 @@ vimfiles
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---
-# Shell, git, vim and the prompt only: no editors, terminals, AI agents, fonts.
+# Shell, git, vim and the prompt only: no editors, terminals or AI agents.
+# (The font external is skipped in .chezmoiexternal.toml.tmpl.)
 # `get` tolerates configs created before the light key existed.
 {{ if get . "light" }}
 .claude
@@ -73,7 +74,6 @@ vimfiles
 .config/Code
 .config/Code - Insiders
 .config/ghostty
-.local/share/fonts
 {{ end }}
 
 # --- Windows only ---
