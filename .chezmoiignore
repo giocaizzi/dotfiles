@@ -79,6 +79,9 @@ vimfiles
 .config/Code
 .config/Code - Insiders
 .config/ghostty
+# Outbound-only SSH config; skipping it (the only encrypted file) means light
+# machines never need the age key, which decrypts every secret in this repo.
+.ssh
 {{ end }}
 
 # Work git identity only where a work folder is configured
