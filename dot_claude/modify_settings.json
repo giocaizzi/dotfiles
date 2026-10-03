@@ -3,4 +3,11 @@
        writes itself (e.g. autoMode) are kept local and never committed. */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- /* Work machines send no telemetry to the personal OTel endpoint. The merge
+       never deletes, so strip any telemetry keys already in the live file. */ -}}
+{{- if and (get . "work") (hasKey $current "env") }}
+{{- range $k, $v := $current.env }}
+{{- if or (hasPrefix "OTEL_" $k) (contains "TELEMETRY" $k) }}{{ $x := unset $current.env $k }}{{ end }}
+{{- end }}
+{{- end }}
 {{- mergeOverwrite $current (includeTemplate "claude-settings.json" . | fromJson) | toPrettyJson }}
