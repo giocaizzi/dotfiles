@@ -6,9 +6,11 @@
 {{- $work := promptBoolOnce . "work" "Work computer (work git identity, no personal telemetry)" -}}
 {{- $workGitDir := "" -}}
 {{- $workEmail := "" -}}
+{{- $workSshKey := "" -}}
 {{- if $work }}
 {{- $workGitDir = promptStringOnce . "workGitDir" "Work repos folder, e.g. ~/work" -}}
 {{- $workEmail = promptStringOnce . "workEmail" "Work git email" -}}
+{{- $workSshKey = promptStringOnce . "workSshKey" "Work SSH key for repos in the work folder, e.g. ~/.ssh/id_ed25519_work (blank for none)" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
@@ -35,6 +37,7 @@ encryption = "age"
     work = {{ $work }}
     workGitDir = {{ $workGitDir | quote }}
     workEmail = {{ $workEmail | quote }}
+    workSshKey = {{ $workSshKey | quote }}
     bwsAccessToken = {{ $bwsToken | quote }}
     bwsProjectId = {{ $bwsProject | quote }}
 
