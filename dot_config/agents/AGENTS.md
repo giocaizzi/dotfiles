@@ -45,6 +45,7 @@
 - Do not add standalone explanatory documentation unless the user asks for it. Use Mermaid only when the user explicitly asks for it.
 - Follow current language conventions for docstrings and explain what and why, not how.
 - Python: use uv for everything — `uv add`/`uv sync`/`uv run` in projects, `uv tool install` or `uvx` for CLI tools. Never use pipx, `pip install --user`, or global pip installs.
+- Bitwarden: use only the `bw` CLI via the session-file flow — the user unlocks in their own terminal into a 0600 file, the agent runs `bw --session "$(cat <file>)" …`, and finishes with `bw lock` and deleting the file. Never ask for the master password or a session token in chat, never export `BW_SESSION` in a profile, never print secret values (discard or filter output to names/counts/match results), and never install or configure the Bitwarden MCP server.
 - Use centralized project commands such as `make` or `npm scripts` when they exist. If none exist, follow the ecosystem's standard conventions.
 - Use git with small, focused commits. When writing commit messages, follow Conventional Commits and explain what changed and why.
 - Keep detailed release, versioning, testing, and domain-specific workflows in skills or narrower instructions, not in this main file.
