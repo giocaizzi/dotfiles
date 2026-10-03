@@ -69,7 +69,6 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | `fzf`         |  ✓   |  ✓  |     ✓      | env in `fzf.sh`/`fzf.ps1`; bindings in bashrc/zshrc/PSFzf  |
 | `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.config/oh-my-posh/theme.omp.json`|
 | `uv`          |  ✓   |  ✓  |     ✓      | Python + CLI tools in `~/.local/bin` (on PATH in `.profile` / `profile.ps1`) |
-| `nvm`         |  ✓   |  —  |     —      | `.bashrc` only                                             |
 | `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `git docker gh`)                        |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
 | `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
@@ -82,7 +81,7 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | Windows | `~/.config/powershell/secrets.ps1` | current user only  |
 
 - **Never tracked**: listed in `.chezmoiignore`; edit on each machine separately.
-- **Created / migrated** by `.chezmoiscripts/run_once_init-untracked-env.{sh,ps1}`: moves a legacy `~/.secrets` / `~\.secrets.ps1` into place if present, otherwise writes a stub, then enforces permissions.
+- **Created** by `.chezmoiscripts/run_once_init-untracked-env.{sh,ps1}`: writes a stub if missing, then enforces owner-only permissions.
 - **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
 - **Why env vars**: project `.mcp.json` files expand `${VAR}` from the environment Claude Code is launched with, so MCP tokens must be exported here. Tools with their own credential store (e.g. `~/.config/gh/`, `~/.config/greenhouse/token`) keep it there.
 - **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`.

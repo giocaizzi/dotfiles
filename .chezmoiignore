@@ -84,6 +84,6 @@ vimfiles
 {{ if eq .chezmoi.os "windows" }}
 .config/vim
 .chezmoiscripts/init-untracked-env.sh
-.chezmoiscripts/migrate-xdg.sh
+.chezmoiscripts/create-xdg-dirs.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}

@@ -32,7 +32,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | -------------------------------------------- | :---: | :---: | :-----: |
 | `run_once_init-untracked-env.sh` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
 | `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
-| `run_once_after_migrate-xdg.sh` → moves history/viminfo/lesshst to `$XDG_STATE_HOME` |  ✓    |  ✓    |   —     |
+| `run_once_after_create-xdg-dirs.sh` → creates `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
 | `run_after_link-pwsh-profile.ps1` → resolves the real Documents folder (OneDrive/locale) and links the profile |  —    |  —    |   ✓     |
 | `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
