@@ -28,7 +28,8 @@
 # JetBrainsMono Nerd Font — Linux only (macOS: Homebrew cask, Windows: oh-my-posh user-scope install,
 # both in the install scripts). ~/.local/share/fonts is the XDG user font dir
 # fontconfig scans natively.
-{{- if eq .chezmoi.os "linux" }}
+# Not on light machines: .chezmoiignore doesn't stop an external's download.
+{{- if and (eq .chezmoi.os "linux") (not (get . "light")) }}
 [".local/share/fonts/JetBrainsMonoNerdFont"]
     type = "archive"
     url = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
