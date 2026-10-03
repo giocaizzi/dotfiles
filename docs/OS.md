@@ -60,6 +60,14 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 
 `chezmoi init` asks once per machine whether it is a light install (stored as `data.light`). Light machines (e.g. the Raspberry Pi over SSH) get the shell, git, vim and the oh-my-posh prompt only: `.chezmoiignore` skips VS Code, Ghostty, Claude/Copilot and fonts, and the install script installs `fzf git vim fd` + oh-my-posh. Change it later with `chezmoi init --promptBool "Light install (shell, git, vim, prompt only)=true"` (the flag matches the prompt text, not the key).
 
+## Work git identity
+
+`chezmoi init` asks once per machine for a work repos folder and email (blank = none), stored only in that machine's `~/.config/chezmoi/chezmoi.toml`. Where set, `~/.config/git/config` includes `~/.config/git/work` for repos under that folder (`includeIf "gitdir/i:…"`), so they commit with the work email. Use the folder's real path, not a symlink.
+
+## Encrypted files (age)
+
+Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply`; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`.
+
 ## Hardcoded by design
 
 chezmoi target paths are literal (they can't be templated), so a few values stay fixed on purpose:

@@ -6,6 +6,15 @@
 {{- $workEmail := "" -}}
 {{- if $workGitDir }}{{ $workEmail = promptStringOnce . "workEmail" "Work git email" }}{{ end -}}
 
+# Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key
+# lives only at ~/.config/chezmoi/key.txt on each machine (copied by hand);
+# the recipient below is the matching public key and is safe to publish.
+encryption = "age"
+
+[age]
+    identity = "{{ .chezmoi.homeDir }}/.config/chezmoi/key.txt"
+    recipient = "age103kslutkh98kkzp95evpt89qgjlp2ndl2qglw9ueze6r5g2hvy6sj4xj25"
+
 [data]
     gitUser = {{ $user | quote }}
     gitEmail = {{ $email | quote }}
