@@ -28,8 +28,16 @@ function Add-ToPath([string]$dir) {
     $env:Path = (@($dir) + $rest) -join ';'
 }
 
-# uv, uv-managed Python and uv tools
+# uv and uv tools
 Add-ToPath "$HOME\.local\bin"
+
+# uv-managed Python: put the interpreter's own folder first. uv's small
+# python.exe launchers are blocked on managed PCs ("Access is denied": an
+# unsigned exe named python.exe), so they aren't installed on Windows.
+# cpython-3.NN-* (no patch) is uv's per-minor folder that tracks the latest patch.
+Get-Item "$env:APPDATA\uv\python\cpython-3.??-windows-*" -ErrorAction SilentlyContinue |
+    Sort-Object Name -Descending | Select-Object -First 1 |
+    ForEach-Object { Add-ToPath $_.FullName }
 
 # ----------------------------------------------------------------------------
 # 3. PSReadLine
