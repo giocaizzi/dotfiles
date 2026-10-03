@@ -36,7 +36,7 @@ dot_config/oh-my-posh/theme.omp.json               → ~/.config/oh-my-posh/ (ba
 dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/vimfiles/vimrc symlink (Windows)
 dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
-dot_config/git/work.tmpl                           → ~/.config/git/work (work machines only)
+dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
 private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo)
 ```

@@ -44,7 +44,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
    |---|---|---|---|
    | User name / Email address | git identity | git identity | git identity |
    | Light install (shell, git, vim, prompt only) | no | no | **yes** |
-   | Work computer (work git identity, no personal telemetry) | no | **yes** → work repos folder (real path) and/or work remote URL globs + work email | no |
+   | Work computer (work git identity, no personal telemetry) | no | **yes** → work email (default identity) + personal remote URL globs | no |
    | Bitwarden Secrets Manager access token / project ID | token + `personal` ID | token + `work` ID | not asked |
 
    The token is visible while typed. To change answers later, `chezmoi init --prompt` (asks everything again; keeps the token out of shell history).
