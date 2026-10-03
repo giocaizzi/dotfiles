@@ -19,6 +19,10 @@ function la { Get-ChildItem -Force -Hidden @args }
 function pipx { Write-Error "pipx is not used here, use uv: uv tool install <pkg> | uvx <pkg> | uv tool upgrade --all" }
 
 # --- Git shortcuts (generated from .chezmoidata/shortcuts.toml) ---
+# Aliases take precedence over functions, and PowerShell ships built-ins with
+# the same names (gc = Get-Content, gp = Get-ItemProperty, gl = Get-Location),
+# so remove any alias first or the shortcut never runs.
 {{ range $name, $cmd := .shortcuts.git -}}
+Remove-Item "Alias:{{ $name }}" -Force -ErrorAction SilentlyContinue
 function {{ $name }} { {{ $cmd }} @args }
 {{ end }}
