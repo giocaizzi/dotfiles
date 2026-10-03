@@ -10,8 +10,8 @@
 # ----------------------------------------------------------------------------
 
 # Load secrets (untracked, user-managed)
-if [ -f "$HOME/.secrets" ]; then
-	. "$HOME/.secrets"
+if [ -f "$HOME/.config/shell/secrets.sh" ]; then
+	. "$HOME/.config/shell/secrets.sh"
 fi
 
 export EDITOR='vim'
@@ -73,6 +73,12 @@ if [ -d "$HOME/Library/Android/sdk" ]; then
 	export ANDROID_HOME="$HOME/Library/Android/sdk"
 	export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools"
 fi
+
+# Java 21 for Android/Gradle (macOS java_home helper)
+if [ -x /usr/libexec/java_home ] && _jh=$(/usr/libexec/java_home -v 21 2>/dev/null); then
+	export JAVA_HOME="$_jh"
+fi
+unset _jh
 
 # Maestro (if installed)
 if [ -d "$HOME/.maestro/bin" ]; then

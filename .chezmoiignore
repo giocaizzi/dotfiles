@@ -12,8 +12,11 @@ README.md
 AGENTS.md
 CLAUDE.md
 .agents
-.secrets
 docs
+
+# Untracked per-machine secrets (created by run_once_init-untracked-env.*)
+.config/shell/secrets.sh
+.config/powershell/secrets.ps1
 
 # Symlink-only sources: files that exist in the source tree purely as targets
 # for symlinks on the OS that uses them, and should never be deployed as

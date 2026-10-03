@@ -12,7 +12,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `~/OneDrive - Jakala SpA/Documenti/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks) |
-| `dot_copilot/settings.json`                          | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
+| `dot_copilot/private_settings.json`                  | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
 | `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
@@ -28,8 +28,8 @@ How each managed file maps to its destination per OS. Canonical sources live und
 
 | Script                                       | macOS | Linux | Windows |
 | -------------------------------------------- | :---: | :---: | :-----: |
-| `run_once_init-untracked-env.sh`             |  ✓    |  ✓    |   —     |
-| `run_once_init-untracked-env.ps1`            |  —    |  —    |   ✓     |
+| `run_once_init-untracked-env.sh` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
+| `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
 
