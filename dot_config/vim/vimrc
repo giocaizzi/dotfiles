@@ -1,0 +1,16 @@
+syntax on
+if has('termguicolors')
+  set termguicolors
+endif
+set background=dark
+silent! colorscheme catppuccin_mocha
+set langmenu=en_US.UTF-8
+language en_US.UTF-8
+
+" XDG: Vim 9.1+ reads this file from $XDG_CONFIG_HOME/vim, but viminfo still
+" defaults to $HOME — keep it in $XDG_STATE_HOME on Unix.
+if !has('win32')
+  let s:state = (empty($XDG_STATE_HOME) ? $HOME . '/.local/state' : $XDG_STATE_HOME) . '/vim'
+  call mkdir(s:state, 'p')
+  let &viminfofile = s:state . '/viminfo'
+endif

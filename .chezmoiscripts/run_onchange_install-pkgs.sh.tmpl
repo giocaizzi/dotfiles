@@ -128,12 +128,6 @@ for pkg in "${ALL_BREW_PACKAGES[@]}"; do
 	fi
 done
 
-# Setup fzf key bindings
-if [ -f "$(brew --prefix)/opt/fzf/install" ]; then
-	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Setting up fzf key bindings...${NC}"
-	"$(brew --prefix)/opt/fzf/install" --key-bindings --completion --no-update-rc >/dev/null 2>&1
-fi
-
 # Additional tools
 if [ "$VERBOSE" = true ]; then
 	echo -e "\n${YELLOW}Additional tools:${NC}"
