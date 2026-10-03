@@ -84,8 +84,8 @@ vimfiles
 .ssh
 {{ end }}
 
-# Work git identity only where a work folder is configured
-{{ if not (get . "workGitDir") }}
+# Work git identity only where a work folder or remote is configured
+{{ if not (or (get . "workGitDir") (get . "workGitRemote")) }}
 .config/git/work
 {{ end }}
 
