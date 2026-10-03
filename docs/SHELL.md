@@ -18,10 +18,12 @@ profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, f
 
 ## Files
 
+History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump in `$XDG_CACHE_HOME/zsh/`.
+
 | File                                     | Role                                                                    | OS scope            |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `dot_profile`                            | POSIX core: PATH, env vars (`EDITOR`, `POSH_THEME`, `JAVA_HOME`), sources snippets | Unix + Git Bash |
-| `dot_bash_profile`                       | Login-shell wrapper → sources `.profile` + `.bashrc`                    | Unix                |
+| `dot_profile`                            | POSIX core: `XDG_*`, PATH, env vars (`EDITOR`, `POSH_THEME`, `JAVA_HOME`), sources snippets | Unix + Git Bash |
+| `dot_bash_profile`                       | Login-shell wrapper → sources `.bashrc` (which sources `.profile` once) | Unix                |
 | `dot_bashrc`                             | Bash: history, completion, FZF bindings, oh-my-posh init                | Unix                |
 | `dot_zshrc` / `dot_zprofile`             | Zsh: Oh My Zsh, history, plugins, FZF bindings, oh-my-posh init         | macOS only          |
 | `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
@@ -65,7 +67,7 @@ PowerShell (`aliases.ps1`) mirrors the same shortcuts as functions (e.g. `functi
 | Tool          | Bash | Zsh | PowerShell | Init location                                              |
 | ------------- | :--: | :-: | :--------: | ---------------------------------------------------------- |
 | `fzf`         |  ✓   |  ✓  |     ✓      | env in `fzf.sh`/`fzf.ps1`; bindings in bashrc/zshrc/PSFzf  |
-| `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.mytheme.omp.json`                 |
+| `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.config/oh-my-posh/theme.omp.json`|
 | `pyenv`       |  ✓   |  ✓  |     ✓      | PATH in `.profile` / `profile.ps1`; `pyenv init` in rc     |
 | `nvm`         |  ✓   |  —  |     —      | `.bashrc` only                                             |
 | `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `git docker gh`)                        |

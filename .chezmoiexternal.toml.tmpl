@@ -13,11 +13,11 @@
 # ============================================================================
 
 # Catppuccin colorscheme for Vim — native vim8+ pack plugin.
-# `:colorscheme catppuccin_mocha` in dot_vimrc activates it.
+# `:colorscheme catppuccin_mocha` in dot_config/vim/vimrc activates it.
 {{- if eq .chezmoi.os "windows" }}
 ["vimfiles/pack/catppuccin/start/catppuccin"]
 {{- else }}
-[".vim/pack/catppuccin/start/catppuccin"]
+[".config/vim/pack/catppuccin/start/catppuccin"]
 {{- end }}
     type = "git-repo"
     url = "https://github.com/catppuccin/vim.git"

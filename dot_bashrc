@@ -30,7 +30,7 @@ esac
 
 HISTSIZE=50000
 HISTFILESIZE=50000
-HISTFILE="$HOME/.bash_history"
+HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/bash/history"
 HISTCONTROL=ignoreboth:erasedups
 
 shopt -s histappend cmdhist
@@ -51,21 +51,13 @@ shopt -s checkwinsize nocaseglob extglob globstar 2>/dev/null
 shopt -s cdspell dirspell 2>/dev/null
 
 # ----------------------------------------------------------------------------
-# FZF & NVM
+# FZF
 # ----------------------------------------------------------------------------
 
 # FZF key bindings (options set in ~/.profile)
-if [ -n "$HOMEBREW_PREFIX" ]; then
-	[ -f "$HOMEBREW_PREFIX/opt/fzf/shell/completion.bash" ] && . "$HOMEBREW_PREFIX/opt/fzf/shell/completion.bash"
-	[ -f "$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.bash" ] && . "$HOMEBREW_PREFIX/opt/fzf/shell/key-bindings.bash"
-elif [ -f ~/.fzf.bash ]; then
-	. ~/.fzf.bash
+if command -v fzf >/dev/null 2>&1; then
+	eval "$(fzf --bash 2>/dev/null)"  # fzf >= 0.48; no-op on older builds
 fi
-
-# nvm (Node Version Manager)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # Homebrew bash-completion
 [ -n "$HOMEBREW_PREFIX" ] && [ -f "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh" ] && . "$HOMEBREW_PREFIX/etc/profile.d/bash_completion.sh"
@@ -77,7 +69,7 @@ export NVM_DIR="$HOME/.nvm"
 if command -v oh-my-posh &> /dev/null; then
 	# Force color support for oh-my-posh
 	export COLORTERM=truecolor
-	eval "$(oh-my-posh init bash --config "${POSH_THEME:-$HOME/.mytheme.omp.json}")"
+	eval "$(oh-my-posh init bash --config "${POSH_THEME:-${XDG_CONFIG_HOME:-$HOME/.config}/oh-my-posh/theme.omp.json}")"
 fi
 
 # ----------------------------------------------------------------------------

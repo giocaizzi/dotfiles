@@ -33,6 +33,14 @@ alias egrep='egrep --color=auto'
 alias free='top -l 1 -s 0 | grep PhysMem'
 {{- end }}
 
+# --- Project-specific ---
+{{- if eq .chezmoi.os "darwin" }}
+alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
+openclaw() {
+	PI_SSH_USER=giorgiocaizzi "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh" "$@"
+}
+{{- end }}
+
 # --- Python ---
 if command -v python3 >/dev/null 2>&1; then
 	alias python='python3'

@@ -14,7 +14,7 @@ if (Test-Path $secretsFile) { . $secretsFile }
 
 $env:EDITOR     = 'vim'
 $env:VISUAL     = 'vim'
-$env:POSH_THEME = Join-Path $HOME '.mytheme.omp.json'
+$env:POSH_THEME = Join-Path $HOME '.config\oh-my-posh\theme.omp.json'
 
 # ----------------------------------------------------------------------------
 # 2. PATH

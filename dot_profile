@@ -9,16 +9,22 @@
 # 1. ENVIRONMENT
 # ----------------------------------------------------------------------------
 
+# XDG Base Directory spec (explicit, so tools also honor it on macOS)
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
+
 # Load secrets (untracked, user-managed)
-if [ -f "$HOME/.config/shell/secrets.sh" ]; then
-	. "$HOME/.config/shell/secrets.sh"
+if [ -f "$XDG_CONFIG_HOME/shell/secrets.sh" ]; then
+	. "$XDG_CONFIG_HOME/shell/secrets.sh"
 fi
 
 export EDITOR='vim'
 export VISUAL='vim'
 
 # Oh-My-Posh theme (single source for all shells)
-export POSH_THEME="$HOME/.mytheme.omp.json"
+export POSH_THEME="$XDG_CONFIG_HOME/oh-my-posh/theme.omp.json"
 
 # ----------------------------------------------------------------------------
 # 2. PATH
@@ -85,33 +91,15 @@ if [ -d "$HOME/.maestro/bin" ]; then
 	export PATH="$PATH:$HOME/.maestro/bin"
 fi
 
-# Google Cloud SDK (if installed)
-if [ -f "$HOME/Downloads/google-cloud-sdk/path.sh.inc" ]; then
-	. "$HOME/Downloads/google-cloud-sdk/path.sh.inc"
-fi
-if [ -f "$HOME/Downloads/google-cloud-sdk/completion.bash.inc" ]; then
-	. "$HOME/Downloads/google-cloud-sdk/completion.bash.inc"
-fi
-
 # ----------------------------------------------------------------------------
 # 3. SHARED SNIPPETS
 # ----------------------------------------------------------------------------
 
 # Aliases (rendered from .chezmoidata/shortcuts.toml)
-[ -f "$HOME/.config/shell/aliases.sh" ] && . "$HOME/.config/shell/aliases.sh"
+[ -f "$XDG_CONFIG_HOME/shell/aliases.sh" ] && . "$XDG_CONFIG_HOME/shell/aliases.sh"
 
 # FZF defaults (key bindings loaded by .bashrc / .zshrc)
-[ -f "$HOME/.config/shell/fzf.sh" ] && . "$HOME/.config/shell/fzf.sh"
-
-# ----------------------------------------------------------------------------
-# 4. PROJECT-SPECIFIC SHORTCUTS
-# ----------------------------------------------------------------------------
-
-alias ikas="$HOME/Documents/iknowaspot/iknowaspot/ikas.sh"
-
-openclaw() {
-	PI_SSH_USER=giorgiocaizzi "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh" "$@"
-}
+[ -f "$XDG_CONFIG_HOME/shell/fzf.sh" ] && . "$XDG_CONFIG_HOME/shell/fzf.sh"
 
 # ----------------------------------------------------------------------------
 # End of .profile

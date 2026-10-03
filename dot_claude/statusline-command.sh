@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Claude Code status line - mirrors ~/.mytheme.omp.json style
+# Claude Code status line - mirrors ~/.config/oh-my-posh/theme.omp.json style
 # Receives JSON on stdin from Claude Code
 
 input=$(cat)
