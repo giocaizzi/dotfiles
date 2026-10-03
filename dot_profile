@@ -24,6 +24,15 @@ fi
 export EDITOR='vim'
 export VISUAL='vim'
 
+# Pager: colour, quit if one screen, smart-case search. Man pages: bold →
+# magenta, underline → blue (the terminal's Catppuccin ANSI palette).
+export PAGER='less'
+export LESS='-R -F -i'
+export MANPAGER='less -R --use-color -Dd+m -Du+b'
+
+# Readline has no XDG default path
+export INPUTRC="$XDG_CONFIG_HOME/readline/inputrc"
+
 # Oh-My-Posh theme (single source for all shells)
 export POSH_THEME="$XDG_CONFIG_HOME/oh-my-posh/theme.omp.json"
 
