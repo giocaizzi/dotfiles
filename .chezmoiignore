@@ -83,6 +83,7 @@ vimfiles
 # get the same aliases/PATH as native Unix.
 {{ if eq .chezmoi.os "windows" }}
 .config/vim
+.config/tmux
 .chezmoiscripts/init-untracked-env.sh
 .chezmoiscripts/create-xdg-dirs.sh
 .chezmoiscripts/install-pkgs.sh
