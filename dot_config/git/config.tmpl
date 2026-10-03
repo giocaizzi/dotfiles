@@ -2,6 +2,13 @@
 	name = {{ .gitUser }}
 	email = {{ .gitEmail }}
 
+{{- with get . "workGitDir" }}
+
+# Repos under the work folder use the work email (~/.config/git/work)
+[includeIf "gitdir/i:{{ . | replace "\\" "/" | trimSuffix "/" }}/"]
+	path = work
+{{- end }}
+
 [commit]
 	template = {{ .chezmoi.homeDir }}/.config/git/commit-template
 

@@ -76,6 +76,11 @@ vimfiles
 .config/ghostty
 {{ end }}
 
+# Work git identity only where a work folder is configured
+{{ if not (get . "workGitDir") }}
+.config/git/work
+{{ end }}
+
 # --- Windows only ---
 # Vim on Windows reads ~/vimfiles/vimrc (symlink → dot_config/vim/vimrc), not
 # the XDG path. Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
