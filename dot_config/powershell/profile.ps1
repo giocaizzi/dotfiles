@@ -20,10 +20,12 @@ $env:POSH_THEME = Join-Path $HOME '.config\oh-my-posh\theme.omp.json'
 # 2. PATH
 # ----------------------------------------------------------------------------
 
+# Prepend $dir, moving it to the front if it's already on PATH (like the
+# POSIX .profile), so user tools win over entries from the Windows PATH setting.
 function Add-ToPath([string]$dir) {
-    if ((Test-Path $dir) -and ($env:Path -split ';' -notcontains $dir)) {
-        $env:Path = "$dir;$env:Path"
-    }
+    if (-not (Test-Path $dir)) { return }
+    $rest = $env:Path -split ';' | Where-Object { $_ -and $_.TrimEnd('\') -ne $dir.TrimEnd('\') }
+    $env:Path = (@($dir) + $rest) -join ';'
 }
 
 # uv, uv-managed Python and uv tools
