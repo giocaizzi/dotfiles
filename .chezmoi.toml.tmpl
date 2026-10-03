@@ -1,9 +1,11 @@
 {{- $user := promptStringOnce . "gitUser" "User name" -}}
 {{- $email := promptStringOnce . "gitEmail" "Email address" -}}
+{{- $light := promptBoolOnce . "light" "Light install (shell, git, vim, prompt only)" -}}
 
 [data]
     gitUser = {{ $user | quote }}
     gitEmail = {{ $email | quote }}
+    light = {{ $light }}
 
 [git]
     autoAdd = true
