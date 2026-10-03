@@ -23,13 +23,8 @@ if (-not (Test-Path $secretsFile)) {
     }
 }
 
-# Restrict access to current user only
-$acl = Get-Acl $secretsFile
-$acl.SetAccessRuleProtection($true, $false)
-$rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
-    [System.Security.Principal.WindowsIdentity]::GetCurrent().Name,
-    "FullControl",
-    "Allow"
-)
-$acl.AddAccessRule($rule)
-Set-Acl -Path $secretsFile -AclObject $acl
+# Restrict access to current user only. icacls edits the DACL alone; Set-Acl
+# also rewrites the SACL, which needs SeSecurityPrivilege (absent on managed PCs).
+$me = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+icacls $secretsFile /inheritance:r /grant:r "${me}:(F)" | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "icacls failed to restrict $secretsFile" }
