@@ -5,14 +5,20 @@
 {{- else }}
 	email = {{ .gitEmail }}
 {{- end }}
-{{- with get . "personalGitRemote" }}
+{{- $globs := list }}
+{{- with get . "githubUser" }}
+{{- $globs = concat $globs (list (printf "git@github.com:%s/**" .) (printf "ssh://git@github.com/%s/**" .) (printf "https://github.com/%s/**" .) (printf "https://*@github.com/%s/**" .)) }}
+{{- end }}
+{{- range splitList "," (get . "personalGitRemote") }}{{ with trim . }}{{ $globs = append $globs . }}{{ end }}{{ end }}
+{{- if $globs }}
 
 # Work machine: the work email is the default; repos with a matching remote
-# URL use the personal email (~/.config/git/personal), wherever they live
-{{- range splitList "," . }}{{ with trim . }}
+# URL (the personal GitHub user plus any extra globs) use the personal email
+# (~/.config/git/personal), wherever they live
+{{- range $globs }}
 [includeIf "hasconfig:remote.*.url:{{ . }}"]
 	path = personal
-{{- end }}{{ end }}
+{{- end }}
 {{- end }}
 
 [commit]
