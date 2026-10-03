@@ -51,11 +51,6 @@ fi
 # XDG user executables: uv (Linux), uv-managed Python, uv tools, claude
 export PATH="$HOME/.local/bin:$PATH"
 
-# User binaries
-if [ -d "$HOME/bin" ]; then
-	export PATH="$HOME/bin:$PATH"
-fi
-
 # Android SDK (macOS path; guard for portability)
 if [ -d "$HOME/Library/Android/sdk" ]; then
 	export ANDROID_HOME="$HOME/Library/Android/sdk"
