@@ -21,6 +21,19 @@ zstyle ':omz:update' mode disabled
 source "$ZSH/oh-my-zsh.sh"
 
 # ----------------------------------------------------------------------------
+# SHARED SNIPPETS
+# ----------------------------------------------------------------------------
+# Aliases (from .chezmoidata/shortcuts.toml) and fzf defaults + h(). Aliases and
+# functions aren't inherited by child shells, so load them in every
+# interactive shell rather than once in ~/.profile.
+# After Oh My Zsh so these shortcuts win over its git plugin aliases.
+
+for snippet in aliases fzf; do
+	[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/shell/$snippet.sh" ] && . "${XDG_CONFIG_HOME:-$HOME/.config}/shell/$snippet.sh"
+done
+unset snippet
+
+# ----------------------------------------------------------------------------
 # HISTORY
 # ----------------------------------------------------------------------------
 
@@ -73,7 +86,7 @@ fi
 # CUSTOM OVERRIDES
 # ----------------------------------------------------------------------------
 
-# Override oh-my-zsh's history alias with fzf version (h function is defined in ~/.profile)
+# Override oh-my-zsh's history alias with fzf version (h is defined in ~/.config/shell/fzf.sh)
 unalias history 2>/dev/null
 function history() {
 	h "$@"
