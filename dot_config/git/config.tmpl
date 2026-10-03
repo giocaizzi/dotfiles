@@ -8,6 +8,14 @@
 [includeIf "gitdir/i:{{ . | replace "\\" "/" | trimSuffix "/" }}/"]
 	path = work
 {{- end }}
+{{- with get . "workGitRemote" }}
+
+# Repos with a matching remote URL use the work email, wherever they live
+{{- range splitList "," . }}{{ with trim . }}
+[includeIf "hasconfig:remote.*.url:{{ . }}"]
+	path = work
+{{- end }}{{ end }}
+{{- end }}
 
 [commit]
 	template = {{ .chezmoi.homeDir }}/.config/git/commit-template
