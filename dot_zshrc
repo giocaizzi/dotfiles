@@ -13,7 +13,8 @@ export ZSH_DISABLE_COMPFIX=true
 export ZSH_COMPDUMP="${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
 
 # Plugins
-plugins=(git docker gh)
+# No `git` plugin: its ~200 aliases would diverge from the shared shortcuts
+plugins=(docker gh)
 
 # Disable auto-update (update manually with: omz update)
 zstyle ':omz:update' mode disabled

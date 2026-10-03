@@ -25,8 +25,6 @@ alias mkdir='mkdir -p'
 alias df='df -h'
 alias du='du -h'
 alias grep='grep --color=auto'
-alias fgrep='fgrep --color=auto'
-alias egrep='egrep --color=auto'
 
 # --- Platform-specific ---
 {{- if eq .chezmoi.os "darwin" }}
@@ -40,7 +38,8 @@ alias openclaw="$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw
 {{- end }}
 
 # --- Python ---
-if command -v python3 >/dev/null 2>&1; then
+# Only where nothing provides `python` (uv does on full machines)
+if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
 	alias python='python3'
 fi
 
