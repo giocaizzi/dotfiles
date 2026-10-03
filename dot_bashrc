@@ -9,6 +9,13 @@ if [ -z "$PROFILE_SOURCED" ]; then
 	[ -f "$HOME/.profile" ] && . "$HOME/.profile"
 fi
 
+# Non-interactive shells stop here (bash also reads .bashrc for `ssh host cmd`,
+# scp and rsync): environment only, no prompt/fzf/completion, no output.
+case $- in
+	*i*) ;;
+	*) return ;;
+esac
+
 # ----------------------------------------------------------------------------
 # SHARED SNIPPETS
 # ----------------------------------------------------------------------------
