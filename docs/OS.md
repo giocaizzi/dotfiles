@@ -17,10 +17,12 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
-| `dot_mytheme.omp.json`                               | `~/.mytheme.omp.json`                                       | `~/.mytheme.omp.json`                          | `~/.mytheme.omp.json`                                                              |
+| `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
+| `dot_config/vim/vimrc`                               | `~/.config/vim/vimrc`                                       | same                                           | `~/vimfiles/vimrc` (symlink)                                                       |
+| `dot_config/git/{ignore,commit-template}`            | `~/.config/git/`                                            | same                                           | same                                                                               |
 | `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
 | `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
-| `dot_vimrc`, `dot_gitignore_global`, `dot_stCommitMsg`, `dot_python-version`, `dot_claude/` | all OSes                                            | all OSes                                       | all OSes                                                                           |
+| `dot_claude/`                                        | all OSes                                            | all OSes                                       | all OSes                                                                           |
 
 \* Symlink-target-only sources — never deployed as regular files anywhere (listed in `.chezmoiignore` unconditionally); only referenced via `{{ .chezmoi.sourceDir }}/...` from the Windows-specific symlinks.
 
@@ -30,6 +32,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | -------------------------------------------- | :---: | :---: | :-----: |
 | `run_once_init-untracked-env.sh` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
 | `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
+| `run_once_after_migrate-xdg.sh` → moves history/viminfo/lesshst to `$XDG_STATE_HOME` |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.ps1`              |  —    |  —    |   ✓     |
 
@@ -39,7 +42,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 
 | Entry (target path)                                    | Upstream                                  | macOS | Linux | Windows |
 | ------------------------------------------------------ | ----------------------------------------- | :---: | :---: | :-----: |
-| `~/.vim/pack/catppuccin/start/catppuccin/`             | `github.com/catppuccin/vim`               |  ✓    |  ✓    |   —     |
+| `~/.config/vim/pack/catppuccin/start/catppuccin/`      | `github.com/catppuccin/vim`               |  ✓    |  ✓    |   —     |
 | `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 

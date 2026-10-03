@@ -31,7 +31,8 @@ dot_config/powershell/{aliases.ps1.tmpl, fzf.ps1}  → ~/.config/powershell/ (Wi
 dot_config/shell/{aliases.sh.tmpl, fzf.sh}         → ~/.config/shell/     (Unix + Git Bash)
 .chezmoidata/shortcuts.toml                        → renders the two aliases files above
 dot_config/git/config.tmpl                         → ~/.config/git/config (all OSes)
-dot_mytheme.omp.json                               → ~/.mytheme.omp.json  (bash/zsh/pwsh)
+dot_config/oh-my-posh/theme.omp.json               → ~/.config/oh-my-posh/ (bash/zsh/pwsh)
+dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/vimfiles/vimrc symlink (Windows)
 ```
 
 Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell/profile.ps1`) are thin orchestrators that source the snippets under `~/.config/shell/` (POSIX) or `~/.config/powershell/` (PS).
@@ -60,12 +61,12 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 | overlay0 | `#6c7086` | `#9ca0b0` | dim/grey |
 
 **Sources of truth (edit these, then `chezmoi apply`):**
-- `dot_mytheme.omp.json` — oh-my-posh prompt
+- `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt
 - `dot_claude/statusline-command.sh` — Claude Code statusline
 - `dot_claude/settings.json.tmpl` — Claude Code theme (`"theme": "dark"`)
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
 - `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
-- `dot_vimrc` — `colorscheme catppuccin_mocha` (plugin fetched via `.chezmoiexternal.toml.tmpl`)
+- `dot_config/vim/vimrc` — `colorscheme catppuccin_mocha` (plugin fetched via `.chezmoiexternal.toml.tmpl`)
 - Obsidian vault `.obsidian/plugins/obsidian-style-settings/data.json` — Minimal theme colours
 - Obsidian vault `.obsidian/snippets/` — `html-example.css`, `math.css`
 

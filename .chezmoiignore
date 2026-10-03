@@ -58,15 +58,19 @@ Library
 AppData
 OneDrive - Jakala SpA
 .config/powershell
+vimfiles
 .chezmoiscripts/init-untracked-env.ps1
 .chezmoiscripts/install-pkgs.ps1
 {{ end }}
 
 # --- Windows only ---
-# Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
+# Vim on Windows reads ~/vimfiles/vimrc (symlink → dot_config/vim/vimrc), not
+# the XDG path. Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
 # files (.profile, .bashrc, .bash_profile) ARE kept so Git Bash and WSL users
 # get the same aliases/PATH as native Unix.
 {{ if eq .chezmoi.os "windows" }}
+.config/vim
 .chezmoiscripts/init-untracked-env.sh
+.chezmoiscripts/migrate-xdg.sh
 .chezmoiscripts/install-pkgs.sh
 {{ end }}

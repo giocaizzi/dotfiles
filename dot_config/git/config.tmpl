@@ -2,11 +2,8 @@
 	name = {{ .gitUser }}
 	email = {{ .gitEmail }}
 
-[core]
-	excludesfile = {{ .chezmoi.homeDir }}/.gitignore_global
-
 [commit]
-	template = {{ .chezmoi.homeDir }}/.stCommitMsg
+	template = {{ .chezmoi.homeDir }}/.config/git/commit-template
 
 [init]
 	defaultBranch = main

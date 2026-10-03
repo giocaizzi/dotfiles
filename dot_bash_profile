@@ -1,15 +1,9 @@
 # ============================================================================
 # BASH PROFILE (Login shells only)
 # ============================================================================
-# Sourced for login shells before .bashrc
-# This sources the shared POSIX-compliant profile and then .bashrc
+# Sourced for login shells instead of .bashrc. Delegates to .bashrc, which
+# sources the shared POSIX ~/.profile exactly once (PROFILE_SOURCED guard).
 
-# Source shared profile (environment variables, PATH, etc.)
-if [ -f "$HOME/.profile" ]; then
-	. "$HOME/.profile"
-fi
-
-# Source bashrc for interactive shell configuration
 if [ -f "$HOME/.bashrc" ]; then
 	. "$HOME/.bashrc"
 fi
