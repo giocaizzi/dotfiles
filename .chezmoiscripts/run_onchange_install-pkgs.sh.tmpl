@@ -106,14 +106,15 @@ install_tool_linux() {
 	esac
 }
 
-# Global python/python3 via uv (--default is marked experimental by uv).
+# Global python/python3 via uv. --default is a uv preview feature; opting in
+# explicitly silences its warning.
 # Skipped where uv isn't installed (light machines).
 install_python() {
 	local uv
 	uv="$(command -v uv || echo "$HOME/.local/bin/uv")"
 	[ -x "$uv" ] || return 0
 	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Python ${PYTHON_VERSION} (uv):${NC}"
-	"$uv" python install "$PYTHON_VERSION" --default
+	"$uv" python install "$PYTHON_VERSION" --default --preview-features python-install-default
 }
 
 # ============================================================================
