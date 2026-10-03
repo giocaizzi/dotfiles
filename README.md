@@ -19,7 +19,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
    winget install twpayne.chezmoi                              # Windows
    ```
 
-3. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only) — every role needs it, or `apply` stops at the first encrypted file ([why](./docs/OS.md#encrypted-files-age)):
+3. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only) — personal and work only, or `apply` stops at the first encrypted file ([why](./docs/OS.md#encrypted-files-age)). **Light machines skip this step:** they get no encrypted files, so a compromised box can't decrypt your secrets.
    - **Personal:** from the vault (secure note `chezmoi age key`):
 
      ```shell
@@ -28,7 +28,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
      bw lock
      ```
 
-   - **Work / light:** copy it from a machine that has it over a secure channel, e.g. `ssh pi.local 'mkdir -p ~/.config/chezmoi' && scp ~/.config/chezmoi/key.txt pi.local:.config/chezmoi/ && ssh pi.local 'chmod 600 ~/.config/chezmoi/key.txt'` — never through this repo or chat.
+   - **Work:** copy it by hand over a secure channel (your personal vault doesn't go on a work PC) — never through this repo or chat.
 
 4. **Create this machine's Secrets Manager token** (personal and work only; [details](./docs/OS.md#bitwarden)): in the Bitwarden **web app** → Secrets Manager → *Machine accounts* → new account named after the machine → *Projects*: **Can read** on `personal` (or `work`) → *Access tokens*: create one and copy it (shown once). Also copy the project's ID.
 
