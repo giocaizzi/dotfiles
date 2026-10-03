@@ -10,9 +10,9 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
         ├─ rendered into ──→  ~/.config/shell/aliases.sh          (bash + zsh)
         └─ rendered into ──→  ~/.config/powershell/aliases.ps1    (PowerShell)
 
-~/.profile        sources →  ~/.config/shell/{secrets.sh, aliases.sh, fzf.sh}
-~/.bashrc         sources →  ~/.profile + bash-specific (history, completion, FZF bindings)
-~/.zshrc          sources →  ~/.profile + Oh My Zsh + zsh-specific
+~/.profile        sources →  ~/.config/shell/secrets.sh  (environment only, inherited)
+~/.bashrc         sources →  ~/.profile (once) + ~/.config/shell/{aliases.sh, fzf.sh} + bash-specific
+~/.zshrc          sources →  Oh My Zsh + ~/.config/shell/{aliases.sh, fzf.sh} + zsh-specific
 profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, fzf.ps1} + PSReadLine
 ```
 
