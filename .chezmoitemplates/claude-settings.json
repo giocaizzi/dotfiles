@@ -61,7 +61,8 @@
       "Edit(**/.aws/credentials)",
       "Edit(**/.ssh/**)",
       "Bash(env)",
-      "Bash(printenv:*)"
+      "Bash(printenv:*)",
+      "Bash(pipx:*)"
     ],
     "defaultMode": "auto"
   },

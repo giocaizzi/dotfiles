@@ -44,6 +44,12 @@ if command -v python3 >/dev/null 2>&1; then
 	alias python='python3'
 fi
 
+# CLI tools come from uv; refuse pipx (a function wins over a reinstalled binary)
+pipx() {
+	echo "pipx is not used here, use uv: uv tool install <pkg> | uvx <pkg> | uv tool upgrade --all" >&2
+	return 1
+}
+
 # --- Git shortcuts (generated from .chezmoidata/shortcuts.toml) ---
 {{ range $name, $cmd := .shortcuts.git -}}
 alias {{ $name }}='{{ $cmd }}'
