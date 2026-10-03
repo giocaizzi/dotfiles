@@ -34,7 +34,7 @@ docs
 #
 #   macOS    →  Library/Application Support/...
 #   Linux    →  .config/...
-#   Windows  →  AppData/... (+ OneDrive for PowerShell)
+#   Windows  →  AppData/... (+ PowerShell profile linked by a script)
 # ============================================================================
 
 # --- not macOS ---
@@ -56,11 +56,11 @@ Library
 # --- not Windows ---
 {{ if ne .chezmoi.os "windows" }}
 AppData
-OneDrive - Jakala SpA
 .config/powershell
 vimfiles
 .chezmoiscripts/init-untracked-env.ps1
 .chezmoiscripts/install-pkgs.ps1
+.chezmoiscripts/link-pwsh-profile.ps1
 {{ end }}
 
 # --- Windows only ---
