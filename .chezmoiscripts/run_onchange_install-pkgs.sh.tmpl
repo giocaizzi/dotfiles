@@ -21,6 +21,7 @@ NC='\033[0m' # No Color
 # Core packages for ALL platforms
 CORE_PACKAGES=(
 	"fzf"           # Fuzzy finder
+	"jq"            # JSON merge for ~/.claude/settings.json (modify_ template)
 	"git"           # Version control
 	"vim"           # Text editor
 	"fd"            # Modern find alternative
@@ -59,7 +60,7 @@ ADDITIONAL_TOOLS=(
 {{- if get . "light" }}
 
 # Light machines: core tools + the prompt only
-CORE_PACKAGES=("fzf" "git" "vim" "fd" "tmux")
+CORE_PACKAGES=("fzf" "git" "vim" "fd" "tmux" "jq")
 SHELL_PACKAGES_MACOS=()
 SHELL_PACKAGES_LINUX=()
 FONTS_MACOS=()
