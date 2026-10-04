@@ -10,4 +10,14 @@
 {{- if or (hasPrefix "OTEL_" $k) (contains "TELEMETRY" $k) }}{{ $x := unset $current.env $k }}{{ end }}
 {{- end }}
 {{- end }}
-{{- mergeOverwrite $current (includeTemplate "claude-settings.json" . | fromJson) | toPrettyJson }}
+{{- $managed := includeTemplate "claude-settings.json" . | fromJson -}}
+{{- /* Go maps sort keys, so toPrettyJson reorders the whole file on every apply.
+       jq's `*` keeps the live file's key order (new keys append) and is the same
+       deep merge; fall back to toPrettyJson where jq is absent. */ -}}
+{{- if lookPath "jq" }}
+{{- $strip := "" }}
+{{- if get . "work" }}{{ $strip = `(if has("env") then .env |= with_entries(select(.key | (startswith("OTEL_") or contains("TELEMETRY")) | not)) else . end) | ` }}{{ end }}
+{{- output "jq" "-n" "--argjson" "c" (.chezmoi.stdin | default "{}") "--argjson" "m" ($managed | toJson) (print "($c | " $strip "." ") * $m") | trimSuffix "\n" }}
+{{- else }}
+{{- mergeOverwrite $current $managed | toPrettyJson }}
+{{- end }}
