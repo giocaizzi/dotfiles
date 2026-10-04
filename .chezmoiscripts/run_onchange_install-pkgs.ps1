@@ -16,6 +16,7 @@ $PythonVersion = '3.13'  # global python, installed by uv
 
 $CorePackages = @(
     @{ Name = 'fzf';     Id = 'junegunn.fzf';        Cmd = 'fzf' }
+    @{ Name = 'jq';      Id = 'jqlang.jq';           Cmd = 'jq' }
     @{ Name = 'git';     Id = 'Git.Git';             Cmd = 'git' }
     @{ Name = 'vim';     Id = 'vim.vim';             Cmd = 'vim' }
     @{ Name = 'fd';      Id = 'sharkdp.fd';          Cmd = 'fd' }
