@@ -8,9 +8,9 @@
 {{- $githubUser := "" -}}
 {{- $personalGitRemote := "" -}}
 {{- if $work }}
-{{- $workEmail := promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" -}}
-{{- $githubUser := promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" -}}
-{{- $personalGitRemote := promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
+{{- $workEmail = promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" -}}
+{{- $githubUser = promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
