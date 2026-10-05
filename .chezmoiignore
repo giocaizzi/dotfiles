@@ -17,10 +17,11 @@ CLAUDE.md
 docs
 
 # Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
-# bws token and bws is installed (the first apply fetches bws, the next one
-# renders); otherwise hand-edited and untracked (stub by run_once_init-untracked-env.*).
+# bws project ID (token in the OS keyring) and bws is installed (the first apply
+# fetches bws, the next one renders); otherwise hand-edited and untracked (stub by
+# run_once_init-untracked-env.*).
 {{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (ternary "bws.exe" "bws" (eq .chezmoi.os "windows")) }}
-{{ if not (and (get . "bwsAccessToken") (stat $bws)) }}
+{{ if not (and (get . "bwsProjectId") (stat $bws)) }}
 .config/shell/secrets.sh
 .config/powershell/secrets.ps1
 {{ end }}
