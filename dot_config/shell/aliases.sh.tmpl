@@ -38,7 +38,7 @@ alias openclaw="$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw
 # Swarm secrets sync from Secrets Manager. The token is read from chezmoi when the
 # command runs and exists only in that process (never exported to the shell).
 rp5-secrets() {
-	BWS_ACCESS_TOKEN="$(chezmoi execute-template '{{ "{{" }} .bwsAccessToken {{ "}}" }}')" \
+	BWS_ACCESS_TOKEN="$(chezmoi secret keyring get --service=bws --user=access-token)" \
 		PI_SSH_USER="${PI_SSH_USER:-$USER}" \
 		"$HOME/Documents/github/rp5-homeserver/scripts/create_secrets.sh" "$@"
 }

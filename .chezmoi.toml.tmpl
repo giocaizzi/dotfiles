@@ -13,12 +13,12 @@
 {{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
-       one project (personal or work); renders the env secrets files. */ -}}
-{{- $bwsToken := "" -}}
+       one project (personal or work); renders the env secrets files. The token
+       itself lives in the OS keyring (service "bws", user "access-token"), never
+       in this file; the project ID is the on/off switch. */ -}}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
-{{- $bwsToken = promptStringOnce . "bwsAccessToken" "[ SECRETS / BWS ] Access token (blank = configure secrets file by hand; visible while typed)" -}}
-{{- if $bwsToken }}{{ $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID — the project this token can read" }}{{ end -}}
+{{- $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID (blank = configure secrets file by hand) — store the token first: chezmoi secret keyring set --service=bws --user=access-token" -}}
 {{- end }}
 
 # Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key
@@ -38,7 +38,6 @@ encryption = "age"
     workEmail = {{ $workEmail | quote }}
     githubUser = {{ $githubUser | quote }}
     personalGitRemote = {{ $personalGitRemote | quote }}
-    bwsAccessToken = {{ $bwsToken | quote }}
     bwsProjectId = {{ $bwsProject | quote }}
 
 [git]
