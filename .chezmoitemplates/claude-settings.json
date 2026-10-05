@@ -121,7 +121,7 @@
     }
   },
   "effortLevel": "high",
-  "tui": "{{ if eq .chezmoi.os "windows" }}default{{ else }}fullscreen{{ end }}",
+  "tui": "fullscreen",
   "terminalProgressBarEnabled": true,
   "showThinkingSummaries": true,
   "viewMode": "focus",
