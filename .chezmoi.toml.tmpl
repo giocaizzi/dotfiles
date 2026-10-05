@@ -1,24 +1,24 @@
-{{- $user := promptStringOnce . "gitUser" "Git user name (text) — your name, used for every commit" -}}
-{{- $email := promptStringOnce . "gitEmail" "PERSONAL git email (text) — default on personal machines; on a work machine only for personal repos" -}}
-{{- $light := promptBoolOnce . "light" "Light install (yes/no) — shell, git, vim, prompt only" -}}
+{{- $user := promptStringOnce . "gitUser" "[ GIT IDENTITY ] Name — used for every commit" -}}
+{{- $email := promptStringOnce . "gitEmail" "[ PERSONAL EMAIL ] Email — default on personal machines; on work machines, used only for personal repos" -}}
+{{- $light := promptBoolOnce . "light" "[ INSTALL MODE ] Light setup? (yes/no — shell, git, vim, and prompt only)" -}}
 {{- /* Work machine: work git identity, no personal telemetry. Values stay in
        this machine's local config only (never committed). */ -}}
-{{- $work := promptBoolOnce . "work" "Work computer (yes/no) — work git identity, no personal telemetry" -}}
+{{- $work := promptBoolOnce . "work" "[ MACHINE ROLE ] Work computer? (yes/no — work git identity, no personal telemetry)" -}}
 {{- $workEmail := "" -}}
 {{- $githubUser := "" -}}
 {{- $personalGitRemote := "" -}}
 {{- if $work }}
-{{- $workEmail = promptStringOnce . "workEmail" "WORK git email (text) — default for every repo on this work machine" -}}
-{{- $githubUser = promptStringOnce . "githubUser" "PERSONAL GitHub username (text, blank = none) — its github.com repos use the personal email, all others the work email" -}}
-{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "EXTRA personal remote URL globs (comma-separated text, blank = none) — other personal orgs or hosts; * stays within one path segment, so end with /** or :*/**, e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
+{{- $workEmail := promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" -}}
+{{- $githubUser := promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" -}}
+{{- $personalGitRemote := promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. */ -}}
 {{- $bwsToken := "" -}}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
-{{- $bwsToken = promptStringOnce . "bwsAccessToken" "Bitwarden Secrets Manager access token (text, blank = secrets file by hand) — this machine's token, visible while typed" -}}
-{{- if $bwsToken }}{{ $bwsProject = promptStringOnce . "bwsProjectId" "Bitwarden Secrets Manager project ID (text) — the project this token can read" }}{{ end -}}
+{{- $bwsToken = promptStringOnce . "bwsAccessToken" "[ SECRETS / BWS ] Access token (blank = configure secrets file by hand; visible while typed)" -}}
+{{- if $bwsToken }}{{ $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID — the project this token can read" }}{{ end -}}
 {{- end }}
 
 # Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key
