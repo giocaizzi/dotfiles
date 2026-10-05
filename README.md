@@ -30,7 +30,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 
    - **Work:** copy it by hand over a secure channel (your personal vault doesn't go on a work PC) — never through this repo or chat.
 
-4. **Create this machine's Secrets Manager token** (personal and work only; [details](./docs/OS.md#bitwarden)): in the Bitwarden **web app** → Secrets Manager → *Machine accounts* → new account named after the machine → *Projects*: **Can read** on `personal` (or `work`) → *Access tokens*: create one and copy it (shown once). Also copy the project's ID.
+4. **Create this machine's Secrets Manager token** (personal and work only; [details](./docs/OS.md#bitwarden)): in the Bitwarden **web app** → Secrets Manager → *Machine accounts* → new account named after the machine → *Projects*: **Can read** on `personal` (or `work`) → *Access tokens*: create one (set an expiry date) and copy it (shown once). Also copy the project's ID. Then store the token in the OS keyring, never in a file: `chezmoi secret keyring set --service=bws --user=access-token` (hidden prompt).
 
 5. **Init and apply:**
 
@@ -45,9 +45,9 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
    | Git user name (text) / PERSONAL git email (text) | your name / personal email | your name / personal email (used only for personal repos) | your name / personal email |
    | Light install (yes/no) — shell, git, vim, prompt only | no | no | **yes** |
    | Work computer (yes/no) — work git identity, no personal telemetry | no | **yes** → WORK git email (default for every repo) + PERSONAL GitHub username + extra personal remote globs ([add later](./docs/OS.md#adding-personal-remotes)) | no |
-   | Bitwarden Secrets Manager access token (text) / project ID (text) | token + `personal` ID | token + `work` ID | not asked |
+   | Bitwarden Secrets Manager project ID (text) | `personal` ID | `work` ID | not asked |
 
-   The token is visible while typed. To change answers later, `chezmoi init --prompt` (asks everything again; keeps the token out of shell history).
+   The token is not an init answer: it sits in the OS keyring (step 4). To change answers later, `chezmoi init --prompt` (asks everything again).
 
 6. **Apply once more** — the first apply downloads `bws`, the second renders the env secrets from Bitwarden:
 
@@ -72,7 +72,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 
 ## Secrets
 
-- **Environment variables** (API keys, tokens) live in `~/.config/shell/secrets.sh` (Windows: `~/.config/powershell/secrets.ps1`), owner-only, never committed. Machines with a Bitwarden Secrets Manager token get them **generated** from Bitwarden on `chezmoi apply` (edit them in Bitwarden); others edit the file by hand. See [docs/OS.md → Bitwarden](./docs/OS.md#bitwarden).
+- **Environment variables** (API keys, tokens) live in `~/.config/shell/secrets.sh` (Windows: `~/.config/powershell/secrets.ps1`), owner-only, never committed. Machines with a Bitwarden Secrets Manager project ID (token in the OS keyring) get them **generated** from Bitwarden on `chezmoi apply` (edit them in Bitwarden); others edit the file by hand. See [docs/OS.md → Bitwarden](./docs/OS.md#bitwarden).
 - **Secret files** (e.g. `~/.ssh/config`) are committed age-encrypted: `chezmoi add --encrypt <file>`.
 
 ## Documentation

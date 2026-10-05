@@ -89,8 +89,8 @@ PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `functio
 | Windows | `~/.config/powershell/secrets.ps1` | current user only  |
 
 - **Never committed.** Two modes per machine:
-  - **Generated** from Bitwarden Secrets Manager when the machine has a `bws` token (`dot_config/shell/private_secrets.sh.tmpl`, `dot_config/powershell/secrets.ps1.tmpl`): edit secrets in Bitwarden, then `chezmoi apply`. See [OS.md → Bitwarden](./OS.md#bitwarden).
-  - **By hand** otherwise (light machines, blank token): ignored by chezmoi, edit the file on that machine.
+  - **Generated** from Bitwarden Secrets Manager when the machine has a `bws` project ID and keyring token (`dot_config/shell/private_secrets.sh.tmpl`, `dot_config/powershell/secrets.ps1.tmpl`): edit secrets in Bitwarden, then `chezmoi apply`. See [OS.md → Bitwarden](./OS.md#bitwarden).
+  - **By hand** otherwise (light machines, blank project ID): ignored by chezmoi, edit the file on that machine.
 - **Created** by `.chezmoiscripts/run_once_init-untracked-env.{sh,ps1}`: writes a stub if missing, then enforces owner-only permissions (on Windows the `~\.config\powershell` folder too, so regenerated files inherit it).
 - **Your global git ignore has `*secret*`**, so new secrets *templates* need `git add -f`; they contain no values.
 - **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
