@@ -22,6 +22,7 @@ $CorePackages = @(
     @{ Name = 'fd';      Id = 'sharkdp.fd';          Cmd = 'fd' }
     @{ Name = 'gh';      Id = 'GitHub.cli';          Cmd = 'gh' }
     @{ Name = 'pwsh';    Id = 'Microsoft.PowerShell';Cmd = 'pwsh' }  # PowerShell 7+
+    @{ Name = 'coreutils'; Id = 'uutils.coreutils';  Cmd = 'ls.exe' }  # exe, not the ls alias
 )
 
 $AdditionalTools = @(

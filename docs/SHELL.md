@@ -15,7 +15,7 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
 ~/.profile        sources →  ~/.config/shell/secrets.sh  (environment only, inherited)
 ~/.bashrc         sources →  ~/.profile (once) + ~/.config/shell/{aliases.sh, fzf.sh} + bash-specific
 ~/.zshrc          sources →  Oh My Zsh + ~/.config/shell/{aliases.sh, fzf.sh} + zsh-specific
-profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, fzf.ps1} + PSReadLine
+profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, coreutils.ps1, fzf.ps1} + PSReadLine
 ```
 
 ## Files
@@ -32,6 +32,7 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 | `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases (rendered from `shortcuts.toml`)                          | Unix + Git Bash     |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
 | `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from `shortcuts.toml`)                   | Windows             |
+| `dot_config/powershell/coreutils.ps1`    | uutils first on PATH; removes the cmdlet aliases it shadows (`ls`, `cat`, `rm`, ...) — use `Get-ChildItem` etc. for objects | Windows |
 | `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
 | `.chezmoidata/shortcuts.toml`            | Single source for cross-shell shortcuts                                 | all                 |
 | `dot_config/readline/inputrc`            | Readline: ↑/↓ prefix history search, case-insensitive coloured completion | Unix + Git Bash   |

@@ -73,6 +73,9 @@ if ($PSStyle) {
 $aliasesFile = Join-Path $HOME '.config\powershell\aliases.ps1'
 if (Test-Path $aliasesFile) { . $aliasesFile }
 
+$coreutilsFile = Join-Path $HOME '.config\powershell\coreutils.ps1'
+if (Test-Path $coreutilsFile) { . $coreutilsFile }
+
 $fzfFile = Join-Path $HOME '.config\powershell\fzf.ps1'
 if (Test-Path $fzfFile) { . $fzfFile }
 
