@@ -44,8 +44,8 @@
   // group azure resources by resource group
   "azureResourceGroups.groupBy": "resourceGroup",
   "azureTerraform.survey": {
-    "surveyPromptDate": "2026-10-03T08:25:45.051Z",
-    "surveyPromptIgnoredCount": 3
+    "surveyPromptDate": "2026-11-04T08:33:04.945Z",
+    "surveyPromptIgnoredCount": 4
   },
   // --- Chat ---
   "chat.agent.maxRequests": 1000,
@@ -179,13 +179,17 @@
   // --- Editor ---
   // disable accepting suggestions on Enter to prevent accidental completions
   "editor.acceptSuggestionOnEnter": "off",
-  // python docstring color
+  // python docstrings: Catppuccin overlay0, including the quotes, so they
+  // differ from regular (green) strings
   "editor.tokenColorCustomizations": {
     "textMateRules": [
       {
-        "scope": "string.quoted.docstring.multi.python",
+        "scope": [
+          "string.quoted.docstring.multi.python",
+          "string.quoted.docstring.multi.python punctuation.definition.string"
+        ],
         "settings": {
-          "foreground": "#acacac"
+          "foreground": "#6c7086"
         }
       }
     ]
@@ -277,7 +281,7 @@
   "terminal.integrated.suggest.selectionMode": "always",
   "terminal.integrated.suggest.suggestOnTriggerCharacters": true,
   // --- VSCode ---
-  "workbench.colorTheme": "Dark Modern",
+  "workbench.colorTheme": "Catppuccin Mocha",
   "security.workspace.trust.untrustedFiles": "open",
   // --- YAML ---
   "yaml.disableSchemaDetection": [
