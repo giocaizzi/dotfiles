@@ -13,6 +13,8 @@
     "api@giocaizzi-skills": true,
     "dev-tools@giocaizzi-skills": true
   },
+  "experimental": true,
+  "inlineImages": false,
   "footer": {
     "showModelEffort": true,
     "showDirectory": true,
