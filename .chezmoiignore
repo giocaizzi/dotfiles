@@ -69,6 +69,8 @@ vimfiles
 .chezmoiscripts/init-untracked-env.ps1
 .chezmoiscripts/install-pkgs.ps1
 .chezmoiscripts/link-pwsh-profile.ps1
+.config/agents/hooks/stop-make-check.ps1
+.copilot/hooks/block-pip.ps1
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---

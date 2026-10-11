@@ -2,10 +2,10 @@
   "version": 1,
   "hooks": {
     "preToolUse": [
-      { "type": "command", "bash": "bash {{ .chezmoi.homeDir }}/.copilot/hooks/block-pip.sh", "timeoutSec": 10 }
+      { "type": "command", "bash": "bash {{ .chezmoi.homeDir }}/.copilot/hooks/block-pip.sh", "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"{{ .chezmoi.homeDir }}/.copilot/hooks/block-pip.ps1\"; if ($LASTEXITCODE -eq 2) { exit 2 }; exit 0", "timeoutSec": 10 }
     ],
     "agentStop": [
-      { "type": "command", "bash": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.sh", "timeoutSec": 600 }
+      { "type": "command", "bash": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.sh", "powershell": "powershell -NoProfile -ExecutionPolicy Bypass -File \"{{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.ps1\"; exit 0", "timeoutSec": 600 }
     ]
   }
 }
