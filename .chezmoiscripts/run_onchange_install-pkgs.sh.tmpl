@@ -218,7 +218,7 @@ fi
 
 # Build package list with apt name mapping
 ALL_APT_PACKAGES=("${CORE_PACKAGES[@]}" "${SHELL_PACKAGES_LINUX[@]}")
-APT_PKGS=("curl" "python3-pip")  # Additional dependencies
+APT_PKGS=("curl" "python3-pip" "make")  # Additional dependencies (make: macOS gets it from the Xcode CLT Homebrew needs)
 for pkg in "${ALL_APT_PACKAGES[@]}"; do
 	APT_PKGS+=("$(map_package_name "$pkg")")
 done
