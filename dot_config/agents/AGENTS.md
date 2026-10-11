@@ -16,6 +16,7 @@
 - Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv` are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
 - `make` runs every task. Use the project's Makefile; add a target rather than invoking tools directly.
 - Python: `uv` only. Never pip, pipx or global installs.
+- Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
 - GitHub: `gh`. Git: small Conventional Commits explaining what and why.
 - Secrets: `bw` via the session-file flow only. I unlock in my own terminal into a 0600 file; you run `bw --session "$(cat <file>)" …`, then `bw lock` and delete the file. Never ask for the master password or token, never print values, never install the Bitwarden MCP.
 
