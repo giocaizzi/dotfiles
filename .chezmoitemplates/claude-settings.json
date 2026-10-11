@@ -63,7 +63,11 @@
       "Edit(**/.ssh/**)",
       "Bash(env)",
       "Bash(printenv:*)",
-      "Bash(pipx:*)"
+      "Bash(pipx:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(python -m pip:*)",
+      "Bash(python3 -m pip:*)"
     ],
     "ask": [
       "Bash(bw)",
@@ -72,7 +76,14 @@
     "defaultMode": "auto"
   },
   "hooks": {
-    "PreToolUse": []
+    "PreToolUse": [],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.sh", "timeout": 600 }
+        ]
+      }
+    ]
   },
   "statusLine": {
     "type": "command",
