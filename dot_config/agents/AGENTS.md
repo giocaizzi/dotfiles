@@ -4,8 +4,8 @@
 - Simplest correct solution. No speculative features, abstractions, configurability or backward compatibility unless requested.
 - Surgical changes: match existing style and architecture, touch only what the task requires.
 - Use plan mode for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
-- Orchestrate subagents hub-and-spoke, routing model and effort by task (`subagent-orchestration` skill). If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
-- No fixed cap on worktrees or agents; throttle on availability. Quota: ask the harness CLI (Claude: `cd /tmp && claude -p "/usage"`; Copilot: `/usage`, `--max-ai-credits`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it). Host: use the repo's `scripts/host/heavy.sh` when present, else check load and free disk before heavy work (`host-hygiene` skill).
+- Orchestrate subagents hub-and-spoke, routing model and effort by task. If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
+- No fixed cap on worktrees or agents; throttle on availability. Quota: ask the harness CLI (Claude: `cd /tmp && claude -p "/usage"`; Copilot: `/usage`, `--max-ai-credits`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it). Host: use the repo's `scripts/host/heavy.sh` when present, else check load and free disk before heavy work.
 - If project rules conflict with these principles, stop and tell me before choosing.
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
 - Never expose secrets in chat; use env vars or a secret store.
@@ -23,14 +23,30 @@
 - `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test); a stop hook runs `make check`. Add a target rather than invoking tools directly.
 - Python: `uv` only. Never pip, pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
-- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked, auto-merged or queued, behind rulesets with required CI checks on `main` (`github-workflow` skill).
-- Secrets: never print or inline a value; keyring or credential manager only. The `bw`/`bws` flows are in the `secrets-handling` skill.
+- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked, auto-merged or queued, behind rulesets with required CI checks on `main`.
+- Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
 
-Abstracted rules (about a language, tool, platform or workflow) live as reusable skills in `github.com/giocaizzi/skills`, a Claude plugin marketplace (`api`, `python`, `javascript`, `dev-tools`). Not here, and not in project files.
+Reusable rules live as skills in `github.com/giocaizzi/skills` (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. If a rule is missing or stale, add it to that repo, generic and reusable; personal or machine-specific facts stay here.
 
-- Use the relevant installed skill before acting.
-- If a rule is missing or stale, add or update it in that repo, keeping it generic and reusable. Personal or machine-specific facts stay in this file.
+| Situation | Load |
+|---|---|
+| Commit message or PR title | `conventional-commits` |
+| Commit, push, open a PR | `/ship` |
+| Wait for CI, merge, clean up | `/land` |
+| Review comments or failing CI on a PR | `/pr-fix` |
+| Start a task | `/wt` |
+| Docs, runbooks or README affected | `/docs-sync` |
+| Stacked PRs, rulesets, branch protection, merge gating | `github-workflow` |
+| Releases, versions, changelogs | `release-please`, `semver` |
+| Credentials, tokens, `.env`, `bw`/`bws` | `secrets-handling` |
+| Heavy builds, emulators, full test suites, parallel agents | `host-hygiene` |
+| Spawning subagents, choosing model or effort | `subagent-orchestration`; agent `scout` for lookups, `escalate` after the driver failed twice |
+| Python code or tests | `python-development`, `python-testing` |
+| JS/TS, React, Next.js | `javascript-typescript`, `react`, `nextjs` |
+| FastAPI, SQLAlchemy, DDD | `fastapi`, `sqlalchemy`, `ddd`; agent `api-reviewer` for API security review |
+| Notion or Firefly | `giocaizzi-notion`, `firefly-ops` |
+
 - Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`), with `CLAUDE.md` symlinked to it. Create it when missing.
 - Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` (plus `CLAUDE.md` symlink) with that component's instructions.
