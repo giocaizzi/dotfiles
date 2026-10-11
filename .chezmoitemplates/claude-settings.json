@@ -168,6 +168,9 @@
     }
   },
   "effortLevel": "high",
+  "promptCacheTtl": "1h",
+  "subagentPromptCacheTtl": "1h",
+  "autoCompactWindow": 500000,
   "tui": "fullscreen",
   "terminalProgressBarEnabled": true,
   "showThinkingSummaries": true,
