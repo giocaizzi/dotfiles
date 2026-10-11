@@ -17,6 +17,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
 | `dot_config/agents/hooks/stop-make-check.sh` | `~/.config/agents/hooks/` (Stop hook for Claude + Copilot: `make check`) | same | same |
 | `dot_copilot/hooks/{hooks.json.tmpl,block-pip.sh}` | `~/.copilot/hooks/` (Copilot hooks: pip/pipx deny, stop check) | same | same |
+| `dot_config/agents/hooks/stop-make-check.ps1`, `dot_copilot/hooks/block-pip.ps1` | — | — | `~/.config/agents/hooks/`, `~/.copilot/hooks/` (Windows twins of the `.sh` hooks; plain cmdlets, no uutils: hooks run `-NoProfile`) | 
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
 | `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
@@ -141,6 +142,7 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 | uv's `python.exe` launchers in `~\.local\bin` (unsigned exe named python.exe) | `uv python install --no-bin`; `profile.ps1` puts uv's `cpython-3.NN-*` interpreter folder on PATH |
 | `New-Item -ItemType SymbolicLink` in Windows PowerShell 5.1 without admin | `mklink` (honours Developer Mode) in `run_after_link-pwsh-profile.ps1` |
 | Documents redirected to OneDrive and localised | profile link target resolved at runtime with `GetFolderPath('MyDocuments')` |
+| Hook scripts may not launch (execution policy, constrained language) | Copilot `preToolUse` is fail-closed, so its `powershell` command denies only on an explicit exit 2 and allows when the script cannot start; Claude hooks fail open by default |
 
 ## Testing the ignore matrix
 
