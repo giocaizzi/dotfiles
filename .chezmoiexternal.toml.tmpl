@@ -33,7 +33,6 @@
 [".local/share/fonts/JetBrainsMonoNerdFont"]
     type = "archive"
     url = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
-    include = ["*.ttf"]
     exact = true
     refreshPeriod = "168h"
 {{- end }}
@@ -50,6 +49,22 @@
     url = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v{{ .bws.version }}/bws-{{ $arch }}-{{ $target }}-{{ .bws.version }}.zip"
     path = "{{ $exe }}"
     executable = true
+{{- end }}
+
+# agent-mods Copilot CLI extension (github.com/giocaizzi/agent-mods) — full machines only
+# (.chezmoiignore doesn't stop an external's download). Loads when Copilot runs
+# with --experimental; the Claude Code half comes from the plugin marketplace
+# (.chezmoitemplates/claude-settings.json). Tests are not deployed.
+{{- if not (get . "light") }}
+[".copilot/extensions/agent-mods"]
+    type = "archive"
+    url = "https://github.com/giocaizzi/agent-mods/archive/refs/heads/main.tar.gz"
+    stripComponents = 3
+    # exclude (not include: include is ignored for archives) matches the original archive paths,
+    # before stripComponents; "*" does not cross "/", so the root */core is not copilot's core.
+    exclude = ["*/claude/**", "*/core/**", "*/docs/**", "*/.claude-plugin/**", "*/.github/**", "**/*.test.mjs"]
+    exact = true
+    refreshPeriod = "168h"
 {{- end }}
 
 # Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
