@@ -30,4 +30,5 @@ Abstracted rules (about a language, tool, platform or workflow) live as reusable
 
 - Use the relevant installed skill before acting.
 - If a rule is missing or stale, add or update it in that repo, keeping it generic and reusable. Personal or machine-specific facts stay in this file.
-- Every repo uses `AGENTS.md`, with `CLAUDE.md` symlinked to it.
+- Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`), with `CLAUDE.md` symlinked to it. Create it when missing.
+- Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` (plus `CLAUDE.md` symlink) with that component's instructions.
