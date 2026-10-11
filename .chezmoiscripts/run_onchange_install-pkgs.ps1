@@ -21,6 +21,8 @@ $CorePackages = @(
     @{ Name = 'vim';     Id = 'vim.vim';             Cmd = 'vim' }
     @{ Name = 'fd';      Id = 'sharkdp.fd';          Cmd = 'fd' }
     @{ Name = 'gh';      Id = 'GitHub.cli';          Cmd = 'gh' }
+    @{ Name = 'shellcheck'; Id = 'koalaman.shellcheck'; Cmd = 'shellcheck' }  # shell linter
+    @{ Name = 'shfmt';   Id = 'mvdan.shfmt';         Cmd = 'shfmt' }  # shell formatter
     @{ Name = 'pwsh';    Id = 'Microsoft.PowerShell';Cmd = 'pwsh' }  # PowerShell 7+
     @{ Name = 'coreutils'; Id = 'uutils.coreutils';  Cmd = 'ls.exe' }  # exe, not the ls alias
 )
@@ -45,6 +47,7 @@ $Fonts = @(
 $PSModules = @(
     @{ Name = 'PSReadLine'; MinVersion = '2.2.0' }  # History/edit experience
     @{ Name = 'PSFzf';      MinVersion = '2.5.0' }  # Ctrl-R / Ctrl-T fzf bindings
+    @{ Name = 'PSScriptAnalyzer'; MinVersion = '1.22.0' }  # PowerShell linter (shellcheck equivalent)
 )
 
 # ============================================================================
