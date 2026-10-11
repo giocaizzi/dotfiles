@@ -82,6 +82,18 @@
   },
   "hooks": {
     "PreToolUse": [],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {{- if eq .chezmoi.os "windows" }}
+          { "type": "command", "command": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "{{ .chezmoi.homeDir }}/.config/agents/hooks/post-edit-lint.ps1"], "timeout": 60 }
+          {{- else }}
+          { "type": "command", "command": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/post-edit-lint.sh", "timeout": 60 }
+          {{- end }}
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
