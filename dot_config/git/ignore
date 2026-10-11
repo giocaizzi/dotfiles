@@ -73,3 +73,6 @@ yarn-error.log*
 
 # Claude Code per-user overrides
 **/.claude/settings.local.json
+
+# Claude Code worktrees (one per task, inside each repo)
+.claude/worktrees/
