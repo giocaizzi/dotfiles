@@ -67,7 +67,12 @@
       "Bash(pip:*)",
       "Bash(pip3:*)",
       "Bash(python -m pip:*)",
-      "Bash(python3 -m pip:*)"
+      "Bash(python3 -m pip:*)"{{ if eq .chezmoi.os "windows" }},
+      "PowerShell(pipx *)",
+      "PowerShell(pip *)",
+      "PowerShell(pip3 *)",
+      "PowerShell(python -m pip *)",
+      "PowerShell(python3 -m pip *)"{{ end }}
     ],
     "ask": [
       "Bash(bw)",
@@ -80,7 +85,11 @@
     "Stop": [
       {
         "hooks": [
+          {{- if eq .chezmoi.os "windows" }}
+          { "type": "command", "command": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "{{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.ps1"], "timeout": 600 }
+          {{- else }}
           { "type": "command", "command": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.sh", "timeout": 600 }
+          {{- end }}
         ]
       }
     ]
