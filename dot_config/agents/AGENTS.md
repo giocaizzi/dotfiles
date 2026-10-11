@@ -10,7 +10,8 @@
 - Never expose secrets in chat; use env vars or a secret store.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
 - Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent), at most two live per repo: check `git worktree list` first, and `git worktree remove` + `prune` as soon as the PR merges. Heavy repos (node_modules, watchers) make worktrees expensive on the host.
-- All docs live in `docs/`; `AGENTS.md` holds rules only and links to them. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
+- `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. Keep them separate; `AGENTS.md` links to docs and never duplicates them.
+- All docs live in `docs/`. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
 - Always write a runbook in `docs/` for any operational procedure, and update it in the same change that alters the procedure. Mermaid only when asked.
 
 # CLI tooling
