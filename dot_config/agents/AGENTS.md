@@ -12,7 +12,8 @@
 
 # CLI tooling
 
-- `chezmoi` drives the whole OS configuration and provides the tooling (packages via `.chezmoiscripts/`). Add or change tools there, not by ad-hoc installs.
+- `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). Packages come from `brew` on macOS; add a tool to that list, never ad-hoc `brew install`.
+- Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv` are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
 - `make` runs every task. Use the project's Makefile; add a target rather than invoking tools directly.
 - Python: `uv` only. Never pip, pipx or global installs.
 - GitHub: `gh`. Git: small Conventional Commits explaining what and why.
