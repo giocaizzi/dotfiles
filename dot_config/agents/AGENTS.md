@@ -4,7 +4,7 @@
 - Simplest correct solution. No speculative features, abstractions, configurability or backward compatibility unless requested.
 - Surgical changes: match existing style and architecture, touch only what the task requires.
 - Use plan mode for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
-- Orchestrate subagents hub-and-spoke. If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
+- Orchestrate subagents hub-and-spoke, routing model and effort by task (`subagent-orchestration` skill). If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
 - If project rules conflict with these principles, stop and tell me before choosing.
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
 - Never expose secrets in chat; use env vars or a secret store.
