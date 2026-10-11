@@ -28,7 +28,12 @@ $CorePackages = @(
 $AdditionalTools = @(
     @{ Name = 'oh-my-posh'; Id = 'JanDeDobbeleer.OhMyPosh'; Cmd = 'oh-my-posh' }
     @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }
+    @{ Name = 'node';       Id = 'OpenJS.NodeJS.LTS';       Cmd = 'node' }  # npm, for the language servers
 )
+
+# Language servers for the Claude Code LSP plugins (.chezmoitemplates/claude-settings.json)
+$UvTools  = @('pyright')
+$NpmTools = @('typescript@5', 'typescript-language-server')  # tsls needs tsserver, which TS 7 dropped
 
 # Fonts — installed per user by oh-my-posh (no admin; managed PCs block the
 # machine-scope winget package). Probed by one of the font's files.
@@ -130,6 +135,24 @@ if (Test-Path $uv) {
     & $uv python install $PythonVersion --no-bin
 } else {
     Write-Warning "uv not found; skipping Python install"
+}
+
+# ============================================================================
+# LANGUAGE SERVERS (uv tool / npm -g, user-global)
+# ============================================================================
+
+Write-Step "Language servers"
+# winget's PATH edits only reach new sessions; reload so a fresh node is found
+$env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
+if (Test-Path $uv) {
+    foreach ($tool in $UvTools) { & $uv tool install $tool }
+} else {
+    Write-Warning "uv not found; skipping $($UvTools -join ', ')"
+}
+if (Test-Command 'npm') {
+    npm install -g @NpmTools
+} else {
+    Write-Warning "npm not found; skipping $($NpmTools -join ', ')"
 }
 
 # ============================================================================
