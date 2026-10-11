@@ -55,7 +55,12 @@ SHELL_PACKAGES_LINUX=(
 ADDITIONAL_TOOLS=(
 	"uv"            # Python versions + CLI tools
 	"oh-my-posh"
+	"node"          # npm, for the language servers below
 )
+
+# Language servers for the Claude Code LSP plugins (.chezmoitemplates/claude-settings.json)
+UV_TOOLS=("pyright")
+NPM_TOOLS=("typescript@5" "typescript-language-server")  # tsls needs tsserver, which TS 7 dropped
 
 {{- if get . "light" }}
 
@@ -65,6 +70,8 @@ SHELL_PACKAGES_MACOS=()
 SHELL_PACKAGES_LINUX=()
 FONTS_MACOS=()
 ADDITIONAL_TOOLS=("oh-my-posh")
+UV_TOOLS=()
+NPM_TOOLS=()
 {{- end }}
 
 # ============================================================================
@@ -111,6 +118,11 @@ install_tool_linux() {
 			# -d: default would be ~/bin if it exists; keep user binaries in ~/.local/bin
 			curl -s https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
 			;;
+		"node")
+			# NodeSource LTS: apt's nodejs is too old for typescript-language-server
+			curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+			sudo apt-get install -y nodejs
+			;;
 		*)
 			echo "Warning: No installation method for $tool" >&2
 			;;
@@ -126,6 +138,21 @@ install_python() {
 	[ -x "$uv" ] || return 0
 	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Python ${PYTHON_VERSION} (uv):${NC}"
 	"$uv" python install "$PYTHON_VERSION" --default --preview-features python-install-default
+}
+
+# User-global CLI tools (uv tool / npm -g). Skipped on light machines (empty lists).
+install_language_servers() {
+	[ ${#UV_TOOLS[@]} -eq 0 ] && [ ${#NPM_TOOLS[@]} -eq 0 ] && return 0
+	[ "$VERBOSE" = true ] && echo -e "\n${YELLOW}Language servers:${NC}"
+	local uv
+	uv="$(command -v uv || echo "$HOME/.local/bin/uv")"
+	for tool in "${UV_TOOLS[@]}"; do
+		"$uv" tool install "$tool"
+	done
+	# Linux: NodeSource's global prefix is /usr; keep npm -g in ~/.local without sudo
+	local prefix=()
+	[ "$(uname)" = "Linux" ] && prefix=(--prefix "$HOME/.local")
+	npm install -g "${prefix[@]}" "${NPM_TOOLS[@]}"
 }
 
 # ============================================================================
@@ -168,6 +195,7 @@ for tool in "${ADDITIONAL_TOOLS[@]}"; do
 done
 
 install_python
+install_language_servers
 
 # Oh My Zsh is fetched declaratively via .chezmoiexternal.toml.tmpl.
 {{- end }}
@@ -209,6 +237,7 @@ for tool in "${ADDITIONAL_TOOLS[@]}"; do
 done
 
 install_python
+install_language_servers
 
 # Create fd symlink (fd-find -> fd) for consistency with macOS
 if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
