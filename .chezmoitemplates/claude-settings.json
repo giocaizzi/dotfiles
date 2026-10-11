@@ -118,6 +118,7 @@
     "api@giocaizzi-skills": true,
     "javascript@giocaizzi-skills": true,
     "dev-tools@giocaizzi-skills": true,
+    "agent-mods@giocaizzi-agent-mods": true,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
@@ -150,6 +151,13 @@
         "source": "github",
         "repo": "anthropics/skills"
       }
+    },
+    "giocaizzi-agent-mods": {
+      "source": {
+        "source": "github",
+        "repo": "giocaizzi/agent-mods"
+      },
+      "autoUpdate": true
     }
   },
   "effortLevel": "high",
