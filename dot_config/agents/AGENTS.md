@@ -5,11 +5,12 @@
 - Surgical changes: match existing style and architecture, touch only what the task requires.
 - Use plan mode for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
 - Orchestrate subagents hub-and-spoke, routing model and effort by task (`subagent-orchestration` skill). If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
+- No fixed cap on worktrees or agents; throttle on availability. Quota: ask the harness CLI (Claude: `cd /tmp && claude -p "/usage"`; Copilot: `/usage`, `--max-ai-credits`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it). Host: use the repo's `scripts/host/heavy.sh` when present, else check load and free disk before heavy work (`host-hygiene` skill).
 - If project rules conflict with these principles, stop and tell me before choosing.
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
 - Never expose secrets in chat; use env vars or a secret store.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
-- Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges. No fixed cap on worktrees or agents: throttle on availability using your own signals (Claude: `cd /tmp && claude -p "/usage"` for session and weekly limits; back off near the limit).
+- Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges.
 - `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. Keep them separate; `AGENTS.md` links to docs and never duplicates them.
 - All docs live in `docs/`. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
 - Always write a runbook in `docs/` for any operational procedure, and update it in the same change that alters the procedure. Mermaid only when asked.
