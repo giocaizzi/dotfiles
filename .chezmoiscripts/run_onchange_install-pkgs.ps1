@@ -25,6 +25,7 @@ $CorePackages = @(
     @{ Name = 'shfmt';   Id = 'mvdan.shfmt';         Cmd = 'shfmt' }  # shell formatter
     @{ Name = 'pwsh';    Id = 'Microsoft.PowerShell';Cmd = 'pwsh' }  # PowerShell 7+
     @{ Name = 'coreutils'; Id = 'uutils.coreutils';  Cmd = 'ls.exe' }  # exe, not the ls alias
+    @{ Name = 'make';    Id = 'ezwinports.make';     Cmd = 'make' }  # `make check` gate + stop hook; GNU Make 4.4.1
 )
 
 $AdditionalTools = @(
