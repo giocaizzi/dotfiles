@@ -129,7 +129,6 @@
     "https://*.openclaw.ai": true,
     "https://*.pydantic.dev": true,
     "https://*.readthedocs.io": true,
-    "https://*.private.co": true,
     "https://agentskills.io": true,
     "https://code.visualstudio.com": true,
     "https://developer.apple.com": true,

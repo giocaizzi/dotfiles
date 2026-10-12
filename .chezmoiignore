@@ -87,6 +87,8 @@ vimfiles
 # Outbound-only SSH config; skipping it (the only encrypted file) means light
 # machines never need the age key, which decrypts every secret in this repo.
 .ssh
+# Same for the encrypted personal aliases.
+.config/shell/aliases.private.sh
 {{ end }}
 
 # Personal-email override only where personal remotes are configured (work machines)

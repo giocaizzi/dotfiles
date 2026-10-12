@@ -33,7 +33,6 @@ alias free='top -l 1 -s 0 | grep PhysMem'
 
 # --- Project-specific ---
 {{- if eq .chezmoi.os "darwin" }}
-alias private="$HOME/Documents/private-project/private-project/private.sh"
 alias openclaw="$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"
 # Swarm secrets sync from Secrets Manager. The token is read from chezmoi when the
 # command runs and exists only in that process (never exported to the shell).
@@ -60,3 +59,6 @@ pipx() {
 {{ range $name, $cmd := .shortcuts.git -}}
 alias {{ $name }}='{{ $cmd }}'
 {{ end }}
+
+# --- Personal aliases (age-encrypted in the repo; absent on light machines) ---
+[ -f "$HOME/.config/shell/aliases.private.sh" ] && . "$HOME/.config/shell/aliases.private.sh"
