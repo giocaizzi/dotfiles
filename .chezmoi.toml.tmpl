@@ -16,6 +16,10 @@
        one project (personal or work); renders the env secrets files. The token
        itself lives in the OS keyring (service "bws", user "access-token"), never
        in this file; the project ID is the on/off switch. */ -}}
+{{- $otelEndpoint := "" -}}
+{{- if and (not $light) (not $work) }}
+{{- $otelEndpoint = promptStringOnce . "otelEndpoint" "[ TELEMETRY ] Claude Code OTLP endpoint URL (blank = no telemetry)" -}}
+{{- end }}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
 {{- $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID (blank = configure secrets file by hand) — store the token first: chezmoi secret keyring set --service=bws --user=access-token" -}}
@@ -39,6 +43,7 @@ encryption = "age"
     githubUser = {{ $githubUser | quote }}
     personalGitRemote = {{ $personalGitRemote | quote }}
     bwsProjectId = {{ $bwsProject | quote }}
+    otelEndpoint = {{ $otelEndpoint | quote }}
 
 [git]
     autoAdd = true
