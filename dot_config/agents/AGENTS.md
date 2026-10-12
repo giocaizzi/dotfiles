@@ -21,11 +21,11 @@
 - `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). Packages come from `brew` on macOS; add a tool to that list, never ad-hoc `brew install`. The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
 - Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv` are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
 - LSP: chezmoi installs `pyright` and `typescript-language-server` for the Claude Code LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
-- `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test); the `guard` stop hook runs `make check`. Add a target rather than invoking tools directly.
+- `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test). Add a target rather than invoking tools directly.
 - Python: `uv` only. Never pip, pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
-- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked and auto-merged behind rulesets with required CI checks on `main`; no merge queue on user repos, and private repos on the free plan have neither rulesets nor auto-merge (see `docs/standard.md` in `github.com/giocaizzi/.github`).
-- Repo management (labels, rulesets, settings, templates, CI) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos. New repos start from `giocaizzi/template` (`gh repo create giocaizzi/<name> --template giocaizzi/template`), then `make onboard REPO=<name>` in `giocaizzi/.github`.
+- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked and auto-merged behind rulesets with required CI checks on `main`.
+- Repo management (labels, rulesets, settings, templates, CI, exceptions, plan limits) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos. New repos start from `giocaizzi/template` (`gh repo create giocaizzi/<name> --template giocaizzi/template`), then `make onboard REPO=<name>` in `giocaizzi/.github`.
 - Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
