@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# PostToolUse hook (Claude Code): after Edit/Write of a shell script, run
-# shellcheck and hand findings back (exit 2 -> stderr reaches the agent).
+# PostToolUse hook (Claude Code): after Edit/Write of a shell script,
+# run shellcheck and hand findings back (exit 2 -> stderr reaches the agent).
 # Formatting (shfmt) is left to `make lint`. Missing shellcheck: skip.
 f=$(jq -r '.tool_input.file_path // empty')
 case "$f" in *.sh|*.bash) ;; *) exit 0 ;; esac
