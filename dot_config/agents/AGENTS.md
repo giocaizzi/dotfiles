@@ -21,16 +21,16 @@
 - `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). Packages come from `brew` on macOS; add a tool to that list, never ad-hoc `brew install`. The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
 - Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv` are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
 - LSP: chezmoi installs `pyright` and `typescript-language-server` for the Claude Code LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
-- `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test); a stop hook runs `make check`. Add a target rather than invoking tools directly.
+- `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test); the `guard` stop hook runs `make check`. Add a target rather than invoking tools directly.
 - Python: `uv` only. Never pip, pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
-- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked, auto-merged or queued, behind rulesets with required CI checks on `main`.
+- GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked and auto-merged behind rulesets with required CI checks on `main`; no merge queue on user repos, and private repos on the free plan have neither rulesets nor auto-merge (see `docs/standard.md` in `github.com/giocaizzi/.github`).
 - Repo management (labels, rulesets, settings, templates, CI) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos.
 - Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
 
-Reusable rules live as skills in `github.com/giocaizzi/skills` (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. If a rule is missing or stale, add it to that repo, generic and reusable; personal or machine-specific facts stay here.
+Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. If a rule is missing or stale, add it to that repo, generic and reusable; personal or machine-specific facts stay here.
 
 | Situation | Load |
 |---|---|
@@ -50,5 +50,6 @@ Reusable rules live as skills in `github.com/giocaizzi/skills` (plugins `api`, `
 | FastAPI, SQLAlchemy, DDD | `fastapi`, `sqlalchemy`, `ddd`; agent `api-reviewer` for API security review |
 | Notion or Firefly | `personal-skill`, `personal-skill` |
 
+- Guards (skill enforcement, host load and quota, risky commands, commit/PR titles, pip, `make check` on stop) are enforced by the `guard` plugin of the same repo.
 - Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`), with `CLAUDE.md` symlinked to it. Create it when missing.
 - Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` (plus `CLAUDE.md` symlink) with that component's instructions.

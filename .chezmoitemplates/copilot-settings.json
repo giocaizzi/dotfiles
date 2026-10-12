@@ -1,19 +1,19 @@
 {
   "extraKnownMarketplaces": {
-    "giocaizzi-skills": {
+    "giocaizzi-harness": {
       "source": {
         "source": "github",
-        "repo": "giocaizzi/skills"
+        "repo": "giocaizzi/harness"
       }
     }
   },
   "enabledPlugins": {
-    "python@giocaizzi-skills": true,
-    "javascript@giocaizzi-skills": true,
-    "api@giocaizzi-skills": true,
-    "dev-tools@giocaizzi-skills": true
+    "python@giocaizzi-harness": true,
+    "javascript@giocaizzi-harness": true,
+    "api@giocaizzi-harness": true,
+    "dev-tools@giocaizzi-harness": true,
+    "guard@giocaizzi-harness": true
   },
-  "experimental": true,
   "inlineImages": false,
   "footer": {
     "showModelEffort": true,

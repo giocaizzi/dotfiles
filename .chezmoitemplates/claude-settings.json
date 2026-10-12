@@ -80,32 +80,6 @@
     ],
     "defaultMode": "auto"
   },
-  "hooks": {
-    "PreToolUse": [],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {{- if eq .chezmoi.os "windows" }}
-          { "type": "command", "command": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "{{ .chezmoi.homeDir }}/.config/agents/hooks/post-edit-lint.ps1"], "timeout": 60 }
-          {{- else }}
-          { "type": "command", "command": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/post-edit-lint.sh", "timeout": 60 }
-          {{- end }}
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {{- if eq .chezmoi.os "windows" }}
-          { "type": "command", "command": "powershell.exe", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "{{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.ps1"], "timeout": 600 }
-          {{- else }}
-          { "type": "command", "command": "bash {{ .chezmoi.homeDir }}/.config/agents/hooks/stop-make-check.sh", "timeout": 600 }
-          {{- end }}
-        ]
-      }
-    ]
-  },
   "statusLine": {
     "type": "command",
     "command": "bash {{ .chezmoi.homeDir }}/.claude/statusline-command.sh"
@@ -114,11 +88,11 @@
   "defaultShell": "powershell",
   {{- end }}
   "enabledPlugins": {
-    "python@giocaizzi-skills": true,
-    "api@giocaizzi-skills": true,
-    "javascript@giocaizzi-skills": true,
-    "dev-tools@giocaizzi-skills": true,
-    "agent-mods@giocaizzi-agent-mods": true,
+    "python@giocaizzi-harness": true,
+    "api@giocaizzi-harness": true,
+    "javascript@giocaizzi-harness": true,
+    "dev-tools@giocaizzi-harness": true,
+    "guard@giocaizzi-harness": true,
     "next-steps@claude-community": true,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
@@ -126,10 +100,10 @@
     "typescript-lsp@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
-    "giocaizzi-skills": {
+    "giocaizzi-harness": {
       "source": {
         "source": "github",
-        "repo": "giocaizzi/skills"
+        "repo": "giocaizzi/harness"
       },
       "autoUpdate": true
     },
@@ -152,13 +126,6 @@
         "source": "github",
         "repo": "anthropics/skills"
       }
-    },
-    "giocaizzi-agent-mods": {
-      "source": {
-        "source": "github",
-        "repo": "giocaizzi/agent-mods"
-      },
-      "autoUpdate": true
     },
     "claude-community": {
       "source": {
