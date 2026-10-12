@@ -12,11 +12,12 @@
     "javascript@giocaizzi-harness": true,
     "api@giocaizzi-harness": true,
     "dev-tools@giocaizzi-harness": true,
-    "guard@giocaizzi-harness": true
+    "guard@giocaizzi-harness": true,
+    "hud@giocaizzi-harness": true
   },
   "statusLine": {
     "type": "command",
-    "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/guard/hooks/statusline.mjs"
+    "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"
   },
   "inlineImages": false,
   "footer": {

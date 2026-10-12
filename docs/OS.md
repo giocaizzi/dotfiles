@@ -15,7 +15,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
 | `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
-| `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; full machines only |
+| `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; `hud` the status line (both CLIs) and the Claude band and pane; `sounds` the Claude toasts and sounds; full machines only |
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
 | `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
@@ -152,16 +152,16 @@ Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: t
 
 ```sh
 claude plugin marketplace add giocaizzi/harness
-claude plugin install guard@giocaizzi-harness   # likewise python, api, javascript, dev-tools
+claude plugin install guard@giocaizzi-harness   # likewise hud, sounds, python, api, javascript, dev-tools
 copilot plugin marketplace add giocaizzi/harness
-copilot plugin install guard@giocaizzi-harness  # likewise python, api, javascript, dev-tools
+copilot plugin install guard@giocaizzi-harness  # likewise hud, python, api, javascript, dev-tools
 ```
 
 Managed settings per harness:
 
 - Claude Code: marketplace and `enabledPlugins` (`.chezmoitemplates/claude-settings.json`).
-- Claude Code status line: `guard`'s `hooks/statusline.mjs claude`, run from the marketplace clone (`~/.claude/plugins/marketplaces/giocaizzi-harness`, a path that does not change with the plugin version); `node` 22+ and a Nerd Font are required. It replaces the old `statusline-command.sh`; delete `~/.claude/statusline-command.sh` once on each machine.
-- Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `guard`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/guard`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting, and no subagent model is pinned: the tier models (GPT-5.4 mini, GPT-6 Luna, GPT-6 Astra) are not available to the account, so `subagents.agents.<name>.model` stays unset and agents inherit the session model.
+- Claude Code status line: `hud`'s `hooks/statusline.mjs claude`, run from the marketplace clone (`~/.claude/plugins/marketplaces/giocaizzi-harness`, a path that does not change with the plugin version); `node` 22+ and a Nerd Font are required. It replaces the old `statusline-command.sh`; delete `~/.claude/statusline-command.sh` once on each machine.
+- Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `hud`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/hud`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting, and no subagent model is pinned: the tier models (GPT-5.4 mini, GPT-6 Luna, GPT-6 Astra) are not available to the account, so `subagents.agents.<name>.model` stays unset and agents inherit the session model.
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
 ## Testing the ignore matrix
