@@ -58,7 +58,20 @@ ADDITIONAL_TOOLS=(
 	"uv"            # Python versions + CLI tools
 	"oh-my-posh"
 	"node"          # npm, for the language servers below
+	"gitleaks"      # secret scanner
+	"actionlint"    # GitHub Actions linter
+	"hadolint"      # Dockerfile linter
 )
+
+# Azure CLI extensions (work machines)
+AZ_EXTENSIONS=()
+
+{{- if get . "work" }}
+
+# Work machines: GitLab and Azure DevOps CLIs
+ADDITIONAL_TOOLS+=("glab" "az")
+AZ_EXTENSIONS=("azure-devops")
+{{- end }}
 
 # Language servers for the Claude Code LSP plugins (.chezmoitemplates/claude-settings.json)
 UV_TOOLS=("pyright")
@@ -72,6 +85,7 @@ SHELL_PACKAGES_MACOS=()
 SHELL_PACKAGES_LINUX=()
 FONTS_MACOS=()
 ADDITIONAL_TOOLS=("oh-my-posh")
+AZ_EXTENSIONS=()
 UV_TOOLS=()
 NPM_TOOLS=()
 {{- end }}
@@ -98,18 +112,26 @@ install_tool_macos() {
 		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $tool already installed"
 	else
 		echo -e "${BLUE}Installing${NC} $tool..."
-		brew install "$tool"
+		local formula=$tool
+		[ "$tool" = "az" ] && formula="azure-cli"
+		brew install "$formula"
 	fi
 }
 
+# Latest release version of a GitHub repo, without the leading v (no API token)
+gh_latest() {
+	curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$1/releases/latest" | sed 's|.*/tag/v||'
+}
+
 install_tool_linux() {
-	local tool=$1
+	local tool=$1 v a
 	if command -v "$tool" >/dev/null 2>&1; then
 		[ "$VERBOSE" = true ] && echo -e "${GREEN}✓${NC} $tool already installed"
 		return
 	fi
 	
 	echo -e "${BLUE}Installing${NC} $tool..."
+	mkdir -p "$HOME/.local/bin"
 	case "$tool" in
 		"uv")
 			# Official installer → ~/.local/bin; UV_NO_MODIFY_PATH keeps it out
@@ -124,6 +146,30 @@ install_tool_linux() {
 			# NodeSource LTS: apt's nodejs is too old for typescript-language-server
 			curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 			sudo apt-get install -y nodejs
+			;;
+		"gitleaks")
+			v=$(gh_latest gitleaks/gitleaks)
+			a=x64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v$v/gitleaks_${v}_linux_$a.tar.gz" | tar -xz -C "$HOME/.local/bin" gitleaks
+			;;
+		"actionlint")
+			v=$(gh_latest rhysd/actionlint)
+			a=amd64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v$v/actionlint_${v}_linux_$a.tar.gz" | tar -xz -C "$HOME/.local/bin" actionlint
+			;;
+		"hadolint")
+			a=x86_64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSLo "$HOME/.local/bin/hadolint" "https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-$a"
+			chmod +x "$HOME/.local/bin/hadolint"
+			;;
+		"glab")
+			v=$(curl -fsSL "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases?per_page=1" | jq -r '.[0].tag_name | ltrimstr("v")')
+			a=amd64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSL "https://gitlab.com/gitlab-org/cli/-/releases/v$v/downloads/glab_${v}_linux_$a.tar.gz" | tar -xz -C "$HOME/.local/bin" --strip-components=1 bin/glab
+			;;
+		"az")
+			# Microsoft's official apt repo setup + install (Debian/Ubuntu)
+			curl -fsSL https://aka.ms/InstallAzureCLIDeb | sudo bash
 			;;
 		*)
 			echo "Warning: No installation method for $tool" >&2
@@ -155,6 +201,13 @@ install_language_servers() {
 	local prefix=()
 	[ "$(uname)" = "Linux" ] && prefix=(--prefix "$HOME/.local")
 	npm install -g "${prefix[@]}" "${NPM_TOOLS[@]}"
+}
+
+# Azure CLI extensions, idempotent. Empty list except on work machines.
+install_az_extensions() {
+	for ext in "${AZ_EXTENSIONS[@]}"; do
+		az extension show --name "$ext" >/dev/null 2>&1 || az extension add --name "$ext"
+	done
 }
 
 # ============================================================================
@@ -198,6 +251,7 @@ done
 
 install_python
 install_language_servers
+install_az_extensions
 
 # Oh My Zsh is fetched declaratively via .chezmoiexternal.toml.tmpl.
 {{- end }}
@@ -240,6 +294,7 @@ done
 
 install_python
 install_language_servers
+install_az_extensions
 
 # Create fd symlink (fd-find -> fd) for consistency with macOS
 if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
