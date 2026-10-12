@@ -15,11 +15,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
 | `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
 | `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
-| `dot_config/agents/hooks/stop-make-check.sh` | `~/.config/agents/hooks/` (Stop hook for Claude + Copilot: `make check`) | same | same |
-| `dot_copilot/hooks/{hooks.json.tmpl,block-pip.sh}` | `~/.copilot/hooks/` (Copilot hooks: pip/pipx deny, stop check) | same | same |
-| `dot_config/agents/hooks/stop-make-check.ps1`, `dot_copilot/hooks/block-pip.ps1` | — | — | `~/.config/agents/hooks/`, `~/.copilot/hooks/` (Windows twins of the `.sh` hooks; plain cmdlets, no uutils: hooks run `-NoProfile`) | 
-| `.chezmoiexternal.toml.tmpl` → agent-mods Copilot extension | — | — | `~/.copilot/extensions/agent-mods` (from github.com/giocaizzi/agent-mods, weekly refresh; loads only in experimental mode, which the managed Copilot settings turn on with `inlineImages: false` to keep inline images off; full machines only) |
-| `.chezmoitemplates/claude-settings.json` → `agent-mods` plugin | — | — | enabled via the `giocaizzi-agent-mods` marketplace (Claude Code mod: skill enforcer, host guard, risky-command ask, usage throttle) |
+| `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; full machines only |
 | `.chezmoidata/shortcuts.toml`                        | `~/.config/shell/aliases.sh`                                | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
 | `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
@@ -144,7 +140,31 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 | uv's `python.exe` launchers in `~\.local\bin` (unsigned exe named python.exe) | `uv python install --no-bin`; `profile.ps1` puts uv's `cpython-3.NN-*` interpreter folder on PATH |
 | `New-Item -ItemType SymbolicLink` in Windows PowerShell 5.1 without admin | `mklink` (honours Developer Mode) in `run_after_link-pwsh-profile.ps1` |
 | Documents redirected to OneDrive and localised | profile link target resolved at runtime with `GetFolderPath('MyDocuments')` |
-| Hook scripts may not launch (execution policy, constrained language) | Copilot `preToolUse` is fail-closed, so its `powershell` command denies only on an explicit exit 2 and allows when the script cannot start; Claude hooks fail open by default |
+
+## Agent plugins (`giocaizzi-harness`)
+
+Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. The `guard` plugin replaced the agent-mods Copilot extension, the agent-mods Claude plugin and the hook scripts this repo used to deploy (`~/.config/agents/hooks/`, `~/.copilot/hooks/`). Its runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
+
+One-time cleanup on machines that had the old setup (chezmoi neither deletes files whose source is gone nor removes keys from the merged settings):
+
+```sh
+rm -rf ~/.copilot/extensions/agent-mods ~/.copilot/hooks ~/.config/agents/hooks
+jq 'del(.hooks, .enabledPlugins["agent-mods@giocaizzi-agent-mods"], .extraKnownMarketplaces["giocaizzi-agent-mods", "giocaizzi-skills"])
+    | .enabledPlugins |= with_entries(select(.key | endswith("@giocaizzi-skills") | not))' \
+  ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json
+jq 'del(.experimental, .extraKnownMarketplaces["giocaizzi-skills"])
+    | .enabledPlugins |= with_entries(select(.key | endswith("@giocaizzi-skills") | not))' \
+  ~/.copilot/settings.json > ~/.copilot/settings.json.new && mv ~/.copilot/settings.json.new ~/.copilot/settings.json
+chezmoi apply
+claude plugin marketplace remove giocaizzi-skills; claude plugin marketplace remove giocaizzi-agent-mods
+claude plugin marketplace add giocaizzi/harness
+claude plugin install guard@giocaizzi-harness   # likewise python, api, javascript, dev-tools
+copilot plugin marketplace remove giocaizzi-skills
+copilot plugin marketplace add giocaizzi/harness
+copilot plugin install guard@giocaizzi-harness  # likewise python, api, javascript, dev-tools
+```
+
+On Windows, `Remove-Item -Recurse -Force` the same three folders. Light machines skip all of this.
 
 ## Testing the ignore matrix
 
