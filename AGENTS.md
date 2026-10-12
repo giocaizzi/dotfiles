@@ -74,7 +74,7 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 
 **Sources of truth (edit these, then `chezmoi apply`):**
 - `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt
-- `.chezmoitemplates/claude-settings.json` `statusLine` — Claude Code statusline, drawn by `guard`'s `hooks/statusline.mjs` (harness repo)
+- `.chezmoitemplates/claude-settings.json` `statusLine` — Claude Code statusline, drawn by `hud`'s `hooks/statusline.mjs` (harness repo)
 - `.chezmoitemplates/claude-settings.json` — Claude Code theme (merged into `~/.claude/settings.json` by `dot_claude/modify_settings.json`, which keeps keys Claude Code writes itself) (`"theme": "dark"`)
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
 - `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
