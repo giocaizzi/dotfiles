@@ -14,6 +14,10 @@
     "dev-tools@giocaizzi-harness": true,
     "guard@giocaizzi-harness": true
   },
+  "statusLine": {
+    "type": "command",
+    "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/guard/hooks/statusline.mjs"
+  },
   "inlineImages": false,
   "footer": {
     "showModelEffort": true,
