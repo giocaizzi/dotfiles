@@ -1,6 +1,17 @@
+<div align="center">
+
 # dotfiles
 
-My configuration for macOS, Linux and Windows from a single source, managed with [chezmoi](https://www.chezmoi.io/). Configs follow the XDG Base Directory spec (`~/.config`, `~/.local/{bin,share,state}`, `~/.cache`).
+**My configuration for macOS, Linux and Windows from a single source.**
+
+[![CI](https://github.com/giocaizzi/dotfiles/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/giocaizzi/dotfiles/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
+
+---
+
+Managed with [chezmoi](https://www.chezmoi.io/). Configs follow the XDG Base Directory spec (`~/.config`, `~/.local/{bin,share,state}`, `~/.cache`).
 
 ## Set up a new machine
 
@@ -81,3 +92,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 - [docs/SHELL.md](./docs/SHELL.md) — shell architecture, aliases and shortcuts, tools, secrets.
 - [AGENTS.md](./AGENTS.md) — repo conventions and the Catppuccin style system.
 - [chezmoi documentation](https://www.chezmoi.io/).
+
+## License
+
+[MIT](LICENSE)
