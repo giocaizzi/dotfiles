@@ -25,6 +25,7 @@
 - Python: `uv` only. Never pip, pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
 - GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked, auto-merged or queued, behind rulesets with required CI checks on `main`.
+- Repo management (labels, rulesets, settings, templates, CI) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos.
 - Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
