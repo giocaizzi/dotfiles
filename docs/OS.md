@@ -154,6 +154,12 @@ copilot plugin marketplace add giocaizzi/harness
 copilot plugin install guard@giocaizzi-harness  # likewise python, api, javascript, dev-tools
 ```
 
+Managed settings per harness:
+
+- Claude Code: marketplace and `enabledPlugins` (`.chezmoitemplates/claude-settings.json`).
+- Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `guard`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/guard`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting, and no subagent model is pinned: the tier models (GPT-5.4 mini, GPT-6 Luna, GPT-6 Astra) are not available to the account, so `subagents.agents.<name>.model` stays unset and agents inherit the session model.
+- VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
+
 ## Testing the ignore matrix
 
 ```sh
