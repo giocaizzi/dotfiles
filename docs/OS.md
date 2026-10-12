@@ -143,28 +143,14 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 
 ## Agent plugins (`giocaizzi-harness`)
 
-Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. The `guard` plugin replaced the agent-mods Copilot extension, the agent-mods Claude plugin and the hook scripts this repo used to deploy (`~/.config/agents/hooks/`, `~/.copilot/hooks/`). Its runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
-
-One-time cleanup on machines that had the old setup (chezmoi neither deletes files whose source is gone nor removes keys from the merged settings):
+Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
 
 ```sh
-rm -rf ~/.copilot/extensions/agent-mods ~/.copilot/hooks ~/.config/agents/hooks
-jq 'del(.hooks, .enabledPlugins["agent-mods@giocaizzi-agent-mods"], .extraKnownMarketplaces["giocaizzi-agent-mods", "giocaizzi-skills"])
-    | .enabledPlugins |= with_entries(select(.key | endswith("@giocaizzi-skills") | not))' \
-  ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json
-jq 'del(.experimental, .extraKnownMarketplaces["giocaizzi-skills"])
-    | .enabledPlugins |= with_entries(select(.key | endswith("@giocaizzi-skills") | not))' \
-  ~/.copilot/settings.json > ~/.copilot/settings.json.new && mv ~/.copilot/settings.json.new ~/.copilot/settings.json
-chezmoi apply
-claude plugin marketplace remove giocaizzi-skills; claude plugin marketplace remove giocaizzi-agent-mods
 claude plugin marketplace add giocaizzi/harness
 claude plugin install guard@giocaizzi-harness   # likewise python, api, javascript, dev-tools
-copilot plugin marketplace remove giocaizzi-skills
 copilot plugin marketplace add giocaizzi/harness
 copilot plugin install guard@giocaizzi-harness  # likewise python, api, javascript, dev-tools
 ```
-
-On Windows, `Remove-Item -Recurse -Force` the same three folders. Light machines skip all of this.
 
 ## Testing the ignore matrix
 
