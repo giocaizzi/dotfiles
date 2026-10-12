@@ -100,8 +100,6 @@
     "npx": true,
     "openclaw": true,
     "pgrep": true,
-    "pip install": true,
-    "poetry": true,
     "pytest": true,
     "python": true,
     "ruff": true,
