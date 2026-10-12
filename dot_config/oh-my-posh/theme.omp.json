@@ -2,194 +2,188 @@
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
   "blocks": [
     {
+      "type": "prompt",
       "alignment": "left",
       "segments": [
         {
-          "foreground": "#cba6f7",
-          "options": {
-            "cache_duration": "none"
-          },
+          "type": "session",
           "style": "plain",
-          "template": "<#89b4fa>\u250c</>[<#cdd6f4>\ueb99</> {{ .UserName }} from <#cdd6f4>\uf108</> {{ .HostName }}]",
-          "type": "session"
-        },
-        {
-          "foreground": "#cba6f7",
-          "options": {
-            "cache_duration": "none"
-          },
-          "style": "plain",
-          "template": "[\uf0e7]",
-          "type": "root"
-        },
-        {
-          "foreground": "#f38ba8",
-          "options": {
-            "cache_duration": "none",
-            "fetch_stash_count": true,
-            "fetch_status": true,
-            "fetch_upstream_icon": true
-          },
-          "style": "plain",
-          "template": "[<#cdd6f4>{{ .UpstreamIcon }}</>{{ .HEAD }}{{if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Working.Changed }} <#cdd6f4>\uf044</> {{ .Working.String }}{{ end }}{{ if and (.Working.Changed) (.Staging.Changed) }} |{{ end }}{{ if .Staging.Changed }} <#cdd6f4>\uf046</> {{ .Staging.String }}{{ end }}{{ if gt .StashCount 0 }} <#cdd6f4>\ueb4b</> {{ .StashCount }}{{ end }}]",
-          "type": "git"
-        },
-        {
           "foreground": "#cdd6f4",
-          "options": {
+          "template": "<#89b4fa>\u250c</><#6c7086>[</>\uf007 {{ .UserName }}@{{ .HostName }}<#6c7086>]</>",
+          "properties": {
             "cache_duration": "none"
-          },
+          }
+        },
+        {
+          "type": "root",
           "style": "plain",
-          "template": "[\ue235 {{ if .Venv }}{{ .Venv }} {{ .Full }}{{ end }}]",
-          "type": "python"
+          "foreground": "#f9e2af",
+          "template": " <#6c7086>[</>\uf0e7 root<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "#f38ba8",
+          "template": " <#6c7086>[</>\ue725 {{ .HEAD }}{{ if gt .Ahead 0 }} \u2191{{ .Ahead }}{{ end }}{{ if gt .Behind 0 }} \u2193{{ .Behind }}{{ end }}{{ if or .Working.Changed .Staging.Changed }} *{{ end }}<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none",
+            "branch_icon": "",
+            "fetch_status": true
+          }
+        },
+        {
+          "type": "gcp",
+          "style": "plain",
+          "foreground": "#f9e2af",
+          "template": "{{ if .Project }} <#6c7086>[</>\uf0c2 {{ .Project }}<#6c7086>]</>{{ end }}",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "az",
+          "style": "plain",
+          "foreground": "#89b4fa",
+          "template": "{{ if .Name }} <#6c7086>[</>\uebd8 {{ .Name }}<#6c7086>]</>{{ end }}",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "azd",
+          "style": "plain",
+          "foreground": "#89b4fa",
+          "template": "{{ if .DefaultEnvironment }} <#6c7086>[</>\uebd8 azd {{ .DefaultEnvironment }}<#6c7086>]</>{{ end }}",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "aws",
+          "style": "plain",
+          "foreground": "#fab387",
+          "template": "{{ if .Profile }} <#6c7086>[</>\uf270 {{ .Profile }}{{ if .Region }}@{{ .Region }}{{ end }}<#6c7086>]</>{{ end }}",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "kubectl",
+          "style": "plain",
+          "foreground": "#89b4fa",
+          "template": "{{ if .Context }} <#6c7086>[</>\ue81d {{ .Context }}{{ if .Namespace }}::{{ .Namespace }}{{ end }}<#6c7086>]</>{{ end }}",
+          "properties": {
+            "cache_duration": "none"
+          }
+        },
+        {
+          "type": "python",
+          "style": "plain",
+          "foreground": "#cdd6f4",
+          "template": " <#6c7086>[</>\ue235 {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none"
+          }
         }
-      ],
-      "type": "prompt"
+      ]
     },
     {
+      "type": "prompt",
       "alignment": "right",
       "overflow": "break",
       "segments": [
         {
+          "type": "sysinfo",
+          "style": "plain",
           "foreground": "#cdd6f4",
+          "template": "<#6c7086>[</>\uefc5 {{ div ((sub .PhysicalTotalMemory .PhysicalFreeMemory)|float64) 1073741824.0 }}/{{ div .PhysicalTotalMemory 1073741824.0 }}GB<#6c7086>]</>",
           "foreground_templates": [
-            "{{ if (gt (subf 1 (divf (.PhysicalFreeMemory|float64) (.PhysicalTotalMemory|float64))) 0.2) }}#f9e2af{{else}}#cba6f7{{end}}"
+            "{{ if gt .PhysicalPercentUsed 80.0 }}#f9e2af{{ end }}"
           ],
-          "options": {
+          "properties": {
             "cache_duration": "none"
-          },
-          "style": "plain",
-          "template": "[<#cdd6f4>\ue266</> RAM: {{ (div ((sub .PhysicalTotalMemory .PhysicalFreeMemory)|float64) 1073741824.0) }}/{{ (div .PhysicalTotalMemory 1073741824.0) }}GB]",
-          "type": "sysinfo"
+          }
         },
         {
+          "type": "battery",
+          "style": "plain",
           "foreground": "#cdd6f4",
+          "template": "{{ if not .Error }} <#6c7086>[</>{{ if ge .Percentage 88 }}\uf240{{ else if ge .Percentage 63 }}\uf241{{ else if ge .Percentage 38 }}\uf242{{ else if ge .Percentage 13 }}\uf243{{ else }}\uf244{{ end }} {{ .Percentage }}%{{ if eq \"Charging\" .State.String }} \uf1e6{{ end }}<#6c7086>]</>{{ end }}",
           "foreground_templates": [
-            "{{if eq \"Charging\" .State.String}}#a6e3a1{{end}}",
-            "{{if eq \"Discharging\" .State.String}}#f9e2af{{end}}",
-            "{{if eq \"Full\" .State.String}}#a6e3a1{{end}}"
+            "{{ if eq \"Charging\" .State.String }}#a6e3a1{{ end }}",
+            "{{ if and (eq \"Discharging\" .State.String) (lt .Percentage 20) }}#f38ba8{{ end }}"
           ],
-          "options": {
-            "cache_duration": "none",
-            "charged_icon": "\uf240 ",
-            "charging_icon": "\uf1e6 ",
-            "discharging_icon": "\ue234 "
-          },
-          "style": "plain",
-          "template": "{{ if not .Error }}[{{ .Icon }}{{ .Percentage }}{{ end }}{{ .Error }}\uf295]",
-          "type": "battery"
+          "properties": {
+            "cache_duration": "none"
+          }
         },
         {
-          "options": {
-            "cache_duration": "none",
-            "time_format": "15:04 PM Mon 02 Jan"
-          },
+          "type": "time",
           "style": "plain",
-          "template": "[{{ .CurrentDate | date .Format }}]",
-          "type": "time"
+          "foreground": "#cdd6f4",
+          "template": " <#6c7086>[</>\uf017 {{ .CurrentDate | date .Format }}<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none",
+            "time_format": "15:04 Mon 02 Jan"
+          }
         }
-      ],
-      "type": "prompt"
+      ]
     },
     {
+      "type": "prompt",
       "alignment": "left",
       "newline": true,
       "segments": [
         {
-          "options": {
-            "cache_duration": "none"
-          },
-          "foreground": "#89b4fa",
+          "type": "path",
           "style": "plain",
-          "template": "{{ if .Name }}<#89b4fa>| </>[<#cdd6f4>\uebd8</> {{.User.Name}}::{{ .Name }}]{{ end }}",
-          "type": "az"
-        },
-        {
-          "options": {
-            "cache_duration": "none"
-          },
-          "style": "plain",
-          "template": "{{ if .DefaultEnvironment }}[\uebd8 {{ .DefaultEnvironment }}]{{ end }}",
-          "type": "azd"
-        },
-        {
-          "foreground": "#f9e2af",
-          "style": "plain",
-          "template": "{{ if .Project }}[<#cdd6f4></> {{.Account}}::{{.Project}}]{{ end }}",
-          "type": "gcp"
-        },
-        {
           "foreground": "#cba6f7",
-          "options": {
-            "cache_duration": "none"
-          },
-          "style": "plain",
-          "template": "{{ if .Profile }}[{{ .Profile }}{{if .Region}}@{{ .Region }}{{ end }}]{{ end }}",
-          "type": "aws"
-        },
-        {
-          "foreground": "#cba6f7",
-          "options": {
-            "cache_duration": "none"
-          },
-          "style": "plain",
-          "template": "{{ if .Context }}[{{.Context}}{{if .Namespace}}::{{.Namespace}}{{end}}]{{ end }}",
-          "type": "kubectl"
-        }
-      ],
-      "type": "prompt"
-    },
-    {
-      "alignment": "left",
-      "newline": true,
-      "segments": [
-        {
-          "foreground": "#cba6f7",
-          "options": {
+          "template": "<#89b4fa>\u251c</><#6c7086>[</>\uf07c {{ .Path }}<#6c7086>]</>",
+          "properties": {
             "cache_duration": "none",
             "style": "full"
-          },
-          "template": "<#89b4fa>|</> [<#cdd6f4>\uf07c</>  {{ .Path }}]",
-          "type": "path"
+          }
         },
         {
-          "foreground": "#cba6f7",
-          "options": {
+          "type": "executiontime",
+          "style": "plain",
+          "foreground": "#cdd6f4",
+          "template": " <#6c7086>[</>\uf520 {{ .FormattedMs }}<#6c7086>]</>",
+          "properties": {
             "cache_duration": "none",
-            "style": "dallas",
-            "threshold": 0
-          },
-          "style": "plain",
-          "template": "[<#cdd6f4>\uf252</> {{ .FormattedMs }}s]",
-          "type": "executiontime"
+            "style": "austin",
+            "threshold": 500
+          }
         },
         {
-          "foreground": "#cba6f7",
-          "options": {
-            "cache_duration": "none"
-          },
+          "type": "status",
           "style": "plain",
-          "template": "[<#cdd6f4>\uea6c</> Error, check your command]",
-          "type": "status"
+          "foreground": "#f38ba8",
+          "template": " <#6c7086>[</>\uf071 exit {{ .Code }}<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none"
+          }
         }
-      ],
-      "type": "prompt"
+      ]
     },
     {
+      "type": "prompt",
       "alignment": "left",
       "newline": true,
       "segments": [
         {
-          "foreground": "#89b4fa",
-          "options": {
-            "cache_duration": "none"
-          },
+          "type": "text",
           "style": "plain",
-          "template": "\u2514Δ",
-          "type": "text"
+          "foreground": "#89b4fa",
+          "template": "\u2514\u0394",
+          "properties": {
+            "cache_duration": "none"
+          }
         }
-      ],
-      "type": "prompt"
+      ]
     }
   ],
   "final_space": true,
