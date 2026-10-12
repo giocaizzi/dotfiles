@@ -49,8 +49,10 @@ Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, 
 | Python code or tests | `python-development`, `python-testing` |
 | JS/TS, React, Next.js | `javascript-typescript`, `react`, `nextjs` |
 | FastAPI, SQLAlchemy, DDD | `fastapi`, `sqlalchemy`, `ddd`; agent `api-reviewer` for API security review |
-| Notion or Firefly | `giocaizzi-notion`, `firefly-ops` |
 
 - Guards (skill enforcement, host load and quota, risky commands, commit/PR titles, pip, `make check` on stop) are enforced by the `guard` plugin of the same repo.
 - Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`), with `CLAUDE.md` symlinked to it. Create it when missing.
 - Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` (plus `CLAUDE.md` symlink) with that component's instructions.
+- Personal instructions, if present: `~/.config/agents/AGENTS.private.md`.
+
+@~/.config/agents/AGENTS.private.md
