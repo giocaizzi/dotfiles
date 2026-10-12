@@ -73,7 +73,7 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 **Font:** `JetBrainsMono Nerd Font` in Ghostty, VS Code terminal and Windows Terminal (installed by brew cask / oh-my-posh (user scope) / Linux external). These configs are symlink targets, so the name is kept identical by hand.
 
 **Sources of truth (edit these, then `chezmoi apply`):**
-- `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt
+- `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt. Same convention as the Claude status line: every part `[icon value]` (dim overlay0 brackets, one Nerd Font icon, value coloured by role), one space apart, rows led by `┌`/`├`/`└`. Segment settings go under `properties` (oh-my-posh ignores an `options` key).
 - `.chezmoitemplates/claude-settings.json` `statusLine` — Claude Code statusline, drawn by `hud`'s `hooks/statusline.mjs` (harness repo)
 - `.chezmoitemplates/claude-settings.json` — Claude Code theme (merged into `~/.claude/settings.json` by `dot_claude/modify_settings.json`, which keeps keys Claude Code writes itself) (`"theme": "dark"`)
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
