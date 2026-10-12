@@ -10,6 +10,7 @@
 # ----------------------------------------------------------------------------
 README.md
 AGENTS.md
+LICENSE
 # Git Bash crash dumps left in the source dir (also git-ignored globally)
 *.stackdump
 CLAUDE.md
