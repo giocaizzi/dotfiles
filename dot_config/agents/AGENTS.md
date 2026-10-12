@@ -12,7 +12,7 @@
 - Never expose secrets in chat; use env vars or a secret store.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
 - Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges.
-- `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. Keep them separate; `AGENTS.md` links to docs and never duplicates them.
+- `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. `README.md` is for humans (quickstart, badges by maturity tier, links to docs). Keep the three separate; `AGENTS.md` and the README link to docs and never duplicate them, and agent instructions never go in the README.
 - All docs live in `docs/`. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
 - Always write a runbook in `docs/` for any operational procedure, and update it in the same change that alters the procedure. Mermaid only when asked.
 
@@ -41,8 +41,8 @@ Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, 
 | Start a task | `/wt` |
 | Docs, runbooks or README affected | `/docs-sync` |
 | Stacked PRs, rulesets, branch protection, merge gating | `github-workflow` |
-| Repo setup or audit (CI, settings, templates, any forge) | `repo-standard` |
-| Releases, versions, changelogs | `release-please`, `semver` |
+| Repo setup or audit (CI, settings, environments, publishing, README, any forge) | `repo-standard` |
+| Releases, versions, changelogs | `release-please`, `semver`; publishing setup: `repo-standard` |
 | Credentials, tokens, `.env`, `bw`/`bws` | `secrets-handling` |
 | Heavy builds, emulators, full test suites, parallel agents | `host-hygiene` |
 | Spawning subagents, choosing model or effort | `subagent-orchestration`; agent `scout` for lookups, `escalate` after the driver failed twice |
