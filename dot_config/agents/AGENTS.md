@@ -25,7 +25,7 @@
 - Python: `uv` only. Never pip, pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
 - GitHub: `gh`. Git: small Conventional Commits explaining what and why. PRs are stacked and auto-merged behind rulesets with required CI checks on `main`; no merge queue on user repos, and private repos on the free plan have neither rulesets nor auto-merge (see `docs/standard.md` in `github.com/giocaizzi/.github`).
-- Repo management (labels, rulesets, settings, templates, CI) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos.
+- Repo management (labels, rulesets, settings, templates, CI) follows the standard in `github.com/giocaizzi/.github` (`docs/standard.md`); `make audit` there reports drift. Change the standard there first, then the repos. New repos start from `giocaizzi/template` (`gh repo create giocaizzi/<name> --template giocaizzi/template`), then `make onboard REPO=<name>` in `giocaizzi/.github`.
 - Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
