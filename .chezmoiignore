@@ -97,6 +97,43 @@ vimfiles
 .config/shell/aliases.private.sh
 {{ end }}
 
+# --- AI harnesses (data.harnesses, chosen by `chezmoi init`; light machines skip them all above) ---
+# Only selected harnesses get their configs. A config without the key gets all six
+# (.chezmoitemplates/harnesses). ~/.config/agents is shared: Claude and Copilot
+# symlink to it, Codex, opencode and pi render from the source, so it stays while
+# any of them is selected.
+{{ $harnesses := includeTemplate "harnesses" . | splitList " " }}
+{{ if not (has "claude" $harnesses) }}
+.claude
+{{ end }}
+{{ if not (has "copilot" $harnesses) }}
+.copilot
+{{ end }}
+{{ if not (has "vscode" $harnesses) }}
+.config/Code
+.config/Code - Insiders
+Library/Application Support/Code
+Library/Application Support/Code - Insiders
+AppData/Roaming/Code
+AppData/Roaming/Code - Insiders
+{{ end }}
+{{ if not (has "codex" $harnesses) }}
+.codex
+{{ end }}
+{{ if not (has "opencode" $harnesses) }}
+.config/opencode
+{{ end }}
+{{ if not (has "pi" $harnesses) }}
+.pi
+{{ end }}
+{{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses) (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses)) }}
+.config/agents
+{{ end }}
+{{ if not (or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses)) }}
+.chezmoiscripts/install-harness.sh
+.chezmoiscripts/install-harness.ps1
+{{ end }}
+
 # Personal-email override only where personal remotes are configured (work machines)
 {{ if not (or (get . "githubUser") (get . "personalGitRemote")) }}
 .config/git/personal
