@@ -1,0 +1,25 @@
+#Requires -Version 5.1
+# giocaizzi/harness for the harnesses that do not install it from their own settings
+# (Claude Code and Copilot CLI do: .chezmoitemplates/{claude,copilot}-settings.json).
+# Mirrors run_after_install-harness.sh.tmpl. Every apply, idempotent; a missing CLI is skipped.
+
+$Harness = Join-Path $HOME '.local\share\giocaizzi-harness'
+$Plugins = @('python', 'javascript', 'api', 'dev-tools', 'guard')
+$Install = Join-Path $Harness 'scripts\install.mjs'
+if (-not (Test-Path $Install)) { exit 0 }
+$has = { param($c) [bool](Get-Command $c -ErrorAction SilentlyContinue) }
+
+# Codex: plugins from the GitHub marketplace, agents from the checkout.
+if (& $has 'codex') {
+    codex plugin marketplace add giocaizzi/harness | Out-Null
+    codex plugin marketplace upgrade | Out-Null
+    foreach ($p in $Plugins) { codex plugin add "$p@giocaizzi-harness" | Out-Null }
+    node $Install codex
+}
+
+# opencode: skills, agents and the guard plugin stub, all from the checkout.
+if (& $has 'opencode') { node $Install opencode }
+
+# pi: the checkout itself as a package, so the external's pull updates it.
+if ((& $has 'pi') -and -not ((pi list 2>$null) -match [regex]::Escape($Harness))) { pi install $Harness }
+exit 0
