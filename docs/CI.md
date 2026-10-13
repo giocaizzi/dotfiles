@@ -10,6 +10,8 @@ make check   # lint + test; run before pushing
 ```
 
 Needs `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS).
+On Windows, `make` uses Git for Windows' POSIX shell; zsh syntax checks run when
+zsh is installed and are otherwise skipped because zsh is not a Windows dependency.
 
 | Target | Does |
 |---|---|
