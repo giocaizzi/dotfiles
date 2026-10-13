@@ -66,7 +66,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 
 ## Machine roles
 
-Two independent yes/no answers, asked once per machine by `chezmoi init` and stored only in that machine's `~/.config/chezmoi/chezmoi.toml` (`data.light`, `data.work`). Templates read them with `get . "light"` / `get . "work"`, which treats a missing key as false.
+Two independent yes/no answers, asked once per machine by `chezmoi init` as a choice (arrow keys to pick `yes` or `no`, Enter to confirm; default `no`) and stored as booleans only in that machine's `~/.config/chezmoi/chezmoi.toml` (`data.light`, `data.work`). A config that already holds the boolean is not asked again. Templates read them with `get . "light"` / `get . "work"`, which treats a missing key as false.
 
 | Flag | Prompt | When true |
 |---|---|---|
@@ -79,7 +79,40 @@ Personal agent instructions and shell aliases are not in this public repo: they 
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
-Change an answer later by passing the prompt text: `chezmoi init --promptBool "Work computer (yes/no) — work git identity, no personal telemetry=true"`, then `chezmoi apply`.
+Change an answer later: `chezmoi edit-config` and set `light` / `work` under `[data]` to `true` or `false`, or re-answer every prompt with `chezmoi init --prompt`; then `chezmoi apply`.
+
+Re-running `chezmoi init`:
+
+- Plain `chezmoi init` asks only for keys missing from the local config (e.g. `harnesses` on a machine set up before that prompt existed) and keeps every stored answer.
+- `chezmoi init --prompt` asks every prompt again, each prefilled with the stored answer (text as the default, yes/no and the harness list preselected), so Enter keeps it. `chezmoi init --prompt --promptDefaults` re-renders the config with every stored answer and no questions.
+
+### AI harnesses
+
+Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; all six preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key (created before the prompt existed) gets all six; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
+
+| Harness | Managed only when selected |
+|---|---|
+| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink) |
+| `copilot` | `~/.copilot` (`settings.json` merge, `copilot-instructions.md` symlink) |
+| `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. |
+| `codex` | `~/.codex/AGENTS.md`; Codex wiring in `run_after_install-harness.*` |
+| `opencode` | `~/.config/opencode/AGENTS.md`; opencode wiring in `run_after_install-harness.*` |
+| `pi` | `~/.pi/agent/AGENTS.md`; pi wiring in `run_after_install-harness.*` |
+
+Shared: `~/.config/agents/` (`AGENTS.md`, `AGENTS.private.md`) stays while any of `claude`, `copilot`, `codex`, `opencode`, `pi` is selected; the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
+
+Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
+
+Simulate the prompts without touching the real config (prompt flags are keyed by the prompt text, as printed by `chezmoi init`):
+
+```sh
+chezmoi execute-template --init \
+  --promptChoice "[ INSTALL MODE ] Light setup? (shell, git, vim, and prompt only)=no" \
+  --promptMultichoice "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)=claude/copilot" \
+  < .chezmoi.toml.tmpl
+```
+
+`execute-template` keeps the answer already in your config for a key it finds there (and, unlike `chezmoi init`, re-asks a stored `harnesses` list); point `--config` at an empty `.toml` file to simulate a new machine.
 
 ### Adding personal remotes
 
@@ -149,7 +182,7 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 
 ## Agent plugins (`giocaizzi-harness`)
 
-Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Codex, opencode and pi have no settings that do this, so `run_after_install-harness.{sh,ps1}` (full machines, every apply, idempotent) wires them from a checkout kept by the `.local/share/giocaizzi-harness` external: Codex adds the marketplace and plugins (`codex plugin add`) and gets the agents from `scripts/install.mjs codex`; opencode gets skills, agents and the guard plugin stub from `scripts/install.mjs opencode`; pi installs the checkout as a package, so the external's daily pull updates it. chezmoi does not install the three CLIs: the script wires up only those already on PATH. Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version. Runbook: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
+Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Codex, opencode and pi have no settings that do this, so `run_after_install-harness.{sh,ps1}.tmpl` (full machines with any of them selected, see [AI harnesses](#ai-harnesses); every apply, idempotent) wires them from a checkout kept by the `.local/share/giocaizzi-harness` external: Codex adds the marketplace and plugins (`codex plugin add`) and gets the agents from `scripts/install.mjs codex`; opencode gets skills, agents and the guard plugin stub from `scripts/install.mjs opencode`; pi installs the checkout as a package, so the external's daily pull updates it. chezmoi does not install the three CLIs: the script wires up only those already on PATH. Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version. Runbook: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
 
 ```sh
 claude plugin marketplace add giocaizzi/harness
@@ -170,8 +203,8 @@ Managed settings per harness:
 
 ```sh
 chezmoi execute-template \
-  --override-data '{"light":false,"work":false,"chezmoi":{"os":"darwin"}}' \
-  < .chezmoiignore   # vary os (darwin/linux/windows), light, work
+  --override-data '{"light":false,"work":false,"harnesses":["claude"],"chezmoi":{"os":"darwin"}}' \
+  < .chezmoiignore   # vary os (darwin/linux/windows), light, work, harnesses
 ```
 
 For the live OS, `chezmoi managed` and `chezmoi ignored` show the actual split.
