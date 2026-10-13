@@ -1,9 +1,16 @@
 {{- $user := promptStringOnce . "gitUser" "[ GIT IDENTITY ] Name — used for every commit" -}}
 {{- $email := promptStringOnce . "gitEmail" "[ PERSONAL EMAIL ] Email — default on personal machines; on work machines, used only for personal repos" -}}
-{{- $light := promptBoolOnce . "light" "[ INSTALL MODE ] Light setup? (yes/no — shell, git, vim, and prompt only)" -}}
+{{- /* light and work are yes/no choices stored as booleans. promptChoiceOnce only
+       recognises a stored string, so an existing boolean is passed back to it as
+       "yes"/"no": not asked again, but still re-asked by `chezmoi init --prompt`. */ -}}
+{{- $roles := dict -}}
+{{- range list "light" "work" }}
+{{- if kindIs "bool" (get $ .) }}{{ $_ := set $roles . (ternary "yes" "no" (get $ .)) }}{{ end }}
+{{- end }}
+{{- $light := eq (promptChoiceOnce $roles "light" "[ INSTALL MODE ] Light setup? (shell, git, vim, and prompt only)" (list "yes" "no") "no") "yes" -}}
 {{- /* Work machine: work git identity, no personal telemetry. Values stay in
        this machine's local config only (never committed). */ -}}
-{{- $work := promptBoolOnce . "work" "[ MACHINE ROLE ] Work computer? (yes/no — work git identity, no personal telemetry)" -}}
+{{- $work := eq (promptChoiceOnce $roles "work" "[ MACHINE ROLE ] Work computer? (work git identity, no personal telemetry)" (list "yes" "no") "no") "yes" -}}
 {{- $workEmail := "" -}}
 {{- $githubUser := "" -}}
 {{- $personalGitRemote := "" -}}
@@ -19,6 +26,13 @@
 {{- $otelEndpoint := "" -}}
 {{- if and (not $light) (not $work) }}
 {{- $otelEndpoint = promptStringOnce . "otelEndpoint" "[ TELEMETRY ] Claude Code OTLP endpoint URL (blank = no telemetry)" -}}
+{{- end }}
+{{- /* AI harnesses whose configs chezmoi writes (it never installs the CLIs). Light
+       machines have none, so they are not asked; a config without the key gets all
+       six (.chezmoitemplates/harnesses). */ -}}
+{{- $harnesses := list -}}
+{{- if not $light }}
+{{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" (list "claude" "copilot" "vscode" "codex" "opencode" "pi") (list "claude" "copilot" "vscode" "codex" "opencode" "pi") -}}
 {{- end }}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
@@ -44,6 +58,9 @@ encryption = "age"
     personalGitRemote = {{ $personalGitRemote | quote }}
     bwsProjectId = {{ $bwsProject | quote }}
     otelEndpoint = {{ $otelEndpoint | quote }}
+{{- if not $light }}
+    harnesses = {{ $harnesses | toJson }}
+{{- end }}
 
 [git]
     autoAdd = true

@@ -50,6 +50,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`.
 - Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
+- AI harness configs are gated on `data.harnesses` (chosen at `chezmoi init`). Read it only through `includeTemplate "harnesses" . | splitList " "`, which defaults a missing key to all six. A new harness file needs its ignore entry in `.chezmoiignore`. See docs/OS.md → AI harnesses.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.

@@ -1,0 +1,1 @@
+{{- if hasKey . "harnesses" }}{{ .harnesses | join " " }}{{ else }}claude copilot vscode codex opencode pi{{ end -}}

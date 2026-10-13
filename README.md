@@ -54,8 +54,9 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
    | Prompt | personal | work | light |
    |---|---|---|---|
    | Git user name (text) / PERSONAL git email (text) | your name / personal email | your name / personal email (used only for personal repos) | your name / personal email |
-   | Light install (yes/no) — shell, git, vim, prompt only | no | no | **yes** |
-   | Work computer (yes/no) — work git identity, no personal telemetry | no | **yes** → WORK git email (default for every repo) + PERSONAL GitHub username + extra personal remote globs ([add later](./docs/OS.md#adding-personal-remotes)) | no |
+   | Light setup (choice yes/no) — shell, git, vim, prompt only | no | no | **yes** |
+   | Work computer (choice yes/no) — work git identity, no personal telemetry | no | **yes** → WORK git email (default for every repo) + PERSONAL GitHub username + extra personal remote globs ([add later](./docs/OS.md#adding-personal-remotes)) | no |
+   | AI harnesses (multiple choice: claude, copilot, vscode, codex, opencode, pi; [details](./docs/OS.md#ai-harnesses)) | the ones you use | the ones you use | not asked |
    | Bitwarden Secrets Manager project ID (text) | `personal` ID | `work` ID | not asked |
 
    The token is not an init answer: it sits in the OS keyring (step 4). To change answers later, `chezmoi init --prompt` (asks everything again).
