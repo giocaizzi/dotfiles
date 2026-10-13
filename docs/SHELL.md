@@ -96,7 +96,7 @@ PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `functio
 - **Your global git ignore has `*secret*`**, so new secrets *templates* need `git add -f`; they contain no values.
 - **Sourced** at the top of `.profile` / `profile.ps1`, so values are exported to every process started from the shell.
 - **Why env vars**: project `.mcp.json` files expand `${VAR}` from the environment Claude Code is launched with, so MCP tokens must be exported here. Tools with their own credential store (e.g. `~/.config/gh/`, `~/.config/greenhouse/token`) keep it there.
-- **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`.
+- **Secrets only**: non-secret env (`JAVA_HOME`, `PATH`, …) belongs in `dot_profile`. One exception: on personal machines with an OTel endpoint the generated file also exports `GUARD_OTEL_EXPORTER_OTLP_{ENDPOINT,HEADERS}` and `GUARD_OTEL_RESOURCE_ATTRIBUTES` (the headers copied from `OTEL_EXPORTER_OTLP_HEADERS`) for the harness `guard` decision log, since Claude Code and Copilot CLI strip `OTEL_*` from hook environments.
 - **Secret files** (e.g. `~/.ssh/config`) are different: they're committed age-encrypted, see [OS.md](./OS.md#encrypted-files-age).
 - **Claude Code** is denied Read/Edit on both files (`.chezmoitemplates/claude-settings.json`).
 
