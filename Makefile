@@ -1,5 +1,10 @@
 # Repo checks. Templates (*.tmpl) need chezmoi to render; only the script templates are
 # rendered and linted (lint-tmpl).
+ifeq ($(OS),Windows_NT)
+# Git for Windows provides the POSIX shell required by the recipes, but does not add it to PATH.
+SHELL := $(shell git --exec-path)/../../../bin/sh.exe
+endif
+
 SCRIPTS := $(shell git ls-files '*.sh')
 SH_TMPL := $(shell git ls-files '.chezmoiscripts/*.sh.tmpl')
 # --override-data per render: OS × role × harness selection.
@@ -33,6 +38,12 @@ lint-tmpl: ## Render script templates with chezmoi, shellcheck the output
 
 test: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
-	@for f in $(ZSH); do zsh -n "$$f" || exit 1; done
+	@if command -v zsh >/dev/null 2>&1; then \
+		for f in $(ZSH); do zsh -n "$$f" || exit 1; done; \
+	elif [ "$(OS)" = "Windows_NT" ]; then \
+		echo "Skipping zsh syntax checks on Windows: zsh is not installed."; \
+	else \
+		echo "zsh is required to syntax-check zsh files."; exit 1; \
+	fi
 
 check: lint test ## lint + test
