@@ -3,8 +3,11 @@
 ifeq ($(OS),Windows_NT)
 # Git for Windows provides the POSIX shell required by the recipes, but does not add it to PATH.
 SHELL := $(shell git --exec-path)/../../../bin/sh.exe
+# Git may retain CRLF in an existing working tree even when .gitattributes specifies LF.
+SHELLCHECK_EXCLUDES := -e SC1017
 endif
 
+SHELLCHECK_EXCLUDES ?=
 SCRIPTS := $(shell git ls-files '*.sh')
 SH_TMPL := $(shell git ls-files '.chezmoiscripts/*.sh.tmpl')
 # --override-data per render: OS × role × harness selection.
@@ -22,8 +25,8 @@ help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-9s %s\n", $$1, $$2}'
 
 lint: lint-tmpl ## shellcheck shell scripts, validate JSON
-	shellcheck $(SCRIPTS)
-	shellcheck -s bash -e SC1090,SC1091 $(RC)
+	shellcheck $(SHELLCHECK_EXCLUDES) $(SCRIPTS)
+	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 
 # Isolated empty config, so the renders never read this machine's answers. A render for one
