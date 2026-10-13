@@ -19,6 +19,12 @@
     "type": "command",
     "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"
   },
+  "subagents": {
+    "agents": {
+      "dev-tools:scout": { "model": "gpt-6-luna", "effortLevel": "low" },
+      "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "high" }
+    }
+  },
   "inlineImages": false,
   "footer": {
     "showModelEffort": true,
