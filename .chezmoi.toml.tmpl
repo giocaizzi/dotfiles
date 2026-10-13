@@ -1,23 +1,24 @@
-{{- $user := promptStringOnce . "gitUser" "[ GIT IDENTITY ] Name — used for every commit" -}}
-{{- $email := promptStringOnce . "gitEmail" "[ PERSONAL EMAIL ] Email — default on personal machines; on work machines, used only for personal repos" -}}
+{{- $user := promptStringOnce . "gitUser" "[ GIT IDENTITY ] Name — used for every commit" (get . "gitUser" | default "") -}}
+{{- $email := promptStringOnce . "gitEmail" "[ PERSONAL EMAIL ] Email — default on personal machines; on work machines, used only for personal repos" (get . "gitEmail" | default "") -}}
 {{- /* light and work are yes/no choices stored as booleans. promptChoiceOnce only
        recognises a stored string, so an existing boolean is passed back to it as
-       "yes"/"no": not asked again, but still re-asked by `chezmoi init --prompt`. */ -}}
+       "yes"/"no": not asked again, but still re-asked by `chezmoi init --prompt`.
+       Every prompt defaults to the stored answer, so a re-ask needs only Enter. */ -}}
 {{- $roles := dict -}}
 {{- range list "light" "work" }}
 {{- if kindIs "bool" (get $ .) }}{{ $_ := set $roles . (ternary "yes" "no" (get $ .)) }}{{ end }}
 {{- end }}
-{{- $light := eq (promptChoiceOnce $roles "light" "[ INSTALL MODE ] Light setup? (shell, git, vim, and prompt only)" (list "yes" "no") "no") "yes" -}}
+{{- $light := eq (promptChoiceOnce $roles "light" "[ INSTALL MODE ] Light setup? (shell, git, vim, and prompt only)" (list "yes" "no") (get $roles "light" | default "no")) "yes" -}}
 {{- /* Work machine: work git identity, no personal telemetry. Values stay in
        this machine's local config only (never committed). */ -}}
-{{- $work := eq (promptChoiceOnce $roles "work" "[ MACHINE ROLE ] Work computer? (work git identity, no personal telemetry)" (list "yes" "no") "no") "yes" -}}
+{{- $work := eq (promptChoiceOnce $roles "work" "[ MACHINE ROLE ] Work computer? (work git identity, no personal telemetry)" (list "yes" "no") (get $roles "work" | default "no")) "yes" -}}
 {{- $workEmail := "" -}}
 {{- $githubUser := "" -}}
 {{- $personalGitRemote := "" -}}
 {{- if $work }}
-{{- $workEmail = promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" -}}
-{{- $githubUser = promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" -}}
-{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" -}}
+{{- $workEmail = promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" (get . "workEmail" | default "") -}}
+{{- $githubUser = promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" (get . "githubUser" | default "") -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" (get . "personalGitRemote" | default "") -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. The token
@@ -25,18 +26,19 @@
        in this file; the project ID is the on/off switch. */ -}}
 {{- $otelEndpoint := "" -}}
 {{- if and (not $light) (not $work) }}
-{{- $otelEndpoint = promptStringOnce . "otelEndpoint" "[ TELEMETRY ] Claude Code OTLP endpoint URL (blank = no telemetry)" -}}
+{{- $otelEndpoint = promptStringOnce . "otelEndpoint" "[ TELEMETRY ] Claude Code OTLP endpoint URL (blank = no telemetry)" (get . "otelEndpoint" | default "") -}}
 {{- end }}
 {{- /* AI harnesses whose configs chezmoi writes (it never installs the CLIs). Light
        machines have none, so they are not asked; a config without the key gets all
        six (.chezmoitemplates/harnesses). */ -}}
 {{- $harnesses := list -}}
 {{- if not $light }}
-{{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" (list "claude" "copilot" "vscode" "codex" "opencode" "pi") (list "claude" "copilot" "vscode" "codex" "opencode" "pi") -}}
+{{- $all := list "claude" "copilot" "vscode" "codex" "opencode" "pi" -}}
+{{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" $all (ternary (get . "harnesses") $all (hasKey . "harnesses")) -}}
 {{- end }}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
-{{- $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID (blank = configure secrets file by hand) — store the token first: chezmoi secret keyring set --service=bws --user=access-token" -}}
+{{- $bwsProject = promptStringOnce . "bwsProjectId" "[ SECRETS / BWS ] Project ID (blank = configure secrets file by hand) — store the token first: chezmoi secret keyring set --service=bws --user=access-token" (get . "bwsProjectId" | default "") -}}
 {{- end }}
 
 # Secrets (e.g. ~/.ssh/config) are committed age-encrypted. The private key

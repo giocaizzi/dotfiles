@@ -81,6 +81,11 @@ Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC
 
 Change an answer later: `chezmoi edit-config` and set `light` / `work` under `[data]` to `true` or `false`, or re-answer every prompt with `chezmoi init --prompt`; then `chezmoi apply`.
 
+Re-running `chezmoi init`:
+
+- Plain `chezmoi init` asks only for keys missing from the local config (e.g. `harnesses` on a machine set up before that prompt existed) and keeps every stored answer.
+- `chezmoi init --prompt` asks every prompt again, each prefilled with the stored answer (text as the default, yes/no and the harness list preselected), so Enter keeps it. `chezmoi init --prompt --promptDefaults` re-renders the config with every stored answer and no questions.
+
 ### AI harnesses
 
 Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; all six preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key (created before the prompt existed) gets all six; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
