@@ -51,6 +51,18 @@
     executable = true
 {{- end }}
 
+# giocaizzi/harness checkout for the harnesses that install it from a clone (opencode,
+# pi, Codex agents): .chezmoiscripts/run_after_install-harness.* runs its installer.
+# Full machines only: light machines have no AI agents.
+{{- if not (get . "light") }}
+[".local/share/giocaizzi-harness"]
+    type = "git-repo"
+    url = "https://github.com/giocaizzi/harness.git"
+    refreshPeriod = "24h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}
+
 # Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
 # Windows uses PowerShell — both ignored in .chezmoiignore).
 # dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.

@@ -71,6 +71,7 @@ vimfiles
 .chezmoiscripts/init-untracked-env.ps1
 .chezmoiscripts/install-pkgs.ps1
 .chezmoiscripts/link-pwsh-profile.ps1
+.chezmoiscripts/install-harness.ps1
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---
@@ -80,7 +81,12 @@ vimfiles
 {{ if get . "light" }}
 .claude
 .copilot
+.codex
+.pi
+.config/opencode
 .config/agents
+.chezmoiscripts/install-harness.sh
+.chezmoiscripts/install-harness.ps1
 .config/Code
 .config/Code - Insiders
 .config/ghostty
@@ -107,4 +113,5 @@ vimfiles
 .chezmoiscripts/init-untracked-env.sh
 .chezmoiscripts/create-xdg-dirs.sh
 .chezmoiscripts/install-pkgs.sh
+.chezmoiscripts/install-harness.sh
 {{ end }}
