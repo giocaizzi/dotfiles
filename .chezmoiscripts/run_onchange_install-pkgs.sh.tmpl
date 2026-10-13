@@ -76,8 +76,6 @@ AZ_EXTENSIONS=("azure-devops")
 # Language servers for the Claude Code LSP plugins (.chezmoitemplates/claude-settings.json)
 UV_TOOLS=("pyright")
 NPM_TOOLS=("typescript@5" "typescript-language-server")  # tsls needs tsserver, which TS 7 dropped
-# The other agent harnesses giocaizzi/harness supports (run_after_install-harness.sh wires them up)
-NPM_TOOLS+=("@openai/codex" "opencode-ai" "@earendil-works/pi-coding-agent")
 
 {{- if get . "light" }}
 
