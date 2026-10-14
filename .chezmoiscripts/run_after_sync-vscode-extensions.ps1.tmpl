@@ -1,0 +1,26 @@
+#Requires -Version 5.1
+$ErrorActionPreference = "Stop"
+
+$code = Get-Command -Name code -ErrorAction SilentlyContinue
+if (-not $code) {
+    Write-Warning "VS Code extension sync skipped because the code CLI is unavailable."
+    exit 0
+}
+
+$installedExtensions = & $code.Source --list-extensions --show-versions
+if ($LASTEXITCODE -ne 0) {
+    throw "Unable to list installed VS Code extensions."
+}
+
+$extensions = @'
+{{ include ".chezmoitemplates/vscode-extensions" -}}
+'@ -split '\r?\n' | Where-Object { $_ }
+
+foreach ($extension in $extensions) {
+    if ($installedExtensions -notcontains $extension) {
+        & $code.Source --install-extension $extension --force
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to install VS Code extension: $extension"
+        }
+    }
+}

@@ -94,7 +94,7 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 |---|---|
 | `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink) |
 | `copilot` | `~/.copilot` (`settings.json` merge, `copilot-instructions.md` symlink) |
-| `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. |
+| `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. `chezmoi apply` also installs the version-pinned extensions in `.chezmoitemplates/vscode-extensions` through the `code` CLI; it warns and skips the extension step when VS Code is unavailable. Extension-specific settings must be kept in the managed VS Code settings files. |
 | `codex` | `~/.codex/AGENTS.md`; Codex wiring in `run_after_install-harness.*` |
 | `opencode` | `~/.config/opencode/AGENTS.md`; opencode wiring in `run_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`; pi wiring in `run_after_install-harness.*` |
