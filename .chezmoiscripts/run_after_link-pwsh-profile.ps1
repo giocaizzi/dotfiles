@@ -9,7 +9,7 @@ $target = [IO.Path]::GetFullPath((Join-Path $env:CHEZMOI_SOURCE_DIR "dot_config\
 $docs   = [Environment]::GetFolderPath("MyDocuments")
 
 foreach ($dir in "PowerShell", "WindowsPowerShell") {
-    $link = Join-Path $docs "$dir\profile.ps1"
+    $link = Join-Path $docs "$dir\Microsoft.PowerShell_profile.ps1"
     $item = Get-Item -LiteralPath $link -Force -ErrorAction SilentlyContinue
 
     # Normalise: chezmoi writes link targets with forward slashes
