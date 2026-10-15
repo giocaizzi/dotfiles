@@ -48,6 +48,7 @@
     "https://docs.github.com",
     "https://learn.microsoft.com"
   ],
+  "beep": true,
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false

@@ -1,0 +1,8 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Codex writes this file itself (plugins, marketplaces, hook trust), so
+       only the managed keys are set; the rest stays local. toToml drops
+       comments and reorders tables. Ring the terminal bell when a turn ends
+       or an approval waits (Ghostty marks the tab: 🔔, border, Dock). */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromToml .chezmoi.stdin }}{{ end -}}
+{{- $current | setValueAtPath "tui.notifications" true | setValueAtPath "tui.notification_method" "bel" | toToml }}
