@@ -76,3 +76,8 @@ yarn-error.log*
 
 # Claude Code worktrees (one per task, inside each repo)
 .claude/worktrees/
+
+# Other agents' personal overrides (backstop; repos carry the same entries)
+**/.claude/agent-memory-local/
+CLAUDE.local.md
+**/.github/copilot/settings.local.json
