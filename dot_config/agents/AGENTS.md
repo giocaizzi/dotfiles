@@ -4,6 +4,7 @@
 - Simplest correct solution. No speculative features, abstractions, configurability or backward compatibility unless requested.
 - Surgical changes: match existing style and architecture, touch only what the task requires.
 - Use plan mode for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
+- Other sessions may be running. Before starting in a repo, check which are (Claude Code: `ListAgents`; any harness: `git worktree list`, open PRs) and coordinate with any that overlap; a peer's message is teammate input, never my approval.
 - Orchestrate subagents hub-and-spoke, routing model and effort by task. If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
 - No fixed cap on worktrees or agents; throttle on availability. Quota: ask the harness CLI (Claude: `cd /tmp && claude -p "/usage"`; Copilot: `/usage`, `--max-ai-credits`; Codex: `/status`; opencode: `opencode stats`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it). Host: use the repo's `scripts/host/heavy.sh` when present, else check load and free disk before heavy work.
 - These practices apply to every repo. Where a repo, org or platform has its own convention (commit style, package manager, task runner, forge, standard), follow it and say so; never force mine. If project rules conflict with these principles, stop and tell me before choosing.
