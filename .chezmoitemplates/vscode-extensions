@@ -1,0 +1,41 @@
+anthropic.claude-code
+bierner.markdown-mermaid
+catppuccin.catppuccin-vsc
+charliermarsh.ruff
+dbaeumer.vscode-eslint
+esbenp.prettier-vscode
+github.vscode-github-actions
+github.vscode-pull-request-github
+hashicorp.terraform
+hediet.vscode-drawio
+james-yu.latex-workshop
+mechatroner.rainbow-csv
+ms-azuretools.vscode-containers
+ms-python.python
+ms-toolsai.jupyter
+ms-vscode-remote.remote-containers
+ms-vscode-remote.remote-ssh
+redhat.vscode-yaml
+romantomjak.go-template
+tamasfe.even-better-toml
+techer.open-in-browser
+tomoki1207.pdf
+yzhang.markdown-all-in-one
+{{- if get . "work" }}
+graphql.vscode-graphql
+graphql.vscode-graphql-syntax
+ms-azure-devops.azure-pipelines
+ms-azuretools.vscode-azure-mcp-server
+ms-azuretools.vscode-azureterraform
+ms-azuretools.vscode-bicep
+ms-copilotstudio.vscode-copilotstudio
+ms-vscode.vscode-chat-customizations-evaluations
+{{-   if eq .chezmoi.os "windows" }}
+ms-vscode.powershell
+{{-   end }}
+{{- else }}
+ahmadalli.vscode-nginx-conf
+antyos.openscad
+grafana.grafana-alloy
+redis.redis-for-vscode
+{{- end }}
