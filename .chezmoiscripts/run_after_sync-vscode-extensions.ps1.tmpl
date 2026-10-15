@@ -7,18 +7,18 @@ if (-not $code) {
     exit 0
 }
 
-$installedExtensions = & $code.Source --list-extensions --show-versions
+$installedExtensions = & $code.Source --list-extensions
 if ($LASTEXITCODE -ne 0) {
     throw "Unable to list installed VS Code extensions."
 }
 
 $extensions = @'
-{{ include ".chezmoitemplates/vscode-extensions" -}}
+{{ template "vscode-extensions" . }}
 '@ -split '\r?\n' | Where-Object { $_ }
 
 foreach ($extension in $extensions) {
     if ($installedExtensions -notcontains $extension) {
-        & $code.Source --install-extension $extension --force
+        & $code.Source --install-extension $extension
         if ($LASTEXITCODE -ne 0) {
             throw "Failed to install VS Code extension: $extension"
         }

@@ -6,16 +6,16 @@ if ! command -v code >/dev/null 2>&1; then
 	exit 0
 fi
 
-if ! installed_extensions="$(code --list-extensions --show-versions)"; then
+if ! installed_extensions="$(code --list-extensions)"; then
 	echo "Error: unable to list installed VS Code extensions." >&2
 	exit 1
 fi
 
 while IFS= read -r extension; do
 	[ -z "$extension" ] && continue
-	if ! grep -Fxq "$extension" <<<"$installed_extensions"; then
-		code --install-extension "$extension" --force
+	if ! grep -Fxqi "$extension" <<<"$installed_extensions"; then
+		code --install-extension "$extension"
 	fi
 done <<'EXTENSIONS'
-{{ include ".chezmoitemplates/vscode-extensions" -}}
+{{ template "vscode-extensions" . }}
 EXTENSIONS
