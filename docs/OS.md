@@ -95,7 +95,7 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 | `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink) |
 | `copilot` | `~/.copilot` (`settings.json` merge, `copilot-instructions.md` symlink) |
 | `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
-| `codex` | `~/.codex/AGENTS.md`; Codex wiring in `run_after_install-harness.*` |
+| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys); Codex wiring in `run_after_install-harness.*` |
 | `opencode` | `~/.config/opencode/AGENTS.md`; opencode wiring in `run_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`; pi wiring in `run_after_install-harness.*` |
 
@@ -141,6 +141,7 @@ Two Bitwarden CLIs, used per machine role:
 - **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (version pinned in `.chezmoidata/bws.toml`; bump to update). The first apply on a new machine fetches it; the next apply renders the secrets.
 - **Online needed:** on machines with a project ID, every `chezmoi status`/`diff`/`apply` calls `bws` once and fails offline.
 - No Bitwarden MCP server: it has no read-only mode and would give an AI agent full vault access.
+- **Tab alert:** every harness rings the terminal bell when it waits on the person, so the terminal marks that tab. Claude Code `preferredNotifChannel: "terminal_bell"`, Copilot `beep`, Codex `[tui] notification_method = "bel"`; opencode and pi through the harness `sounds` plugin. Ghostty `bell-features` shows 🔔 in the title, a border, a Dock bounce and the system sound; Windows Terminal `bellStyle: "all"` flashes the window and taskbar and plays the sound. tmux forwards the bell to the outer terminal.
 - **Claude Code TUI:** `tui` is `fullscreen` everywhere (needed for `viewMode: focus`, clicks and the side-by-side `/diff`, which also needs Claude Code ≥ 2.1.287 and a terminal ≥ 110 columns). macOS needs Ghostty mouse reporting on. On Windows Terminal, if stale text fragments appear, set `CLAUDE_CODE_ALT_SCREEN_FULL_REPAINT=1`; `CLAUDE_CODE_SCROLL_SPEED=3` is already set there.
 - **Claude Code and `bw`:** every `bw` command Claude runs needs your approval (an `ask` rule in the managed Claude settings; ask rules beat the blanket Bash allow, also inside pipes and in auto mode). To let Claude act, unlock in your own terminal into a private file, `(umask 077; bw unlock --raw > <file>)`; Claude runs `bw --session "$(cat <file>)" …` and prints only non-secret fields. Finish with `bw lock` and delete the file. The rule matches the command as written, so it's an approval gate, not a security boundary.
 

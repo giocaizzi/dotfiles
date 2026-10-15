@@ -45,6 +45,7 @@
         "defaults": 
         {
             "antialiasingMode": "cleartype",
+            "bellStyle": "all",
             "colorScheme": "Catppuccin Mocha",
             "cursorShape": "filledBox",
             "experimental.retroTerminalEffect": false,
