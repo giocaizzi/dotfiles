@@ -72,6 +72,7 @@ vimfiles
 .chezmoiscripts/install-pkgs.ps1
 .chezmoiscripts/link-pwsh-profile.ps1
 .chezmoiscripts/install-harness.ps1
+.chezmoiscripts/sync-vscode-extensions.ps1
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---
@@ -89,6 +90,8 @@ vimfiles
 .chezmoiscripts/install-harness.ps1
 .config/Code
 .config/Code - Insiders
+.chezmoiscripts/sync-vscode-extensions.sh
+.chezmoiscripts/sync-vscode-extensions.ps1
 .config/ghostty
 # Outbound-only SSH config; skipping it (the only encrypted file) means light
 # machines never need the age key, which decrypts every secret in this repo.
@@ -116,6 +119,8 @@ Library/Application Support/Code
 Library/Application Support/Code - Insiders
 AppData/Roaming/Code
 AppData/Roaming/Code - Insiders
+.chezmoiscripts/sync-vscode-extensions.sh
+.chezmoiscripts/sync-vscode-extensions.ps1
 {{ end }}
 {{ if not (has "codex" $harnesses) }}
 .codex
@@ -151,4 +156,5 @@ AppData/Roaming/Code - Insiders
 .chezmoiscripts/create-xdg-dirs.sh
 .chezmoiscripts/install-pkgs.sh
 .chezmoiscripts/install-harness.sh
+.chezmoiscripts/sync-vscode-extensions.sh
 {{ end }}
