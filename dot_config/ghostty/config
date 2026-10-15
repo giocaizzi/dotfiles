@@ -1,32 +1,62 @@
 # Ghostty 1.3.x (macOS + Linux; macos-* keys are ignored on Linux)
 # https://ghostty.org/docs/config/reference
+# Every setting below is explained; `ghostty +show-config --default --docs`
+# prints the full upstream reference. Reload with super+r.
 
 # --- Font ---
+# Nerd Font so prompt icons (oh-my-posh, statusline) render. Keep the name
+# identical in VS Code and Windows Terminal configs.
 font-family = JetBrainsMono Nerd Font
 font-size = 14
+# macOS only: draws glyphs slightly bolder; makes thin fonts readable on
+# transparent/blurred backgrounds.
 font-thicken = true
+# Cell height +1px: a touch more line spacing (value is pixels or a %).
 adjust-cell-height = 1
 
 # --- Theme (auto light/dark) ---
+# Follows the OS appearance: Catppuccin Mocha in dark mode, Latte in light.
 theme = dark:Catppuccin Mocha,light:Catppuccin Latte
 
 # --- Window ---
+# 0.85 = 15% see-through background; toggle opaque with super+shift+u.
 background-opacity = 0.85
+# Blur what is behind the transparent window (macOS: frosted-glass effect).
 background-blur = true
+# Inner padding around the text grid, "left,right" / "top,bottom" in px.
 window-padding-x = 4,2
 window-padding-y = 6,0
+# Spread the leftover pixels (grid doesn't divide the window evenly)
+# equally on all sides instead of leaving a gap at right/bottom.
 window-padding-balance = true
+# Restore windows, tabs, splits and working dirs after quitting Ghostty.
 window-save-state = always
-confirm-close-surface = false
+# Ask "are you sure?" before closing a window/tab/split that has a running
+# process (with shell integration, an idle prompt closes without asking).
+# undo-timeout below is the second safety net (super+z).
+confirm-close-surface = true
+# After a closed tab/window, super+z can bring it back for this long
+# (macOS only; default 5s).
+undo-timeout = 30s
 
 # --- macOS ---
-macos-titlebar-style = hidden
+# "tabs": custom titlebar with the tab bar built in (always matches the
+# terminal background) and the close/minimise/zoom buttons visible.
+# Others: native, transparent, hidden (no buttons). New windows only.
+macos-titlebar-style = tabs
 # Italian layout: both ⌥ keys type symbols (@ = ⌥ò, ~ = ⌥5, # [ ] { } `),
 # so neither is Alt. For Alt shortcuts press Esc then the key
 # (Esc b / Esc f: word back/forward; Esc c: fzf cd).
 macos-option-as-alt = false
+# Dock/app icon variant ("official" = stock Ghostty icon).
 macos-icon = official
+# Drop shadow under windows.
 macos-window-shadow = true
+# Don't auto-enable Secure Keyboard Entry when a password prompt is
+# detected. Secure input blocks every other app from seeing keystrokes and
+# kills Magnet shortcuts; enable manually via Ghostty > Secure Keyboard
+# Entry when you really want it.
+macos-auto-secure-input = false
 
 # --- Cursor ---
 cursor-style = block
@@ -35,53 +65,117 @@ cursor-style-blink = false
 # to stand out on both Mocha dark and Latte cream backgrounds, and high-contrast
 # against yellow vim diff highlights (DiffText/DiffChange).
 cursor-color = #8839ef
+# Colour of the character under the block cursor (Mocha text).
 cursor-text = #cdd6f4
+# Click in the prompt line to move the cursor there (needs shell
+# integration; translates the click into arrow keys). Edge cases possible
+# on multi-line prompts.
+cursor-click-to-move = true
 
 # --- Shell ---
+# Auto-inject shell integration for bash/zsh/fish/etc. (prompt marks for
+# jump_to_prompt, cwd tracking, command-finish notifications).
 shell-integration = detect
+# no-cursor: keep my block cursor instead of the shell's bar at prompts.
+# ssh-env: set a safe TERM over ssh. ssh-terminfo: copy Ghostty's terminfo
+# to remote hosts automatically.
 shell-integration-features = no-cursor,ssh-env,ssh-terminfo
+# Hide the mouse pointer while typing, show it again on mouse move.
 mouse-hide-while-typing = true
+# Scrollback size limit in bytes (~1 MB per terminal; the default is ~10 MB
+# total across the app's history pages): enough for long agent/build output.
 scrollback-limit = 1000000
 
 # --- Scrollbar ---
+# Never draw the scrollbar (system default would show it while scrolling).
 scrollbar = never
 
 # --- Clipboard ---
+# Let programs (vim, tmux, ssh sessions) read/write the clipboard via OSC 52
+# without prompting. Convenient; trusts every program that runs here.
 clipboard-read = allow
 clipboard-write = allow
+# Selecting text copies it to the system clipboard immediately.
 copy-on-select = clipboard
 
 # --- Splits ---
+# Dim unfocused splits to 70% so the active one stands out.
 unfocused-split-opacity = 0.7
+# New splits open in the current split's directory.
 split-inherit-working-directory = true
+# Moving between splits (ctrl+h/j/k/l) keeps a zoomed split zoomed and
+# zooms the newly focused one instead of un-zooming everything.
+split-preserve-zoom = navigation
 
 # --- Quick Terminal ---
+# Drop-down terminal, toggled globally by cmd+` (see keybinds). It has no
+# titlebar/buttons by design.
 quick-terminal-position = top
+# Slide animation length in seconds (0 = instant).
 quick-terminal-animation-duration = 0.08
+# Open on whichever display the mouse is on (default: main display).
+quick-terminal-screen = mouse
+# Hide when focus moves to another window (macOS default; explicit here).
+quick-terminal-autohide = true
 
 # --- Notifications ---
+# Notify when a long command finishes in a window that isn't focused:
+# useful for builds and agent runs in another tab/app.
 notify-on-command-finish = unfocused
+# "notify" = desktop notification ("bell" would only ring the bell).
 notify-on-command-finish-action = notify
+# Only for commands that ran at least this long.
 notify-on-command-finish-after = 5s
+# On a terminal bell: bounce the Dock icon (attention), prepend 🔔 to the
+# tab title (title), play the system sound (system). No custom audio, no
+# border.
+bell-features = system,attention,title,no-audio,no-border
 
 # --- Keybindings ---
-# Quick terminal (global)
+# Quick terminal (global: works even when Ghostty is not focused)
 keybind = global:cmd+grave_accent=toggle_quick_terminal
 
-# Vim-style split navigation
+# Vim-style split navigation: ctrl+h/j/k/l focus left/down/up/right
+# (overrides those keys in the terminal, e.g. ctrl+l clear in shells).
 keybind = ctrl+h=goto_split:left
 keybind = ctrl+j=goto_split:bottom
 keybind = ctrl+k=goto_split:top
 keybind = ctrl+l=goto_split:right
 
-# Split management (ctrl+a leader, tmux-like)
+# Split management (ctrl+a leader, tmux-like): press ctrl+a, release, then:
+#   h/j/k/l  new split left/down/up/right
+#   f        zoom/unzoom the current split
+#   e        equalize all split sizes
+#   r        enter resize mode (see key table below)
+#   o        dump the whole scrollback to a temp file and open it in the
+#            default app (search/read long agent or build output)
 keybind = ctrl+a>h=new_split:left
 keybind = ctrl+a>j=new_split:down
 keybind = ctrl+a>k=new_split:up
 keybind = ctrl+a>l=new_split:right
 keybind = ctrl+a>f=toggle_split_zoom
 keybind = ctrl+a>e=equalize_splits
+keybind = ctrl+a>o=write_scrollback_file:open
+
+# Resize mode (key table "resize"): after ctrl+a r, h/j/k/l resize the split
+# by 20px per press (repeat freely); esc or enter leaves the mode.
+keybind = ctrl+a>r=activate_key_table:resize
+keybind = resize/h=resize_split:left,20
+keybind = resize/j=resize_split:down,20
+keybind = resize/k=resize_split:up,20
+keybind = resize/l=resize_split:right,20
+keybind = resize/escape=deactivate_key_table
+keybind = resize/enter=deactivate_key_table
 
 # Utility
+# super+i: inspector (debug terminal state); super+r: reload this config;
+# super+shift+u: toggle background transparency (opaque <-> 0.85).
 keybind = super+i=inspector:toggle
 keybind = super+r=reload_config
+keybind = super+shift+u=toggle_background_opacity
+
+# Built-in shortcuts worth knowing (defaults, not set above):
+#   super+t / super+n   new tab / new window       super+w   close
+#   super+f             search scrollback           super+shift+p  command palette
+#   super+up / down     jump to prev/next prompt    super+z   undo close (30s)
+#   super+plus/minus/0  font size up/down/reset     super+enter  fullscreen
