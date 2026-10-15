@@ -15,7 +15,7 @@ HARNESS="$HOME/.local/share/giocaizzi-harness"
 if command -v codex >/dev/null 2>&1; then
 	codex plugin marketplace add giocaizzi/harness >/dev/null
 	codex plugin marketplace upgrade >/dev/null
-	for p in python javascript api dev-tools guard; do codex plugin add "$p@giocaizzi-harness" >/dev/null; done
+	for p in python javascript api dev-tools guard sounds; do codex plugin add "$p@giocaizzi-harness" >/dev/null; done
 	node "$HARNESS/scripts/install.mjs" codex
 fi
 {{- end }}
