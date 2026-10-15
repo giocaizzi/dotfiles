@@ -155,5 +155,5 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "askUserQuestionTimeout": "5m"
+  "askUserQuestionTimeout": "60s"
 }
