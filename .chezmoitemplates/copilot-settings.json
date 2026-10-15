@@ -26,15 +26,22 @@
     }
   },
   "inlineImages": false,
+  "showReasoning": false,
   "footer": {
     "showModelEffort": true,
     "showDirectory": true,
     "showBranch": true,
     "showContextWindow": true,
     "showQuota": true,
+    "showAiUsed": true,
     "showAgent": true,
-    "showCodeChanges": false,
+    "showCodeChanges": true,
     "showUsername": false,
+    "showSandbox": true,
+    "showYolo": true,
+    "showCiStatus": true,
+    "showSchedules": false,
+    "showPullRequest": true,
     "showCustom": true
   },
   "allowedUrls": [

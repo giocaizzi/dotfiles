@@ -26,6 +26,7 @@ $CorePackages = @(
     @{ Name = 'shfmt';   Id = 'mvdan.shfmt';         Cmd = 'shfmt' }  # shell formatter
     @{ Name = 'pwsh';    Id = 'Microsoft.PowerShell';Cmd = 'pwsh' }  # PowerShell 7+
     @{ Name = 'coreutils'; Id = 'uutils.coreutils';  Cmd = 'ls.exe' }  # exe, not the ls alias
+    @{ Name = 'ripgrep'; Id = 'BurntSushi.ripgrep.MSVC'; Cmd = 'rg' }
     @{ Name = 'make';    Id = 'ezwinports.make';     Cmd = 'make' }  # `make check` gate + stop hook; GNU Make 4.4.1
     @{ Name = 'gitleaks';   Id = 'Gitleaks.Gitleaks';   Cmd = 'gitleaks' }    # secret scanner
     @{ Name = 'actionlint'; Id = 'rhysd.actionlint';    Cmd = 'actionlint' }  # GitHub Actions linter
