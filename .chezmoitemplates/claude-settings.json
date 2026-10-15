@@ -142,6 +142,7 @@
   "autoCompactWindow": 500000,
   "tui": "fullscreen",
   "terminalProgressBarEnabled": true,
+  "preferredNotifChannel": "terminal_bell",
   "showThinkingSummaries": true,
   "viewMode": "focus",
   "showTurnDuration": true,

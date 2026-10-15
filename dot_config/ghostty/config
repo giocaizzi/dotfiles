@@ -127,9 +127,11 @@ notify-on-command-finish-action = notify
 # Only for commands that ran at least this long.
 notify-on-command-finish-after = 5s
 # On a terminal bell: bounce the Dock icon (attention), prepend 🔔 to the
-# tab title (title), play the system sound (system). No custom audio, no
-# border.
-bell-features = system,attention,title,no-audio,no-border
+# tab title (title), draw a border around the alerted split (border), play
+# the system sound (system); all clear on focus or input. No custom audio.
+# Claude Code rings the bell when it is idle or waits on a prompt
+# (preferredNotifChannel = terminal_bell), so its tab is marked.
+bell-features = system,attention,title,border,no-audio
 
 # --- Keybindings ---
 # Quick terminal (global: works even when Ghostty is not focused)
