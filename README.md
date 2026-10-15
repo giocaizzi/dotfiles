@@ -74,13 +74,13 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 | Command | Does |
 |---|---|
 | `chezmoi update` | pull this repo and apply it |
-| `chezmoi edit <file>` | edit a managed file in the source (auto-committed and pushed) |
+| `chezmoi edit <file>` | edit a managed file in the source (staged, not committed) |
 | `chezmoi add <file>` | start managing a file (`--encrypt` for secrets) |
 | `chezmoi status` / `chezmoi diff` | what an apply would change |
 | `chezmoi merge <file>` | reconcile a file changed on both sides |
 | `chezmoi cd` | open a shell in the source repo |
 
-`autoCommit`/`autoPush` are on: `chezmoi edit`/`add` commit and push immediately, with Conventional Commit messages (`chore: add .ssh/config`, from `.commit-message.tmpl`). If a push fails, the next `chezmoi update` on another machine stops on diverged history — push from the machine that has the commits first.
+`autoAdd` is on, `autoCommit`/`autoPush` are off: `chezmoi edit`/`add`/`re-add` only stage the change in the source repo. `main` only accepts pull requests, so ship it from `chezmoi cd` on a branch with a PR.
 
 ## Secrets
 
