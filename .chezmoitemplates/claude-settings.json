@@ -136,7 +136,7 @@
       }
     }
   },
-  "effortLevel": "high",
+  "effortLevel": "medium",
   "promptCacheTtl": "1h",
   "subagentPromptCacheTtl": "1h",
   "autoCompactWindow": 500000,
