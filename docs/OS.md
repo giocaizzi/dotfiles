@@ -88,7 +88,7 @@ Re-running `chezmoi init`:
 
 ### AI harnesses
 
-Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; all six preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key (created before the prompt existed) gets all six; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
+Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
 
 | Harness | Managed only when selected |
 |---|---|

@@ -103,7 +103,7 @@ ops
 {{ end }}
 
 # --- AI harnesses (data.harnesses, chosen by `chezmoi init`; light machines skip them all above) ---
-# Only selected harnesses get their configs. A config without the key gets all six
+# Only selected harnesses get their configs. A config without the key gets none
 # (.chezmoitemplates/harnesses). ~/.config/agents is shared: Claude and Copilot
 # symlink to it, Codex, opencode and pi render from the source, so it stays while
 # any of them is selected.
