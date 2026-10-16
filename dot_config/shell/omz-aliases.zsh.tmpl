@@ -1,0 +1,13 @@
+{{- $r := includeTemplate "aliases" (dict "shell" "posix" "ctx" .) | fromJson -}}
+# ============================================================================
+# OH MY ZSH ALIAS SETS
+# ============================================================================
+# Rendered by chezmoi from [aliasExternal.zsh] in .chezmoidata/aliases.toml.
+# Sourced by ~/.zshrc before Oh My Zsh. Every lib and plugin alias set is off
+# unless the registry turns it on; registry aliases load afterwards and win.
+# ============================================================================
+
+zstyle ':omz:*' aliases no
+{{ range $context, $on := $r.zsh -}}
+zstyle ':omz:{{ $context }}' aliases {{ ternary "yes" "no" $on }}
+{{ end -}}

@@ -19,7 +19,7 @@ esac
 # ----------------------------------------------------------------------------
 # SHARED SNIPPETS
 # ----------------------------------------------------------------------------
-# Aliases (from .chezmoidata/shortcuts.toml) and fzf defaults + h(). Aliases and
+# Aliases (from .chezmoidata/aliases.toml) and fzf defaults + h(). Aliases and
 # functions aren't inherited by child shells, so load them in every
 # interactive shell rather than once in ~/.profile.
 

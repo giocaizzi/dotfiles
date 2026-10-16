@@ -1,0 +1,3 @@
+# Targets chezmoi deletes on apply.
+# Personal aliases moved into the encrypted alias registry (.aliases.private.toml.age).
+.config/shell/aliases.private.sh

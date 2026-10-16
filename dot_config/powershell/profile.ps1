@@ -2,7 +2,7 @@
 # POWERSHELL PROFILE (Windows)
 # ============================================================================
 # Thin orchestrator. Aliases live in ~/.config/powershell/aliases.ps1
-# (rendered from .chezmoidata/shortcuts.toml). FZF setup in fzf.ps1.
+# (rendered from .chezmoidata/aliases.toml). FZF setup in fzf.ps1.
 # ============================================================================
 
 # ----------------------------------------------------------------------------

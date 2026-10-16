@@ -41,4 +41,3 @@ h() {
 		print -z "$selected" 2>/dev/null || printf '%s\n' "$selected"
 	fi
 }
-alias hist='h'
