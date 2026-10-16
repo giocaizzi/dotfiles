@@ -115,6 +115,23 @@ ops
 .chezmoiscripts/claude-mcp-user.ps1
 {{ end }}
 {{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
+ops/.mcp.json
+{{ end }}
+{{ if not (has "codex" $harnesses) }}
+ops/.codex
+{{ end }}
+{{ if not (has "opencode" $harnesses) }}
+ops/opencode.json
+{{ end }}
+{{ if not (has "pi" $harnesses) }}
+ops/.pi
+{{ end }}
+{{ if not (has "vscode" $harnesses) }}
+ops/.vscode
+{{ end }}
+# ~/ops holds personal servers: personal machines only (work PCs get no
+# personal account, like the personal vault and telemetry).
+{{ if get . "work" }}
 ops
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}

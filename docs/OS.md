@@ -93,11 +93,11 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 | Harness | Managed only when selected |
 |---|---|
 | `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
-| `copilot` | `~/.copilot` (`settings.json` merge, `copilot-instructions.md` symlink) |
+| `copilot` | `~/.copilot` (`settings.json` and `mcp-config.json` merge, `copilot-instructions.md` symlink) |
 | `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
-| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys); Codex wiring in `run_after_install-harness.*` |
-| `opencode` | `~/.config/opencode/AGENTS.md`; opencode wiring in `run_after_install-harness.*` |
-| `pi` | `~/.pi/agent/AGENTS.md`; pi wiring in `run_after_install-harness.*` |
+| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_after_install-harness.*` |
+| `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_after_install-harness.*` |
+| `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_after_install-harness.*` |
 
 Shared: `~/.config/agents/` (`AGENTS.md`, `AGENTS.private.md`) stays while any of `claude`, `copilot`, `codex`, `opencode`, `pi` is selected; the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
 
@@ -183,21 +183,26 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 
 ## MCP servers
 
-Rule: harness `repo-standard`, "MCP servers, least privilege". What lives here:
+Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezmoidata/mcp.toml`, feeds every selected harness:
 
-- **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`, so account-synced connectors never load in Claude Code.
-- **User scope:** `.chezmoidata/mcp.toml` `[mcp.user]`, only servers every repo needs. `run_onchange_after_claude-mcp-user.*` adds a missing one with `claude mcp add -s user` (add-only).
-- **Workspace folder:** `ops/dot_mcp.json` renders `~/ops/.mcp.json`, personal servers tied to no repo. Account-specific parts of a URL are `${VAR}` references (e.g. `${MCP_CONNECTOR_ACCOUNT}`), set as a Bitwarden secret of the same name and exported by `secrets.sh`, so this public repo holds no account names. Start the session in `~/ops`; never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
+| Layer | Data | Claude Code | Copilot CLI | VS Code | Codex | opencode | pi |
+|---|---|---|---|---|---|---|---|
+| User | `[mcp.user]` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | user `mcp.json` (whole file, `dot_config/Code/User/mcp.json`) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
+| Workspace `~/ops` | `[mcp.ops]` | `~/ops/.mcp.json` | same file | `~/ops/.vscode/mcp.json` | `~/ops/.codex/config.toml`, trusted in the user config | `~/ops/opencode.json` | `~/ops/.pi/mcp.json` |
+
+- **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`.
+- **Private URL parts:** `${VAR}` in `mcp.toml` (e.g. `${MCP_CONNECTOR_ACCOUNT}`), a Bitwarden secret of the same name exported by `secrets.sh`. `.chezmoitemplates/mcp-servers.json` fills it from the environment at `chezmoi apply`, so the rendered files (never committed) hold the value and this public repo does not. Unset (first apply on a new machine, before a new shell), it stays a reference: open a new shell and apply again.
+- **`~/ops` is personal:** ignored on light and work machines. Never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
 - **Repo servers** live in each repo, not here.
 
 Procedures:
 
-- **Add a user-scope server:** add `name = "url"` under `[mcp.user]`, `chezmoi apply`.
-- **Add a workspace server:** add it to `ops/dot_mcp.json`, `chezmoi apply`, approve it once on the next session in `~/ops`.
-- **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `[mcp.user]` or `ops/`, and `claude mcp remove -s local <name>`.
-- **Remove a server:** delete it from the file and `chezmoi apply`; for user scope also `claude mcp remove -s user <name>` (the script never removes).
-- **Sign in:** OAuth servers ask once per machine: `/mcp` in a session, pick the server, finish in the browser.
-- **Check:** `claude mcp list` from `~`, `~/ops` and a repo: only that layer's servers, no `claude.ai` rows.
+- **Add a server:** add `name = "url"` under `[mcp.user]` or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is plain JSON: add user servers there too.
+- **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `mcp.toml`, and `claude mcp remove -s local <name>`.
+- **Remove a server:** delete it from `mcp.toml`, `chezmoi apply`, then remove it by hand where the merge keeps it: `claude mcp remove -s user <name>`, `copilot mcp remove <name>`, `codex mcp remove <name>`, the `mcp` key of opencode, `pi mcp remove <name>`.
+- **First run in `~/ops`:** Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder. Codex is trusted by the config.
+- **Sign in:** OAuth servers ask once per machine and harness: Claude Code `/mcp`, Copilot CLI `/mcp`, VS Code on first connect, `codex mcp login <name>`, `opencode mcp auth <name>`, `pi mcp login <name>`.
+- **Check:** `claude mcp list`, `copilot mcp list`, `codex mcp list`, `opencode mcp list`, `pi mcp list` from `~`, `~/ops` and a repo: only that layer's servers.
 
 ## Agent plugins (`giocaizzi-harness`)
 

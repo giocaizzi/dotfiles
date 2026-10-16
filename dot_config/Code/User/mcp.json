@@ -1,5 +1,9 @@
 {
 	"servers": {
+		"notion": {
+			"type": "http",
+			"url": "https://mcp.notion.com/mcp"
+		},
 		"io.github.ChromeDevTools/chrome-devtools-mcp": {
 			"type": "stdio",
 			"command": "npx",

@@ -1,0 +1,12 @@
+{{- /* One MCP layer of .chezmoidata/mcp.toml as JSON {name: url}, each `${VAR}`
+       replaced by the variable from the environment when it is set. Pass the
+       layer: includeTemplate "mcp-servers.json" .mcp.ops */ -}}
+{{- $out := dict -}}
+{{- range $name, $url := . -}}
+{{- range $ref := regexFindAll "\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}" $url -1 -}}
+{{- $v := env (trimSuffix "}" (trimPrefix "${" $ref)) -}}
+{{- if $v }}{{ $url = replace $ref $v $url }}{{ end -}}
+{{- end -}}
+{{- $_ := set $out $name $url -}}
+{{- end -}}
+{{- $out | toJson -}}
