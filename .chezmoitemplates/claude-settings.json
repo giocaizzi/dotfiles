@@ -87,6 +87,7 @@
   {{- if eq .chezmoi.os "windows" }}
   "defaultShell": "powershell",
   {{- end }}
+  "disableClaudeAiConnectors": true,
   "enabledPlugins": {
     "python@giocaizzi-harness": true,
     "api@giocaizzi-harness": true,
