@@ -1,0 +1,5 @@
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Claude Code and Copilot CLI. */ -}}
+{{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
+{{- $out := dict -}}
+{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "type" "http" "url" $u) }}{{ end -}}
+{{- dict "mcpServers" $out | toPrettyJson }}

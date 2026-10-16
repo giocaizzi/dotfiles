@@ -1,0 +1,5 @@
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for opencode. */ -}}
+{{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
+{{- $out := dict -}}
+{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end -}}
+{{- dict "$schema" "https://opencode.ai/config.json" "mcp" $out | toPrettyJson }}
