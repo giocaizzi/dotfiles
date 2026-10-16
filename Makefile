@@ -11,7 +11,7 @@ SHELLCHECK_EXCLUDES ?=
 SCRIPTS := $(shell git ls-files '*.sh')
 SH_TMPL := $(shell git ls-files '.chezmoiscripts/*.sh.tmpl')
 # --override-data per render: OS × role × harness selection.
-TMPL_DATA := '"light":false' '"light":true' '"work":true' '"harnesses":["opencode"]' 
+TMPL_DATA := '"light":false' '"light":true' '"work":true' '"harnesses":["opencode"]' '"harnesses":["claude","copilot","vscode","codex","opencode","pi"]' 
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
 RC   := dot_bashrc dot_bash_profile dot_profile
 SH   := $(SCRIPTS) $(RC)
