@@ -72,6 +72,7 @@ vimfiles
 .chezmoiscripts/link-pwsh-profile.ps1
 .chezmoiscripts/install-harness.ps1
 .chezmoiscripts/sync-vscode-extensions.ps1
+.chezmoiscripts/claude-mcp-user.ps1
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---
@@ -87,6 +88,9 @@ vimfiles
 .config/agents
 .chezmoiscripts/install-harness.sh
 .chezmoiscripts/install-harness.ps1
+.chezmoiscripts/claude-mcp-user.sh
+.chezmoiscripts/claude-mcp-user.ps1
+ops
 .config/Code
 .config/Code - Insiders
 .chezmoiscripts/sync-vscode-extensions.sh
@@ -107,6 +111,11 @@ vimfiles
 {{ $harnesses := includeTemplate "harnesses" . | splitList " " }}
 {{ if not (has "claude" $harnesses) }}
 .claude
+.chezmoiscripts/claude-mcp-user.sh
+.chezmoiscripts/claude-mcp-user.ps1
+{{ end }}
+{{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
+ops
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}
 .copilot
@@ -156,4 +165,5 @@ AppData/Roaming/Code - Insiders
 .chezmoiscripts/install-pkgs.sh
 .chezmoiscripts/install-harness.sh
 .chezmoiscripts/sync-vscode-extensions.sh
+.chezmoiscripts/claude-mcp-user.sh
 {{ end }}

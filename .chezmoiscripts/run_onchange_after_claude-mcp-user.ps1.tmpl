@@ -1,0 +1,9 @@
+# Claude Code user-scope MCP servers from .chezmoidata/mcp.toml (add-only: remove
+# a dropped server by hand, `claude mcp remove -s user <name>`). Re-runs when the
+# list changes. A missing CLI is skipped. Runbook: docs/OS.md#mcp-servers.
+# servers: {{ .mcp.user | toJson }}
+if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { exit 0 }
+{{- range $name, $url := .mcp.user }}
+claude mcp get '{{ $name }}' *> $null
+if ($LASTEXITCODE -ne 0) { claude mcp add -s user --transport http '{{ $name }}' '{{ $url }}' | Out-Null }
+{{- end }}
