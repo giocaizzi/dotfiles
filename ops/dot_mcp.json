@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "grafana": { "type": "http", "url": "https://mcp-connector-grafana.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" },
+    "greenhouse": { "type": "http", "url": "https://mcp-connector-greenhouse.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" },
+    "n8n": { "type": "http", "url": "https://mcp-connector-n8n.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" },
+    "netdata": { "type": "http", "url": "https://mcp-connector-netdata.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" },
+    "portainer": { "type": "http", "url": "https://mcp-connector-portainer.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" }
+  }
+}

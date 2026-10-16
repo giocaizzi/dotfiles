@@ -1,0 +1,10 @@
+# ----------------------------------------------------------------------------
+# MCP servers in Claude Code user scope: only the servers every repo needs
+# (harness repo-standard, "MCP servers, least privilege"). Repo servers live in
+# each repo; personal servers tied to no repo in a workspace folder (ops/).
+# Applied add-only by .chezmoiscripts/run_onchange_after_claude-mcp-user.*.
+# Runbook: docs/OS.md#mcp-servers.
+# ----------------------------------------------------------------------------
+
+[mcp.user]
+notion = "https://mcp.notion.com/mcp"
