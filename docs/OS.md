@@ -92,7 +92,7 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 
 | Harness | Managed only when selected |
 |---|---|
-| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink) |
+| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
 | `copilot` | `~/.copilot` (`settings.json` merge, `copilot-instructions.md` symlink) |
 | `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
 | `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys); Codex wiring in `run_after_install-harness.*` |
@@ -180,6 +180,24 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 | uv's `python.exe` launchers in `~\.local\bin` (unsigned exe named python.exe) | `uv python install --no-bin`; `profile.ps1` puts uv's `cpython-3.NN-*` interpreter folder on PATH |
 | `New-Item -ItemType SymbolicLink` in Windows PowerShell 5.1 without admin | `mklink` (honours Developer Mode) in `run_after_link-pwsh-profile.ps1` |
 | Documents redirected to OneDrive and localised | profile link target resolved at runtime with `GetFolderPath('MyDocuments')` |
+
+## MCP servers
+
+Rule: harness `repo-standard`, "MCP servers, least privilege". What lives here:
+
+- **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`, so account-synced connectors never load in Claude Code.
+- **User scope:** `.chezmoidata/mcp.toml` `[mcp.user]`, only servers every repo needs. `run_onchange_after_claude-mcp-user.*` adds a missing one with `claude mcp add -s user` (add-only).
+- **Workspace folder:** `ops/dot_mcp.json` renders `~/ops/.mcp.json`, personal servers tied to no repo. Start the session in `~/ops`; never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
+- **Repo servers** live in each repo, not here.
+
+Procedures:
+
+- **Add a user-scope server:** add `name = "url"` under `[mcp.user]`, `chezmoi apply`.
+- **Add a workspace server:** add it to `ops/dot_mcp.json`, `chezmoi apply`, approve it once on the next session in `~/ops`.
+- **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `[mcp.user]` or `ops/`, and `claude mcp remove -s local <name>`.
+- **Remove a server:** delete it from the file and `chezmoi apply`; for user scope also `claude mcp remove -s user <name>` (the script never removes).
+- **Sign in:** OAuth servers ask once per machine: `/mcp` in a session, pick the server, finish in the browser.
+- **Check:** `claude mcp list` from `~`, `~/ops` and a repo: only that layer's servers, no `claude.ai` rows.
 
 ## Agent plugins (`giocaizzi-harness`)
 
