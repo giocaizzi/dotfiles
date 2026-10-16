@@ -165,7 +165,7 @@ Manages macOS, Linux, and Windows config in one source. Canonicals live under `d
 dot_config/      ← canonical configs (vscode, ghostty, powershell, etc.)
 Library/         ← macOS destinations (symlinks via templates)
 AppData/         ← Windows destinations (symlinks via templates)
-.chezmoidata/    ← template data (e.g. shortcuts.toml for cross-shell aliases)
+.chezmoidata/    ← template data (e.g. aliases.toml, the alias registry)
 .chezmoiignore   ← excludes per-OS paths on the wrong platform
 .chezmoiscripts/ ← setup + package install scripts (.sh / .ps1 variants)
 ```

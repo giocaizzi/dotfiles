@@ -7,14 +7,15 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
 ## Architecture
 
 ```
-.chezmoidata/shortcuts.toml          ← single source of truth (git aliases)
-        │
-        ├─ rendered into ──→  ~/.config/shell/aliases.sh          (bash + zsh)
+.chezmoidata/aliases.toml + .aliases.private.toml.age   ← alias registry (public + encrypted)
+        │  selected per shell, OS and machine role by .chezmoitemplates/aliases
+        ├─ rendered into ──→  ~/.config/shell/aliases.sh          (bash + zsh + Git Bash)
+        ├─ rendered into ──→  ~/.config/shell/omz-aliases.zsh     (Oh My Zsh alias sets, zsh)
         └─ rendered into ──→  ~/.config/powershell/aliases.ps1    (PowerShell)
 
 ~/.profile        sources →  ~/.config/shell/secrets.sh  (environment only, inherited)
 ~/.bashrc         sources →  ~/.profile (once) + ~/.config/shell/{aliases.sh, fzf.sh} + bash-specific
-~/.zshrc          sources →  Oh My Zsh + ~/.config/shell/{aliases.sh, fzf.sh} + zsh-specific
+~/.zshrc          sources →  omz-aliases.zsh + Oh My Zsh + ~/.config/shell/{aliases.sh, fzf.sh} + zsh-specific
 profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, coreutils.ps1, fzf.ps1} + PSReadLine
 ```
 
@@ -27,46 +28,94 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 | `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `JAVA_HOME`; sources `secrets.sh` | Unix + Git Bash |
 | `dot_bash_profile`                       | Login-shell wrapper → sources `.bashrc` (which sources `.profile` once) | Unix                |
 | `dot_bashrc`                             | Bash: loads `.profile` once, then **returns for non-interactive shells** (`ssh host cmd`, scp, rsync); snippets, history (timestamped), completion, FZF bindings, oh-my-posh | Unix + Git Bash |
-| `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` loads Oh My Zsh, then the snippets (so shared shortcuts win), history, FZF bindings, oh-my-posh | macOS only |
+| `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` sets the Oh My Zsh alias sets, loads Oh My Zsh, then the snippets (so registry aliases win), history, FZF bindings, oh-my-posh | macOS only |
 | `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
-| `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases (rendered from `shortcuts.toml`)                          | Unix + Git Bash     |
+| `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases and refused commands (rendered from the registry), `ls` colours, `python` fallback, `rp5-secrets` (personal Mac) | Unix + Git Bash |
+| `dot_config/shell/omz-aliases.zsh.tmpl`  | `zstyle ':omz:…' aliases` per Oh My Zsh lib/plugin (from `[aliasExternal.zsh]`) | macOS (zsh) |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
-| `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from `shortcuts.toml`)                   | Windows             |
+| `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from the registry)                       | Windows             |
 | `dot_config/powershell/coreutils.ps1`    | uutils first on PATH; removes the cmdlet aliases it shadows (`ls`, `cat`, `rm`, ...) — use `Get-ChildItem` etc. for objects | Windows |
 | `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
-| `.chezmoidata/shortcuts.toml`            | Single source for cross-shell shortcuts                                 | all                 |
+| `.chezmoidata/aliases.toml`              | Alias registry: every alias, refused command and framework alias set    | all                 |
+| `.aliases.private.toml.age`              | Personal aliases, same schema, age-encrypted; read on non-light machines with the age key | all |
+| `.chezmoitemplates/aliases`              | Selector: merges both registries, filters by shell, OS and machine role | all                 |
 | `dot_config/readline/inputrc`            | Readline: ↑/↓ prefix history search, case-insensitive coloured completion | Unix + Git Bash   |
 | `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status)            | Unix                |
 
-## Adding a new shortcut
+## Alias registry
 
-Edit `.chezmoidata/shortcuts.toml`:
+Every alias on every machine comes from `.chezmoidata/aliases.toml` (public) and
+`.aliases.private.toml.age` (personal, encrypted). One entry per alias:
 
 ```toml
-[shortcuts.git]
-gco = "git checkout"
+[alias.gs]
+cmd = "git status"                 # same command in every shell
+
+[alias.ll]
+posix = "ls -lah"                  # bash, zsh, Git Bash
+powershell = "Get-ChildItem -Force"
+
+[alias.free]
+posix = "top -l 1 -s 0 | grep PhysMem"
+shells = ["posix"]                 # one shell only: needs `why`
+os = ["darwin"]                    # darwin, linux, windows (default: all)
+machines = ["personal"]            # personal, work, light (default: all)
+why = "macOS has no free; Linux ships it"
+
+[aliasBlock.pipx]                  # refused command
+message = "pipx is not used here, use uv: ..."
+
+[aliasExternal.zsh]                # Oh My Zsh alias sets, off unless true
+"plugins:docker" = true
 ```
 
-Then `chezmoi apply`. Both `~/.config/shell/aliases.sh` and `~/.config/powershell/aliases.ps1` get the new entry on next shell launch.
+- **Machine roles** come from the `light` and `work` init flags: `personal` is neither.
+- **PowerShell:** each alias is a function (`function gs { git status @args }`); a
+  same-named built-in alias (`gc`, `gp`, `gl`) is removed first, so the registry wins.
+- **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
+  `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
+- **Functions** that are more than a command (`rp5-secrets`, fzf `h`) stay in the
+  shell snippets.
+- **Checks:** `make lint` validates the registry (every alias names its shells, a
+  one-shell alias says why, known OS and role values) and lints the rendered files
+  per OS and role; CI also parses `aliases.ps1` with `pwsh`. `make aliases-audit`
+  lists aliases live in this machine's zsh and bash that the registry does not
+  account for.
+
+To add or change an alias: edit the registry, `make lint`, `chezmoi apply`, open a
+new shell.
+
+### Personal aliases
+
+Same schema, never in plain text in the repo. Edit through a private temp file:
+
+```sh
+cd "$(chezmoi source-path)"
+f=$(umask 077; mktemp)
+chezmoi decrypt .aliases.private.toml.age >"$f" && "${EDITOR:-vim}" "$f" &&
+	chezmoi encrypt "$f" >.aliases.private.toml.age
+rm -f "$f"
+```
+
+Light machines and machines without the age key (`~/.config/chezmoi/key.txt`) skip
+the file.
 
 ## Aliases (current)
 
-POSIX shell (`aliases.sh`):
-
-| Alias                 | Command                                  |
-| --------------------- | ---------------------------------------- |
-| `..` `...` `....`     | `cd ..`, `cd ../..`, `cd ../../..`       |
-| `ll` `la` `l`         | `ls -lah`, `ls -A`, `ls -CF`             |
-| `mkdir`               | `mkdir -p`                               |
-| `df` `du`             | `df -h`, `du -h`                         |
-| `grep`                | `grep --color=auto`                      |
-| `python`              | `python3`, only where no `python` exists (uv provides it on full machines) |
-| `pipx`                | refuses; use `uv tool install` / `uvx`   |
-| `free` (macOS only)   | `top -l 1 -s 0 \| grep PhysMem`          |
-| `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts (from `shortcuts.toml`) |
-| `hist` / `h`          | fzf history search                       |
-
-PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `function gs { git status @args }`), removing any same-named built-in alias first (`gc`, `gp`, `gl` are PowerShell built-ins and aliases outrank functions).
+| Alias                 | bash / zsh / Git Bash                    | PowerShell |
+| --------------------- | ---------------------------------------- | ---------- |
+| `..` `...` `....`     | `cd ..`, `cd ../..`, `cd ../../..`       | same |
+| `ll` `la`             | `ls -lah`, `ls -A`                       | `Get-ChildItem -Force` |
+| `l`                   | `ls -CF`                                 | — (`Get-ChildItem`) |
+| `mkdir` `df` `du`     | `mkdir -p`, `df -h`, `du -h`             | — (already parents / readable) |
+| `grep`                | `grep --color=auto`                      | `rg` |
+| `free` (macOS)        | `top -l 1 -s 0 \| grep PhysMem`          | — |
+| `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts            | same |
+| `hist` / `h`          | fzf history search                       | same |
+| `openclaw` (personal Mac) | rp5-homeserver openclaw script       | — |
+| `pipx`                | refuses; use `uv tool install` / `uvx`   | same |
+| `python`              | `python3`, only where no `python` exists | — |
+| `ls`                  | colour flag for GNU or BSD `ls`          | — (uutils `ls`) |
 
 ## Tools
 
@@ -75,7 +124,7 @@ PowerShell (`aliases.ps1`) mirrors the git shortcuts as functions (e.g. `functio
 | `fzf`         |  ✓   |  ✓  |     ✓      | env in `fzf.sh`/`fzf.ps1`; bindings in bashrc/zshrc/PSFzf  |
 | `oh-my-posh`  |  ✓   |  ✓  |     ✓      | Uses `$POSH_THEME` → `~/.config/oh-my-posh/theme.omp.json`|
 | `uv`          |  ✓   |  ✓  |     ✓      | Python + CLI tools in `~/.local/bin` (on PATH in `.profile` / `profile.ps1`) |
-| `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `docker gh`; no `git` plugin, the shared shortcuts cover git) |
+| `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `docker gh`; alias sets per `[aliasExternal.zsh]`; no `git` plugin, the registry covers git) |
 | readline      |  ✓   |  —  |     —      | `~/.config/readline/inputrc` via `$INPUTRC`: ↑/↓ prefix history search, case-insensitive completion |
 | `less`        |  ✓   |  ✓  |     —      | `PAGER`/`LESS`/`MANPAGER` in `.profile` (colour, quit if one screen, smart-case search) |
 | `tmux`        |  ✓   |  ✓  |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves |
