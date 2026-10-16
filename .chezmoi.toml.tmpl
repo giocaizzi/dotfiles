@@ -29,12 +29,12 @@
 {{- $otelEndpoint = promptStringOnce . "otelEndpoint" "[ TELEMETRY ] Claude Code OTLP endpoint URL (blank = no telemetry)" (get . "otelEndpoint" | default "") -}}
 {{- end }}
 {{- /* AI harnesses whose configs chezmoi writes (it never installs the CLIs). Light
-       machines have none, so they are not asked; a config without the key gets all
-       six (.chezmoitemplates/harnesses). */ -}}
+       machines have none, so they are not asked; nothing is preselected and a config
+       without the key gets none (.chezmoitemplates/harnesses). */ -}}
 {{- $harnesses := list -}}
 {{- if not $light }}
 {{- $all := list "claude" "copilot" "vscode" "codex" "opencode" "pi" -}}
-{{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" $all (ternary (get . "harnesses") $all (hasKey . "harnesses")) -}}
+{{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" $all (get . "harnesses" | default list) -}}
 {{- end }}
 {{- $bwsProject := "" -}}
 {{- if not $light }}
