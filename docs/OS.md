@@ -187,7 +187,7 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". What lives here:
 
 - **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`, so account-synced connectors never load in Claude Code.
 - **User scope:** `.chezmoidata/mcp.toml` `[mcp.user]`, only servers every repo needs. `run_onchange_after_claude-mcp-user.*` adds a missing one with `claude mcp add -s user` (add-only).
-- **Workspace folder:** `ops/dot_mcp.json` renders `~/ops/.mcp.json`, personal servers tied to no repo. Start the session in `~/ops`; never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
+- **Workspace folder:** `ops/dot_mcp.json` renders `~/ops/.mcp.json`, personal servers tied to no repo. Account-specific parts of a URL are `${VAR}` references (e.g. `${MCP_CONNECTOR_ACCOUNT}`), set as a Bitwarden secret of the same name and exported by `secrets.sh`, so this public repo holds no account names. Start the session in `~/ops`; never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
 - **Repo servers** live in each repo, not here.
 
 Procedures:
