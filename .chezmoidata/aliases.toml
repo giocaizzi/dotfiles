@@ -1,0 +1,120 @@
+# ----------------------------------------------------------------------------
+# Alias registry — the single source for every shell alias on every machine
+# ----------------------------------------------------------------------------
+# Rendered by .chezmoitemplates/aliases into:
+#   ~/.config/shell/aliases.sh        (bash, zsh, Git Bash)
+#   ~/.config/powershell/aliases.ps1  (PowerShell)
+# Personal entries use the same schema in .aliases.private.toml.age (encrypted).
+#
+# [alias.<name>]
+#   cmd        command for every shell, or
+#   posix      command for bash/zsh/Git Bash
+#   powershell command for PowerShell (rendered as a function, args appended)
+#   shells     ["posix"] or ["powershell"] to limit an alias to one shell;
+#              requires `why`, so a missing variant is always a decision
+#   os         ["darwin", "linux", "windows"] (default: all)
+#   machines   ["personal", "work", "light"] (default: all); personal = not light, not work
+#   why        reason for a limit
+#
+# [aliasBlock.<name>]   refuse a command and print `message`
+# [aliasExternal.zsh]   Oh My Zsh alias sets, by zstyle context: true keeps them
+#
+# `make lint` validates this file; `make aliases-audit` lists live aliases that
+# come from nowhere declared here. See docs/SHELL.md.
+# ----------------------------------------------------------------------------
+
+# --- Navigation ---
+[alias.".."]
+cmd = "cd .."
+
+[alias."..."]
+cmd = "cd ../.."
+
+[alias."...."]
+cmd = "cd ../../.."
+
+# --- Listing ---
+[alias.ll]
+posix = "ls -lah"
+powershell = "Get-ChildItem -Force"
+
+[alias.la]
+posix = "ls -A"
+powershell = "Get-ChildItem -Force"
+
+[alias.l]
+posix = "ls -CF"
+shells = ["posix"]
+why = "PowerShell Get-ChildItem is already the short listing"
+
+# --- Files and system ---
+[alias.mkdir]
+posix = "mkdir -p"
+shells = ["posix"]
+why = "PowerShell mkdir already creates parent directories"
+
+[alias.df]
+posix = "df -h"
+shells = ["posix"]
+why = "PowerShell Get-PSDrive already prints readable sizes"
+
+[alias.du]
+posix = "du -h"
+shells = ["posix"]
+why = "no du on PowerShell unless uutils is installed, which already prints sizes"
+
+[alias.free]
+posix = "top -l 1 -s 0 | grep PhysMem"
+shells = ["posix"]
+os = ["darwin"]
+why = "macOS has no free; Linux ships it"
+
+# --- Search and history ---
+[alias.grep]
+posix = "grep --color=auto"
+powershell = "rg"
+
+[alias.hist]
+cmd = "h"
+
+# --- Git ---
+[alias.gs]
+cmd = "git status"
+
+[alias.ga]
+cmd = "git add"
+
+[alias.gc]
+cmd = "git commit -v"
+
+[alias.gd]
+cmd = "git diff"
+
+[alias.gp]
+cmd = "git push"
+
+[alias.gl]
+cmd = "git pull"
+
+[alias.glog]
+cmd = "git log --oneline --decorate --graph"
+
+# --- Projects ---
+[alias.openclaw]
+posix = "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"
+shells = ["posix"]
+os = ["darwin"]
+machines = ["personal"]
+why = "local rp5-homeserver script, only on the personal Mac"
+
+# --- Refused commands ---
+[aliasBlock.pipx]
+message = "pipx is not used here, use uv: uv tool install <pkg> | uvx <pkg> | uv tool upgrade --all"
+
+# --- Framework aliases ---
+# Oh My Zsh contexts (zstyle ':omz:<context>' aliases). Every context is off unless
+# set to true here, so a new plugin brings no aliases until it is declared.
+[aliasExternal.zsh]
+"lib:*" = false          # l, ll, la, md, rd, 1-9, -, _, grep, nocorrect wrappers
+"plugins:docker" = true  # dps, dr, dst, ... (~50 docker shortcuts)
+"plugins:gh" = true      # completion only, no aliases

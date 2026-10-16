@@ -29,8 +29,8 @@ dot_config/powershell/profile.ps1           (symlink-target-only, ignored)
       run_after_link-pwsh-profile.ps1 — Documents may be OneDrive-redirected)
 
 dot_config/powershell/{aliases.ps1.tmpl, fzf.ps1}  → ~/.config/powershell/ (Windows)
-dot_config/shell/{aliases.sh.tmpl, fzf.sh}         → ~/.config/shell/     (Unix + Git Bash)
-.chezmoidata/shortcuts.toml                        → renders the two aliases files above
+dot_config/shell/{aliases.sh.tmpl, omz-aliases.zsh.tmpl, fzf.sh} → ~/.config/shell/ (Unix + Git Bash)
+.chezmoidata/aliases.toml + .aliases.private.toml.age → alias registry, renders the alias files above
 dot_config/git/config.tmpl                         → ~/.config/git/config (all OSes)
 dot_config/oh-my-posh/theme.omp.json               → ~/.config/oh-my-posh/ (bash/zsh/pwsh)
 dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/vimfiles/vimrc symlink (Windows)
@@ -46,7 +46,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 ## Working in this repo
 
 - `.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
-- Add a new git alias once in `.chezmoidata/shortcuts.toml` → it renders into both shells on `chezmoi apply`.
+- Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`. `make lint` renders each `.sh.tmpl` script per OS, role and harness selection (`lint-tmpl`, needs chezmoi) and shellchecks the output.
 - Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
@@ -90,7 +90,7 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 
 - [README.md](./README.md) — new-machine setup and everyday chezmoi commands.
 - [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values.
-- [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, shortcuts.toml workflow, tools, secrets.
+- [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, alias registry, tools, secrets.
 - [docs/CI.md](./docs/CI.md) — `make check` targets and the CI workflow; run `make check` before pushing.
 - Commits follow Conventional Commits.
 

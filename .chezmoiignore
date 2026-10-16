@@ -12,6 +12,7 @@ README.md
 AGENTS.md
 LICENSE
 Makefile
+scripts
 # Git Bash crash dumps left in the source dir (also git-ignored globally)
 *.stackdump
 .agents
@@ -99,8 +100,6 @@ ops
 # Outbound-only SSH config; skipping it (the only encrypted file) means light
 # machines never need the age key, which decrypts every secret in this repo.
 .ssh
-# Same for the encrypted personal aliases.
-.config/shell/aliases.private.sh
 {{ end }}
 
 # --- AI harnesses (data.harnesses, chosen by `chezmoi init`; light machines skip them all above) ---

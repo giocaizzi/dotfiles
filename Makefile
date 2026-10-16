@@ -1,5 +1,5 @@
-# Repo checks. Templates (*.tmpl) need chezmoi to render; only the script templates are
-# rendered and linted (lint-tmpl).
+# Repo checks. Templates (*.tmpl) need chezmoi to render; the script templates
+# (lint-tmpl) and the alias templates (lint-aliases) are rendered and linted.
 ifeq ($(OS),Windows_NT)
 # Git for Windows provides the POSIX shell required by the recipes, but does not add it to PATH.
 SHELL := $(shell git --exec-path)/../../../bin/sh.exe
@@ -19,12 +19,12 @@ ZSH  := dot_zshrc dot_zprofile
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint lint-tmpl test check
+.PHONY: help lint lint-tmpl lint-aliases aliases-audit test check
 
 help: ## List targets
-	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-9s %s\n", $$1, $$2}'
+	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
 
-lint: lint-tmpl ## shellcheck shell scripts, validate JSON
+lint: lint-tmpl lint-aliases ## shellcheck shell scripts, validate JSON
 	shellcheck $(SHELLCHECK_EXCLUDES) $(SCRIPTS)
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
@@ -38,6 +38,32 @@ lint-tmpl: ## Render script templates with chezmoi, shellcheck the output
 			--override-data "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" < "$$f" > "$$dir/out.sh" && \
 		shellcheck -e SC2034 "$$dir/out.sh" || { echo "lint-tmpl: $$f os=$$os $$d"; exit 1; }; \
 	done; done; done; rm -rf "$$dir"
+
+# Validate the registry, then render the alias files per OS × role: aliases.sh is
+# shellchecked as bash, omz-aliases.zsh syntax-checked by zsh, aliases.ps1 parsed by
+# pwsh (CI runners ship pwsh; skipped where it is missing).
+lint-aliases: ## Validate the alias registry and lint the rendered alias files
+	@sh scripts/aliases-lint.sh
+	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
+	render() { chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$1" < "$$2"; } && \
+	for os in darwin linux windows; do for d in $(TMPL_DATA); do \
+		render "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" dot_config/shell/aliases.sh.tmpl > "$$dir/aliases.sh" && \
+		shellcheck -s bash "$$dir/aliases.sh" || { echo "lint-aliases: aliases.sh os=$$os $$d"; exit 1; }; \
+	done; done && \
+	render '{}' dot_config/shell/omz-aliases.zsh.tmpl > "$$dir/omz.zsh" && \
+	{ ! command -v zsh >/dev/null 2>&1 || zsh -n "$$dir/omz.zsh"; } && \
+	for d in $(TMPL_DATA); do \
+		render "{\"chezmoi\":{\"os\":\"windows\"},$$d}" dot_config/powershell/aliases.ps1.tmpl > "$$dir/aliases.ps1" && \
+		if command -v pwsh >/dev/null 2>&1; then \
+			pwsh -NoProfile -Command "\$$e = \$$null; [void][System.Management.Automation.Language.Parser]::ParseFile('$$dir/aliases.ps1', [ref]\$$null, [ref]\$$e); if (\$$e) { \$$e; exit 1 }" \
+				|| { echo "lint-aliases: aliases.ps1 $$d"; exit 1; }; \
+		fi; \
+	done; \
+	command -v pwsh >/dev/null 2>&1 || echo "Skipping aliases.ps1 parse: pwsh is not installed."; \
+	rm -rf "$$dir"
+
+aliases-audit: ## List live shell aliases the registry does not account for
+	@sh scripts/aliases-audit.sh
 
 test: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done

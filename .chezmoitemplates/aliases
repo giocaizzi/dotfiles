@@ -1,0 +1,31 @@
+{{- /* Alias registry selector. Called as
+  includeTemplate "aliases" (dict "shell" "posix"|"powershell" "ctx" .) | fromJson
+  Returns {"aliases": {name: command}, "blocks": {name: message}, "zsh": {context: bool}}
+  for this machine: public .chezmoidata/aliases.toml plus the encrypted
+  .aliases.private.toml.age (skipped on light machines and where no age identity is
+  configured, e.g. CI), filtered by shell, OS and machine role. Public entries win
+  on a name clash. */ -}}
+{{- $ctx := .ctx -}}
+{{- $shell := .shell -}}
+{{- $machine := "personal" -}}
+{{- if get $ctx "light" }}{{ $machine = "light" }}{{ else if get $ctx "work" }}{{ $machine = "work" }}{{ end -}}
+{{- $aliases := deepCopy (get $ctx "alias" | default dict) -}}
+{{- $blocks := deepCopy (get $ctx "aliasBlock" | default dict) -}}
+{{- $identity := $ctx.chezmoi.config.age.identity -}}
+{{- if and (ne $machine "light") $identity (stat $identity) -}}
+{{-   $private := include ".aliases.private.toml.age" | decrypt | fromToml -}}
+{{-   $aliases = merge $aliases (get $private "alias" | default dict) -}}
+{{-   $blocks = merge $blocks (get $private "aliasBlock" | default dict) -}}
+{{- end -}}
+{{- $out := dict -}}
+{{- range $name, $a := $aliases -}}
+{{-   $command := get $a $shell | default (get $a "cmd") -}}
+{{-   $shells := get $a "shells" | default (list "posix" "powershell") -}}
+{{-   $os := get $a "os" | default (list "darwin" "linux" "windows") -}}
+{{-   $machines := get $a "machines" | default (list "personal" "work" "light") -}}
+{{-   if and $command (has $shell $shells) (has $ctx.chezmoi.os $os) (has $machine $machines) -}}
+{{-     $_ := set $out $name $command -}}
+{{-   end -}}
+{{- end -}}
+{{- $external := get (get $ctx "aliasExternal" | default dict) "zsh" | default dict -}}
+{{- dict "aliases" $out "blocks" $blocks "zsh" $external | toJson -}}
