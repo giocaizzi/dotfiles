@@ -14,7 +14,6 @@ LICENSE
 Makefile
 # Git Bash crash dumps left in the source dir (also git-ignored globally)
 *.stackdump
-CLAUDE.md
 .agents
 docs
 
