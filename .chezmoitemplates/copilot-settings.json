@@ -22,7 +22,7 @@
   "subagents": {
     "agents": {
       "dev-tools:scout": { "model": "gpt-6-luna", "effortLevel": "low" },
-      "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "high" }
+      "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "medium" }
     }
   },
   "inlineImages": false,
