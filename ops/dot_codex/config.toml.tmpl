@@ -1,0 +1,6 @@
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Codex (trusted in ~/.codex/config.toml). */ -}}
+{{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
+{{- range $n, $u := $s }}
+[mcp_servers.{{ $n }}]
+url = {{ $u | quote }}
+{{ end -}}

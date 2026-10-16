@@ -1,10 +1,19 @@
 # ----------------------------------------------------------------------------
-# MCP servers in Claude Code user scope: only the servers every repo needs
-# (harness repo-standard, "MCP servers, least privilege"). Repo servers live in
-# each repo; personal servers tied to no repo in a workspace folder (ops/).
-# Applied add-only by .chezmoiscripts/run_onchange_after_claude-mcp-user.*.
+# MCP servers by layer (harness repo-standard, "MCP servers, least privilege").
+# Repo servers live in each repo. `${VAR}` in a URL is filled from the
+# environment at `chezmoi apply` (secrets.sh, from Bitwarden), so this public
+# repo holds no account names; unset, it stays a reference.
 # Runbook: docs/OS.md#mcp-servers.
 # ----------------------------------------------------------------------------
 
+# User scope, every harness: only servers every repo needs.
 [mcp.user]
 notion = "https://mcp.notion.com/mcp"
+
+# Workspace folder ~/ops (personal machines): personal servers tied to no repo.
+[mcp.ops]
+grafana = "https://mcp-connector-grafana.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
+greenhouse = "https://mcp-connector-greenhouse.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
+n8n = "https://mcp-connector-n8n.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
+netdata = "https://mcp-connector-netdata.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
+portainer = "https://mcp-connector-portainer.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
