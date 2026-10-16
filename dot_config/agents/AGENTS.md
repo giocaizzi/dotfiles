@@ -52,8 +52,8 @@ Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, 
 | FastAPI, SQLAlchemy, DDD | `fastapi`, `sqlalchemy`, `ddd`; agent `api-reviewer` for API security review |
 
 - Guards (skill enforcement, host load and quota, risky commands, commit/PR titles, pip, `make check` on stop) are enforced by the `guard` plugin of the same repo.
-- Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`), with `CLAUDE.md` symlinked to it. Create it when missing.
-- Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` (plus `CLAUDE.md` symlink) with that component's instructions.
+- Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`). Create it when missing. No `CLAUDE.md` in projects: Claude Code reads `AGENTS.md` when none exists.
+- Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` with that component's instructions.
 - Personal instructions, if present: `~/.config/agents/AGENTS.private.md`.
 
 @~/.config/agents/AGENTS.private.md
