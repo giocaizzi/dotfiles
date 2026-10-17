@@ -16,6 +16,7 @@ notion = "https://mcp.notion.com/mcp"
 
 # Workspace folder ~/ops (personal machines): personal servers tied to no repo.
 [mcp.ops]
+firefly = "https://mcp-connector-firefly.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 grafana = "https://mcp-connector-grafana.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 greenhouse = "https://mcp-connector-greenhouse.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 n8n = "https://mcp-connector-n8n.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
