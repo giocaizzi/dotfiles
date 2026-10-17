@@ -1,9 +1,9 @@
 {{- /* chezmoi:modify-template */ -}}
-{{- /* User-scope MCP servers (.chezmoidata/mcp.toml [mcp.user]) merged into
+{{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) merged into
        Copilot CLI's file; servers added with `copilot mcp add` stay. */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $servers := get $current "mcpServers" | default dict -}}
-{{- range $n, $u := includeTemplate "mcp-servers.json" .mcp.user | fromJson }}{{ $_ := set $servers $n (dict "type" "http" "url" $u) }}{{ end -}}
+{{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $servers $n (dict "type" "http" "url" $u) }}{{ end -}}
 {{- $_ := set $current "mcpServers" $servers -}}
 {{- $current | toPrettyJson }}

@@ -18,7 +18,7 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `lint` | `lint-tmpl` + `lint-aliases`, then `shellcheck` on tracked `*.sh` and the bash rc files (`dot_bashrc`, `dot_bash_profile`, `dot_profile`, as bash); `jq empty` on tracked JSON |
+| `lint` | `lint-tmpl` + `lint-aliases`, then `shellcheck` on tracked `*.sh` and the bash rc files (`dot_bashrc`, `dot_bash_profile`, `dot_profile`, as bash); `jq empty` on tracked JSON and on the VS Code `mcp.json` render (`.chezmoitemplates/vscode-mcp.json`, personal and work) |
 | `lint-tmpl` | renders `.chezmoiscripts/*.sh.tmpl` per OS × role × harness selection, `shellcheck` the output |
 | `lint-aliases` | validates the alias registry (`scripts/aliases-lint.sh`, plus the encrypted part where the age key exists), renders `aliases.sh` per OS × role (`shellcheck` as bash), `omz-aliases.zsh` (`zsh -n`), `aliases.ps1` (parsed by `pwsh`) |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |

@@ -28,6 +28,11 @@ lint: lint-tmpl lint-aliases ## shellcheck shell scripts, validate JSON
 	shellcheck $(SHELLCHECK_EXCLUDES) $(SCRIPTS)
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
+	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
+	for d in '{}' '{"work":true}'; do \
+		chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$d" \
+			< .chezmoitemplates/vscode-mcp.json | jq empty || { echo "invalid JSON: vscode-mcp.json $$d"; exit 1; }; \
+	done; rm -rf "$$dir"
 
 # Isolated empty config, so the renders never read this machine's answers. A render for one
 # OS leaves the other OS's package lists unset-but-unused (SC2034).

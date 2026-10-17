@@ -1,0 +1,5 @@
+{{- /* User-scope MCP servers for this machine's role as JSON {name: url}: .chezmoidata/mcp.toml
+       [mcp.user], plus [mcp.personal] unless it is a work machine. */ -}}
+{{- $out := deepCopy .mcp.user -}}
+{{- if not (get . "work") }}{{ $out = merge $out .mcp.personal }}{{ end -}}
+{{- $out | toJson -}}
