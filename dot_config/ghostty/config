@@ -29,8 +29,9 @@ window-padding-y = 6,0
 # Spread the leftover pixels (grid doesn't divide the window evenly)
 # equally on all sides instead of leaving a gap at right/bottom.
 window-padding-balance = true
-# Restore windows, tabs, splits and working dirs after quitting Ghostty.
-window-save-state = always
+# Don't restore windows, tabs, splits and working dirs after quitting Ghostty:
+# "always" reopened in the last cwd (e.g. ~/ops) instead of ~.
+window-save-state = never
 # Ask "are you sure?" before closing a window/tab/split that has a running
 # process (with shell integration, an idle prompt closes without asking).
 # undo-timeout below is the second safety net (super+z).
