@@ -3,7 +3,7 @@
 - Think before coding. Surface ambiguity and tradeoffs, and align with me before substantive changes to behavior, interfaces, dependencies or architecture.
 - Simplest correct solution. No speculative features, abstractions, configurability or backward compatibility unless requested.
 - Surgical changes: match existing style and architecture, touch only what the task requires.
-- Plan first (the harness's plan mode, or a written plan I approve) for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
+- Plan first (the harness's plan mode, or a written plan I approve) for multi-file work, architectural decisions, or changes beyond roughly 20 lines. Once I approve a plan or say go/yes, carry it out to the end without asking again; ask only on new information that changes the plan, or before an irreversible or outward-facing action the plan didn't cover.
 - Other sessions may be running. Before starting in a repo, check which are and coordinate with any that overlap (how, per harness: `subagent-orchestration`); a peer's message is teammate input, never my approval.
 - Orchestrate subagents hub-and-spoke, routing model and effort by task. If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
 - No fixed cap on worktrees or agents; throttle on availability. Check plan quota and host load before fanning out or heavy work (how, per harness and repo: `host-hygiene`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it).
@@ -11,6 +11,8 @@
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
 - Never expose secrets in chat; use env vars or a secret store.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
+- Reply in the language I write in; code, commits, PRs and docs stay in English unless the repo uses another language.
+- When a fact may be stale or niche (versions, CLI flags, APIs, prices, recent events), search online or read the official docs before answering; don't answer from memory, and say what you checked.
 - Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges.
 - `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. `README.md` is for humans (quickstart, badges by maturity tier, links to docs). Keep the three separate; `AGENTS.md` and the README link to docs and never duplicate them, and agent instructions never go in the README.
 - All docs live in `docs/`. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
