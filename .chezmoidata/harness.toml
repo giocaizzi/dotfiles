@@ -1,0 +1,16 @@
+# ----------------------------------------------------------------------------
+# Plugins of github.com/giocaizzi/harness: one key per plugins/<name> directory
+# there (`make lint-plugins` checks), listing the harnesses whose config here
+# enables it. Claude Code and Copilot CLI enable them in their settings
+# (.chezmoitemplates/{claude,copilot}-settings.json), Codex in
+# run_after_install-harness.*; opencode and pi take the whole checkout.
+# Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
+# ----------------------------------------------------------------------------
+[harnessPlugins]
+api = ["claude", "copilot", "codex"]
+dev-tools = ["claude", "copilot", "codex"]
+guard = ["claude", "copilot", "codex"]
+hud = ["claude", "copilot"]
+javascript = ["claude", "copilot", "codex"]
+python = ["claude", "copilot", "codex"]
+sounds = ["claude", "codex"]
