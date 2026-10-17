@@ -19,9 +19,11 @@
     "allow": [
       "WebSearch",
       "WebFetch",
-      "Bash"
+      "Bash",
+      "Bash(gh pr merge * --auto*)"
     ],
     "deny": [
+      "Bash(gh pr merge * --admin*)",
       "Read(**/.env)",
       "Read(**/.env.local)",
       "Read(**/.env.*.local)",
