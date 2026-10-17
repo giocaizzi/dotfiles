@@ -6,11 +6,11 @@
        or an approval waits (Ghostty marks the tab: 🔔, border, Dock). */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromToml .chezmoi.stdin }}{{ end -}}
-{{- /* User-scope MCP servers come from .chezmoidata/mcp.toml [mcp.user]; the
+{{- /* User-scope MCP servers come from .chezmoidata/mcp.toml (.chezmoitemplates/mcp-user.json); the
        ~/ops workspace (ops/dot_codex/config.toml) is trusted so Codex loads it
        (personal machines only, like ops/). */ -}}
 {{- $tui := get $current "tui" | default dict -}}
-{{- $users := includeTemplate "mcp-servers.json" .mcp.user | fromJson -}}
+{{- $users := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson -}}
 {{- $mcp := get $current "mcp_servers" | default dict -}}
 {{- $ops := joinPath .chezmoi.homeDir "ops" -}}
 {{- $projects := get $current "projects" | default dict -}}
