@@ -99,6 +99,19 @@ cmd = "git pull"
 [alias.glog]
 cmd = "git log --oneline --decorate --graph"
 
+# --- chezmoi ---
+[alias.cz]
+cmd = "chezmoi"
+
+[alias.cze]
+cmd = "chezmoi edit --apply"
+
+[alias.czd]
+cmd = "chezmoi diff"
+
+[alias.cza]
+cmd = "chezmoi apply"
+
 # --- Projects ---
 [alias.openclaw]
 posix = "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"

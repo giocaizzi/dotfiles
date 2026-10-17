@@ -10,7 +10,7 @@ make check   # lint + test; run before pushing
 ```
 
 Needs `chezmoi`, `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS);
-`pwsh` is optional locally (the PowerShell alias parse is skipped without it) and present on CI runners.
+`pwsh` is optional locally (the PowerShell alias parse and edit command tests are skipped without it) and present on CI runners. The edit command tests also need `ssh`.
 On Windows, `make` uses Git for Windows' POSIX shell; zsh syntax checks run when
 zsh is installed and are otherwise skipped because zsh is not a Windows dependency.
 ShellCheck also ignores working-tree CRLF diagnostics on Windows; tracked shell
@@ -23,7 +23,7 @@ files remain LF through `.gitattributes`.
 | `lint-plugins` | `.chezmoidata/harness.toml` lists exactly the `plugins/` directories of `giocaizzi/harness` (`scripts/harness-plugins-lint.sh`): main through `gh api` (CI passes `GH_TOKEN`), or a local checkout with `HARNESS_DIR=<path>` |
 | `lint-aliases` | validates the alias registry (`scripts/aliases-lint.sh`, plus the encrypted part where the age key exists), renders `aliases.sh` per OS × role (`shellcheck` as bash), `omz-aliases.zsh` (`zsh -n`), `aliases.ps1` (parsed by `pwsh`) |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
-| `test` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
+| `test` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile`; `scripts/dots-edit-test.sh`: `agents-edit`, `aliases-edit`, `ssh-edit` in bash, zsh and pwsh (each where installed; pwsh runs on CI, skipped on Windows hosts) against a throwaway source copy with dummy encrypted files, a throwaway age key and a temp destination |
 | `check` | `lint` + `test` |
 
 Skipped: other `*.tmpl` files and JSON containing `{{` (need chezmoi to render), `dot_config/Code/User/settings.json` (JSONC). No `shfmt`: existing scripts mix tab and space indents.

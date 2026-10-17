@@ -73,7 +73,7 @@ lint-plugins: ## Check the harness plugin list against giocaizzi/harness (HARNES
 aliases-audit: ## List live shell aliases the registry does not account for
 	@sh scripts/aliases-audit.sh
 
-test: ## Syntax-check bash and zsh files
+test: ## Syntax-check bash and zsh files, test the edit commands
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
 	@if command -v zsh >/dev/null 2>&1; then \
 		for f in $(ZSH); do zsh -n "$$f" || exit 1; done; \
@@ -82,5 +82,6 @@ test: ## Syntax-check bash and zsh files
 	else \
 		echo "zsh is required to syntax-check zsh files."; exit 1; \
 	fi
+	@sh scripts/dots-edit-test.sh
 
 check: lint test ## lint + test
