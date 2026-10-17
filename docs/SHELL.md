@@ -111,7 +111,7 @@ the file.
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts            | same |
 | `hist` / `h`          | fzf history search                       | same |
 | `cz` `cze` `czd` `cza` | `chezmoi`, `chezmoi edit --apply`, `chezmoi diff`, `chezmoi apply` | same |
-| `agents-edit` `aliases-edit` `ssh-edit` (full machines) | edit an agent instruction layer, the alias registry (public or private), `~/.ssh/config`; check, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
+| `agents-edit` `aliases-edit` `ssh-edit` (full machines) | edit an agent instruction layer, the alias registry (public or private), `~/.ssh/config` or a `~/.ssh/config.d/` file; check, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
 | `openclaw` (personal Mac) | rp5-homeserver openclaw script       | — |
 | `pipx`                | refuses; use `uv tool install` / `uvx`   | same |
 | `python`              | `python3`, only where no `python` exists | — |

@@ -147,7 +147,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker, or a numbered prompt without fzf.
+Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker sized to show every option (`--height=~100%`), or a numbered prompt without fzf.
 
 | Component | Command | Check before apply |
 |---|---|---|
@@ -155,7 +155,8 @@ Every command edits the chezmoi source checkout in place, shows `chezmoi diff` o
 | Agent instructions, private layers | `agents-edit personal`, `agents-edit work` | — |
 | Aliases, public registry | `aliases-edit public` | `make lint-aliases` |
 | Aliases, personal (encrypted) | `aliases-edit private` | `make lint-aliases` |
-| `~/.ssh/config` (encrypted) | `ssh-edit` | `ssh -G` parses the edited file |
+| `~/.ssh/config` (encrypted) | `ssh-edit config` | `ssh -G` parses the edited file |
+| `~/.ssh/config.d/<name>` (this machine only, unmanaged) | `ssh-edit <name>` (a new name creates the file) | `ssh -G` parses it; edited in place, no diff, apply or PR |
 | Any other managed file | `cze <target>` (`chezmoi edit --apply`) | — |
 
 After `aliases-edit` applies, open a new shell (or source the alias file). Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
@@ -166,7 +167,7 @@ Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the
 
 **SSH key names (same on every machine):** `~/.ssh/id_<type>_<service>_<account>` (+ `.pub`) — type first, then the service, then the account or organisation: `id_ed25519_github_<github-user>`, `id_ed25519_github_<work-account>`, `id_rsa_devops_<org>`. The shared `~/.ssh/config` points `Host github.com` at the personal GitHub key, so don't redefine `github.com` in `config.d/` (it would shadow the shared entry); rename the key instead. Work keys and their `Host` aliases (e.g. `github-<work>`, `azure-<org>`) live in `config.d/<name>`.
 
-**SSH hosts per machine:** the shared `~/.ssh/config` starts with `Include config.d/*`. Hosts that belong to one machine only — e.g. work hosts on the corporate PC — go in `~/.ssh/config.d/<name>` there; chezmoi doesn't manage that folder, so they never enter this repo, not even encrypted. Work keys are generated on the work machine itself. If a work Git host is the same as a personal one, give the work account its own `Host` alias in `config.d/<name>` (own key, `IdentitiesOnly yes`) and clone work repos through that alias.
+**SSH hosts per machine:** the shared `~/.ssh/config` starts with `Include config.d/*`. Hosts that belong to one machine only — e.g. work hosts on the corporate PC — go in `~/.ssh/config.d/<name>` there; chezmoi doesn't manage that folder, so they never enter this repo, not even encrypted. Edit them with `ssh-edit <name>` ([Editing your dotfiles](#editing-your-dotfiles)). Work keys are generated on the work machine itself. If a work Git host is the same as a personal one, give the work account its own `Host` alias in `config.d/<name>` (own key, `IdentitiesOnly yes`) and clone work repos through that alias.
 
 ## Hardcoded by design
 

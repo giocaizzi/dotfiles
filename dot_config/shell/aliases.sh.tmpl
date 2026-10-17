@@ -41,7 +41,7 @@ _dots_pick() (
 	label=$1
 	shift
 	if command -v fzf >/dev/null 2>&1; then
-		printf '%s\n' "$@" | fzf --prompt="$label> " --height=$(($# + 2))
+		printf '%s\n' "$@" | fzf --prompt="$label> " --height=~100%
 	else
 		i=0
 		for c do
@@ -54,6 +54,9 @@ _dots_pick() (
 		if [ "$n" -ge 1 ] && [ "$n" -le $# ]; then eval "printf '%s\n' \"\${$n}\""; fi
 	fi
 )
+
+# _dots_open <file>: $EDITOR (then $VISUAL, then vi) on one file.
+_dots_open() { sh -c "${EDITOR:-${VISUAL:-vi}} \"\$1\"" dots-edit "$1"; }
 
 # _dots_edit [-1] <source file> <hook|-> <target>...: the shared edit flow.
 # A plain file opens in the editor; an age file is decrypted to a private temp file,
@@ -71,7 +74,6 @@ _dots_edit() (
 	file=$1 hook=$2
 	shift 2
 	src=$(chezmoi source-path) || return 1
-	editor=${EDITOR:-${VISUAL:-vi}}
 	case $file in
 	*.age)
 		umask 077
@@ -80,7 +82,7 @@ _dots_edit() (
 		trap 'exit 130' HUP INT TERM
 		chezmoi decrypt "$src/$file" >"$tmp" || return 1
 		before=$(cksum <"$tmp")
-		sh -c "$editor \"\$1\"" dots-edit "$tmp" || return 1
+		_dots_open "$tmp" || return 1
 		if [ "$(cksum <"$tmp")" != "$before" ]; then
 			{ chezmoi encrypt "$tmp" >"$src/$file.new" &&
 				mv "$src/$file.new" "$src/$file"; } || return 1
@@ -88,7 +90,7 @@ _dots_edit() (
 		edited=$tmp
 		;;
 	*)
-		sh -c "$editor \"\$1\"" dots-edit "$src/$file" || return 1
+		_dots_open "$src/$file" || return 1
 		edited=$src/$file
 		;;
 	esac
@@ -162,13 +164,42 @@ _aliases_edit_hook() {
 	esac
 }
 
-# ssh-edit: the encrypted ~/.ssh/config. `ssh -G` must parse the edit before apply.
+# ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
+# (this machine's hosts, not managed by chezmoi: edited in place, a new name creates it).
+# `ssh -G` must parse the edit (config: before apply). No argument: pick config or an
+# existing config.d file.
 ssh-edit() (
-	if [ $# -gt 0 ]; then
-		echo 'usage: ssh-edit' >&2
+	if [ $# -gt 1 ]; then
+		echo 'usage: ssh-edit [config|<name>]' >&2
 		return 2
 	fi
-	_dots_edit private_dot_ssh/encrypted_private_config.age _ssh_edit_hook .ssh/config
+	dir=$(chezmoi target-path)/.ssh/config.d || return 1
+	name=${1:-}
+	if [ -z "$name" ]; then
+		set -- config
+		while IFS= read -r n; do
+			if [ -f "$dir/$n" ]; then set -- "$@" "$n"; fi
+		done <<EOF
+$(ls -A "$dir" 2>/dev/null)
+EOF
+		name=$(_dots_pick 'ssh config' "$@") || return 1
+	fi
+	case $name in
+	config)
+		_dots_edit private_dot_ssh/encrypted_private_config.age _ssh_edit_hook .ssh/config
+		return
+		;;
+	'' | .* | */*)
+		echo 'usage: ssh-edit [config|<name>]' >&2
+		return 2
+		;;
+	esac
+	umask 077
+	mkdir -p "$dir" && _dots_open "$dir/$name" || return 1
+	if ! _ssh_edit_hook check "$dir/$name"; then
+		echo "Check failed: the file keeps the edit, run ssh-edit $name to fix it ($dir/$name)." >&2
+		return 1
+	fi
 )
 _ssh_edit_hook() {
 	if [ "$1" = check ]; then ssh -G -F "$2" localhost >/dev/null; fi
