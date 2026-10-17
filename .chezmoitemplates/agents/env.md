@@ -1,0 +1,11 @@
+# CLI tooling
+
+- `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). Packages come from `brew` on macOS; add a tool to that list only when it is used repeatedly or is a standard tool, never ad-hoc `brew install`. One-off tools run without installing (`uvx`, `npx`, `docker run`). The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
+- Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv`, `gitleaks`, `actionlint`, `hadolint` are available (work machines add `glab`, `az`); prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
+- LSP: chezmoi installs `pyright` and `typescript-language-server` for the Claude Code LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
+- `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test). Add a target rather than invoking tools directly. Repos without a Makefile use their own task runner; don't add one to repos you don't own.
+- Python: `uv`, unless the repo pins another manager (poetry, pip). Never pipx or global installs.
+- Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
+- Forges: `gh` for GitHub, `glab` for GitLab, `az repos`/`az pipelines` for Azure DevOps; the forge mapping lives in the `repo-standard` skill. Git: small Conventional Commits explaining what and why.
+- `giocaizzi/*` repos follow the standard in `github.com/giocaizzi/.github` (`docs/standard.md`: labels, rulesets, settings, templates, CI, exceptions, plan limits; PRs stacked and auto-merged behind required CI checks on `main`); `make audit` there reports drift. Change the standard there first, then the repos. New repos start from `giocaizzi/template` (`gh repo create giocaizzi/<name> --template giocaizzi/template`), then `make onboard REPO=<name>` in `giocaizzi/.github`. Other orgs follow their own standard, with `repo-standard` as the generic checklist.
+- Secrets: never print or inline a value; keyring or credential manager only.

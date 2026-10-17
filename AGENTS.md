@@ -11,11 +11,14 @@ This is the user's [chezmoi](https://chezmoi.io/) dotfiles configuration, managi
 Canonical configs live under `dot_config/<xdg-path>/`. On Linux they deploy directly; on macOS/Windows they are symlink targets referenced via `{{ .chezmoi.sourceDir }}/...` from `Library/` or `AppData/` paths.
 
 ```bash
-dot_config/Code/User/{settings,keybindings,mcp}.json
+dot_config/Code/User/{settings,keybindings}.json
     → ~/.config/Code/User/         (Linux, direct)
     → Library/.../Code/User/        (macOS, symlinks)
     → AppData/Roaming/Code/User/    (Windows, symlinks)
     (Code - Insiders symlinks point at the same files)
+
+.chezmoitemplates/vscode-mcp.json  → Code and Code - Insiders User/mcp.json on every OS
+    (rendered per role, not symlinked)
 
 dot_config/ghostty/config
     → ~/.config/ghostty/   (Linux, direct)
@@ -37,6 +40,8 @@ dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/
 dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
+.chezmoitemplates/agents-instructions.md (core + env + encrypted private layer per role)
+    → global instructions of every AI harness (docs/OS.md → Agent instructions)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
 private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo)
 ```
