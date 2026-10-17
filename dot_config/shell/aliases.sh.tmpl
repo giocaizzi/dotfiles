@@ -29,6 +29,69 @@ alias {{ $name }}='{{ replace "'" "'\\''" $command }}'
 if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
 	alias python='python3'
 fi
+{{- if not (get . "light") }}
+
+# --- Functions (full machines) ---
+# agents-edit [core|env|personal|work]: edit a layer of the global agent instructions in
+# the chezmoi source, then diff and optionally apply them (docs/OS.md#agent-instructions).
+# Private layers are decrypted to a private temp file, re-encrypted only when changed,
+# and the temp file is always removed. A subshell keeps umask and traps local.
+agents-edit() (
+	src=$(chezmoi source-path) || return 1
+	dir="$src/.chezmoitemplates/agents"
+	layer=${1:-}
+	if [ -z "$layer" ]; then
+		if command -v fzf >/dev/null 2>&1; then
+			layer=$(printf '%s\n' core env personal work | fzf --prompt='agent layer> ' --height=6) || return 1
+		else
+			printf '1) core\n2) env\n3) personal\n4) work\nlayer [1-4]: ' >&2
+			read -r n
+			case $n in 1) layer='core' ;; 2) layer='env' ;; 3) layer='personal' ;; 4) layer='work' ;; esac
+		fi
+	fi
+	editor=${EDITOR:-${VISUAL:-vi}}
+	case $layer in
+	core | env)
+		sh -c "$editor \"\$1\"" agents-edit "$dir/$layer.md" || return 1
+		;;
+	personal | work)
+		umask 077
+		tmp=$(mktemp) || return 1
+		trap 'rm -f "$tmp" "$dir/$layer.md.age.new"' EXIT
+		trap 'exit 130' HUP INT TERM
+		chezmoi decrypt "$dir/$layer.md.age" >"$tmp" || return 1
+		before=$(cksum <"$tmp")
+		sh -c "$editor \"\$1\"" agents-edit "$tmp" || return 1
+		if [ "$(cksum <"$tmp")" != "$before" ]; then
+			{ chezmoi encrypt "$tmp" >"$dir/$layer.md.age.new" &&
+				mv "$dir/$layer.md.age.new" "$dir/$layer.md.age"; } || return 1
+		fi
+		;;
+	*)
+		echo 'usage: agents-edit [core|env|personal|work]' >&2
+		return 2
+		;;
+	esac
+	# The rendered instruction files this machine manages; the first one shows the diff.
+	home=$(chezmoi target-path) || return 1
+	managed=$(chezmoi managed -i files)
+	set --
+	for t in .claude/CLAUDE.md .copilot/copilot-instructions.md .codex/AGENTS.md .config/opencode/AGENTS.md .pi/agent/AGENTS.md; do
+		printf '%s\n' "$managed" | grep -qxF "$t" && set -- "$@" "$home/$t"
+	done
+	if [ $# -gt 0 ]; then
+		chezmoi diff "$1"
+		printf 'apply now? [y/N] ' >&2
+		read -r answer
+		case $answer in [yY]*) chezmoi apply "$@" || return 1 ;; esac
+	fi
+	changes=$(git -C "$src" status --short)
+	if [ -n "$changes" ]; then
+		echo "The dotfiles source changed: ship a PR (e.g. /ship) from $src" >&2
+		printf '%s\n' "$changes" >&2
+	fi
+)
+{{- end }}
 {{- if and (eq .chezmoi.os "darwin") (not (get . "light")) (not (get . "work")) }}
 
 # --- Functions (personal Mac) ---

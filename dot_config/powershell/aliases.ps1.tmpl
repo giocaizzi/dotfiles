@@ -18,3 +18,73 @@ function {{ $name }} { {{ $command }} @args }
 {{ range $name, $block := $r.blocks -}}
 function {{ $name }} { Write-Error '{{ replace "'" "''" $block.message }}' }
 {{ end -}}
+{{- if not (get . "light") }}
+
+# --- Functions (full machines) ---
+# agents-edit [core|env|personal|work]: edit a layer of the global agent instructions in
+# the chezmoi source, then diff and optionally apply them (docs/OS.md#agent-instructions).
+# Private layers are decrypted to a temp file in the per-user temp folder, re-encrypted
+# only when changed, and the temp file is always removed.
+function agents-edit {
+	param([string]$Layer)
+	$src = chezmoi source-path
+	if ($LASTEXITCODE) { return }
+	$dir = Join-Path $src '.chezmoitemplates/agents'
+	$layers = 'core', 'env', 'personal', 'work'
+	if (-not $Layer) {
+		if (Get-Command fzf -ErrorAction SilentlyContinue) {
+			$Layer = $layers | fzf --prompt='agent layer> ' --height=6
+		} else {
+			for ($i = 0; $i -lt $layers.Count; $i++) { Write-Host "$($i + 1)) $($layers[$i])" }
+			$n = Read-Host 'layer [1-4]'
+			if ($n -match '^[1-4]$') { $Layer = $layers[[int]$n - 1] }
+		}
+	}
+	if ($Layer -notin $layers) { Write-Error 'usage: agents-edit [core|env|personal|work]'; return }
+	$editor = if ($env:EDITOR) { $env:EDITOR } elseif ($env:VISUAL) { $env:VISUAL } else { 'notepad' }
+	$exe, $editorArgs = -split $editor
+	# Waits for GUI editors too (notepad returns at once when called directly).
+	$edit = {
+		param($file)
+		$p = Start-Process -FilePath $exe -ArgumentList (@($editorArgs | Where-Object { $_ }) + "`"$file`"") -Wait -NoNewWindow -PassThru
+		$p.ExitCode -eq 0
+	}
+	if ($Layer -in 'core', 'env') {
+		if (-not (& $edit (Join-Path $dir "$Layer.md"))) { return }
+	} else {
+		$age = Join-Path $dir "$Layer.md.age"
+		$tmp = [IO.Path]::GetTempFileName()
+		try {
+			chezmoi decrypt --output $tmp $age
+			if ($LASTEXITCODE) { return }
+			$before = (Get-FileHash $tmp).Hash
+			if (-not (& $edit $tmp)) { return }
+			if ((Get-FileHash $tmp).Hash -ne $before) {
+				chezmoi encrypt --output "$age.new" $tmp
+				if ($LASTEXITCODE) { return }
+				Move-Item -Force "$age.new" $age
+			}
+		} finally {
+			Remove-Item -Force -ErrorAction SilentlyContinue $tmp, "$age.new"
+		}
+	}
+	# The rendered instruction files this machine manages; the first one shows the diff.
+	$dest = chezmoi target-path
+	$managed = chezmoi managed -i files
+	$targets = @(foreach ($t in '.claude/CLAUDE.md', '.copilot/copilot-instructions.md', '.codex/AGENTS.md', '.config/opencode/AGENTS.md', '.pi/agent/AGENTS.md') {
+			if ($managed -contains $t) { Join-Path $dest $t }
+		})
+	if ($targets) {
+		chezmoi diff $targets[0]
+		if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
+			chezmoi apply @targets
+			if ($LASTEXITCODE) { return }
+		}
+	}
+	$changes = git -C $src status --short
+	if ($changes) {
+		Write-Host "The dotfiles source changed: ship a PR (e.g. /ship) from $src"
+		$changes | Write-Host
+	}
+}
+{{- end }}
