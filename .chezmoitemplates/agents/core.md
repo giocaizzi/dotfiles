@@ -28,7 +28,7 @@
 
 # Skills
 
-Reusable rules live as skills (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. Skills are named without harness syntax; invoke one as `/name` in Claude Code, Copilot CLI and opencode, `$name` in Codex, `/skill:name` in pi.
+Reusable rules live as skills (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. Skills are named without harness syntax; invoke one as `/name` in Claude Code, Copilot CLI and opencode, `$plugin:name` in Codex (e.g. `$dev-tools:wt`), `/skill:name` in pi.
 
 | Situation | Load |
 |---|---|
