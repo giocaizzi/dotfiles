@@ -39,4 +39,10 @@ rp5-secrets() {
 		PI_SSH_USER="${PI_SSH_USER:-$USER}" \
 		"$HOME/Documents/github/rp5-homeserver/scripts/create_secrets.sh" "$@"
 }
+# Infra stack deploy with its file-based secrets written from Secrets Manager (same token).
+rp5-sync-infra() {
+	BWS_ACCESS_TOKEN="$(chezmoi secret keyring get --service=bws --user=access-token)" \
+		PI_SSH_USER="${PI_SSH_USER:-$USER}" DOMAIN="${DOMAIN:?export DOMAIN (the public zone)}" \
+		"$HOME/Documents/github/rp5-homeserver/scripts/sync_infra.sh" "$@"
+}
 {{- end }}
