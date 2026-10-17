@@ -1,0 +1,200 @@
+#!/bin/sh
+# Test the edit commands (agents-edit, aliases-edit, ssh-edit) in bash, zsh and pwsh
+# (each where installed) against a throwaway copy of this source: dummy encrypted files
+# under a throwaway age key, a temp destination, and a chezmoi wrapper pinning
+# --config/--source/--destination/--persistent-state. The real key, encrypted files and
+# home are never read or written. Run from the repo root (make test).
+set -eu
+
+case $(uname -s) in MINGW* | MSYS* | CYGWIN*)
+	echo "Skipping the edit command tests on Windows: CI runs them on Linux."
+	exit 0
+	;;
+esac
+
+real=$(command -v chezmoi)
+T=$(mktemp -d)
+trap 'rm -rf "$T"' EXIT
+S=$T/src
+mkdir "$T/bin"
+
+"$real" age-keygen -o "$T/key.txt" 2>/dev/null
+recipient=$(sed -n 's/^# public key: //p' "$T/key.txt")
+cat >"$T/chezmoi.toml" <<EOF
+encryption = "age"
+[age]
+identity = "$T/key.txt"
+recipient = "$recipient"
+[data]
+light = false
+work = false
+harnesses = ["claude"]
+EOF
+cat >"$T/bin/chezmoi" <<EOF
+#!/bin/sh
+exec "$real" --config "$T/chezmoi.toml" --source "$S" --destination "$T/home" \
+	--persistent-state "$T/state.boltdb" "\$@"
+EOF
+# Fake editor: logs the path it was given, then edits it per mode.
+cat >"$T/bin/editor" <<EOF
+#!/bin/sh
+printf '%s\n' "\$2" >"$T/edited"
+case \$1 in
+fail) exit 1 ;;
+text) printf '\nedited-marker\n' >>"\$2" ;;
+alias) printf '\n[alias.zzedit]\ncmd = "echo edited-marker"\n' >>"\$2" ;;
+badalias) printf '\n[alias.zzbad]\nposix = "true"\nshells = ["posix"]\n' >>"\$2" ;;
+ssh) printf '\nHost zzedit\n  HostName edited-marker.invalid\n' >>"\$2" ;;
+badssh) printf '\nNotAnOption yes\n' >>"\$2" ;;
+esac
+EOF
+chmod +x "$T/bin/chezmoi" "$T/bin/editor"
+
+# The source copy: no scripts, externals or removals, dummy encrypted files, a git repo.
+mkdir "$S"
+git ls-files -z | tar -cf - --null -T - | tar -xf - -C "$S"
+rm -rf "$S/.chezmoiscripts" "$S/.chezmoiexternal.toml.tmpl" "$S/.chezmoiremove" "$S/.chezmoi.toml.tmpl"
+enc() { printf '%b' "$2" | "$T/bin/chezmoi" encrypt >"$S/$1"; }
+enc .aliases.private.toml.age '[alias.zzprivate]\ncmd = "echo private"\n'
+enc .chezmoitemplates/agents/personal.md.age 'dummy personal layer\n'
+enc .chezmoitemplates/agents/work.md.age 'dummy work layer\n'
+enc private_dot_ssh/encrypted_private_config.age 'Host dummy\n  HostName dummy.invalid\n'
+git -C "$S" init -q
+git -C "$S" add -A
+git -C "$S" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsign=false \
+	-c core.hooksPath=/dev/null commit -qm fixture
+"$T/bin/chezmoi" execute-template <"$S/dot_config/shell/aliases.sh.tmpl" >"$T/aliases.sh"
+"$T/bin/chezmoi" execute-template <"$S/dot_config/powershell/aliases.ps1.tmpl" >"$T/aliases.ps1"
+
+pass=0
+fail=0
+# run <shell> <answers> <editor mode> <path: full|nofzf> <command...>: status in $st,
+# output in $T/out. Resets the source and the destination first. In pwsh, Write-Error
+# is made terminating so a reported failure gives a non-zero exit.
+run() {
+	shell=$1 answers=$2 mode=$3 path=$4
+	shift 4
+	git -C "$S" checkout -q -- .
+	rm -rf "${T:?}/home" "$T/edited" "$T/state.boltdb"
+	# The parents a real home already has (apply of one target needs them).
+	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.ssh"
+	p=$T/bin:$PATH
+	[ "$path" = full ] || p=$T/bin:/usr/bin:/bin
+	set +e
+	# shellcheck disable=SC2016 # expanded by the shell under test
+	case $shell in
+	pwsh) printf '%b' "$answers" | EDITOR="$T/bin/editor $mode" PATH=$p "$pwsh" -NoProfile -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*" ;;
+	*) printf '%b' "$answers" | EDITOR="$T/bin/editor $mode" PATH=$p "$shell" -c '. "$1"; shift; "$@"' sh "$T/aliases.sh" "$@" ;;
+	esac >"$T/out" 2>&1
+	st=$?
+	set -e
+}
+# expect <description> <test...>
+expect() {
+	desc=$1
+	shift
+	if "$@"; then
+		pass=$((pass + 1))
+	else
+		fail=$((fail + 1))
+		echo "FAIL [$shell] $desc"
+		sed 's/^/    /' "$T/out"
+	fi
+}
+status() { test "$st" "$1" "$2"; }
+has() { grep -q "$1" "$2" 2>/dev/null; }
+lacks() { ! grep -q "$1" "$2" 2>/dev/null; }
+armored() { [ "$(head -n 1 "$S/$1")" = '-----BEGIN AGE ENCRYPTED FILE-----' ]; }
+unchanged() { git -C "$S" diff --quiet -- "$1"; }
+# The decrypted temp file the editor got is gone, and no .new file is left.
+cleaned() {
+	f=$(cat "$T/edited")
+	case $f in "$S"/*) ;; *) [ ! -e "$f" ] || return 1 ;; esac
+	[ -z "$(find "$S" -name '*.new')" ]
+}
+usage() { status -ne 0 && has usage: "$T/out" && { [ "$shell" = pwsh ] || status -eq 2; }; }
+
+suite() {
+	run "$shell" 'y\n' text full agents-edit personal
+	expect 'agents-edit personal: edit + apply' status -eq 0
+	expect 'agents-edit personal: applied' has edited-marker "$T/home/.claude/CLAUDE.md"
+	expect 'agents-edit personal: re-encrypted, armored' armored .chezmoitemplates/agents/personal.md.age
+	expect 'agents-edit personal: temp removed' cleaned
+	expect 'agents-edit: ship hint' has 'ship a PR' "$T/out"
+
+	run "$shell" 'n\n' text full agents-edit core
+	expect 'agents-edit core: edited, not applied' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+	expect 'agents-edit core: no target written' lacks edited-marker "$T/home/.claude/CLAUDE.md"
+
+	run "$shell" 'n\n' noop full agents-edit work
+	expect 'agents-edit work no-op: byte-identical' unchanged .chezmoitemplates/agents/work.md.age
+	expect 'agents-edit work no-op: temp removed' cleaned
+
+	run "$shell" 'n\n' fail full agents-edit personal
+	expect 'editor failure: non-zero' status -ne 0
+	expect 'editor failure: source unchanged' unchanged .chezmoitemplates/agents/personal.md.age
+	expect 'editor failure: temp removed' cleaned
+
+	run "$shell" '' noop full agents-edit bogus
+	expect 'agents-edit bad argument: usage' usage
+
+	run "$shell" '1\nn\n' text nofzf agents-edit
+	expect 'agents-edit picker without fzf: core' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+
+	run "$shell" '9\n' noop nofzf aliases-edit
+	expect 'aliases-edit picker without fzf, invalid choice: usage' usage
+
+	run "$shell" '' noop full aliases-edit bogus
+	expect 'aliases-edit bad argument: usage' usage
+
+	run "$shell" 'y\n' alias full aliases-edit public
+	expect 'aliases-edit public: edit + apply' status -eq 0
+	expect 'aliases-edit public: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
+	expect 'aliases-edit: new-shell reminder' has 'open a new shell' "$T/out"
+
+	run "$shell" 'y\n' alias full aliases-edit private
+	expect 'aliases-edit private: edit + apply' status -eq 0
+	expect 'aliases-edit private: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
+	expect 'aliases-edit private: armored' armored .aliases.private.toml.age
+	expect 'aliases-edit private: temp removed' cleaned
+
+	run "$shell" 'y\n' noop full aliases-edit private
+	expect 'aliases-edit private no-op: byte-identical' unchanged .aliases.private.toml.age
+
+	run "$shell" 'y\n' badalias full aliases-edit public
+	expect 'aliases-edit lint failure: non-zero' status -ne 0
+	expect 'aliases-edit lint failure: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'aliases-edit lint failure: nothing applied' lacks zzbad "$T/home/.config/shell/aliases.sh"
+
+	run "$shell" 'y\n' ssh full ssh-edit
+	expect 'ssh-edit: edit + apply' status -eq 0
+	expect 'ssh-edit: applied' has edited-marker "$T/home/.ssh/config"
+	expect 'ssh-edit: armored' armored private_dot_ssh/encrypted_private_config.age
+	expect 'ssh-edit: temp removed' cleaned
+
+	run "$shell" 'y\n' noop full ssh-edit
+	expect 'ssh-edit no-op: byte-identical' unchanged private_dot_ssh/encrypted_private_config.age
+
+	run "$shell" 'y\n' badssh full ssh-edit
+	expect 'ssh-edit syntax error: non-zero' status -ne 0
+	expect 'ssh-edit syntax error: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'ssh-edit syntax error: nothing applied' lacks NotAnOption "$T/home/.ssh/config"
+	expect 'ssh-edit syntax error: temp removed' cleaned
+
+	run "$shell" '' noop full ssh-edit extra
+	expect 'ssh-edit bad argument: usage' usage
+}
+
+if PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
+	echo "fzf is in /usr/bin: the picker fallback cases will fail" >&2
+fi
+pwsh=$(command -v pwsh || true)
+for shell in bash zsh pwsh; do
+	if [ "$shell" = pwsh ] && [ -z "$pwsh" ] || ! command -v "$shell" >/dev/null 2>&1; then
+		echo "Skipping the $shell edit command tests: $shell is not installed."
+		continue
+	fi
+	suite
+done
+echo "edit commands: $pass passed, $fail failed"
+[ "$fail" -eq 0 ]

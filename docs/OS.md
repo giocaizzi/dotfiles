@@ -145,9 +145,24 @@ Two Bitwarden CLIs, used per machine role:
 - **Claude Code and `bw`:** every `bw` command Claude runs needs your approval (an `ask` rule in the managed Claude settings; ask rules beat the blanket Bash allow, also inside pipes and in auto mode). To let Claude act, unlock in your own terminal into a private file, `(umask 077; bw unlock --raw > <file>)`; Claude runs `bw --session "$(cat <file>)" …` and prints only non-secret fields. Finish with `bw lock` and delete the file. The rule matches the command as written, so it's an approval gate, not a security boundary.
 - **Claude Code and auto-merge:** `gh pr merge … --auto` is allowed by name, so agents can arm auto-merge in auto mode too, where the blanket Bash allow does not count; the merge still waits for required CI and the repo ruleset. `gh pr merge … --admin` is denied. Copilot CLI, Codex, opencode and pi have no rule for it here and ask as for any command.
 
+## Editing your dotfiles
+
+Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker, or a numbered prompt without fzf.
+
+| Component | Command | Check before apply |
+|---|---|---|
+| Agent instructions, public layers | `agents-edit core`, `agents-edit env` | — |
+| Agent instructions, private layers | `agents-edit personal`, `agents-edit work` | — |
+| Aliases, public registry | `aliases-edit public` | `make lint-aliases` |
+| Aliases, personal (encrypted) | `aliases-edit private` | `make lint-aliases` |
+| `~/.ssh/config` (encrypted) | `ssh-edit` | `ssh -G` parses the edited file |
+| Any other managed file | `cze <target>` (`chezmoi edit --apply`) | — |
+
+After `aliases-edit` applies, open a new shell (or source the alias file). Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
+
 ## Encrypted files (age)
 
-Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`, or edit one in place with `chezmoi edit --apply <file>` (decrypts to an editor, re-encrypts on save).
+Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`, or edit one in place with `chezmoi edit --apply <file>` (decrypts to an editor, re-encrypts on save); `~/.ssh/config` with `ssh-edit`, which also checks it ([Editing your dotfiles](#editing-your-dotfiles)).
 
 **SSH key names (same on every machine):** `~/.ssh/id_<type>_<service>_<account>` (+ `.pub`) — type first, then the service, then the account or organisation: `id_ed25519_github_<github-user>`, `id_ed25519_github_<work-account>`, `id_rsa_devops_<org>`. The shared `~/.ssh/config` points `Host github.com` at the personal GitHub key, so don't redefine `github.com` in `config.d/` (it would shadow the shared entry); rename the key instead. Work keys and their `Host` aliases (e.g. `github-<work>`, `azure-<org>`) live in `config.d/<name>`.
 
@@ -220,7 +235,7 @@ Core holds how to work on any machine, in any harness: it names no harness-only 
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
-- **Edit a layer:** `agents-edit [core|env|personal|work]` (bash/zsh and PowerShell; no argument: fzf picker, or a numbered prompt without fzf). It edits the chezmoi source checkout in place: core and env open in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`); a private layer is decrypted into a private temp file, re-encrypted (armored, like the committed file) only when its content changed, and the temp file is always removed. It then shows `chezmoi diff` of the first rendered instruction file this machine manages (`~/.claude/CLAUDE.md` first), asks `apply now? [y/N]` (yes applies only the instruction files), and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). The diff shows decrypted private text when a private layer changed: do not run it where the screen is shared or recorded.
+- **Edit a layer:** `agents-edit [core|env|personal|work]`, the flow in [Editing your dotfiles](#editing-your-dotfiles). Core and env open in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`); a private layer goes through a private temp file. The diff shows only the first rendered instruction file this machine manages (`~/.claude/CLAUDE.md` first: they all render the same text); apply writes all of them.
 - **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
 - **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
 - **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.

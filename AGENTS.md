@@ -43,7 +43,7 @@ dot_config/git/personal.tmpl                       → ~/.config/git/personal (w
 .chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
     personal/work) → global instructions of every AI harness; edit with `agents-edit` (docs/OS.md → Agent instructions)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
-private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo)
+private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `ssh-edit`
 ```
 
 Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell/profile.ps1`) are thin orchestrators that source the snippets under `~/.config/shell/` (POSIX) or `~/.config/powershell/` (PS).
@@ -52,6 +52,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 
 - `.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
 - Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
+- The edit commands (`agents-edit`, `aliases-edit`, `ssh-edit`) share one helper per shell (`_dots_edit` / `_dots-edit`); a new one goes through it, gets a PowerShell twin and cases in `scripts/dots-edit-test.sh`. See docs/OS.md → Editing your dotfiles.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`. `make lint` renders each `.sh.tmpl` script per OS, role and harness selection (`lint-tmpl`, needs chezmoi) and shellchecks the output.
 - Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
