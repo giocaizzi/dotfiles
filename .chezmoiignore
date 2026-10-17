@@ -131,7 +131,13 @@ ops/.vscode
 ops
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}
+{{   if has "vscode" $harnesses }}
+# VS Code reads the global instructions from ~/.copilot/copilot-instructions.md
+.copilot/*
+!.copilot/copilot-instructions.md
+{{   else }}
 .copilot
+{{   end }}
 {{ end }}
 {{ if not (has "vscode" $harnesses) }}
 .config/Code
