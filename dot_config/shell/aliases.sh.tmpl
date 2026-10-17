@@ -32,58 +32,88 @@ fi
 {{- if not (get . "light") }}
 
 # --- Functions (full machines) ---
-# agents-edit [core|env|personal|work]: edit a layer of the global agent instructions in
-# the chezmoi source, then diff and optionally apply them (docs/OS.md#agent-instructions).
-# Private layers are decrypted to a private temp file, re-encrypted only when changed,
-# and the temp file is always removed. A subshell keeps umask and traps local.
-agents-edit() (
-	src=$(chezmoi source-path) || return 1
-	dir="$src/.chezmoitemplates/agents"
-	layer=${1:-}
-	if [ -z "$layer" ]; then
-		if command -v fzf >/dev/null 2>&1; then
-			layer=$(printf '%s\n' core env personal work | fzf --prompt='agent layer> ' --height=6) || return 1
-		else
-			printf '1) core\n2) env\n3) personal\n4) work\nlayer [1-4]: ' >&2
-			read -r n
-			case $n in 1) layer='core' ;; 2) layer='env' ;; 3) layer='personal' ;; 4) layer='work' ;; esac
-		fi
+# Edit commands for the dotfiles (docs/OS.md#editing-your-dotfiles). They edit the chezmoi
+# source checkout in place, then diff and optionally apply only the affected targets.
+
+# _dots_pick <label> <choice>...: fzf picker, or a numbered prompt without fzf (prints
+# nothing on an invalid number).
+_dots_pick() (
+	label=$1
+	shift
+	if command -v fzf >/dev/null 2>&1; then
+		printf '%s\n' "$@" | fzf --prompt="$label> " --height=$(($# + 2))
+	else
+		i=0
+		for c do
+			i=$((i + 1))
+			printf '%s) %s\n' "$i" "$c" >&2
+		done
+		printf '%s [1-%s]: ' "$label" "$#" >&2
+		read -r n
+		case $n in '' | *[!0-9]*) return 0 ;; esac
+		if [ "$n" -ge 1 ] && [ "$n" -le $# ]; then eval "printf '%s\n' \"\${$n}\""; fi
 	fi
+)
+
+# _dots_edit [-1] <source file> <hook|-> <target>...: the shared edit flow.
+# A plain file opens in the editor; an age file is decrypted to a private temp file,
+# re-encrypted (armored) only when changed, and the temp file is always removed.
+# Then `<hook> check <edited file>` (failure: nothing applied), `chezmoi diff` of the
+# targets this machine manages (-1: the first only, when they render the same text),
+# "apply now? [y/N]" for those targets only, `<hook> applied`, and a reminder to ship
+# a PR. A subshell keeps umask and traps local.
+_dots_edit() (
+	first=
+	if [ "$1" = -1 ]; then
+		first=1
+		shift
+	fi
+	file=$1 hook=$2
+	shift 2
+	src=$(chezmoi source-path) || return 1
 	editor=${EDITOR:-${VISUAL:-vi}}
-	case $layer in
-	core | env)
-		sh -c "$editor \"\$1\"" agents-edit "$dir/$layer.md" || return 1
-		;;
-	personal | work)
+	case $file in
+	*.age)
 		umask 077
 		tmp=$(mktemp) || return 1
-		trap 'rm -f "$tmp" "$dir/$layer.md.age.new"' EXIT
+		trap 'rm -f "$tmp" "$src/$file.new"' EXIT
 		trap 'exit 130' HUP INT TERM
-		chezmoi decrypt "$dir/$layer.md.age" >"$tmp" || return 1
+		chezmoi decrypt "$src/$file" >"$tmp" || return 1
 		before=$(cksum <"$tmp")
-		sh -c "$editor \"\$1\"" agents-edit "$tmp" || return 1
+		sh -c "$editor \"\$1\"" dots-edit "$tmp" || return 1
 		if [ "$(cksum <"$tmp")" != "$before" ]; then
-			{ chezmoi encrypt "$tmp" >"$dir/$layer.md.age.new" &&
-				mv "$dir/$layer.md.age.new" "$dir/$layer.md.age"; } || return 1
+			{ chezmoi encrypt "$tmp" >"$src/$file.new" &&
+				mv "$src/$file.new" "$src/$file"; } || return 1
 		fi
+		edited=$tmp
 		;;
 	*)
-		echo 'usage: agents-edit [core|env|personal|work]' >&2
-		return 2
+		sh -c "$editor \"\$1\"" dots-edit "$src/$file" || return 1
+		edited=$src/$file
 		;;
 	esac
-	# The rendered instruction files this machine manages; the first one shows the diff.
+	if [ "$hook" != - ] && ! "$hook" check "$edited"; then
+		echo "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($src/$file)." >&2
+		return 1
+	fi
+	# Keep the targets this machine manages: each original argument is shifted off,
+	# the managed ones are appended as absolute paths.
 	home=$(chezmoi target-path) || return 1
 	managed=$(chezmoi managed -i files)
-	set --
-	for t in .claude/CLAUDE.md .copilot/copilot-instructions.md .codex/AGENTS.md .config/opencode/AGENTS.md .pi/agent/AGENTS.md; do
-		printf '%s\n' "$managed" | grep -qxF "$t" && set -- "$@" "$home/$t"
+	for t do
+		shift
+		if printf '%s\n' "$managed" | grep -qxF "$t"; then set -- "$@" "$home/$t"; fi
 	done
 	if [ $# -gt 0 ]; then
-		chezmoi diff "$1"
+		if [ -n "$first" ]; then chezmoi diff "$1"; else chezmoi diff "$@"; fi
 		printf 'apply now? [y/N] ' >&2
 		read -r answer
-		case $answer in [yY]*) chezmoi apply "$@" || return 1 ;; esac
+		case $answer in
+		[yY]*)
+			chezmoi apply "$@" || return 1
+			if [ "$hook" != - ]; then "$hook" applied; fi
+			;;
+		esac
 	fi
 	changes=$(git -C "$src" status --short)
 	if [ -n "$changes" ]; then
@@ -91,6 +121,58 @@ agents-edit() (
 		printf '%s\n' "$changes" >&2
 	fi
 )
+
+# agents-edit [core|env|personal|work]: a layer of the global agent instructions
+# (docs/OS.md#agent-instructions). Every harness file renders the same text: one diff.
+agents-edit() (
+	layer=${1:-}
+	[ -n "$layer" ] || layer=$(_dots_pick 'agent layer' core env personal work) || return 1
+	case $layer in
+	core | env) file=.chezmoitemplates/agents/$layer.md ;;
+	personal | work) file=.chezmoitemplates/agents/$layer.md.age ;;
+	*)
+		echo 'usage: agents-edit [core|env|personal|work]' >&2
+		return 2
+		;;
+	esac
+	_dots_edit -1 "$file" - .claude/CLAUDE.md .copilot/copilot-instructions.md \
+		.codex/AGENTS.md .config/opencode/AGENTS.md .pi/agent/AGENTS.md
+)
+
+# aliases-edit [public|private]: the alias registry or the encrypted personal aliases
+# (docs/SHELL.md#alias-registry). The registry lint must pass before apply.
+aliases-edit() (
+	scope=${1:-}
+	[ -n "$scope" ] || scope=$(_dots_pick aliases public private) || return 1
+	case $scope in
+	public) file=.chezmoidata/aliases.toml ;;
+	private) file=.aliases.private.toml.age ;;
+	*)
+		echo 'usage: aliases-edit [public|private]' >&2
+		return 2
+		;;
+	esac
+	_dots_edit "$file" _aliases_edit_hook .config/shell/aliases.sh \
+		.config/shell/omz-aliases.zsh .config/powershell/aliases.ps1
+)
+_aliases_edit_hook() {
+	case $1 in
+	check) make -C "$(chezmoi source-path)" lint-aliases ;;
+	applied) echo "Aliases applied: open a new shell, or run . ${XDG_CONFIG_HOME:-$HOME/.config}/shell/aliases.sh" >&2 ;;
+	esac
+}
+
+# ssh-edit: the encrypted ~/.ssh/config. `ssh -G` must parse the edit before apply.
+ssh-edit() (
+	if [ $# -gt 0 ]; then
+		echo 'usage: ssh-edit' >&2
+		return 2
+	fi
+	_dots_edit private_dot_ssh/encrypted_private_config.age _ssh_edit_hook .ssh/config
+)
+_ssh_edit_hook() {
+	if [ "$1" = check ]; then ssh -G -F "$2" localhost >/dev/null; fi
+}
 {{- end }}
 {{- if and (eq .chezmoi.os "darwin") (not (get . "light")) (not (get . "work")) }}
 

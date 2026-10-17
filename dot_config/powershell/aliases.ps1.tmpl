@@ -22,26 +22,33 @@ function {{ $name }} { Write-Error '{{ replace "'" "''" $block.message }}' }
 {{- if not (get . "light") }}
 
 # --- Functions (full machines) ---
-# agents-edit [core|env|personal|work]: edit a layer of the global agent instructions in
-# the chezmoi source, then diff and optionally apply them (docs/OS.md#agent-instructions).
-# Private layers are decrypted to a temp file in the per-user temp folder, re-encrypted
-# only when changed, and the temp file is always removed.
-function agents-edit {
-	param([string]$Layer)
+# Edit commands for the dotfiles (docs/OS.md#editing-your-dotfiles). They edit the chezmoi
+# source checkout in place, then diff and optionally apply only the affected targets.
+
+# _dots-pick <label> <choices>: fzf picker, or a numbered prompt without fzf (returns
+# nothing on an invalid number).
+function _dots-pick {
+	param([string]$Label, [string[]]$Choices)
+	if (Get-Command fzf -ErrorAction SilentlyContinue) {
+		$Choices | fzf --prompt="$Label> " --height=$($Choices.Count + 2)
+	} else {
+		for ($i = 0; $i -lt $Choices.Count; $i++) { Write-Host "$($i + 1)) $($Choices[$i])" }
+		$n = Read-Host "$Label [1-$($Choices.Count)]"
+		if ($n -match '^\d+$' -and [int]$n -ge 1 -and [int]$n -le $Choices.Count) { $Choices[[int]$n - 1] }
+	}
+}
+
+# _dots-edit: the shared edit flow. A plain file opens in the editor; an age file is
+# decrypted to a temp file in the per-user temp folder, re-encrypted (armored) only when
+# changed, and the temp file is always removed. Then `& $Hook check <edited file>`
+# (false: nothing applied), chezmoi diff of the targets this machine manages
+# (-DiffFirst: the first only, when they render the same text), apply now? for those
+# targets only, `& $Hook applied`, and a reminder to ship a PR.
+function _dots-edit {
+	param([string]$File, [scriptblock]$Hook, [string[]]$Targets, [switch]$DiffFirst)
 	$src = chezmoi source-path
 	if ($LASTEXITCODE) { return }
-	$dir = Join-Path $src '.chezmoitemplates/agents'
-	$layers = 'core', 'env', 'personal', 'work'
-	if (-not $Layer) {
-		if (Get-Command fzf -ErrorAction SilentlyContinue) {
-			$Layer = $layers | fzf --prompt='agent layer> ' --height=6
-		} else {
-			for ($i = 0; $i -lt $layers.Count; $i++) { Write-Host "$($i + 1)) $($layers[$i])" }
-			$n = Read-Host 'layer [1-4]'
-			if ($n -match '^[1-4]$') { $Layer = $layers[[int]$n - 1] }
-		}
-	}
-	if ($Layer -notin $layers) { Write-Error 'usage: agents-edit [core|env|personal|work]'; return }
+	$path = Join-Path $src $File
 	$editor = if ($env:EDITOR) { $env:EDITOR } elseif ($env:VISUAL) { $env:VISUAL } else { 'notepad' }
 	$exe, $editorArgs = -split $editor
 	# Waits for GUI editors too (notepad returns at once when called directly).
@@ -50,42 +57,86 @@ function agents-edit {
 		$p = Start-Process -FilePath $exe -ArgumentList (@($editorArgs | Where-Object { $_ }) + "`"$file`"") -Wait -NoNewWindow -PassThru
 		$p.ExitCode -eq 0
 	}
-	if ($Layer -in 'core', 'env') {
-		if (-not (& $edit (Join-Path $dir "$Layer.md"))) { return }
-	} else {
-		$age = Join-Path $dir "$Layer.md.age"
-		$tmp = [IO.Path]::GetTempFileName()
-		try {
-			chezmoi decrypt --output $tmp $age
+	$tmp = $null
+	try {
+		if ($File -like '*.age') {
+			$tmp = [IO.Path]::GetTempFileName()
+			chezmoi decrypt --output $tmp $path
 			if ($LASTEXITCODE) { return }
 			$before = (Get-FileHash $tmp).Hash
-			if (-not (& $edit $tmp)) { return }
+			if (-not (& $edit $tmp)) { Write-Error 'The editor failed: nothing saved.'; return }
 			if ((Get-FileHash $tmp).Hash -ne $before) {
-				chezmoi encrypt --output "$age.new" $tmp
+				chezmoi encrypt --output "$path.new" $tmp
 				if ($LASTEXITCODE) { return }
-				Move-Item -Force "$age.new" $age
+				Move-Item -Force "$path.new" $path
 			}
-		} finally {
-			Remove-Item -Force -ErrorAction SilentlyContinue $tmp, "$age.new"
+			$edited = $tmp
+		} else {
+			if (-not (& $edit $path)) { Write-Error 'The editor failed.'; return }
+			$edited = $path
 		}
-	}
-	# The rendered instruction files this machine manages; the first one shows the diff.
-	$dest = chezmoi target-path
-	$managed = chezmoi managed -i files
-	$targets = @(foreach ($t in '.claude/CLAUDE.md', '.copilot/copilot-instructions.md', '.codex/AGENTS.md', '.config/opencode/AGENTS.md', '.pi/agent/AGENTS.md') {
-			if ($managed -contains $t) { Join-Path $dest $t }
-		})
-	if ($targets) {
-		chezmoi diff $targets[0]
-		if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
-			chezmoi apply @targets
-			if ($LASTEXITCODE) { return }
+		if ($Hook -and -not (& $Hook check $edited)) {
+			Write-Error "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($path)."
+			return
 		}
+		$dest = chezmoi target-path
+		$managed = chezmoi managed -i files
+		$apply = @(foreach ($t in $Targets) { if ($managed -contains $t) { Join-Path $dest $t } })
+		if ($apply) {
+			if ($DiffFirst) { chezmoi diff $apply[0] } else { chezmoi diff @apply }
+			if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
+				chezmoi apply @apply
+				if ($LASTEXITCODE) { return }
+				if ($Hook) { & $Hook applied }
+			}
+		}
+	} finally {
+		if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue $tmp, "$path.new" }
 	}
 	$changes = git -C $src status --short
 	if ($changes) {
 		Write-Host "The dotfiles source changed: ship a PR (e.g. /ship) from $src"
 		$changes | Write-Host
+	}
+}
+
+# agents-edit [core|env|personal|work]: a layer of the global agent instructions
+# (docs/OS.md#agent-instructions). Every harness file renders the same text: one diff.
+function agents-edit {
+	param([string]$Layer)
+	if (-not $Layer) { $Layer = _dots-pick 'agent layer' 'core', 'env', 'personal', 'work' }
+	if ($Layer -notin 'core', 'env', 'personal', 'work') { Write-Error 'usage: agents-edit [core|env|personal|work]'; return }
+	$file = ".chezmoitemplates/agents/$Layer.md" + $(if ($Layer -in 'personal', 'work') { '.age' })
+	_dots-edit $file -DiffFirst -Targets '.claude/CLAUDE.md', '.copilot/copilot-instructions.md', '.codex/AGENTS.md', '.config/opencode/AGENTS.md', '.pi/agent/AGENTS.md'
+}
+
+# aliases-edit [public|private]: the alias registry or the encrypted personal aliases
+# (docs/SHELL.md#alias-registry). The registry lint must pass before apply.
+function aliases-edit {
+	param([string]$Scope)
+	if (-not $Scope) { $Scope = _dots-pick 'aliases' 'public', 'private' }
+	if ($Scope -notin 'public', 'private') { Write-Error 'usage: aliases-edit [public|private]'; return }
+	$file = if ($Scope -eq 'public') { '.chezmoidata/aliases.toml' } else { '.aliases.private.toml.age' }
+	_dots-edit $file -Targets '.config/shell/aliases.sh', '.config/shell/omz-aliases.zsh', '.config/powershell/aliases.ps1' -Hook {
+		param($step)
+		if ($step -eq 'check') {
+			make -C (chezmoi source-path) lint-aliases | Out-Host
+			$LASTEXITCODE -eq 0
+		} else {
+			Write-Host "Aliases applied: open a new shell, or run . $HOME/.config/powershell/aliases.ps1"
+		}
+	}
+}
+
+# ssh-edit: the encrypted ~/.ssh/config. `ssh -G` must parse the edit before apply.
+function ssh-edit {
+	if ($args) { Write-Error 'usage: ssh-edit'; return }
+	_dots-edit 'private_dot_ssh/encrypted_private_config.age' -Targets '.ssh/config' -Hook {
+		param($step, $file)
+		if ($step -eq 'check') {
+			ssh -G -F $file localhost > $null
+			$LASTEXITCODE -eq 0
+		}
 	}
 }
 {{- end }}
