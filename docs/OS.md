@@ -8,14 +8,11 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dot_config/Code/User/{settings,keybindings,mcp}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
 | same + Insiders                                      | `~/Library/.../Code - Insiders/User/` (symlinks → stable)   | `~/.config/Code - Insiders/User/` (symlinks → stable) | `%APPDATA%\Code - Insiders\User\` (symlinks → stable)                       |
-| `dot_config/agents/AGENTS.md`                        | `~/.config/agents/AGENTS.md`                                | `~/.config/agents/AGENTS.md`                   | `~/.config/agents/AGENTS.md`                                                       |
+| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.config/agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` (rendered) | same | same |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
 | `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
-| `dot_claude/symlink_CLAUDE.md.tmpl`                  | `~/.claude/CLAUDE.md` → `~/.config/agents/AGENTS.md`        | same                                           | same                                                                               |
-| `dot_copilot/symlink_copilot-instructions.md.tmpl`   | `~/.copilot/copilot-instructions.md` → `~/.config/agents/AGENTS.md` | same                                    | same                                                                               |
-| `dot_codex/AGENTS.md.tmpl`, `dot_config/opencode/AGENTS.md.tmpl`, `dot_pi/agent/AGENTS.md.tmpl` (`.chezmoitemplates/agents-instructions.md`) | `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md`: `AGENTS.md` with `AGENTS.private.md` inlined | same | same |
 | `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; `hud` the status line (both CLIs) and the Claude band and pane; `sounds` the Claude toasts and sounds; full machines only |
 | `.chezmoidata/aliases.toml` (+ `.aliases.private.toml.age`) | `~/.config/shell/aliases.sh`, `~/.config/shell/omz-aliases.zsh` | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
@@ -70,12 +67,12 @@ Two independent yes/no answers, asked once per machine by `chezmoi init` as a ch
 
 | Flag | Prompt | When true |
 |---|---|---|
-| `light` | Light install (yes/no) — shell, git, vim, prompt only | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, Codex, opencode, pi, AGENTS.md and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux jq shellcheck shfmt` + oh-my-posh (no uv/Python, Node, language servers, linters or forge CLIs). |
+| `light` | Light install (yes/no) — shell, git, vim, prompt only | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, Codex, opencode, pi, the agent instructions ([no agents on light machines](#agent-instructions)) and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux jq shellcheck shfmt` + oh-my-posh (no uv/Python, Node, language servers, linters or forge CLIs). |
 | `work` | Work computer (yes/no) — work git identity, no personal telemetry | Asks the work email, which becomes the default `user.email` (`gitEmail` stays the personal one), the **personal GitHub username** (`githubUser`) and optional **extra personal remote URL globs** (`personalGitRemote`, for other orgs or hosts; blank = none). The username expands to the four github.com URL forms (`git@github.com:<user>/**`, `ssh://git@github.com/<user>/**`, `https://github.com/<user>/**`, `https://*@github.com/<user>/**`); each of those and each extra glob becomes `includeIf "hasconfig:remote.*.url:<glob>"` (git ≥ 2.36) → `~/.config/git/personal`, so repos in any folder with a matching remote commit with the personal email. Everything else, including repos with no remote, uses the work email. In an extra glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. To add more later see [Adding personal remotes](#adding-personal-remotes). Keep the SSH key consistent with the identity through `~/.ssh/config.d/*` (e.g. `Host github.com` → personal key, a work alias → work key). Claude Code sends no telemetry to the OTel endpoint (the keys are left out and stripped from the live file). The install scripts add the GitLab and Azure DevOps CLIs: `glab` and Azure CLI (`az`, brew `azure-cli`, winget `Microsoft.AzureCLI` machine-scope MSI) plus its `azure-devops` extension. |
 
 Full personal machines are also asked for the Claude Code OTLP endpoint (`otelEndpoint`, local config only); blank omits the telemetry keys.
 
-Personal agent instructions and shell aliases are not in this public repo: they are age-encrypted sources that render to `~/.config/agents/AGENTS.private.md` (referenced from `AGENTS.md`, imported by Claude Code) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
+Private agent instructions and personal shell aliases are not in this public repo: they are age-encrypted layers of the global agent instructions (`AGENTS.private.md` on personal machines, `AGENTS.work.md` on work ones, see [Agent instructions](#agent-instructions)) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
@@ -92,14 +89,14 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 
 | Harness | Managed only when selected |
 |---|---|
-| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md` symlink); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
-| `copilot` | `~/.copilot` (`settings.json` and `mcp-config.json` merge, `copilot-instructions.md` symlink) |
+| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md`); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
+| `copilot` | `~/.copilot` (`settings.json` and `mcp-config.json` merge, `copilot-instructions.md`) |
 | `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
 | `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_after_install-harness.*` |
 | `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_after_install-harness.*` |
 
-Shared: `~/.config/agents/` (`AGENTS.md`, `AGENTS.private.md`) stays while any of `claude`, `copilot`, `codex`, `opencode`, `pi` is selected; the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
+Shared: `~/.config/agents/` (`AGENTS.md` and the role's private layer) stays while any of `claude`, `copilot`, `codex`, `opencode`, `pi` is selected; the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
 
 Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
 
@@ -188,7 +185,7 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezm
 
 | Layer | Data | Claude Code | Copilot CLI | VS Code | Codex | opencode | pi |
 |---|---|---|---|---|---|---|---|
-| User | `[mcp.user]` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | user `mcp.json` (whole file, `dot_config/Code/User/mcp.json`) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
+| User | `[mcp.user]` (every machine) + `[mcp.personal]` (not work), merged by `.chezmoitemplates/mcp-user.json` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | user `mcp.json` (whole file, `dot_config/Code/User/mcp.json`) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
 | Workspace `~/ops` | `[mcp.ops]` | `~/ops/.mcp.json` | same file | `~/ops/.vscode/mcp.json` | `~/ops/.codex/config.toml`, trusted in the user config | `~/ops/opencode.json` | `~/ops/.pi/mcp.json` |
 
 - **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`.
@@ -198,12 +195,33 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezm
 
 Procedures:
 
-- **Add a server:** add `name = "url"` under `[mcp.user]` or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is plain JSON: add user servers there too.
+- **Add a server:** add `name = "url"` under `[mcp.user]` (every machine), `[mcp.personal]` (personal machines) or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is plain JSON, shared by every role: add user servers there too (it still lists Notion on work machines).
+- **Work PC set up before `[mcp.personal]`:** remove `notion` by hand as in *Remove a server* (the merges keep it).
 - **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `mcp.toml`, and `claude mcp remove -s local <name>`.
 - **Remove a server:** delete it from `mcp.toml`, `chezmoi apply`, then remove it by hand where the merge keeps it: `claude mcp remove -s user <name>`, `copilot mcp remove <name>`, `codex mcp remove <name>`, the `mcp` key of opencode, `pi mcp remove <name>`.
 - **First run in `~/ops`:** Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder. Codex is trusted by the config.
 - **Sign in:** OAuth servers ask once per machine and harness: Claude Code `/mcp`, Copilot CLI `/mcp`, VS Code on first connect, `codex mcp login <name>`, `opencode mcp auth <name>`, `pi mcp login <name>`.
 - **Check:** `claude mcp list`, `copilot mcp list`, `codex mcp list`, `opencode mcp list`, `pi mcp list` from `~`, `~/ops` and a repo: only that layer's servers.
+
+## Agent instructions
+
+Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.config/agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. The text is composed of layers, in this order:
+
+| Layer | Source | Public | Machines |
+|---|---|---|---|
+| core | `.chezmoitemplates/agents/core.md` | yes | every machine with a harness |
+| env | `.chezmoitemplates/agents/env.md` (template: role and OS conditionals) | yes | every machine with a harness |
+| private, personal | `dot_config/agents/encrypted_AGENTS.private.md.age` | no (age) | personal (`work` false) |
+| private, work | `dot_config/agents/encrypted_AGENTS.work.md.age` | no (age) | work |
+
+Core holds how to work on any machine; env how this machine's CLI environment is managed and which tools it has; the private layer what must not be public. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The role's private file is also deployed as `~/.config/agents/AGENTS.<private|work>.md`; the other role's is ignored.
+
+Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
+
+- **Edit a public layer:** edit the file in the source, `chezmoi apply`.
+- **Edit a private layer:** `chezmoi edit ~/.config/agents/AGENTS.private.md` (or `AGENTS.work.md` on the work PC; elsewhere decrypt and re-encrypt with `chezmoi decrypt` / `chezmoi encrypt`), `chezmoi apply`.
+- **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
+- **First apply after the switch from symlinks:** `~/.claude/CLAUDE.md` and `~/.copilot/copilot-instructions.md` become regular files; chezmoi replaces the old symlinks.
 
 ## Agent plugins (`giocaizzi-harness`)
 
@@ -221,7 +239,7 @@ Managed settings per harness:
 - Claude Code: marketplace and `enabledPlugins` (`.chezmoitemplates/claude-settings.json`).
 - Claude Code status line: `hud`'s `hooks/statusline.mjs claude`, run from the marketplace clone (`~/.claude/plugins/marketplaces/giocaizzi-harness`, a path that does not change with the plugin version); `node` 22+ and a Nerd Font are required. It replaces the old `statusline-command.sh`; delete `~/.claude/statusline-command.sh` once on each machine.
 - Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `hud`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/hud`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting. `subagents.agents` pins the harness agents to their tiers, keyed `<plugin>:<agent>`: `dev-tools:scout` GPT-6 Luna at `low`, `dev-tools:escalate` GPT-6 Astra at `medium` (as Claude's `effort`). A model the account lacks falls back to an available one, so Astra runs as Luna until the account gets it.
-- Codex, opencode, pi: global instructions are `AGENTS.md` rendered with `AGENTS.private.md` inlined where Claude's `@` import sits, since none of them expands `@file` (`.chezmoitemplates/agents-instructions.md`). Rendered, not symlinked: an edit to `AGENTS.md` reaches them on the next `chezmoi apply`.
+- Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
 ## Testing the ignore matrix
