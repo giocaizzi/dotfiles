@@ -69,8 +69,8 @@ git -C "$S" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsi
 pass=0
 fail=0
 # run <shell> <answers> <editor mode> <path: full|nofzf> <command...>: status in $st,
-# output in $T/out. Resets the source and the destination first. In pwsh, Write-Error
-# is made terminating so a reported failure gives a non-zero exit.
+# output in $T/out. Resets the source and the destination first, then evals $pre. In
+# pwsh, Write-Error is made terminating so a reported failure gives a non-zero exit.
 run() {
 	shell=$1 answers=$2 mode=$3 path=$4
 	shift 4
@@ -78,6 +78,7 @@ run() {
 	rm -rf "${T:?}/home" "$T/edited" "$T/state.boltdb"
 	# The parents a real home already has (apply of one target needs them).
 	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.ssh"
+	eval "${pre:-}"
 	p=$T/bin:$PATH
 	[ "$path" = full ] || p=$T/bin:/usr/bin:/bin
 	set +e
@@ -166,23 +167,40 @@ suite() {
 	expect 'aliases-edit lint failure: no apply prompt' lacks 'apply now' "$T/out"
 	expect 'aliases-edit lint failure: nothing applied' lacks zzbad "$T/home/.config/shell/aliases.sh"
 
-	run "$shell" 'y\n' ssh full ssh-edit
+	run "$shell" 'y\n' ssh full ssh-edit config
 	expect 'ssh-edit: edit + apply' status -eq 0
 	expect 'ssh-edit: applied' has edited-marker "$T/home/.ssh/config"
 	expect 'ssh-edit: armored' armored private_dot_ssh/encrypted_private_config.age
 	expect 'ssh-edit: temp removed' cleaned
 
-	run "$shell" 'y\n' noop full ssh-edit
+	run "$shell" 'y\n' noop full ssh-edit config
 	expect 'ssh-edit no-op: byte-identical' unchanged private_dot_ssh/encrypted_private_config.age
 
-	run "$shell" 'y\n' badssh full ssh-edit
+	run "$shell" 'y\n' badssh full ssh-edit config
 	expect 'ssh-edit syntax error: non-zero' status -ne 0
 	expect 'ssh-edit syntax error: no apply prompt' lacks 'apply now' "$T/out"
 	expect 'ssh-edit syntax error: nothing applied' lacks NotAnOption "$T/home/.ssh/config"
 	expect 'ssh-edit syntax error: temp removed' cleaned
 
-	run "$shell" '' noop full ssh-edit extra
-	expect 'ssh-edit bad argument: usage' usage
+	run "$shell" '' ssh full ssh-edit work
+	expect 'ssh-edit config.d: created' has edited-marker "$T/home/.ssh/config.d/work"
+	expect 'ssh-edit config.d: source untouched' test -z "$(git -C "$S" status --short)"
+	expect 'ssh-edit config.d: no apply prompt' lacks 'apply now' "$T/out"
+
+	run "$shell" '' badssh full ssh-edit work
+	expect 'ssh-edit config.d syntax error: non-zero' status -ne 0
+	expect 'ssh-edit config.d syntax error: file keeps the edit' has NotAnOption "$T/home/.ssh/config.d/work"
+
+	pre="mkdir -p '$T/home/.ssh/config.d' && : >'$T/home/.ssh/config.d/zzlocal'"
+	run "$shell" '2\n' ssh nofzf ssh-edit
+	pre=
+	expect 'ssh-edit picker without fzf: config.d file' has edited-marker "$T/home/.ssh/config.d/zzlocal"
+
+	run "$shell" '' noop full ssh-edit ../x
+	expect 'ssh-edit path argument: usage' usage
+
+	run "$shell" '' noop full ssh-edit a b
+	expect 'ssh-edit two arguments: usage' usage
 }
 
 if PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
