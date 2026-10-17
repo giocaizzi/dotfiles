@@ -40,8 +40,8 @@ dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/
 dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
-.chezmoitemplates/agents-instructions.md (core + env + encrypted private layer per role)
-    → global instructions of every AI harness (docs/OS.md → Agent instructions)
+.chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
+    personal/work) → global instructions of every AI harness; edit with `agents-edit` (docs/OS.md → Agent instructions)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
 private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo)
 ```
