@@ -87,14 +87,19 @@ new shell.
 
 ### Personal aliases
 
-Same schema, never in plain text in the repo. Edit through a private temp file:
+Same schema, never in plain text in the repo. Edit through a private temp file, the
+same flow `agents-edit` uses for the private instruction layers
+([OS.md](./OS.md#agent-instructions)): re-encrypt only on change, always remove the
+temp file.
 
 ```sh
 cd "$(chezmoi source-path)"
 f=$(umask 077; mktemp)
-chezmoi decrypt .aliases.private.toml.age >"$f" && "${EDITOR:-vim}" "$f" &&
-	chezmoi encrypt "$f" >.aliases.private.toml.age
-rm -f "$f"
+chezmoi decrypt .aliases.private.toml.age >"$f" && before=$(cksum <"$f") &&
+	"${EDITOR:-${VISUAL:-vi}}" "$f" && [ "$(cksum <"$f")" != "$before" ] &&
+	chezmoi encrypt "$f" >.aliases.private.toml.age.new &&
+	mv .aliases.private.toml.age.new .aliases.private.toml.age
+rm -f "$f" .aliases.private.toml.age.new
 ```
 
 Light machines and machines without the age key (`~/.config/chezmoi/key.txt`) skip
