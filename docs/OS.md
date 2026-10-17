@@ -6,7 +6,8 @@ How each managed file maps to its destination per OS. Canonical sources live und
 
 | Canonical source (in repo)                          | macOS                                                       | Linux                                          | Windows                                                                            |
 | ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `dot_config/Code/User/{settings,keybindings,mcp}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
+| `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
+| `.chezmoitemplates/vscode-mcp.json` (`mcp.json.tmpl` in each Code / Code - Insiders `User/` folder) | `~/Library/Application Support/Code*/User/mcp.json` (rendered) | `~/.config/Code*/User/mcp.json` (rendered) | `%APPDATA%\Code*\User\mcp.json` (rendered) |
 | same + Insiders                                      | `~/Library/.../Code - Insiders/User/` (symlinks → stable)   | `~/.config/Code - Insiders/User/` (symlinks → stable) | `%APPDATA%\Code - Insiders\User\` (symlinks → stable)                       |
 | `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.config/agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` (rendered) | same | same |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
@@ -185,7 +186,7 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezm
 
 | Layer | Data | Claude Code | Copilot CLI | VS Code | Codex | opencode | pi |
 |---|---|---|---|---|---|---|---|
-| User | `[mcp.user]` (every machine) + `[mcp.personal]` (not work), merged by `.chezmoitemplates/mcp-user.json` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | user `mcp.json` (whole file, `dot_config/Code/User/mcp.json`) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
+| User | `[mcp.user]` (every machine) + `[mcp.personal]` (not work), merged by `.chezmoitemplates/mcp-user.json` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | user `mcp.json` (whole file rendered by `.chezmoitemplates/vscode-mcp.json`, Code and Insiders) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
 | Workspace `~/ops` | `[mcp.ops]` | `~/ops/.mcp.json` | same file | `~/ops/.vscode/mcp.json` | `~/ops/.codex/config.toml`, trusted in the user config | `~/ops/opencode.json` | `~/ops/.pi/mcp.json` |
 
 - **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`.
@@ -195,8 +196,8 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezm
 
 Procedures:
 
-- **Add a server:** add `name = "url"` under `[mcp.user]` (every machine), `[mcp.personal]` (personal machines) or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is plain JSON, shared by every role: add user servers there too (it still lists Notion on work machines).
-- **Work PC set up before `[mcp.personal]`:** remove `notion` by hand as in *Remove a server* (the merges keep it).
+- **Add a server:** add `name = "url"` under `[mcp.user]` (every machine), `[mcp.personal]` (personal machines) or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is rendered whole: a server VS Code adds itself is overwritten on the next apply, so add stdio servers to `.chezmoitemplates/vscode-mcp.json`.
+- **Work PC set up before `[mcp.personal]`:** remove `notion` by hand as in *Remove a server* (the merges keep it; VS Code's rendered file drops it on apply).
 - **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `mcp.toml`, and `claude mcp remove -s local <name>`.
 - **Remove a server:** delete it from `mcp.toml`, `chezmoi apply`, then remove it by hand where the merge keeps it: `claude mcp remove -s user <name>`, `copilot mcp remove <name>`, `codex mcp remove <name>`, the `mcp` key of opencode, `pi mcp remove <name>`.
 - **First run in `~/ops`:** Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder. Codex is trusted by the config.
