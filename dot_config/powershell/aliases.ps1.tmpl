@@ -9,9 +9,10 @@
 # --- Registry aliases ---
 # Each alias is a function so it can take arguments. Built-in aliases outrank
 # functions (gc = Get-Content, gp = Get-ItemProperty, gl = Get-Location), so a
-# same-named built-in is removed first: the registry always wins.
+# same-named built-in is removed first: the registry always wins. Only an existing one:
+# Remove-Item 'Alias:..' would resolve to the whole Alias: drive and prompt.
 {{ range $name, $command := $r.aliases -}}
-Remove-Item 'Alias:{{ $name }}' -Force -ErrorAction SilentlyContinue
+if (Get-Alias -Name '{{ $name }}' -ErrorAction SilentlyContinue) { Remove-Item 'Alias:{{ $name }}' -Force }
 function {{ $name }} { {{ $command }} @args }
 {{ end }}
 # --- Refused commands (a function wins over a reinstalled exe) ---
