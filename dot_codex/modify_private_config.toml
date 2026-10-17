@@ -15,14 +15,24 @@
 {{- $ops := joinPath .chezmoi.homeDir "ops" -}}
 {{- $projects := get $current "projects" | default dict -}}
 {{- $trustOps := not (or (get . "light") (get . "work")) -}}
+{{- /* Agent telemetry (personal machines with an OTLP endpoint): logs, traces and
+       metrics to the collector; the auth header comes from the env
+       OTEL_EXPORTER_OTLP_HEADERS, since Codex does not expand ${VAR} in headers. */ -}}
+{{- $otel := dict -}}
+{{- if and (not (get . "work")) (get . "otelEndpoint") -}}
+{{- range $k, $path := dict "exporter" "logs" "trace_exporter" "traces" "metrics_exporter" "metrics" }}{{ $_ := set $otel $k (dict "otlp-http" (dict "endpoint" (printf "%s/v1/%s" (trimSuffix "/" $.otelEndpoint) $path) "protocol" "binary")) }}{{ end -}}
+{{- $_ := set $otel "environment" "production" -}}
+{{- end -}}
 {{- $ok := and (eq (toString (get $tui "notifications")) "true") (eq (toString (get $tui "notification_method")) "bel") -}}
 {{- range $n, $u := $users }}{{ if ne (toString (get (get $mcp $n | default dict) "url")) $u }}{{ $ok = false }}{{ end }}{{ end -}}
 {{- if and $trustOps (ne (toString (get (get $projects $ops | default dict) "trust_level")) "trusted") }}{{ $ok = false }}{{ end -}}
+{{- if and $otel (ne (toJson (get $current "otel" | default dict)) (toJson $otel)) }}{{ $ok = false }}{{ end -}}
 {{- if $ok -}}
 {{ .chezmoi.stdin }}
 {{- else -}}
 {{- range $n, $u := $users }}{{ $e := get $mcp $n | default dict }}{{ $_ := set $e "url" $u }}{{ $_ := set $mcp $n $e }}{{ end -}}
 {{- $_ := set $current "mcp_servers" $mcp -}}
+{{- if $otel }}{{ $_ := set $current "otel" $otel }}{{ end -}}
 {{- if $trustOps }}{{ $e := get $projects $ops | default dict }}{{ $_ := set $e "trust_level" "trusted" }}{{ $_ := set $projects $ops $e }}{{ $_ := set $current "projects" $projects }}{{ end -}}
 {{ $current | setValueAtPath "tui.notifications" true | setValueAtPath "tui.notification_method" "bel" | toToml }}
 {{- end -}}
