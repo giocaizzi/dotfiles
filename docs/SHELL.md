@@ -74,7 +74,7 @@ message = "pipx is not used here, use uv: ..."
   same-named built-in alias (`gc`, `gp`, `gl`) is removed first, so the registry wins.
 - **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
   `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
-- **Functions** that are more than a command (`rp5-secrets`, fzf `h`) stay in the
+- **Functions** that are more than a command (`rp5-secrets`, `rp5-sync-infra`, fzf `h`) stay in the
   shell snippets.
 - **Checks:** `make lint` validates the registry (every alias names its shells, a
   one-shell alias says why, known OS and role values) and lints the rendered files
