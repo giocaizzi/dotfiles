@@ -43,7 +43,7 @@ dot_config/git/personal.tmpl                       → ~/.config/git/personal (w
 .chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
     personal/work) → global instructions of every AI harness; edit with `agents-edit` (docs/OS.md → Agent instructions)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
-private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `ssh-edit`
+private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `ssh-edit` (also ~/.ssh/config.d/<name>, unmanaged)
 ```
 
 Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell/profile.ps1`) are thin orchestrators that source the snippets under `~/.config/shell/` (POSIX) or `~/.config/powershell/` (PS).

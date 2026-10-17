@@ -30,12 +30,22 @@ function {{ $name }} { Write-Error '{{ replace "'" "''" $block.message }}' }
 function _dots-pick {
 	param([string]$Label, [string[]]$Choices)
 	if (Get-Command fzf -ErrorAction SilentlyContinue) {
-		$Choices | fzf --prompt="$Label> " --height=$($Choices.Count + 2)
+		$Choices | fzf --prompt="$Label> " --height=~100%
 	} else {
 		for ($i = 0; $i -lt $Choices.Count; $i++) { Write-Host "$($i + 1)) $($Choices[$i])" }
 		$n = Read-Host "$Label [1-$($Choices.Count)]"
 		if ($n -match '^\d+$' -and [int]$n -ge 1 -and [int]$n -le $Choices.Count) { $Choices[[int]$n - 1] }
 	}
+}
+
+# _dots-open <file>: $EDITOR (then $VISUAL, then notepad) on one file; true on success.
+# Waits for GUI editors too (notepad returns at once when called directly).
+function _dots-open {
+	param([string]$File)
+	$editor = if ($env:EDITOR) { $env:EDITOR } elseif ($env:VISUAL) { $env:VISUAL } else { 'notepad' }
+	$exe, $editorArgs = -split $editor
+	$p = Start-Process -FilePath $exe -ArgumentList (@($editorArgs | Where-Object { $_ }) + "`"$File`"") -Wait -NoNewWindow -PassThru
+	$p.ExitCode -eq 0
 }
 
 # _dots-edit: the shared edit flow. A plain file opens in the editor; an age file is
@@ -49,14 +59,6 @@ function _dots-edit {
 	$src = chezmoi source-path
 	if ($LASTEXITCODE) { return }
 	$path = Join-Path $src $File
-	$editor = if ($env:EDITOR) { $env:EDITOR } elseif ($env:VISUAL) { $env:VISUAL } else { 'notepad' }
-	$exe, $editorArgs = -split $editor
-	# Waits for GUI editors too (notepad returns at once when called directly).
-	$edit = {
-		param($file)
-		$p = Start-Process -FilePath $exe -ArgumentList (@($editorArgs | Where-Object { $_ }) + "`"$file`"") -Wait -NoNewWindow -PassThru
-		$p.ExitCode -eq 0
-	}
 	$tmp = $null
 	try {
 		if ($File -like '*.age') {
@@ -64,7 +66,7 @@ function _dots-edit {
 			chezmoi decrypt --output $tmp $path
 			if ($LASTEXITCODE) { return }
 			$before = (Get-FileHash $tmp).Hash
-			if (-not (& $edit $tmp)) { Write-Error 'The editor failed: nothing saved.'; return }
+			if (-not (_dots-open $tmp)) { Write-Error 'The editor failed: nothing saved.'; return }
 			if ((Get-FileHash $tmp).Hash -ne $before) {
 				chezmoi encrypt --output "$path.new" $tmp
 				if ($LASTEXITCODE) { return }
@@ -72,7 +74,7 @@ function _dots-edit {
 			}
 			$edited = $tmp
 		} else {
-			if (-not (& $edit $path)) { Write-Error 'The editor failed.'; return }
+			if (-not (_dots-open $path)) { Write-Error 'The editor failed.'; return }
 			$edited = $path
 		}
 		if ($Hook -and -not (& $Hook check $edited)) {
@@ -128,15 +130,32 @@ function aliases-edit {
 	}
 }
 
-# ssh-edit: the encrypted ~/.ssh/config. `ssh -G` must parse the edit before apply.
+# ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
+# (this machine's hosts, not managed by chezmoi: edited in place, a new name creates it).
+# `ssh -G` must parse the edit (config: before apply). No argument: pick config or an
+# existing config.d file.
 function ssh-edit {
-	if ($args) { Write-Error 'usage: ssh-edit'; return }
-	_dots-edit 'private_dot_ssh/encrypted_private_config.age' -Targets '.ssh/config' -Hook {
+	param([string]$Name)
+	if ($args) { Write-Error 'usage: ssh-edit [config|<name>]'; return }
+	$dir = Join-Path (chezmoi target-path) '.ssh/config.d'
+	if (-not $Name) {
+		$Name = _dots-pick 'ssh config' (@('config') + @(Get-ChildItem -File -Force $dir -ErrorAction SilentlyContinue | ForEach-Object Name))
+	}
+	$check = {
 		param($step, $file)
 		if ($step -eq 'check') {
 			ssh -G -F $file localhost > $null
 			$LASTEXITCODE -eq 0
 		}
 	}
+	if ($Name -eq 'config') {
+		_dots-edit 'private_dot_ssh/encrypted_private_config.age' -Targets '.ssh/config' -Hook $check
+		return
+	}
+	if (-not $Name -or $Name -match '^\.|[\\/]') { Write-Error 'usage: ssh-edit [config|<name>]'; return }
+	New-Item -ItemType Directory -Force $dir > $null
+	$file = Join-Path $dir $Name
+	if (-not (_dots-open $file)) { Write-Error 'The editor failed.'; return }
+	if (-not (& $check check $file)) { Write-Error "Check failed: the file keeps the edit, run ssh-edit $Name to fix it ($file)." }
 }
 {{- end }}
