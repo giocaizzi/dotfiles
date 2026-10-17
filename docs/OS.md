@@ -9,7 +9,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
 | `.chezmoitemplates/vscode-mcp.json` (`mcp.json.tmpl` in each Code / Code - Insiders `User/` folder) | `~/Library/Application Support/Code*/User/mcp.json` (rendered) | `~/.config/Code*/User/mcp.json` (rendered) | `%APPDATA%\Code*\User\mcp.json` (rendered) |
 | same + Insiders                                      | `~/Library/.../Code - Insiders/User/` (symlinks → stable)   | `~/.config/Code - Insiders/User/` (symlinks → stable) | `%APPDATA%\Code - Insiders\User\` (symlinks → stable)                       |
-| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.config/agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` (rendered) | same | same |
+| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` (rendered) | same | same |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
@@ -73,7 +73,7 @@ Two independent yes/no answers, asked once per machine by `chezmoi init` as a ch
 
 Full personal machines are also asked for the Claude Code OTLP endpoint (`otelEndpoint`, local config only); blank omits the telemetry keys.
 
-Private agent instructions and personal shell aliases are not in this public repo: they are age-encrypted layers of the global agent instructions (`AGENTS.private.md` on personal machines, `AGENTS.work.md` on work ones, see [Agent instructions](#agent-instructions)) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
+Private agent instructions and personal shell aliases are not in this public repo: they are age-encrypted layers of the global agent instructions (`personal.md.age` on personal machines, `work.md.age` on work ones, see [Agent instructions](#agent-instructions)) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
@@ -97,7 +97,7 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 | `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_after_install-harness.*` |
 
-Shared: `~/.config/agents/` (`AGENTS.md` and the role's private layer) stays while any of `claude`, `copilot`, `codex`, `opencode`, `pi` is selected; the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
+Shared: the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
 
 Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
 
@@ -207,22 +207,23 @@ Procedures:
 
 ## Agent instructions
 
-Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.config/agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. The text is composed of layers, in this order:
+Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. The text is composed of layers, in this order:
 
 | Layer | Source | Public | Machines |
 |---|---|---|---|
 | core | `.chezmoitemplates/agents/core.md` | yes | every machine with a harness |
 | env | `.chezmoitemplates/agents/env.md` (template: role and OS conditionals) | yes | every machine with a harness |
-| private, personal | `dot_config/agents/encrypted_AGENTS.private.md.age` | no (age) | personal (`work` false) |
-| private, work | `dot_config/agents/encrypted_AGENTS.work.md.age` | no (age) | work |
+| private, personal | `.chezmoitemplates/agents/personal.md.age` | no (age) | personal (`work` false) |
+| private, work | `.chezmoitemplates/agents/work.md.age` | no (age) | work |
 
-Core holds how to work on any machine, in any harness: it names no harness-only tool (skills carry the per-harness detail, e.g. `subagent-orchestration`, `host-hygiene`). Env holds what depends on the machine: how its CLI environment is managed and the tool-install rule (brew, apt or winget by OS), which tools it has (by OS and role), the Claude Code LSP note and, on personal machines only, the own-org (`giocaizzi`) rules; work machines follow their org's standard. The private layer holds what must not be public. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The role's private file is also deployed as `~/.config/agents/AGENTS.<private|work>.md`; the other role's is ignored.
+Core holds how to work on any machine, in any harness: it names no harness-only tool (skills carry the per-harness detail, e.g. `subagent-orchestration`, `host-hygiene`). Env holds what depends on the machine: how its CLI environment is managed and the tool-install rule (brew, apt or winget by OS), which tools it has (by OS and role), the Claude Code LSP note and, on personal machines only, the own-org (`giocaizzi`) rules; work machines follow their org's standard. The private layer holds what must not be public. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The layers are templates only: no file is deployed for them (`~/.config/agents/` is gone, see below).
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
-- **Edit a public layer:** edit the file in the source, `chezmoi apply`.
-- **Edit a private layer:** `chezmoi edit ~/.config/agents/AGENTS.private.md` (or `AGENTS.work.md` on the work PC; elsewhere decrypt and re-encrypt with `chezmoi decrypt` / `chezmoi encrypt`), `chezmoi apply`.
+- **Edit a layer:** `agents-edit [core|env|personal|work]` (bash/zsh and PowerShell; no argument: fzf picker, or a numbered prompt without fzf). It edits the chezmoi source checkout in place: core and env open in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`); a private layer is decrypted into a private temp file, re-encrypted (armored, like the committed file) only when its content changed, and the temp file is always removed. It then shows `chezmoi diff` of the first rendered instruction file this machine manages (`~/.claude/CLAUDE.md` first), asks `apply now? [y/N]` (yes applies only the instruction files), and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). The diff shows decrypted private text when a private layer changed: do not run it where the screen is shared or recorded.
+- **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
 - **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
+- **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.
 - **First apply after the switch from symlinks:** `~/.claude/CLAUDE.md` and `~/.copilot/copilot-instructions.md` become regular files; chezmoi replaces the old symlinks.
 
 ## Agent plugins (`giocaizzi-harness`)

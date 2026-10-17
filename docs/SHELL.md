@@ -30,10 +30,10 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 | `dot_bashrc`                             | Bash: loads `.profile` once, then **returns for non-interactive shells** (`ssh host cmd`, scp, rsync); snippets, history (timestamped), completion, FZF bindings, oh-my-posh | Unix + Git Bash |
 | `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` sets the Oh My Zsh alias sets, loads Oh My Zsh, then the snippets (so registry aliases win), history, FZF bindings, oh-my-posh | macOS only |
 | `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
-| `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases and refused commands (rendered from the registry), `ls` colours, `python` fallback, `rp5-secrets` (personal Mac) | Unix + Git Bash |
+| `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases and refused commands (rendered from the registry), `ls` colours, `python` fallback, `agents-edit` (full machines), `rp5-secrets` (personal Mac) | Unix + Git Bash |
 | `dot_config/shell/omz-aliases.zsh.tmpl`  | `zstyle ':omz:…' aliases` per Oh My Zsh lib/plugin (from `[aliasExternal.zsh]`) | macOS (zsh) |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
-| `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from the registry)                       | Windows             |
+| `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from the registry), `agents-edit` (full machines) | Windows             |
 | `dot_config/powershell/coreutils.ps1`    | uutils first on PATH; removes the cmdlet aliases it shadows (`ls`, `cat`, `rm`, ...) — use `Get-ChildItem` etc. for objects | Windows |
 | `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
 | `.chezmoidata/aliases.toml`              | Alias registry: every alias, refused command and framework alias set    | all                 |
@@ -74,7 +74,7 @@ message = "pipx is not used here, use uv: ..."
   same-named built-in alias (`gc`, `gp`, `gl`) is removed first, so the registry wins.
 - **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
   `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
-- **Functions** that are more than a command (`rp5-secrets`, `rp5-sync-infra`, fzf `h`) stay in the
+- **Functions** that are more than a command (`agents-edit`, `rp5-secrets`, `rp5-sync-infra`, fzf `h`) stay in the
   shell snippets.
 - **Checks:** `make lint` validates the registry (every alias names its shells, a
   one-shell alias says why, known OS and role values) and lints the rendered files
@@ -112,6 +112,7 @@ the file.
 | `free` (macOS)        | `top -l 1 -s 0 \| grep PhysMem`          | — |
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts            | same |
 | `hist` / `h`          | fzf history search                       | same |
+| `agents-edit` (full machines) | edit an agent instruction layer, diff, apply ([OS.md](./OS.md#agent-instructions)) | same |
 | `openclaw` (personal Mac) | rp5-homeserver openclaw script       | — |
 | `pipx`                | refuses; use `uv tool install` / `uvx`   | same |
 | `python`              | `python3`, only where no `python` exists | — |
