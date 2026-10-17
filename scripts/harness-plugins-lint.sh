@@ -9,7 +9,7 @@ trap 'rm -rf "$dir"' EXIT
 touch "$dir/chezmoi.toml"
 
 chezmoi execute-template --config "$dir/chezmoi.toml" --source . \
-	'{{ range $p, $_ := .harnessPlugins }}{{ $p }}{{ "\n" }}{{ end }}' | sort >"$dir/listed"
+	'{{ keys .harnessPlugins | sortAlpha | join "\n" }}' | sort >"$dir/listed"
 if [ -n "${HARNESS_DIR:-}" ]; then
 	find "$HARNESS_DIR/plugins" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort >"$dir/upstream"
 else
