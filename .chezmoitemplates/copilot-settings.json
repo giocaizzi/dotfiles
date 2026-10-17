@@ -7,14 +7,7 @@
       }
     }
   },
-  "enabledPlugins": {
-    "python@giocaizzi-harness": true,
-    "javascript@giocaizzi-harness": true,
-    "api@giocaizzi-harness": true,
-    "dev-tools@giocaizzi-harness": true,
-    "guard@giocaizzi-harness": true,
-    "hud@giocaizzi-harness": true
-  },
+  "enabledPlugins": {{ $on := dict }}{{ range $p, $h := .harnessPlugins }}{{ if has "copilot" $h }}{{ $_ := set $on (printf "%s@giocaizzi-harness" $p) true }}{{ end }}{{ end }}{{ $on | toJson }},
   "statusLine": {
     "type": "command",
     "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"
@@ -22,6 +15,7 @@
   "subagents": {
     "agents": {
       "dev-tools:scout": { "model": "gpt-6-luna", "effortLevel": "low" },
+      "api:api-reviewer": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
       "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "medium" }
     }
   },
