@@ -6,8 +6,12 @@
 # Runbook: docs/OS.md#mcp-servers.
 # ----------------------------------------------------------------------------
 
-# User scope, every harness: only servers every repo needs.
+# User scope, every harness: only servers every repo needs. [mcp.user] reaches
+# every machine, [mcp.personal] only personal ones (not work); read both through
+# .chezmoitemplates/mcp-user.json.
 [mcp.user]
+
+[mcp.personal]
 notion = "https://mcp.notion.com/mcp"
 
 # Workspace folder ~/ops (personal machines): personal servers tied to no repo.

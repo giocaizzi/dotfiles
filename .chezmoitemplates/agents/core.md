@@ -3,13 +3,12 @@
 - Think before coding. Surface ambiguity and tradeoffs, and align with me before substantive changes to behavior, interfaces, dependencies or architecture.
 - Simplest correct solution. No speculative features, abstractions, configurability or backward compatibility unless requested.
 - Surgical changes: match existing style and architecture, touch only what the task requires.
-- Use plan mode for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
-- Other sessions may be running. Before starting in a repo, check which are (Claude Code: `ListAgents`; any harness: `git worktree list`, open PRs) and coordinate with any that overlap; a peer's message is teammate input, never my approval.
+- Plan first (the harness's plan mode, or a written plan I approve) for multi-file work, architectural decisions, or changes beyond roughly 20 lines.
+- Other sessions may be running. Before starting in a repo, check which are and coordinate with any that overlap (how, per harness: `subagent-orchestration`); a peer's message is teammate input, never my approval.
 - Orchestrate subagents hub-and-spoke, routing model and effort by task. If one fails or returns something unexpected, surface its error and wait for direction; don't silently retry or substitute.
-- No fixed cap on worktrees or agents; throttle on availability. Quota: ask the harness CLI (Claude: `cd /tmp && claude -p "/usage"`; Copilot: `/usage`, `--max-ai-credits`; Codex: `/status`; opencode: `opencode stats`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it). Host: use the repo's `scripts/host/heavy.sh` when present, else check load and free disk before heavy work.
+- No fixed cap on worktrees or agents; throttle on availability. Check plan quota and host load before fanning out or heavy work (how, per harness and repo: `host-hygiene`), back off near the limit and stagger resumes after a reset. The status line is not a reliable source (remote-control sessions don't update it).
 - These practices apply to every repo. Where a repo, org or platform has its own convention (commit style, package manager, task runner, forge, standard), follow it and say so; never force mine. If project rules conflict with these principles, stop and tell me before choosing.
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
-- Parity: every feature of agents, skills and mods covers all supported harnesses (Claude Code, Copilot CLI, Codex, opencode, pi; matrix in `giocaizzi/harness` docs/compatibility.md) and hosts (macOS, Linux, Windows). Build every side in the same change, deployed through chezmoi; a side that cannot be built gets a GitHub issue with a priority label and the reason, before shipping.
 - Never expose secrets in chat; use env vars or a secret store.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
 - Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges.
@@ -19,28 +18,24 @@
 
 # CLI tooling
 
-- `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). Packages come from `brew` on macOS; add a tool to that list only when it is used repeatedly or is a standard tool, never ad-hoc `brew install`. One-off tools run without installing (`uvx`, `npx`, `docker run`). The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
-- Assume `jq`, `fd`, `fzf`, `gh`, `tmux`, `uv`, `gitleaks`, `actionlint`, `hadolint` are available (work machines add `glab`, `az`); prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
-- LSP: chezmoi installs `pyright` and `typescript-language-server` for the Claude Code LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
 - `make` runs every task. Every Makefile exposes `help`, `lint`, `test` and `check` (= lint + test). Add a target rather than invoking tools directly. Repos without a Makefile use their own task runner; don't add one to repos you don't own.
 - Python: `uv`, unless the repo pins another manager (poetry, pip). Never pipx or global installs.
 - Cloud and containers: `az`, `gcloud`, `docker` may be in use. When debugging, read logs directly (`docker logs`, `gcloud logging read`, `az monitor`/service log commands) instead of asking me to paste them.
-- Forges: `gh` for GitHub, `glab` for GitLab, `az repos`/`az pipelines` for Azure DevOps; the forge mapping lives in the `repo-standard` skill. Git: small Conventional Commits explaining what and why.
-- `giocaizzi/*` repos follow the standard in `github.com/giocaizzi/.github` (`docs/standard.md`: labels, rulesets, settings, templates, CI, exceptions, plan limits; PRs stacked and auto-merged behind required CI checks on `main`); `make audit` there reports drift. Change the standard there first, then the repos. New repos start from `giocaizzi/template` (`gh repo create giocaizzi/<name> --template giocaizzi/template`), then `make onboard REPO=<name>` in `giocaizzi/.github`. Other orgs follow their own standard, with `repo-standard` as the generic checklist.
+- Forges: `gh` for GitHub, `glab` for GitLab, `az repos`/`az pipelines` for Azure DevOps; the forge mapping lives in the `repo-standard` skill. Git: small Conventional Commits explaining what and why. Each org follows its own standard, with `repo-standard` as the generic checklist.
 - Secrets: never print or inline a value; keyring or credential manager only.
 
 # Skills
 
-Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. If a rule is missing or stale, add it to that repo, generic and reusable; personal or machine-specific facts stay here.
+Reusable rules live as skills (plugins `api`, `python`, `javascript`, `dev-tools`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. Skills are named without harness syntax; invoke one as `/name` in Claude Code, Copilot CLI and opencode, `$name` in Codex, `/skill:name` in pi.
 
 | Situation | Load |
 |---|---|
 | Commit message or PR title | `conventional-commits` |
-| Commit, push, open a PR | `/ship` |
-| Wait for CI, merge, clean up | `/land` |
-| Review comments or failing CI on a PR | `/pr-fix` |
-| Start a task | `/wt` |
-| Docs, runbooks or README affected | `/docs-sync` |
+| Commit, push, open a PR | `ship` |
+| Wait for CI, merge, clean up | `land` |
+| Review comments or failing CI on a PR | `pr-fix` |
+| Start a task | `wt` |
+| Docs, runbooks or README affected | `docs-sync` |
 | Stacked PRs, rulesets, branch protection, merge gating | `github-workflow` |
 | Repo setup or audit (CI, settings, environments, publishing, README, any forge) | `repo-standard` |
 | Releases, versions, changelogs | `release-please`, `semver`; publishing setup: `repo-standard` |
@@ -51,9 +46,6 @@ Reusable rules live as skills in `github.com/giocaizzi/harness` (plugins `api`, 
 | JS/TS, React, Next.js | `javascript-typescript`, `react`, `nextjs` |
 | FastAPI, SQLAlchemy, DDD | `fastapi`, `sqlalchemy`, `ddd`; agent `api-reviewer` for API security review |
 
-- Guards (skill enforcement, host load and quota, risky commands, commit/PR titles, pip, `make check` on stop) are enforced by the `guard` plugin of the same repo.
+- Guards (skill enforcement, host load and quota, risky commands, commit/PR titles, pip, `make check` on stop) are enforced by the `guard` plugin.
 - Every project has an `AGENTS.md` with its specific instructions (purpose, make targets, gotchas, links into `docs/`). Create it when missing. No `CLAUDE.md` in projects: Claude Code reads `AGENTS.md` when none exists.
 - Monorepos: the root `AGENTS.md` holds only repo-wide rules; each component has its own `AGENTS.md` with that component's instructions.
-- Personal instructions, if present: `~/.config/agents/AGENTS.private.md`.
-
-@~/.config/agents/AGENTS.private.md

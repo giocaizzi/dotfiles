@@ -19,15 +19,20 @@ ZSH  := dot_zshrc dot_zprofile
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint lint-tmpl lint-aliases aliases-audit test check
+.PHONY: help lint lint-tmpl lint-aliases lint-plugins aliases-audit test check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
 
-lint: lint-tmpl lint-aliases ## shellcheck shell scripts, validate JSON
+lint: lint-tmpl lint-aliases lint-plugins ## shellcheck shell scripts, validate JSON
 	shellcheck $(SHELLCHECK_EXCLUDES) $(SCRIPTS)
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
+	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
+	for t in vscode-mcp.json claude-settings.json copilot-settings.json; do for d in '{}' '{"work":true}'; do \
+		chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$d" \
+			< .chezmoitemplates/$$t | jq empty || { echo "invalid JSON: $$t $$d"; exit 1; }; \
+	done; done; rm -rf "$$dir"
 
 # Isolated empty config, so the renders never read this machine's answers. A render for one
 # OS leaves the other OS's package lists unset-but-unused (SC2034).
@@ -61,6 +66,9 @@ lint-aliases: ## Validate the alias registry and lint the rendered alias files
 	done; \
 	command -v pwsh >/dev/null 2>&1 || echo "Skipping aliases.ps1 parse: pwsh is not installed."; \
 	rm -rf "$$dir"
+
+lint-plugins: ## Check the harness plugin list against giocaizzi/harness (HARNESS_DIR = local checkout)
+	@sh scripts/harness-plugins-lint.sh
 
 aliases-audit: ## List live shell aliases the registry does not account for
 	@sh scripts/aliases-audit.sh

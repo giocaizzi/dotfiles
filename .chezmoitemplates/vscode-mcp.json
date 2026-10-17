@@ -1,0 +1,12 @@
+{{- /* VS Code (and Insiders) user mcp.json, rendered whole on every OS: this role's user-scope
+       servers (.chezmoitemplates/mcp-user.json) plus the stdio servers below. Rendered, not
+       symlinked, so add servers here or in .chezmoidata/mcp.toml, not in VS Code. */ -}}
+{{- $out := dict -}}
+{{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $out $n (dict "type" "http" "url" $u) }}{{ end -}}
+{{- $_ := set $out "io.github.ChromeDevTools/chrome-devtools-mcp" (dict
+      "type" "stdio"
+      "command" "npx"
+      "args" (list "--registry" "https://registry.npmjs.org" "chrome-devtools-mcp@0.18.1")
+      "gallery" "https://api.mcp.github.com"
+      "version" "0.18.1") -}}
+{{- dict "servers" $out "inputs" list | toPrettyJson }}

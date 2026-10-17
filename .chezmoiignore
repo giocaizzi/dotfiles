@@ -104,9 +104,8 @@ ops
 
 # --- AI harnesses (data.harnesses, chosen by `chezmoi init`; light machines skip them all above) ---
 # Only selected harnesses get their configs. A config without the key gets none
-# (.chezmoitemplates/harnesses). ~/.config/agents is shared: Claude and Copilot
-# symlink to it, Codex, opencode and pi render from the source, so it stays while
-# any of them is selected.
+# (.chezmoitemplates/harnesses). ~/.config/agents holds the composed instructions
+# every harness renders, so it stays while any of them is selected.
 {{ $harnesses := includeTemplate "harnesses" . | splitList " " }}
 {{ if not (has "claude" $harnesses) }}
 .claude
@@ -132,6 +131,12 @@ ops/.vscode
 # personal account, like the personal vault and telemetry).
 {{ if get . "work" }}
 ops
+{{ end }}
+# Private agent instructions: one layer per role (docs/OS.md#agent-instructions).
+{{ if get . "work" }}
+.config/agents/AGENTS.private.md
+{{ else }}
+.config/agents/AGENTS.work.md
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}
 .copilot
