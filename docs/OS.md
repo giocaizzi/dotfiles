@@ -197,7 +197,7 @@ Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezm
 Procedures:
 
 - **Add a server:** add `name = "url"` under `[mcp.user]` (every machine), `[mcp.personal]` (personal machines) or `[mcp.ops]`, `chezmoi apply`. VS Code's user file is rendered whole: a server VS Code adds itself is overwritten on the next apply, so add stdio servers to `.chezmoitemplates/vscode-mcp.json`.
-- **Work PC set up before `[mcp.personal]`:** remove `notion` by hand as in *Remove a server* (the merges keep it; VS Code's rendered file drops it on apply).
+- **Work PC set up before `[mcp.personal]`** (once): `chezmoi apply`, then remove the personal server from the clients whose merge keeps it, for each CLI installed there: `claude mcp remove -s user notion`, `copilot mcp remove notion`, `codex mcp remove notion`, delete `notion` from the `mcp` key of `~/.config/opencode/opencode.jsonc`, `pi mcp remove notion`. VS Code's rendered `mcp.json` drops it on apply. Check: `claude mcp list` (and the other `mcp list` commands) shows no `notion`.
 - **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `mcp.toml`, and `claude mcp remove -s local <name>`.
 - **Remove a server:** delete it from `mcp.toml`, `chezmoi apply`, then remove it by hand where the merge keeps it: `claude mcp remove -s user <name>`, `copilot mcp remove <name>`, `codex mcp remove <name>`, the `mcp` key of opencode, `pi mcp remove <name>`.
 - **First run in `~/ops`:** Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder. Codex is trusted by the config.
@@ -215,7 +215,7 @@ Every harness reads the same global instructions, rendered (not symlinked) by `.
 | private, personal | `dot_config/agents/encrypted_AGENTS.private.md.age` | no (age) | personal (`work` false) |
 | private, work | `dot_config/agents/encrypted_AGENTS.work.md.age` | no (age) | work |
 
-Core holds how to work on any machine; env how this machine's CLI environment is managed and which tools it has; the private layer what must not be public. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The role's private file is also deployed as `~/.config/agents/AGENTS.<private|work>.md`; the other role's is ignored.
+Core holds how to work on any machine, in any harness: it names no harness-only tool (skills carry the per-harness detail, e.g. `subagent-orchestration`, `host-hygiene`). Env holds what depends on the machine: how its CLI environment is managed and the tool-install rule (brew, apt or winget by OS), which tools it has (by OS and role), the Claude Code LSP note and, on personal machines only, the own-org (`giocaizzi`) rules; work machines follow their org's standard. The private layer holds what must not be public. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The role's private file is also deployed as `~/.config/agents/AGENTS.<private|work>.md`; the other role's is ignored.
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
