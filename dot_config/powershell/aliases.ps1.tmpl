@@ -213,20 +213,44 @@ function _dots-report {
 	$ok
 }
 
-# _dots-live <source file> <edited file> <snapshot dir> <source dir>: inside tmux (not on
-# Windows), a side pane that shows this machine's changes on every save
-# (.chezmoitemplates/dots-edit/live.sh), rendered from a private copy of the source.
-# Returns the pane id.
+# _dots-quiet <command> <argument>...: a native command with its stderr discarded.
+# Windows PowerShell turns redirected native stderr into error records, which stop a
+# caller running with $ErrorActionPreference = 'Stop'; here they are only dropped.
+function _dots-quiet {
+	$ErrorActionPreference = 'Continue'
+	$exe = $args[0]
+	$rest = @($args | Select-Object -Skip 1)
+	& $exe @rest 2>$null
+}
+
+# _dots-live <source file> <edited file> <snapshot dir> <source dir>: a side pane that
+# shows this machine's changes on every save, rendered from a private copy of the source:
+# inside tmux (Linux, macOS: .chezmoitemplates/dots-edit/live.sh) or Windows Terminal
+# (live.ps1). Returns a scriptblock that closes the pane, or nothing.
 function _dots-live {
 	param([string]$File, [string]$Edited, [string]$Snap, [string]$Src)
-	if (-not $env:TMUX -or -not (Get-Command tmux -ErrorAction SilentlyContinue) -or -not (Test-Path (Join-Path $Snap 'before/here.json'))) { return }
+	$windows = $env:OS -eq 'Windows_NT'
+	$tmux = -not $windows -and $env:TMUX -and (Get-Command tmux -ErrorAction SilentlyContinue)
+	$wt = $windows -and $env:WT_SESSION -and (Get-Command wt -ErrorAction SilentlyContinue)
+	if (-not ($tmux -or $wt) -or -not (Test-Path (Join-Path $Snap 'before/here.json'))) { return }
 	$shadow = Join-Path $Snap shadow
 	New-Item -ItemType Directory $shadow > $null
 	Get-ChildItem -Force $Src | Where-Object Name -notin '.git', '.claude' | Copy-Item -Recurse -Destination $shadow
-	$script = Join-Path $Snap live.sh
-	(_dots-tmpl live.sh) -join "`n" | Set-Content -NoNewline $script
 	$exe = (Get-Command chezmoi -CommandType Application | Select-Object -First 1).Source
-	tmux split-window -h -d -P -F '#{pane_id}' "sh '$script' '$File' '$Edited' '$Snap' '$exe' '$Src'"
+	if ($tmux) {
+		$script = Join-Path $Snap live.sh
+		(_dots-tmpl live.sh) -join "`n" | Set-Content -NoNewline $script
+		$id = tmux split-window -h -d -P -F '#{pane_id}' "sh '$script' '$File' '$Edited' '$Snap' '$exe' '$Src'"
+		if ($id) { return { _dots-quiet tmux kill-pane -t $id }.GetNewClosure() }
+		return
+	}
+	# The pane ends itself once the stop file appears (Windows Terminal has no kill-pane).
+	$script = Join-Path $Snap live.ps1
+	[IO.File]::WriteAllText($script, ((_dots-tmpl live.ps1) -join "`r`n"))
+	$ps = (Get-Process -Id $PID).Path
+	wt -w 0 split-pane -V "`"$ps`"" -NoProfile -ExecutionPolicy Bypass -File "`"$script`"" "`"$File`"" "`"$Edited`"" "`"$Snap`"" "`"$exe`"" "`"$Src`""
+	$stop = Join-Path $Snap stop
+	{ New-Item -Force $stop > $null }.GetNewClosure()
 }
 
 # _dots-edit <entry|''> <source file>: the shared edit flow (docs/OS.md#editing-your-dotfiles).
@@ -261,7 +285,7 @@ function _dots-edit {
 		$before = (Get-FileHash $edited).Hash
 		$pane = _dots-live $File $edited $snap $src
 		$opened = _dots-open $edited
-		if ($pane) { tmux kill-pane -t $pane 2>$null; $pane = $null }
+		if ($pane) { & $pane; $pane = $null }
 		if (-not $opened) { Write-Error "The editor failed: $path unchanged."; return }
 		if ($File -like '*.age' -and (Get-FileHash $edited).Hash -ne $before) {
 			chezmoi encrypt --output "$path.new" $edited
@@ -302,7 +326,7 @@ function _dots-edit {
 			}
 		}
 	} finally {
-		if ($pane) { tmux kill-pane -t $pane 2>$null }
+		if ($pane) { & $pane }
 		Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $snap, "$path.new"
 	}
 	$changes = git -C $src status --short
@@ -351,12 +375,12 @@ function _dots-view {
 		return
 	}
 	# A target: its source file, found here or in the first configuration managing it.
-	$source = chezmoi source-path $arg 2>$null
+	$source = _dots-quiet chezmoi source-path $arg
 	if ($LASTEXITCODE) {
 		$source = $null
 		foreach ($l in $labels) {
 			$file = _dots-datafile $l.Data
-			try { $source = chezmoi source-path --override-data-file $file $arg 2>$null } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+			try { $source = _dots-quiet chezmoi source-path --override-data-file $file $arg } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
 			if (-not $LASTEXITCODE) { break }
 			$source = $null
 		}
@@ -374,7 +398,7 @@ function _dots-view {
 	$missing = @()
 	foreach ($l in $labels) {
 		$file = _dots-datafile $l.Data
-		try { $out = (chezmoi cat --override-data-file $file $arg 2>$null) -join "`n" } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+		try { $out = (_dots-quiet chezmoi cat --override-data-file $file $arg) -join "`n" } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
 		if ($LASTEXITCODE) { $missing += $l.Label; continue }
 		$g = $groups | Where-Object Text -CEQ $out | Select-Object -First 1
 		if ($g) { $g.Labels += $l.Label } else { $groups += [pscustomobject]@{ Text = $out; Labels = @($l.Label) } }
@@ -417,7 +441,7 @@ function dots-edit {
 		$file = $arg
 	} else {
 		# A target: pick a node of its composition tree (the only node: no picker).
-		$source = chezmoi source-path $arg 2>$null
+		$source = _dots-quiet chezmoi source-path $arg
 		if ($LASTEXITCODE) { Write-Error "dots-edit: $arg is no registry entry, source file or managed target (dots-edit --help)"; return }
 		$nodes = @(_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/') | Where-Object { Test-Path -PathType Leaf (Join-Path $src $_.Path) } | ForEach-Object {
 				$e = $entries | Where-Object Source -CEQ $_.Path | Select-Object -First 1
