@@ -31,6 +31,12 @@ jobs:
           "$env:USERPROFILE\bin" >> $env:GITHUB_PATH
       # The aliases entry checks with make lint-aliases (shellcheck inside).
       - run: choco install -y --no-progress make shellcheck
+      - name: debug powershell 5.1
+        shell: bash
+        run: |
+          chezmoi --source "$PWD" execute-template < dot_config/powershell/aliases.ps1.tmpl > "$RUNNER_TEMP/a.ps1"
+          echo | powershell -NoProfile -ExecutionPolicy Bypass -Command ". '$(cygpath -m "$RUNNER_TEMP/a.ps1")'; 'loaded'; dots-edit --list" 2>&1 | head -40 || true
+          powershell -NoProfile -ExecutionPolicy Bypass -Command ". '$(cygpath -m "$RUNNER_TEMP/a.ps1")'; 'loaded2'; dots-edit --list" 2>&1 | head -40 || true
       - run: sh scripts/dots-edit-test.sh
         shell: bash
 
