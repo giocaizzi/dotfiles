@@ -147,7 +147,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots-edit` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh and PowerShell (`dots-edit --help` prints the full usage).
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots-edit` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots-edit --help` prints the full usage).
 
 ### Edit
 
@@ -163,7 +163,7 @@ Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a parti
 Every edit, in order:
 
 1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel.
-2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux (Linux and macOS, also from PowerShell), a side pane re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor. Not on Windows yet ([#102](https://github.com/giocaizzi/dotfiles/issues/102)).
+2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux (Linux and macOS, also from PowerShell) or, from PowerShell on Windows, Windows Terminal, a side pane re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor (`.chezmoitemplates/dots-edit/live.sh`, `live.ps1`).
 3. **Check:** the entry's check, when it has one (`make lint-aliases`, `ssh -G`, `make lint-plugins`, `make lint-edit`).
 4. **Render after** and report the changed targets per configuration: a list, `same as <configuration>` for an identical list, or `nothing`. A configuration that no longer renders fails the edit; one that already failed before is only reported.
 5. **This machine only:** `chezmoi diff` of its changed targets (one diff when the entry says they render the same text), `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date), the entry's note (e.g. open a new shell after an alias change), and `git status` of the source as a reminder to ship a PR (e.g. `/ship`). A changed script is listed: it runs on the next full `chezmoi apply`.

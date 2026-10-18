@@ -46,10 +46,12 @@ lint-tmpl: ## Render script templates with chezmoi, shellcheck the output
 
 # Validate the registry, then render the alias files per OS × role: aliases.sh is
 # shellchecked as bash, omz-aliases.zsh syntax-checked by zsh, aliases.ps1 parsed by
-# pwsh (CI runners ship pwsh; skipped where it is missing).
+# pwsh and, on Windows, Windows PowerShell 5.1 (CI runners ship pwsh; skipped where it is
+# missing). On Windows the temp dir is passed in C:/x form, which PowerShell can open.
 lint-aliases: ## Validate the alias registry and lint the rendered alias files
 	@sh scripts/aliases-lint.sh
-	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
+	@dir=$$(mktemp -d) && { ! command -v cygpath >/dev/null 2>&1 || dir=$$(cygpath -m "$$dir"); } && \
+	touch "$$dir/chezmoi.toml" && \
 	render() { chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$1" < "$$2"; } && \
 	for os in darwin linux windows; do for d in $(TMPL_DATA); do \
 		render "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" dot_config/shell/aliases.sh.tmpl > "$$dir/aliases.sh" && \
@@ -59,10 +61,12 @@ lint-aliases: ## Validate the alias registry and lint the rendered alias files
 	{ ! command -v zsh >/dev/null 2>&1 || zsh -n "$$dir/omz.zsh"; } && \
 	for d in $(TMPL_DATA); do \
 		render "{\"chezmoi\":{\"os\":\"windows\"},$$d}" dot_config/powershell/aliases.ps1.tmpl > "$$dir/aliases.ps1" && \
-		if command -v pwsh >/dev/null 2>&1; then \
-			pwsh -NoProfile -Command "\$$e = \$$null; [void][System.Management.Automation.Language.Parser]::ParseFile('$$dir/aliases.ps1', [ref]\$$null, [ref]\$$e); if (\$$e) { \$$e; exit 1 }" \
-				|| { echo "lint-aliases: aliases.ps1 $$d"; exit 1; }; \
-		fi; \
+		for ps in pwsh powershell; do \
+			if command -v $$ps >/dev/null 2>&1; then \
+				$$ps -NoProfile -Command "\$$e = \$$null; [void][System.Management.Automation.Language.Parser]::ParseFile('$$dir/aliases.ps1', [ref]\$$null, [ref]\$$e); if (\$$e) { \$$e; exit 1 }" \
+					|| { echo "lint-aliases: aliases.ps1 ($$ps) $$d"; exit 1; }; \
+			fi; \
+		done; \
 	done; \
 	command -v pwsh >/dev/null 2>&1 || echo "Skipping aliases.ps1 parse: pwsh is not installed."; \
 	rm -rf "$$dir"
