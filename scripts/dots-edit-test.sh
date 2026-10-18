@@ -1,21 +1,22 @@
 #!/bin/sh
-# Test the edit commands (agents-edit, aliases-edit, ssh-edit) in bash, zsh and pwsh
-# (each where installed) against a throwaway copy of this source: dummy encrypted files
-# under a throwaway age key, a temp destination, and a chezmoi wrapper pinning
-# --config/--source/--destination/--persistent-state. The real key, encrypted files and
-# home are never read or written. Run from the repo root (make test).
+# Test the edit commands (dots-edit, agents-edit, aliases-edit, ssh-edit) in bash, zsh,
+# pwsh and, on Windows (Git Bash), Windows PowerShell 5.1 (each where installed) against a
+# throwaway copy of this source: dummy encrypted files under a throwaway age key, a temp
+# destination, and a chezmoi wrapper pinning --config/--source/--destination/
+# --persistent-state. The real key, encrypted files and home are never read or written.
+# Run from the repo root (make test).
 set -eu
 # Pinned so the target-mode cases are deterministic.
 umask 022
 
-case $(uname -s) in MINGW* | MSYS* | CYGWIN*)
-	echo "Skipping the edit command tests on Windows: CI runs them on Linux."
-	exit 0
-	;;
-esac
+# Windows: every path in C:/x form, which Git Bash and PowerShell both read; PowerShell
+# runs the wrappers as .cmd shims over the sh ones.
+win=
+case $(uname -s) in MINGW* | MSYS* | CYGWIN*) win=1 ;; esac
 
 real=$(command -v chezmoi)
 T=$(mktemp -d)
+if [ -n "$win" ]; then T=$(cygpath -m "$T"); fi
 trap 'rm -rf "$T"' EXIT
 S=$T/src
 mkdir "$T/bin"
@@ -82,7 +83,20 @@ split-window)
 kill-pane) kill "\$(cat "$T/pane.pid")" 2>/dev/null; echo killed >>"$T/pane.log" ;;
 esac
 EOF
-chmod +x "$T/bin/chezmoi" "$T/bin/editor" "$T/bin/tmux"
+# Fake Windows Terminal: wt -w 0 split-pane -V <command> runs the command in the
+# background (output in $T/pane); the pane ends itself.
+cat >"$T/bin/wt" <<EOF
+#!/bin/sh
+shift 4
+"\$@" >"$T/pane" 2>&1 &
+EOF
+chmod +x "$T/bin/chezmoi" "$T/bin/editor" "$T/bin/tmux" "$T/bin/wt"
+if [ -n "$win" ]; then
+	sh=$(cygpath -w "$(command -v sh)")
+	printf '@"%s" --config "%s" --source "%s" --destination "%s" --persistent-state "%s" %%*\r\n' \
+		"$(cygpath -w "$real")" "$T/chezmoi.toml" "$S" "$T/home" "$T/state.boltdb" >"$T/bin/chezmoi.cmd"
+	for f in editor wt; do printf '@"%s" "%s" %%*\r\n' "$sh" "$T/bin/$f" >"$T/bin/$f.cmd"; done
+fi
 
 # The source copy: no scripts, externals or removals, dummy encrypted files, a git repo.
 mkdir "$S"
@@ -104,21 +118,31 @@ pass=0
 fail=0
 # run <shell> <answers> <editor mode> <path: full|nofzf> <command...>: status in $st,
 # output in $T/out. Resets the source and the destination first, then evals $pre. In
-# pwsh, Write-Error is made terminating so a reported failure gives a non-zero exit.
+# PowerShell, Write-Error is made terminating so a reported failure gives a non-zero exit.
+# $live set: the live pane runs (tmux; in PowerShell on Windows, Windows Terminal).
 run() {
 	shell=$1 answers=$2 mode=$3 path=$4
 	shift 4
 	git -C "$S" checkout -q -- .
 	rm -rf "${T:?}/home" "$T/edited" "$T/state.boltdb" "$T/pane" "$T/pane.log"
 	# The parents a real home already has (apply of one target needs them).
-	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.ssh"
+	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.config/powershell" "$T/home/.ssh"
 	eval "${pre:-}"
-	p=$T/bin:$PATH
-	[ "$path" = full ] || p=$T/bin:/usr/bin:/bin
+	# PATH needs the /c/x form: the colon of C:/x would split it.
+	bin=$T/bin
+	if [ -n "$win" ]; then bin=$(cygpath -u "$bin"); fi
+	p=$bin:$PATH
+	# Windows has no fzf to hide: the fallback cases warn below when one is installed.
+	[ "$path" = full ] || [ -n "$win" ] || p=$bin:/usr/bin:/bin
+	editor=$T/bin/editor
+	if [ -n "$win" ]; then editor=$T/bin/editor.cmd; fi
 	set +e
 	# shellcheck disable=SC2016 # expanded by the shell under test
 	case $shell in
-	pwsh) printf '%b' "$answers" | TMUX=${live:-} EDITOR="$T/bin/editor $mode" PATH=$p "$pwsh" -NoProfile -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*" ;;
+	pwsh | powershell)
+		printf '%b' "$answers" | TMUX=${live:-} WT_SESSION=${live:-} EDITOR="$editor $mode" PATH=$p "$(command -v "$shell")" \
+			-NoProfile -ExecutionPolicy Bypass -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*"
+		;;
 	*) printf '%b' "$answers" | TMUX=${live:-} EDITOR="$T/bin/editor $mode" PATH=$p "$shell" -c '. "$1"; shift; "$@"' sh "$T/aliases.sh" "$@" ;;
 	esac >"$T/out" 2>&1
 	st=$?
@@ -144,10 +168,12 @@ unchanged() { git -C "$S" diff --quiet -- "$1"; }
 # The decrypted temp file the editor got is gone, and no .new file is left.
 cleaned() {
 	f=$(cat "$T/edited")
+	if [ -n "$win" ]; then f=$(cygpath -m "$f"); fi
 	case $f in "$S"/*) ;; *) [ ! -e "$f" ] || return 1 ;; esac
 	[ -z "$(find "$S" -name '*.new')" ]
 }
-usage() { status -ne 0 && has usage: "$T/out" && { [ "$shell" = pwsh ] || status -eq 2; }; }
+in_powershell() { [ "$shell" = pwsh ] || [ "$shell" = powershell ]; }
+usage() { status -ne 0 && has usage: "$T/out" && { in_powershell || status -eq 2; }; }
 
 suite() {
 	run "$shell" 'y\n' text full agents-edit personal
@@ -155,7 +181,9 @@ suite() {
 	expect 'agents-edit personal: applied' has edited-marker "$T/home/.claude/CLAUDE.md"
 	expect 'agents-edit personal: re-encrypted, armored' armored .chezmoitemplates/agents/personal.md.age
 	expect 'agents-edit personal: temp removed' cleaned
-	expect 'agents-edit personal: umask restored for apply' test -n "$(find "$T/home/.claude/CLAUDE.md" -perm 0644)"
+	if [ -z "$win" ]; then
+		expect 'agents-edit personal: umask restored for apply' test -n "$(find "$T/home/.claude/CLAUDE.md" -perm 0644)"
+	fi
 	expect 'agents-edit: ship hint' has 'ship a PR' "$T/out"
 
 	run "$shell" 'n\n' text full agents-edit core
@@ -312,16 +340,25 @@ suite() {
 	live=1
 	run "$shell" 'n\n' slowtext full dots-edit agents/core
 	live=
+	# A failure report shows the pane too.
+	{ echo '--- pane'; cat "$T/pane" 2>/dev/null; } >>"$T/out"
 	expect 'live preview: diff of the changed target' has '+edited-marker' "$T/pane"
-	expect 'live preview: pane closed' has killed "$T/pane.log"
+	# Windows Terminal has no kill-pane: there the pane ends itself on the stop file.
+	if [ -z "$win" ] || ! in_powershell; then
+		expect 'live preview: pane closed' has killed "$T/pane.log"
+	fi
 }
 
-if PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
+if [ -n "$win" ] && command -v fzf >/dev/null 2>&1; then
+	echo "fzf is installed: the picker fallback cases will fail" >&2
+elif [ -z "$win" ] && PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
 	echo "fzf is in /usr/bin: the picker fallback cases will fail" >&2
 fi
-pwsh=$(command -v pwsh || true)
-for shell in bash zsh pwsh; do
-	if [ "$shell" = pwsh ] && [ -z "$pwsh" ] || ! command -v "$shell" >/dev/null 2>&1; then
+# Windows PowerShell 5.1 exists only on Windows; zsh is no Windows dependency.
+shells='bash zsh pwsh'
+if [ -n "$win" ]; then shells='bash powershell pwsh'; fi
+for shell in $shells; do
+	if ! command -v "$shell" >/dev/null 2>&1; then
 		echo "Skipping the $shell edit command tests: $shell is not installed."
 		continue
 	fi

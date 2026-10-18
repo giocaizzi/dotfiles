@@ -112,10 +112,11 @@ _dots_snap() {
 	wait
 }
 
-# _dots_changed <before.json> <after.json>: the targets whose state differs, one per line.
+# _dots_changed <before.json> <after.json>: the targets whose state differs, one per line
+# (without the CR jq adds on Windows).
 _dots_changed() {
 	jq -rn --slurpfile a "$1" --slurpfile b "$2" \
-		'$a[0] as $a | $b[0] as $b | [($a, $b) | keys[]] | unique[] | select($a[.] != $b[.])'
+		'$a[0] as $a | $b[0] as $b | [($a, $b) | keys[]] | unique[] | select($a[.] != $b[.])' | tr -d '\r'
 }
 
 # _dots_report <before dir> <after dir>: per matrix configuration, the targets the edit

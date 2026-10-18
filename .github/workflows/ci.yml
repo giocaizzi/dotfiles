@@ -19,14 +19,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Required status check: aggregates gitleaks and runs make check.
+  # The edit commands on Windows: Git Bash, Windows PowerShell 5.1 and pwsh.
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install chezmoi
+        shell: pwsh
+        run: |
+          iex "&{$(irm 'https://get.chezmoi.io/ps1')} -b '$env:USERPROFILE\bin' -t v2.70.0"
+          "$env:USERPROFILE\bin" >> $env:GITHUB_PATH
+      # The aliases entry checks with make lint-aliases (shellcheck inside).
+      - run: choco install -y --no-progress make shellcheck
+      - run: sh scripts/dots-edit-test.sh
+        shell: bash
+
+  # Required status check: aggregates gitleaks and the Windows tests, runs make check.
   check:
-    needs: [gitleaks]
+    needs: [gitleaks, windows]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require upstream jobs
-        if: needs.gitleaks.result != 'success'
+        if: needs.gitleaks.result != 'success' || needs.windows.result != 'success'
         run: exit 1
       - uses: actions/checkout@v7
       - run: sudo apt-get install -y --no-install-recommends zsh
