@@ -58,67 +58,205 @@ _dots_pick() (
 # _dots_open <file>: $EDITOR (then $VISUAL, then vi) on one file.
 _dots_open() { sh -c "${EDITOR:-${VISUAL:-vi}} \"\$1\"" dots-edit "$1"; }
 
-# _dots_edit [-1] <source file> <hook|-> <target>...: the shared edit flow.
-# A plain file opens in the editor; an age file is decrypted to a private temp file,
-# re-encrypted (armored) only when changed, and the temp file is always removed.
-# Then `<hook> check <edited file>` (failure: nothing applied), `chezmoi diff` of the
-# targets this machine manages (-1: the first only, when they render the same text),
-# "apply now? [y/N]" for those targets only (skipped when they are up to date),
-# `<hook> applied`, and a reminder to ship a PR. A subshell keeps umask and traps local.
-_dots_edit() (
-	first=
-	if [ "$1" = -1 ]; then
-		first=1
-		shift
+# _dots_tmpl <name> [<data JSON>]: render the dots-edit helper template
+# .chezmoitemplates/dots-edit/<name>, its arguments under .dotsEdit in the data JSON.
+_dots_tmpl() {
+	chezmoi execute-template --override-data "${2:-"{}"}" "{{ "{{" }} includeTemplate \"dots-edit/$1\" . }}"
+}
+
+# _dots_entries: the edit registry (.chezmoidata/edit.toml), one entry per line:
+# <name> TAB <source> TAB <diff> TAB <desc>.
+_dots_entries() { _dots_tmpl entries; }
+
+# _dots_field <entry> <field>: a registry field, empty when unset.
+_dots_field() { _dots_tmpl field "$(jq -cn --arg e "$1" --arg f "$2" '{dotsEdit: {entry: $e, field: $f}}')"; }
+
+# _dots_tree <source file> [<data JSON>]: its composition tree, one node per line:
+# <depth> TAB <how> TAB <source file> (.chezmoitemplates/dots-edit/tree).
+_dots_tree() {
+	_dots_tmpl tree-of "$(jq -cn --arg f "$1" --argjson d "${2:-"{}"}" '$d + {dotsEdit: {file: $f}}')"
+}
+
+# _dots_print_tree <entries>: indent the tree on stdin, naming each node's registry entry.
+_dots_print_tree() {
+	DOTS_ENTRIES=$1 awk -F'\t' '
+		BEGIN { n = split(ENVIRON["DOTS_ENTRIES"], l, "\n"); for (i = 1; i <= n; i++) { split(l[i], f, "\t"); e[f[2]] = f[1] } }
+		{ printf "%s%s %s%s%s\n", sprintf("%" ($1 * 2) "s", ""), $2, $3, ($3 in e ? "  [" e[$3] "]" : ""), ($3 ~ /\.age$/ ? "  (encrypted)" : "") }'
+}
+
+# _dots_join: the lines on stdin as one comma-separated line, nothing for none.
+_dots_join() { awk 'NF { printf "%s%s", (n++ ? ", " : ""), $0 }'; }
+
+# _dots_dump <out> [chezmoi flag]...: the target state (chezmoi dump: files, symlinks and
+# scripts with their contents) into <out>.json, or the error into <out>.err.
+_dots_dump() {
+	out=$1
+	shift
+	if chezmoi dump --exclude dirs,externals --format json "$@" >"$out.tmp" 2>"$out.err"; then
+		mv "$out.tmp" "$out.json" && rm -f "$out.err"
+	else
+		rm -f "$out.tmp"
 	fi
-	file=$1 hook=$2
-	shift 2
+}
+
+# _dots_snap <dir>: the target state of this machine (here.json) and of every matrix
+# configuration (<n>.json, its label on line n of <dir>/labels), rendered in parallel.
+_dots_snap() {
+	mkdir -p "$1" && _dots_tmpl matrix >"$1/labels" || return 1
+	_dots_dump "$1/here" &
+	n=0
+	while IFS='	' read -r label data; do
+		n=$((n + 1))
+		_dots_dump "$1/$n" --override-data "$data" &
+	done <"$1/labels"
+	wait
+}
+
+# _dots_changed <before.json> <after.json>: the targets whose state differs, one per line.
+_dots_changed() {
+	jq -rn --slurpfile a "$1" --slurpfile b "$2" \
+		'$a[0] as $a | $b[0] as $b | [($a, $b) | keys[]] | unique[] | select($a[.] != $b[.])'
+}
+
+# _dots_report <before dir> <after dir>: per matrix configuration, the targets the edit
+# changes ("same as" an earlier configuration with the same list). Fails when a
+# configuration stopped rendering; one that already failed before is only reported.
+_dots_report() (
+	echo 'Changed by this edit, per configuration (every harness selected):' >&2
+	rc=0 n=0
+	while IFS='	' read -r label data; do
+		n=$((n + 1))
+		if [ ! -f "$2/$n.json" ]; then
+			if [ -f "$1/$n.json" ]; then
+				printf '  %s: render FAILED\n' "$label" >&2
+				sed 's/^/    /' "$2/$n.err" >&2
+				rc=1
+			else
+				printf '  %s: render failed, already before this edit\n' "$label" >&2
+				grep -v '^chezmoi: warning:' "$1/$n.err" | sed 's/^/    /' >&2
+			fi
+			continue
+		fi
+		if [ ! -f "$1/$n.json" ]; then
+			printf '  %s: renders again\n' "$label" >&2
+			continue
+		fi
+		_dots_changed "$1/$n.json" "$2/$n.json" | _dots_join >"$2/$n.changed"
+		printf '%s' "$label" >"$2/$n.label"
+		same='' m=0
+		while [ $m -lt $((n - 1)) ] && [ -z "$same" ]; do
+			m=$((m + 1))
+			if [ -s "$2/$n.changed" ] && cmp -s "$2/$m.changed" "$2/$n.changed"; then
+				same=$(cat "$2/$m.label")
+			fi
+		done
+		if [ -n "$same" ]; then
+			printf '  %s: same as %s\n' "$label" "$same" >&2
+		elif [ -s "$2/$n.changed" ]; then
+			printf '  %s: %s\n' "$label" "$(cat "$2/$n.changed")" >&2
+		else
+			printf '  %s: nothing\n' "$label" >&2
+		fi
+	done <"$1/labels"
+	return $rc
+)
+
+# _dots_live <source file> <edited file> <snapshot dir>: in tmux, a side pane that shows
+# this machine's changes on every save (.chezmoitemplates/dots-edit/live.sh), rendered
+# from a private copy of the source ($src). Sets $pane.
+_dots_live() {
+	pane=
+	if [ -z "${TMUX:-}" ] || ! command -v tmux >/dev/null 2>&1 || [ ! -f "$3/before/here.json" ]; then
+		return 0
+	fi
+	{ mkdir "$3/shadow" && (cd "$src" && tar -cf - --exclude ./.git --exclude ./.claude .) | (cd "$3/shadow" && tar -xf -) &&
+		_dots_tmpl live.sh >"$3/live.sh"; } || return 0
+	pane=$(tmux split-window -h -d -P -F '#{pane_id}' \
+		"sh '$3/live.sh' '$1' '$2' '$3' '$(command -v chezmoi)' '$src'") || pane=
+}
+
+# _dots_edit <entry|-> <source file>: the shared edit flow (docs/OS.md#editing-your-dotfiles).
+# Renders the target state of this machine and of every matrix configuration, opens the
+# file (in tmux with a live preview pane), runs the entry's check, renders again, reports
+# what changed per configuration, then diffs this machine's changed targets and asks to
+# apply them (skipped when they are up to date), and reminds to ship a PR. An age file is
+# decrypted to a private temp file, re-encrypted (armored) only when changed, and the temp
+# file is always removed. A subshell keeps umask and traps local.
+_dots_edit() (
+	entry=$1 file=$2 check='' note='' first=''
 	src=$(chezmoi source-path) || return 1
+	if [ "$entry" != - ]; then
+		check=$(_dots_field "$entry" check) && note=$(_dots_field "$entry" note) &&
+			first=$(_dots_field "$entry" diff) || return 1
+	fi
+	snap=$(mktemp -d) || return 1
+	pane=
+	trap 'if [ -n "$pane" ]; then tmux kill-pane -t "$pane" 2>/dev/null; fi; rm -rf "$snap" "$src/$file.new"' EXIT
+	trap 'exit 130' HUP INT TERM
+	# Both renders run under the user's umask: chezmoi derives target modes from it.
+	_dots_snap "$snap/before" || return 1
 	case $file in
 	*.age)
 		mask=$(umask)
 		umask 077
-		tmp=$(mktemp) || return 1
-		trap 'rm -f "$tmp" "$src/$file.new"' EXIT
-		trap 'exit 130' HUP INT TERM
-		chezmoi decrypt "$src/$file" >"$tmp" || return 1
-		before=$(cksum <"$tmp")
-		_dots_open "$tmp" || return 1
-		if [ "$(cksum <"$tmp")" != "$before" ]; then
-			{ chezmoi encrypt "$tmp" >"$src/$file.new" &&
+		edited=$snap/edit
+		chezmoi decrypt "$src/$file" >"$edited" || return 1
+		;;
+	*) edited=$src/$file ;;
+	esac
+	before=$(cksum <"$edited")
+	_dots_live "$file" "$edited" "$snap"
+	if ! _dots_open "$edited"; then
+		echo "The editor failed: $src/$file unchanged." >&2
+		return 1
+	fi
+	if [ -n "$pane" ]; then tmux kill-pane -t "$pane" 2>/dev/null; fi
+	pane=
+	case $file in
+	*.age)
+		if [ "$(cksum <"$edited")" != "$before" ]; then
+			{ chezmoi encrypt "$edited" >"$src/$file.new" &&
 				mv "$src/$file.new" "$src/$file"; } || return 1
 		fi
-		edited=$tmp
-		# chezmoi derives target modes from the umask: restore it for diff and apply.
 		umask "$mask"
 		;;
-	*)
-		_dots_open "$src/$file" || return 1
-		edited=$src/$file
-		;;
 	esac
-	if [ "$hook" != - ] && ! "$hook" check "$edited"; then
+	if [ -n "$check" ] && ! (cd "$src" && sh -c "$check" sh "$edited"); then
 		echo "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($src/$file)." >&2
 		return 1
 	fi
-	# Keep the targets this machine manages: each original argument is shifted off,
-	# the managed ones are appended as absolute paths.
+	_dots_snap "$snap/after" || return 1
+	if ! _dots_report "$snap/before" "$snap/after" || [ ! -f "$snap/after/here.json" ]; then
+		if [ -f "$snap/after/here.err" ]; then cat "$snap/after/here.err" >&2; fi
+		echo "A configuration no longer renders, nothing applied. The source keeps the edit: run the command again to fix it ($src/$file)." >&2
+		return 1
+	fi
+	# This machine's changed targets, as absolute paths; scripts run on a full apply.
 	home=$(chezmoi target-path) || return 1
-	managed=$(chezmoi managed -i files)
-	for t do
-		shift
-		if printf '%s\n' "$managed" | grep -qxF "$t"; then set -- "$@" "$home/$t"; fi
-	done
-	if [ $# -gt 0 ] && [ -z "$(chezmoi status "$@")" ]; then
+	set --
+	scripts=
+	while IFS= read -r t; do
+		case $t in
+		'') ;;
+		.chezmoiscripts/*) scripts="$scripts ${t#.chezmoiscripts/}" ;;
+		*) set -- "$@" "$home/$t" ;;
+		esac
+	done <<EOF
+$(if [ -f "$snap/before/here.json" ]; then _dots_changed "$snap/before/here.json" "$snap/after/here.json"; fi)
+EOF
+	if [ -n "$scripts" ]; then
+		echo "Scripts changed:$scripts (they run on the next full chezmoi apply)" >&2
+	fi
+	if [ $# -eq 0 ] || [ -z "$(chezmoi status "$@")" ]; then
 		echo 'Targets up to date: nothing to apply.' >&2
-	elif [ $# -gt 0 ]; then
+	else
 		if [ -n "$first" ]; then chezmoi diff "$1"; else chezmoi diff "$@"; fi
 		printf 'apply now? [y/N] ' >&2
 		read -r answer
 		case $answer in
 		[yY]*)
 			chezmoi apply "$@" || return 1
-			if [ "$hook" != - ]; then "$hook" applied; fi
+			if [ -n "$note" ]; then echo "$note" >&2; fi
 			;;
 		esac
 	fi
@@ -129,45 +267,229 @@ _dots_edit() (
 	fi
 )
 
+# _dots_usage: dots-edit --help (.chezmoitemplates/dots-edit/usage).
+_dots_usage() { _dots_tmpl usage; }
+
+# _dots_config <os>[,<role>]: the matrix label and data JSON of one configuration
+# (<label> TAB <data>), or nothing for an unknown one.
+_dots_config() {
+	os=${1%%[,/]*} role=personal
+	case $1 in *[,/]*) role=${1#*[,/]} ;; esac
+	_dots_tmpl matrix | awk -F'\t' -v l="$os/$role" '$1 == l'
+}
+
+# _dots_view <target|entry> [--as <os>[,<role>] | --matrix]: see dots-edit --help.
+_dots_view() (
+	mode=
+	case $#:${2:-} in
+	1:) mode=here ;;
+	2:--matrix) mode=matrix ;;
+	3:--as) mode=as ;;
+	esac
+	if [ -z "$mode" ]; then
+		_dots_usage >&2
+		return 2
+	fi
+	arg=$1
+	entries=$(_dots_entries) || return 1
+	tmp=$(mktemp -d) || return 1
+	trap 'rm -rf "$tmp"' EXIT
+	trap 'exit 130' HUP INT TERM
+	_dots_tmpl matrix >"$tmp/labels" || return 1
+	if [ "$mode" = as ]; then
+		_dots_config "$3" >"$tmp/labels"
+		if [ ! -s "$tmp/labels" ]; then
+			echo "dots-edit: unknown configuration $3 (os darwin|linux|windows, role personal|work|light)" >&2
+			return 2
+		fi
+	fi
+	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v n="$arg" '$1 == n')
+	if [ -n "$entry" ]; then
+		file=$(printf '%s\n' "$entry" | cut -f2)
+		printf '%s: %s\n' "$arg" "$(printf '%s\n' "$entry" | cut -f4)"
+		_dots_tree "$file" | _dots_print_tree "$entries"
+		# The targets whose composition tree holds the file, per configuration.
+		if [ "$mode" = here ]; then printf 'here\t{}\n' >"$tmp/labels"; fi
+		n=0
+		while IFS='	' read -r label data; do
+			n=$((n + 1))
+			{
+				m=$(chezmoi managed -i files,symlinks,scripts -x externals -p all -f json --override-data "$data" |
+					jq -c 'map_values(.sourceRelative)') &&
+					_dots_tmpl feeds "$(jq -cn --argjson d "$data" --argjson m "$m" --arg f "$file" \
+						'$d + {dotsEdit: {file: $f, managed: $m}}')" | _dots_join >"$tmp/$n"
+			} &
+		done <"$tmp/labels"
+		wait
+		echo 'Reaches:'
+		n=0
+		while IFS='	' read -r label data; do
+			n=$((n + 1))
+			if [ "$label" = here ]; then label='this machine'; fi
+			if [ ! -f "$tmp/$n" ]; then
+				printf '  %s: render failed\n' "$label"
+			elif [ -s "$tmp/$n" ]; then
+				printf '  %s: %s\n' "$label" "$(cat "$tmp/$n")"
+			else
+				printf '  %s: nothing\n' "$label"
+			fi
+		done <"$tmp/labels"
+		return 0
+	fi
+	# A target: its source file, found here or in the first configuration managing it.
+	source=$(chezmoi source-path "$arg" 2>/dev/null) || source=
+	if [ -z "$source" ]; then
+		while IFS='	' read -r label data; do
+			source=$(chezmoi source-path --override-data "$data" "$arg" 2>/dev/null) && break
+		done <"$tmp/labels"
+	fi
+	if [ -z "$source" ]; then
+		echo "dots-edit: $arg is no registry entry or managed target" >&2
+		return 1
+	fi
+	src=$(chezmoi source-path) || return 1
+	_dots_tree "${source#"$src"/}" | _dots_print_tree "$entries"
+	if [ "$mode" = here ]; then
+		echo '--- rendered on this machine'
+		chezmoi cat "$arg"
+		return
+	fi
+	# One render per configuration; identical renders are grouped.
+	n=0
+	while IFS='	' read -r label data; do
+		n=$((n + 1))
+		{ chezmoi cat --override-data "$data" "$arg" >"$tmp/$n.out" 2>/dev/null || rm -f "$tmp/$n.out"; } &
+	done <"$tmp/labels"
+	wait
+	n=0 groups='' missing=''
+	while IFS='	' read -r label data; do
+		n=$((n + 1))
+		if [ ! -f "$tmp/$n.out" ]; then
+			missing="$missing $label"
+			continue
+		fi
+		found=
+		for g in $(printf '%s' "$groups"); do
+			if cmp -s "$tmp/$g.out" "$tmp/$n.out"; then
+				printf ', %s' "$label" >>"$tmp/$g.labels"
+				found=1
+				break
+			fi
+		done
+		if [ -z "$found" ]; then
+			groups="$groups $n"
+			printf '%s' "$label" >"$tmp/$n.labels"
+		fi
+	done <"$tmp/labels"
+	first=
+	for g in $(printf '%s' "$groups"); do
+		if [ -z "$first" ]; then
+			first=$g
+			printf -- '--- rendered on %s\n' "$(cat "$tmp/$g.labels")"
+			cat "$tmp/$g.out"
+		else
+			printf -- '--- rendered on %s, against the first\n' "$(cat "$tmp/$g.labels")"
+			diff -u --label "$(cut -d, -f1 "$tmp/$first.labels")" --label "$(cut -d, -f1 "$tmp/$g.labels")" \
+				"$tmp/$first.out" "$tmp/$g.out"
+		fi
+	done
+	if [ -n "$missing" ]; then printf -- '--- not managed on:%s\n' "$missing"; fi
+	return 0
+)
+
+# dots-edit: edit any part of the dotfiles and see what it changes everywhere
+# (docs/OS.md#editing-your-dotfiles; dots-edit --help).
+dots-edit() (
+	case ${1:-} in
+	-h | --help)
+		_dots_usage
+		return
+		;;
+	--list)
+		_dots_entries | awk -F'\t' '{ printf "%-20s %s\n", $1, $4 }'
+		return
+		;;
+	--view)
+		shift
+		_dots_view "$@"
+		return
+		;;
+	-*)
+		_dots_usage >&2
+		return 2
+		;;
+	esac
+	if [ $# -gt 1 ]; then
+		_dots_usage >&2
+		return 2
+	fi
+	src=$(chezmoi source-path) || return 1
+	entries=$(_dots_entries) || return 1
+	arg=${1:-}
+	if [ -z "$arg" ]; then
+		set --
+		while IFS= read -r line; do set -- "$@" "$line"; done <<EOF
+$(printf '%s\n' "$entries" | awk -F'\t' '{ print $1 "\t" $4 }')
+EOF
+		arg=$(_dots_pick dots-edit "$@" | cut -f1) || return 1
+		[ -n "$arg" ] || return 1
+	fi
+	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v n="$arg" '$1 == n')
+	if [ -n "$entry" ]; then
+		_dots_edit "$arg" "$(printf '%s\n' "$entry" | cut -f2)"
+		return
+	fi
+	if [ -f "$src/$arg" ]; then
+		file=$arg
+	else
+		# A target: pick a node of its composition tree (the only node: no picker).
+		source=$(chezmoi source-path "$arg" 2>/dev/null) || {
+			echo "dots-edit: $arg is no registry entry, source file or managed target (dots-edit --help)" >&2
+			return 1
+		}
+		set --
+		while IFS='	' read -r _depth _how node; do
+			if [ -f "$src/$node" ]; then
+				name=$(printf '%s\n' "$entries" | awk -F'\t' -v s="$node" '$2 == s { print "\t[" $1 "]" }')
+				set -- "$@" "$node$name"
+			fi
+		done <<EOF
+$(_dots_tree "${source#"$src"/}")
+EOF
+		if [ $# -eq 1 ]; then file=$(printf '%s\n' "$1" | cut -f1); else file=$(_dots_pick "$arg" "$@" | cut -f1) || return 1; fi
+		[ -n "$file" ] || return 1
+	fi
+	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v s="$file" '$2 == s { print $1; exit }')
+	_dots_edit "${entry:--}" "$file"
+)
+
 # agents-edit [core|env|personal|work]: a layer of the global agent instructions
-# (docs/OS.md#agent-instructions). Every harness file renders the same text: one diff.
+# (docs/OS.md#agent-instructions): dots-edit agents/<layer>.
 agents-edit() (
 	layer=${1:-}
 	[ -n "$layer" ] || layer=$(_dots_pick 'agent layer' core env personal work) || return 1
 	case $layer in
-	core | env) file=.chezmoitemplates/agents/$layer.md ;;
-	personal | work) file=.chezmoitemplates/agents/$layer.md.age ;;
+	core | env | personal | work) dots-edit "agents/$layer" ;;
 	*)
 		echo 'usage: agents-edit [core|env|personal|work]' >&2
 		return 2
 		;;
 	esac
-	_dots_edit -1 "$file" - .claude/CLAUDE.md .copilot/copilot-instructions.md \
-		.codex/AGENTS.md .config/opencode/AGENTS.md .pi/agent/AGENTS.md
 )
 
 # aliases-edit [public|private]: the alias registry or the encrypted personal aliases
-# (docs/SHELL.md#alias-registry). The registry lint must pass before apply.
+# (docs/SHELL.md#alias-registry): dots-edit aliases/<scope>.
 aliases-edit() (
 	scope=${1:-}
 	[ -n "$scope" ] || scope=$(_dots_pick aliases public private) || return 1
 	case $scope in
-	public) file=.chezmoidata/aliases.toml ;;
-	private) file=.aliases.private.toml.age ;;
+	public | private) dots-edit "aliases/$scope" ;;
 	*)
 		echo 'usage: aliases-edit [public|private]' >&2
 		return 2
 		;;
 	esac
-	_dots_edit "$file" _aliases_edit_hook .config/shell/aliases.sh \
-		.config/shell/omz-aliases.zsh .config/powershell/aliases.ps1
 )
-_aliases_edit_hook() {
-	case $1 in
-	check) make -C "$(chezmoi source-path)" lint-aliases ;;
-	applied) echo "Aliases applied: open a new shell, or run . ${XDG_CONFIG_HOME:-$HOME/.config}/shell/aliases.sh" >&2 ;;
-	esac
-}
 
 # ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
 # (this machine's hosts, not managed by chezmoi; a new name creates it). `ssh -G` must
@@ -192,7 +514,7 @@ EOF
 	fi
 	case $name in
 	config)
-		_dots_edit private_dot_ssh/encrypted_private_config.age _ssh_edit_hook .ssh/config
+		dots-edit ssh/config
 		return
 		;;
 	'' | .* | */*)

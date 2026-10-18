@@ -5,5 +5,5 @@
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $managed := includeTemplate "copilot-settings.json" . | fromJson -}}
-{{- $urls := concat ($current.allowedUrls | default list) $managed.allowedUrls | uniq -}}
+{{- $urls := concat (get $current "allowedUrls" | default list) $managed.allowedUrls | uniq -}}
 {{- mergeOverwrite $current $managed | setValueAtPath "allowedUrls" $urls | toPrettyJson }}

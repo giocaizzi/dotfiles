@@ -1,0 +1,7 @@
+{{- /* dots-edit: the targets whose composition tree (dots-edit/tree) holds .dotsEdit.file,
+  one per line; .dotsEdit.managed maps each managed target to its source-relative path. */ -}}
+{{- range $target, $source := .dotsEdit.managed -}}
+{{-   range splitList "\n" (includeTemplate "dots-edit/tree" (dict "file" $source "depth" 0 "seen" list "ctx" $)) -}}
+{{-     if eq (last (splitList "\t" .)) $.dotsEdit.file }}{{ printf "%s\n" $target }}{{ break }}{{ end -}}
+{{-   end -}}
+{{- end -}}
