@@ -1,0 +1,5 @@
+{{- /* dots-edit registry (.chezmoidata/edit.toml), one line per entry:
+  <name> TAB <source> TAB <diff> TAB <desc>. */ -}}
+{{- range $name, $e := .edit }}
+{{- printf "%s\t%s\t%s\t%s\n" $name $e.source (get $e "diff" | default "") $e.desc }}
+{{- end -}}

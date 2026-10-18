@@ -1,0 +1,53 @@
+{{- /* dots-edit composition tree (docs/OS.md#editing-your-dotfiles). Called as
+  includeTemplate "dots-edit/tree" (dict "file" <source-relative path> "depth" 0 "seen" list "ctx" .)
+  Prints one line per node, depth first: <depth> TAB <how> TAB <source-relative path>, how
+  being source (the file itself), template (a template/includeTemplate name, in
+  .chezmoitemplates), include (an include path; a printf pattern is globbed), symlink (the
+  file a symlink_ template points at) or data (a .chezmoidata TOML file whose top-level key
+  the file reads). Static: every branch is listed, whichever role or OS takes it.
+  Encrypted (.age) files are leaves. */ -}}
+{{- $ctx := .ctx -}}
+{{- $src := $ctx.chezmoi.sourceDir | replace "\\" "/" -}}
+{{- $file := .file -}}
+{{- $seen := append .seen $file -}}
+{{- if eq .depth 0 }}{{ printf "0\tsource\t%s\n" $file }}{{ end -}}
+{{- if and (not (hasSuffix ".age" $file)) (lt .depth 8) (stat (printf "%s/%s" $src $file)) -}}
+{{- $text := include $file -}}
+{{- $nodes := list -}}
+{{- if hasPrefix "symlink_" (base $file) -}}
+{{-   range regexFindAll `\.chezmoi\.sourceDir\s*\}\}/[^\s{}]+` $text -1 -}}
+{{-     $nodes = append $nodes (list "symlink" (regexReplaceAll `^.*\}\}/` . "")) -}}
+{{-   end -}}
+{{- end -}}
+{{- range regexFindAll `(template|includeTemplate)\s+"[^"]+"` $text -1 -}}
+{{-   $nodes = append $nodes (list "template" (printf ".chezmoitemplates/%s" (regexReplaceAll `^[^"]*"([^"]+)"$` . "${1}"))) -}}
+{{- end -}}
+{{- range regexFindAll `include\s+"[^"]+"` $text -1 -}}
+{{-   $nodes = append $nodes (list "include" (regexReplaceAll `^[^"]*"([^"]+)"$` . "${1}")) -}}
+{{- end -}}
+{{- range regexFindAll `include\s+\(printf\s+"[^"]+"` $text -1 -}}
+{{-   $pattern := regexReplaceAll `^[^"]*"([^"]+)"$` . "${1}" | replace "%s" "*" -}}
+{{-   range glob (printf "%s/%s" $src $pattern) -}}
+{{-     $nodes = append $nodes (list "include" (. | replace "\\" "/" | trimPrefix (printf "%s/" $src))) -}}
+{{-   end -}}
+{{- end -}}
+{{- if not (hasPrefix ".chezmoidata/" $file) -}}
+{{-   range glob (printf "%s/.chezmoidata/*.toml" $src) -}}
+{{-     $data := . | replace "\\" "/" | trimPrefix (printf "%s/" $src) -}}
+{{-     if hasPrefix "." (base $data) }}{{ continue }}{{ end -}}
+{{-     range $key, $_ := include $data | fromToml -}}
+{{-       if regexMatch (printf `([\s($]\.%s\b|get\s+\S+\s+"%s")` $key $key) $text -}}
+{{-         $nodes = append $nodes (list "data" $data) -}}
+{{-       end -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- range $nodes | uniq -}}
+{{-   $how := index . 0 -}}
+{{-   $path := index . 1 -}}
+{{-   if not (has $path $seen) -}}
+{{-     printf "%d\t%s\t%s\n" (add1 $.depth) $how $path -}}
+{{-     includeTemplate "dots-edit/tree" (dict "file" $path "depth" (add1 $.depth) "seen" $seen "ctx" $ctx) -}}
+{{-   end -}}
+{{- end -}}
+{{- end -}}

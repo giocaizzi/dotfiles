@@ -19,12 +19,12 @@ ZSH  := dot_zshrc dot_zprofile
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint lint-tmpl lint-aliases lint-plugins aliases-audit test check
+.PHONY: help lint lint-tmpl lint-aliases lint-plugins lint-edit aliases-audit test check
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
 
-lint: lint-tmpl lint-aliases lint-plugins ## shellcheck shell scripts, validate JSON
+lint: lint-tmpl lint-aliases lint-plugins lint-edit ## shellcheck shell scripts, validate JSON
 	shellcheck $(SHELLCHECK_EXCLUDES) $(SCRIPTS)
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
@@ -69,6 +69,9 @@ lint-aliases: ## Validate the alias registry and lint the rendered alias files
 
 lint-plugins: ## Check the harness plugin list against giocaizzi/harness (HARNESS_DIR = local checkout)
 	@sh scripts/harness-plugins-lint.sh
+
+lint-edit: ## Validate the edit registry (.chezmoidata/edit.toml) and the dots-edit matrix
+	@sh scripts/edit-lint.sh
 
 aliases-audit: ## List live shell aliases the registry does not account for
 	@sh scripts/aliases-audit.sh
