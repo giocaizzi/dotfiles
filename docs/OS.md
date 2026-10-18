@@ -147,7 +147,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker sized to show every option (`--height=~100%`), or a numbered prompt without fzf.
+Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker sized to show every option (`--height=~100%`), or a numbered prompt without fzf.
 
 | Component | Command | Check before apply |
 |---|---|---|
