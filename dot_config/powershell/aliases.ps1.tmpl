@@ -131,9 +131,10 @@ function aliases-edit {
 }
 
 # ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
-# (this machine's hosts, not managed by chezmoi: edited in place, a new name creates it).
-# `ssh -G` must parse the edit (config: before apply). No argument: pick config or an
-# existing config.d file.
+# (this machine's hosts, not managed by chezmoi; a new name creates it). `ssh -G` must
+# parse the edit before it goes live: config before apply, a config.d file is edited in
+# a private temp copy that replaces the live file only once it passes (on failure: edit
+# again, or keep the live file). No argument: pick config or an existing config.d file.
 function ssh-edit {
 	param([string]$Name)
 	if ($args) { Write-Error 'usage: ssh-edit [config|<name>]'; return }
@@ -153,9 +154,23 @@ function ssh-edit {
 		return
 	}
 	if (-not $Name -or $Name -match '^\.|[\\/]') { Write-Error 'usage: ssh-edit [config|<name>]'; return }
-	New-Item -ItemType Directory -Force $dir > $null
 	$file = Join-Path $dir $Name
-	if (-not (_dots-open $file)) { Write-Error 'The editor failed.'; return }
-	if (-not (& $check check $file)) { Write-Error "Check failed: the file keeps the edit, run ssh-edit $Name to fix it ($file)." }
+	$tmp = [IO.Path]::GetTempFileName()
+	try {
+		if (Test-Path $file) { Copy-Item -Force $file $tmp }
+		$before = (Get-FileHash $tmp).Hash
+		while ($true) {
+			if (-not (_dots-open $tmp)) { Write-Error "The editor failed: $file unchanged."; return }
+			if (& $check check $tmp) { break }
+			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
+			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
+		}
+		if ((Get-FileHash $tmp).Hash -ne $before) {
+			New-Item -ItemType Directory -Force $dir > $null
+			Move-Item -Force $tmp $file
+		}
+	} finally {
+		Remove-Item -Force -ErrorAction SilentlyContinue $tmp
+	}
 }
 {{- end }}

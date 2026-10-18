@@ -46,6 +46,14 @@ alias) printf '\n[alias.zzedit]\ncmd = "echo edited-marker"\n' >>"\$2" ;;
 badalias) printf '\n[alias.zzbad]\nposix = "true"\nshells = ["posix"]\n' >>"\$2" ;;
 ssh) printf '\nHost zzedit\n  HostName edited-marker.invalid\n' >>"\$2" ;;
 badssh) printf '\nNotAnOption yes\n' >>"\$2" ;;
+badthenssh)
+	if grep -q NotAnOption "\$2"; then
+		sed '/NotAnOption/d' "\$2" >"\$2.x" && mv "\$2.x" "\$2"
+		printf '\nHost zzedit\n  HostName edited-marker.invalid\n' >>"\$2"
+	else
+		printf '\nNotAnOption yes\n' >>"\$2"
+	fi
+	;;
 esac
 EOF
 chmod +x "$T/bin/chezmoi" "$T/bin/editor"
@@ -186,10 +194,22 @@ suite() {
 	expect 'ssh-edit config.d: created' has edited-marker "$T/home/.ssh/config.d/work"
 	expect 'ssh-edit config.d: source untouched' test -z "$(git -C "$S" status --short)"
 	expect 'ssh-edit config.d: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'ssh-edit config.d: temp removed' cleaned
 
-	run "$shell" '' badssh full ssh-edit work
-	expect 'ssh-edit config.d syntax error: non-zero' status -ne 0
-	expect 'ssh-edit config.d syntax error: file keeps the edit' has NotAnOption "$T/home/.ssh/config.d/work"
+	run "$shell" '' noop full ssh-edit work
+	expect 'ssh-edit config.d no-op: no file created' test ! -e "$T/home/.ssh/config.d/work"
+
+	pre="mkdir -p '$T/home/.ssh/config.d' && echo 'Host zzold' >'$T/home/.ssh/config.d/work'"
+	run "$shell" 'n\n' badssh full ssh-edit work
+	pre=
+	expect 'ssh-edit config.d syntax error, give up: non-zero' status -ne 0
+	expect 'ssh-edit config.d syntax error, give up: live file unchanged' test "$(cat "$T/home/.ssh/config.d/work")" = 'Host zzold'
+	expect 'ssh-edit config.d syntax error, give up: temp removed' cleaned
+
+	run "$shell" '\n' badthenssh full ssh-edit work
+	expect 'ssh-edit config.d syntax error, edit again: fixed' status -eq 0
+	expect 'ssh-edit config.d syntax error, edit again: installed' has edited-marker "$T/home/.ssh/config.d/work"
+	expect 'ssh-edit config.d syntax error, edit again: bad line gone' lacks NotAnOption "$T/home/.ssh/config.d/work"
 
 	pre="mkdir -p '$T/home/.ssh/config.d' && : >'$T/home/.ssh/config.d/zzlocal'"
 	run "$shell" '2\n' ssh nofzf ssh-edit
