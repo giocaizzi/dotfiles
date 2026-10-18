@@ -76,6 +76,7 @@ _dots_edit() (
 	src=$(chezmoi source-path) || return 1
 	case $file in
 	*.age)
+		mask=$(umask)
 		umask 077
 		tmp=$(mktemp) || return 1
 		trap 'rm -f "$tmp" "$src/$file.new"' EXIT
@@ -88,6 +89,8 @@ _dots_edit() (
 				mv "$src/$file.new" "$src/$file"; } || return 1
 		fi
 		edited=$tmp
+		# chezmoi derives target modes from the umask: restore it for diff and apply.
+		umask "$mask"
 		;;
 	*)
 		_dots_open "$src/$file" || return 1
