@@ -128,9 +128,12 @@ run() {
 	# The parents a real home already has (apply of one target needs them).
 	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.config/powershell" "$T/home/.ssh"
 	eval "${pre:-}"
-	p=$T/bin:$PATH
+	# PATH needs the /c/x form: the colon of C:/x would split it.
+	bin=$T/bin
+	if [ -n "$win" ]; then bin=$(cygpath -u "$bin"); fi
+	p=$bin:$PATH
 	# Windows has no fzf to hide: the fallback cases warn below when one is installed.
-	[ "$path" = full ] || [ -n "$win" ] || p=$T/bin:/usr/bin:/bin
+	[ "$path" = full ] || [ -n "$win" ] || p=$bin:/usr/bin:/bin
 	editor=$T/bin/editor
 	if [ -n "$win" ]; then editor=$T/bin/editor.cmd; fi
 	set +e
