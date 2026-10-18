@@ -172,8 +172,8 @@ cleaned() {
 	case $f in "$S"/*) ;; *) [ ! -e "$f" ] || return 1 ;; esac
 	[ -z "$(find "$S" -name '*.new')" ]
 }
-powershell() { [ "$shell" = pwsh ] || [ "$shell" = powershell ]; }
-usage() { status -ne 0 && has usage: "$T/out" && { powershell || status -eq 2; }; }
+in_powershell() { [ "$shell" = pwsh ] || [ "$shell" = powershell ]; }
+usage() { status -ne 0 && has usage: "$T/out" && { in_powershell || status -eq 2; }; }
 
 suite() {
 	run "$shell" 'y\n' text full agents-edit personal
@@ -340,9 +340,11 @@ suite() {
 	live=1
 	run "$shell" 'n\n' slowtext full dots-edit agents/core
 	live=
+	# A failure report shows the pane too.
+	{ echo '--- pane'; cat "$T/pane" 2>/dev/null; } >>"$T/out"
 	expect 'live preview: diff of the changed target' has '+edited-marker' "$T/pane"
 	# Windows Terminal has no kill-pane: there the pane ends itself on the stop file.
-	if [ -z "$win" ] || ! powershell; then
+	if [ -z "$win" ] || ! in_powershell; then
 		expect 'live preview: pane closed' has killed "$T/pane.log"
 	fi
 }
