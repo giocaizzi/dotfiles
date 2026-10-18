@@ -165,9 +165,10 @@ _aliases_edit_hook() {
 }
 
 # ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
-# (this machine's hosts, not managed by chezmoi: edited in place, a new name creates it).
-# `ssh -G` must parse the edit (config: before apply). No argument: pick config or an
-# existing config.d file.
+# (this machine's hosts, not managed by chezmoi; a new name creates it). `ssh -G` must
+# parse the edit before it goes live: config before apply, a config.d file is edited in
+# a private temp copy that replaces the live file only once it passes (on failure: edit
+# again, or keep the live file). No argument: pick config or an existing config.d file.
 ssh-edit() (
 	if [ $# -gt 1 ]; then
 		echo 'usage: ssh-edit [config|<name>]' >&2
@@ -195,10 +196,20 @@ EOF
 		;;
 	esac
 	umask 077
-	mkdir -p "$dir" && _dots_open "$dir/$name" || return 1
-	if ! _ssh_edit_hook check "$dir/$name"; then
-		echo "Check failed: the file keeps the edit, run ssh-edit $name to fix it ($dir/$name)." >&2
-		return 1
+	tmp=$(mktemp) || return 1
+	trap 'rm -f "$tmp"' EXIT
+	trap 'exit 130' HUP INT TERM
+	if [ -f "$dir/$name" ]; then cp "$dir/$name" "$tmp" || return 1; fi
+	before=$(cksum <"$tmp")
+	while :; do
+		_dots_open "$tmp" || return 1
+		if _ssh_edit_hook check "$tmp"; then break; fi
+		printf 'Check failed, %s unchanged. Edit again? [Y/n] ' "$dir/$name" >&2
+		read -r answer || return 1
+		case $answer in [nN]*) return 1 ;; esac
+	done
+	if [ "$(cksum <"$tmp")" != "$before" ]; then
+		mkdir -p "$dir" && mv -f "$tmp" "$dir/$name"
 	fi
 )
 _ssh_edit_hook() {
