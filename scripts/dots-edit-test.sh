@@ -143,6 +143,12 @@ suite() {
 	expect 'agents-edit work no-op: temp removed' cleaned
 	expect 'agents-edit work no-op: diff in the default mode' lacks 100600 "$T/out"
 
+	pre="'$T/bin/chezmoi' apply '$T/home/.claude/CLAUDE.md'"
+	run "$shell" '' noop full agents-edit personal
+	pre=
+	expect 'agents-edit up to date: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'agents-edit up to date: says so' has 'up to date' "$T/out"
+
 	run "$shell" 'n\n' fail full agents-edit personal
 	expect 'editor failure: non-zero' status -ne 0
 	expect 'editor failure: source unchanged' unchanged .chezmoitemplates/agents/personal.md.age

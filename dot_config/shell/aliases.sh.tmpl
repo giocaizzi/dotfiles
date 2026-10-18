@@ -63,8 +63,8 @@ _dots_open() { sh -c "${EDITOR:-${VISUAL:-vi}} \"\$1\"" dots-edit "$1"; }
 # re-encrypted (armored) only when changed, and the temp file is always removed.
 # Then `<hook> check <edited file>` (failure: nothing applied), `chezmoi diff` of the
 # targets this machine manages (-1: the first only, when they render the same text),
-# "apply now? [y/N]" for those targets only, `<hook> applied`, and a reminder to ship
-# a PR. A subshell keeps umask and traps local.
+# "apply now? [y/N]" for those targets only (skipped when they are up to date),
+# `<hook> applied`, and a reminder to ship a PR. A subshell keeps umask and traps local.
 _dots_edit() (
 	first=
 	if [ "$1" = -1 ]; then
@@ -109,7 +109,9 @@ _dots_edit() (
 		shift
 		if printf '%s\n' "$managed" | grep -qxF "$t"; then set -- "$@" "$home/$t"; fi
 	done
-	if [ $# -gt 0 ]; then
+	if [ $# -gt 0 ] && [ -z "$(chezmoi status "$@")" ]; then
+		echo 'Targets up to date: nothing to apply.' >&2
+	elif [ $# -gt 0 ]; then
 		if [ -n "$first" ]; then chezmoi diff "$1"; else chezmoi diff "$@"; fi
 		printf 'apply now? [y/N] ' >&2
 		read -r answer

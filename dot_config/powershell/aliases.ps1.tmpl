@@ -84,7 +84,9 @@ function _dots-edit {
 		$dest = chezmoi target-path
 		$managed = chezmoi managed -i files
 		$apply = @(foreach ($t in $Targets) { if ($managed -contains $t) { Join-Path $dest $t } })
-		if ($apply) {
+		if ($apply -and -not (chezmoi status @apply)) {
+			Write-Host 'Targets up to date: nothing to apply.'
+		} elseif ($apply) {
 			if ($DiffFirst) { chezmoi diff $apply[0] } else { chezmoi diff @apply }
 			if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
 				chezmoi apply @apply
