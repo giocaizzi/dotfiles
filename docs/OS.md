@@ -156,7 +156,7 @@ Every command edits the chezmoi source checkout in place, shows `chezmoi diff` o
 | Aliases, public registry | `aliases-edit public` | `make lint-aliases` |
 | Aliases, personal (encrypted) | `aliases-edit private` | `make lint-aliases` |
 | `~/.ssh/config` (encrypted) | `ssh-edit config` | `ssh -G` parses the edited file |
-| `~/.ssh/config.d/<name>` (this machine only, unmanaged) | `ssh-edit <name>` (a new name creates the file) | `ssh -G` parses it; edited in place, no diff, apply or PR |
+| `~/.ssh/config.d/<name>` (this machine only, unmanaged) | `ssh-edit <name>` (a new name creates the file) | `ssh -G` parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no diff, apply or PR |
 | Any other managed file | `cze <target>` (`chezmoi edit --apply`) | — |
 
 After `aliases-edit` applies, open a new shell (or source the alias file). Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
