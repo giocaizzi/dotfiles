@@ -5,6 +5,8 @@
 # --config/--source/--destination/--persistent-state. The real key, encrypted files and
 # home are never read or written. Run from the repo root (make test).
 set -eu
+# Pinned so the target-mode cases are deterministic.
+umask 022
 
 case $(uname -s) in MINGW* | MSYS* | CYGWIN*)
 	echo "Skipping the edit command tests on Windows: CI runs them on Linux."
@@ -129,6 +131,7 @@ suite() {
 	expect 'agents-edit personal: applied' has edited-marker "$T/home/.claude/CLAUDE.md"
 	expect 'agents-edit personal: re-encrypted, armored' armored .chezmoitemplates/agents/personal.md.age
 	expect 'agents-edit personal: temp removed' cleaned
+	expect 'agents-edit personal: umask restored for apply' test -n "$(find "$T/home/.claude/CLAUDE.md" -perm 0644)"
 	expect 'agents-edit: ship hint' has 'ship a PR' "$T/out"
 
 	run "$shell" 'n\n' text full agents-edit core
@@ -138,6 +141,7 @@ suite() {
 	run "$shell" 'n\n' noop full agents-edit work
 	expect 'agents-edit work no-op: byte-identical' unchanged .chezmoitemplates/agents/work.md.age
 	expect 'agents-edit work no-op: temp removed' cleaned
+	expect 'agents-edit work no-op: diff in the default mode' lacks 100600 "$T/out"
 
 	run "$shell" 'n\n' fail full agents-edit personal
 	expect 'editor failure: non-zero' status -ne 0
