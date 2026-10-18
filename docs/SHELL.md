@@ -75,9 +75,10 @@ message = "pipx is not used here, use uv: ..."
 - **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
   `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
 - **Functions** that are more than a command stay in the shell snippets, each with a
-  PowerShell twin where it applies: the edit commands `agents-edit`, `aliases-edit`,
-  `ssh-edit` (full machines, over the shared `_dots_edit` / `_dots-edit` and
-  `_dots_pick` / `_dots-pick` helpers, [OS.md](./OS.md#editing-your-dotfiles)),
+  PowerShell twin where it applies: the edit commands `dots-edit` and its shortcuts
+  `agents-edit`, `aliases-edit`, `ssh-edit` (full machines, over the shared
+  `_dots_edit` / `_dots-edit` and `_dots_pick` / `_dots-pick` helpers and the
+  `.chezmoitemplates/dots-edit/` templates, [OS.md](./OS.md#editing-your-dotfiles)),
   `rp5-secrets`, `rp5-sync-infra` (personal Mac, POSIX only), fzf `h`.
 - **Checks:** `make lint` validates the registry (every alias names its shells, a
   one-shell alias says why, known OS and role values) and lints the rendered files
@@ -111,7 +112,8 @@ the file.
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts            | same |
 | `hist` / `h`          | fzf history search                       | same |
 | `cz` `cze` `czd` `cza` | `chezmoi`, `chezmoi edit --apply`, `chezmoi diff`, `chezmoi apply` | same |
-| `agents-edit` `aliases-edit` `ssh-edit` (full machines) | edit an agent instruction layer, the alias registry (public or private), `~/.ssh/config` or a `~/.ssh/config.d/` file; check, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
+| `dots-edit` (full machines) | edit or view any part of the dotfiles: a registry entry, a target's composition tree or a source file; check, render every configuration, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
+| `agents-edit` `aliases-edit` `ssh-edit` (full machines) | `dots-edit` shortcuts: an agent instruction layer, the alias registry (public or private), `~/.ssh/config`; `ssh-edit <name>` also edits a `~/.ssh/config.d/` file | same |
 | `openclaw` (personal Mac) | rp5-homeserver openclaw script       | — |
 | `pipx`                | refuses; use `uv tool install` / `uvx`   | same |
 | `python`              | `python3`, only where no `python` exists | — |
