@@ -74,6 +74,7 @@ First decide the machine's role ([details](./docs/OS.md#machine-roles)): **perso
 | Command | Does |
 |---|---|
 | `chezmoi update` | pull this repo and apply it |
+| `dots-edit [<target>]` | edit what a file is made of (layers, partials, data) and see what changes on every OS and role; `dots-edit --view <target> --matrix` to only look ([docs](./docs/OS.md#editing-your-dotfiles)) |
 | `chezmoi edit <file>` | edit a managed file in the source (staged, not committed) |
 | `chezmoi add <file>` | start managing a file (`--encrypt` for secrets) |
 | `chezmoi status` / `chezmoi diff` | what an apply would change |

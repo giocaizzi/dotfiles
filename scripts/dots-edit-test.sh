@@ -28,8 +28,15 @@ encryption = "age"
 identity = "$T/key.txt"
 recipient = "$recipient"
 [data]
+gitUser = "test"
+gitEmail = "test@example.invalid"
 light = false
 work = false
+workEmail = ""
+githubUser = ""
+personalGitRemote = ""
+bwsProjectId = ""
+otelEndpoint = ""
 harnesses = ["claude"]
 EOF
 cat >"$T/bin/chezmoi" <<EOF
@@ -44,6 +51,9 @@ printf '%s\n' "\$2" >"$T/edited"
 case \$1 in
 fail) exit 1 ;;
 text) printf '\nedited-marker\n' >>"\$2" ;;
+slowtext) printf '\nedited-marker\n' >>"\$2" && sleep 3 ;;
+mcp) printf 'zzedit = "https://edited-marker.invalid/mcp"\n' >>"\$2" ;;
+badtmpl) printf '\n{{ .nope.nope }}\n' >>"\$2" ;;
 alias) printf '\n[alias.zzedit]\ncmd = "echo edited-marker"\n' >>"\$2" ;;
 badalias) printf '\n[alias.zzbad]\nposix = "true"\nshells = ["posix"]\n' >>"\$2" ;;
 ssh) printf '\nHost zzedit\n  HostName edited-marker.invalid\n' >>"\$2" ;;
@@ -58,7 +68,21 @@ badthenssh)
 	;;
 esac
 EOF
-chmod +x "$T/bin/chezmoi" "$T/bin/editor"
+# Fake tmux for the live preview: split-window runs the pane command in the background
+# (output in $T/pane), kill-pane stops it.
+cat >"$T/bin/tmux" <<EOF
+#!/bin/sh
+case \$1 in
+split-window)
+	for a do cmd=\$a; done
+	sh -c "\$cmd" >"$T/pane" 2>&1 &
+	echo \$! >"$T/pane.pid"
+	echo %1
+	;;
+kill-pane) kill "\$(cat "$T/pane.pid")" 2>/dev/null; echo killed >>"$T/pane.log" ;;
+esac
+EOF
+chmod +x "$T/bin/chezmoi" "$T/bin/editor" "$T/bin/tmux"
 
 # The source copy: no scripts, externals or removals, dummy encrypted files, a git repo.
 mkdir "$S"
@@ -85,7 +109,7 @@ run() {
 	shell=$1 answers=$2 mode=$3 path=$4
 	shift 4
 	git -C "$S" checkout -q -- .
-	rm -rf "${T:?}/home" "$T/edited" "$T/state.boltdb"
+	rm -rf "${T:?}/home" "$T/edited" "$T/state.boltdb" "$T/pane" "$T/pane.log"
 	# The parents a real home already has (apply of one target needs them).
 	mkdir -p "$T/home/.claude" "$T/home/.config/shell" "$T/home/.ssh"
 	eval "${pre:-}"
@@ -94,8 +118,8 @@ run() {
 	set +e
 	# shellcheck disable=SC2016 # expanded by the shell under test
 	case $shell in
-	pwsh) printf '%b' "$answers" | EDITOR="$T/bin/editor $mode" PATH=$p "$pwsh" -NoProfile -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*" ;;
-	*) printf '%b' "$answers" | EDITOR="$T/bin/editor $mode" PATH=$p "$shell" -c '. "$1"; shift; "$@"' sh "$T/aliases.sh" "$@" ;;
+	pwsh) printf '%b' "$answers" | TMUX=${live:-} EDITOR="$T/bin/editor $mode" PATH=$p "$pwsh" -NoProfile -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*" ;;
+	*) printf '%b' "$answers" | TMUX=${live:-} EDITOR="$T/bin/editor $mode" PATH=$p "$shell" -c '. "$1"; shift; "$@"' sh "$T/aliases.sh" "$@" ;;
 	esac >"$T/out" 2>&1
 	st=$?
 	set -e
@@ -231,6 +255,65 @@ suite() {
 
 	run "$shell" '' noop full ssh-edit a b
 	expect 'ssh-edit two arguments: usage' usage
+
+	run "$shell" '' noop full dots-edit --list
+	expect 'dots-edit --list: entries' has 'aliases/private' "$T/out"
+
+	run "$shell" '' noop full dots-edit --help
+	expect 'dots-edit --help: usage' has 'usage: dots-edit' "$T/out"
+
+	run "$shell" 'n\n' mcp full dots-edit mcp
+	expect 'dots-edit mcp: edited' has edited-marker "$S/.chezmoidata/mcp.toml"
+	expect 'dots-edit mcp: report per configuration' has 'darwin/personal: .*mcp' "$T/out"
+	expect 'dots-edit mcp: identical lists grouped' has 'linux/personal: same as darwin/personal' "$T/out"
+	expect 'dots-edit mcp: work machines unaffected' has 'darwin/work: nothing' "$T/out"
+	expect 'dots-edit mcp: light not managed' has 'windows/light: nothing' "$T/out"
+
+	run "$shell" 'y\n' badtmpl full dots-edit agents/env
+	expect 'render failure: non-zero' status -ne 0
+	expect 'render failure: reported' has 'render FAILED' "$T/out"
+	expect 'render failure: no apply prompt' lacks 'apply now' "$T/out"
+
+	run "$shell" '4\nn\n' text nofzf dots-edit "$T/home/.claude/CLAUDE.md"
+	expect 'dots-edit <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+	expect 'dots-edit <target>: nodes named' has '\[agents/personal\]' "$T/out"
+
+	run "$shell" 'n\n' text full dots-edit dot_config/tmux/tmux.conf
+	expect 'dots-edit <source file>: edited' has edited-marker "$S/dot_config/tmux/tmux.conf"
+
+	run "$shell" '' noop full dots-edit no/such/thing
+	expect 'dots-edit unknown argument: non-zero' status -ne 0
+	expect 'dots-edit unknown argument: says so' has 'no registry entry' "$T/out"
+
+	run "$shell" '' noop full dots-edit --bogus
+	expect 'dots-edit bad flag: usage' usage
+
+	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md"
+	expect 'dots-edit --view <target>: tree' has 'include .chezmoitemplates/agents/core.md  \[agents/core\]' "$T/out"
+	expect 'dots-edit --view <target>: rendered' has 'dummy personal layer' "$T/out"
+
+	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --as windows,work
+	expect 'dots-edit --view --as: other role' has 'dummy work layer' "$T/out"
+	expect 'dots-edit --view --as: labelled' has 'rendered on windows/work' "$T/out"
+
+	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --as plan9
+	expect 'dots-edit --view --as unknown: non-zero' status -ne 0
+
+	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --matrix
+	expect 'dots-edit --view --matrix: differences as diffs' has '+dummy work layer' "$T/out"
+	expect 'dots-edit --view --matrix: unmanaged listed' has 'not managed on: darwin/light' "$T/out"
+
+	run "$shell" '' noop full dots-edit --view "$T/home/.config/tmux/tmux.conf" --matrix
+	expect 'dots-edit --view --matrix: identical renders grouped' has 'rendered on darwin/personal, darwin/work, darwin/light, linux/personal' "$T/out"
+
+	run "$shell" '' noop full dots-edit --view mcp
+	expect 'dots-edit --view <entry>: reaches this machine' has 'this machine: ' "$T/out"
+
+	live=1
+	run "$shell" 'n\n' slowtext full dots-edit agents/core
+	live=
+	expect 'live preview: diff of the changed target' has '+edited-marker' "$T/pane"
+	expect 'live preview: pane closed' has killed "$T/pane.log"
 }
 
 if PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then

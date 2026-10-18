@@ -48,54 +48,262 @@ function _dots-open {
 	$p.ExitCode -eq 0
 }
 
-# _dots-edit: the shared edit flow. A plain file opens in the editor; an age file is
-# decrypted to a temp file in the per-user temp folder, re-encrypted (armored) only when
-# changed, and the temp file is always removed. Then `& $Hook check <edited file>`
-# (false: nothing applied), chezmoi diff of the targets this machine manages
-# (-DiffFirst: the first only, when they render the same text), apply now? for those
-# targets only, `& $Hook applied`, and a reminder to ship a PR.
+# _dots-datafile <data> [<path>]: write chezmoi override data (a hashtable, an object or
+# a JSON string) to a .json file and return its path. Data goes through a file, never an
+# argument: Windows PowerShell strips the quotes of a JSON argument to a native command.
+function _dots-datafile {
+	param($Data, [string]$Path)
+	if (-not $Path) { $Path = Join-Path ([IO.Path]::GetTempPath()) "dots-edit-$([guid]::NewGuid()).json" }
+	$json = if ($null -eq $Data) { '{}' } elseif ($Data -is [string]) { $Data } else { $Data | ConvertTo-Json -Depth 20 -Compress }
+	[IO.File]::WriteAllText($Path, $json)
+	$Path
+}
+
+# _dots-tmpl <name> [<data>]: render the dots-edit helper template
+# .chezmoitemplates/dots-edit/<name>, its arguments under dotsEdit in the data.
+function _dots-tmpl {
+	param([string]$Name, $Data)
+	$file = _dots-datafile $Data
+	try { chezmoi execute-template --override-data-file $file ('{{ "{{" }} includeTemplate `dots-edit/' + $Name + '` . }}') }
+	finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+}
+
+# _dots-with <data JSON> <dotsEdit hashtable>: the data JSON plus the dotsEdit arguments.
+function _dots-with {
+	param([string]$Json, [hashtable]$DotsEdit)
+	$d = $Json | ConvertFrom-Json
+	$d | Add-Member -Force -NotePropertyName dotsEdit -NotePropertyValue $DotsEdit
+	$d
+}
+
+# _dots-entries: the edit registry (.chezmoidata/edit.toml): Name, Source, Diff, Desc.
+function _dots-entries {
+	_dots-tmpl entries | Where-Object { $_ } | ForEach-Object {
+		$f = $_ -split "`t", 4
+		[pscustomobject]@{ Name = $f[0]; Source = $f[1]; Diff = $f[2]; Desc = $f[3] }
+	}
+}
+
+# _dots-field <entry> <field>: a registry field, empty when unset.
+function _dots-field {
+	param([string]$Entry, [string]$Field)
+	(@(_dots-tmpl field @{ dotsEdit = @{ entry = $Entry; field = $Field } }) -join "`n").Trim()
+}
+
+# _dots-tree <source file> [<data JSON>]: its composition tree (Depth, How, Path), from
+# .chezmoitemplates/dots-edit/tree.
+function _dots-tree {
+	param([string]$File, [string]$Json = '{}')
+	_dots-tmpl tree-of (_dots-with $Json @{ file = $File }) | Where-Object { $_ } | ForEach-Object {
+		$f = $_ -split "`t", 3
+		[pscustomobject]@{ Depth = [int]$f[0]; How = $f[1]; Path = $f[2] }
+	}
+}
+
+# _dots-print-tree <tree> <entries>: the tree indented, each node's registry entry named.
+function _dots-print-tree {
+	param($Tree, $Entries)
+	foreach ($n in $Tree) {
+		$e = $Entries | Where-Object Source -CEQ $n.Path | Select-Object -First 1
+		$line = ('  ' * $n.Depth) + "$($n.How) $($n.Path)"
+		if ($e) { $line += "  [$($e.Name)]" }
+		if ($n.Path -like '*.age') { $line += '  (encrypted)' }
+		$line
+	}
+}
+
+# _dots-tempdir: a new private temp folder (owner-only on Linux and macOS).
+function _dots-tempdir {
+	$dir = Join-Path ([IO.Path]::GetTempPath()) "dots-edit-$([guid]::NewGuid())"
+	New-Item -ItemType Directory $dir > $null
+	if ($PSVersionTable.PSEdition -eq 'Core' -and -not $IsWindows) { chmod 700 $dir }
+	$dir
+}
+
+# _dots-start <out> <chezmoi argument>...: start chezmoi in the background, stdout into
+# <out>.tmp and stderr into <out>.err; _dots-finish moves <out>.tmp to <out>.json on
+# success. Arguments with spaces must come quoted.
+function _dots-start {
+	param([string]$Out, [string[]]$ArgList)
+	$exe = (Get-Command chezmoi -CommandType Application | Select-Object -First 1).Source
+	$p = Start-Process -FilePath $exe -ArgumentList $ArgList -RedirectStandardOutput "$Out.tmp" -RedirectStandardError "$Out.err" -NoNewWindow -PassThru
+	$null = $p.Handle
+	@{ Process = $p; Out = $Out }
+}
+function _dots-finish {
+	param($Jobs)
+	foreach ($j in $Jobs) {
+		$j.Process.WaitForExit()
+		if ($j.Process.ExitCode -eq 0) {
+			Move-Item -Force "$($j.Out).tmp" "$($j.Out).json"
+			Remove-Item -Force "$($j.Out).err"
+		} else {
+			Remove-Item -Force -ErrorAction SilentlyContinue "$($j.Out).tmp"
+		}
+	}
+}
+
+# _dots-snap <dir>: the target state (chezmoi dump: files, symlinks and scripts with their
+# contents) of this machine (here.json) and of every matrix configuration (<n>.json, its
+# label on line n of <dir>/labels), rendered in parallel. A failed render leaves <name>.err.
+function _dots-snap {
+	param([string]$Dir)
+	New-Item -ItemType Directory -Force $Dir > $null
+	$labels = @(_dots-tmpl matrix | Where-Object { $_ })
+	if ($LASTEXITCODE) { return $false }
+	$labels | Set-Content (Join-Path $Dir labels)
+	$dump = 'dump', '--exclude', 'dirs,externals', '--format', 'json'
+	$jobs = @(_dots-start (Join-Path $Dir here) $dump)
+	for ($n = 1; $n -le $labels.Count; $n++) {
+		$out = Join-Path $Dir $n
+		$data = _dots-datafile ($labels[$n - 1] -split "`t", 2)[1] "$out.data.json"
+		$jobs += _dots-start $out ($dump + '--override-data-file', "`"$data`"")
+	}
+	_dots-finish $jobs
+	$true
+}
+
+# _dots-state <dump.json>: target -> its state as compact JSON (case-sensitive keys).
+function _dots-state {
+	param([string]$File)
+	$h = New-Object System.Collections.Hashtable ([StringComparer]::Ordinal)
+	(Get-Content -Raw $File | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $h[$_.Name] = $_.Value | ConvertTo-Json -Depth 5 -Compress }
+	$h
+}
+
+# _dots-changed <before.json> <after.json>: the targets whose state differs.
+function _dots-changed {
+	param([string]$Before, [string]$After)
+	$a = _dots-state $Before
+	$b = _dots-state $After
+	@(@($a.Keys) + @($b.Keys) | Sort-Object -Unique -CaseSensitive | Where-Object { $a[$_] -cne $b[$_] })
+}
+
+# _dots-report <before dir> <after dir>: per matrix configuration, the targets the edit
+# changes ("same as" an earlier configuration with the same list). False when a
+# configuration stopped rendering; one that already failed before is only reported.
+function _dots-report {
+	param([string]$Before, [string]$After)
+	Write-Host 'Changed by this edit, per configuration (every harness selected):'
+	$ok = $true
+	$seen = @()
+	$labels = @(Get-Content (Join-Path $Before labels))
+	for ($n = 1; $n -le $labels.Count; $n++) {
+		$label = ($labels[$n - 1] -split "`t", 2)[0]
+		$a = Join-Path $Before "$n.json"
+		$b = Join-Path $After "$n.json"
+		if (-not (Test-Path $b)) {
+			if (Test-Path $a) {
+				Write-Host "  ${label}: render FAILED"
+				$ok = $false
+			} else {
+				Write-Host "  ${label}: render failed, already before this edit"
+			}
+			Get-Content (Join-Path $After "$n.err") | Where-Object { $_ -notlike 'chezmoi: warning:*' } | ForEach-Object { Write-Host "    $_" }
+			continue
+		}
+		if (-not (Test-Path $a)) { Write-Host "  ${label}: renders again"; continue }
+		$list = (_dots-changed $a $b) -join ', '
+		$same = if ($list) { $seen | Where-Object List -CEQ $list | Select-Object -First 1 }
+		$seen += [pscustomobject]@{ Label = $label; List = $list }
+		if ($same) { Write-Host "  ${label}: same as $($same.Label)" }
+		elseif ($list) { Write-Host "  ${label}: $list" }
+		else { Write-Host "  ${label}: nothing" }
+	}
+	$ok
+}
+
+# _dots-live <source file> <edited file> <snapshot dir> <source dir>: inside tmux (not on
+# Windows), a side pane that shows this machine's changes on every save
+# (.chezmoitemplates/dots-edit/live.sh), rendered from a private copy of the source.
+# Returns the pane id.
+function _dots-live {
+	param([string]$File, [string]$Edited, [string]$Snap, [string]$Src)
+	if (-not $env:TMUX -or -not (Get-Command tmux -ErrorAction SilentlyContinue) -or -not (Test-Path (Join-Path $Snap 'before/here.json'))) { return }
+	$shadow = Join-Path $Snap shadow
+	New-Item -ItemType Directory $shadow > $null
+	Get-ChildItem -Force $Src | Where-Object Name -notin '.git', '.claude' | Copy-Item -Recurse -Destination $shadow
+	$script = Join-Path $Snap live.sh
+	(_dots-tmpl live.sh) -join "`n" | Set-Content -NoNewline $script
+	$exe = (Get-Command chezmoi -CommandType Application | Select-Object -First 1).Source
+	tmux split-window -h -d -P -F '#{pane_id}' "sh '$script' '$File' '$Edited' '$Snap' '$exe' '$Src'"
+}
+
+# _dots-edit <entry|''> <source file>: the shared edit flow (docs/OS.md#editing-your-dotfiles).
+# Renders the target state of this machine and of every matrix configuration, opens the
+# file (inside tmux with a live preview pane), runs the entry's check, renders again,
+# reports what changed per configuration, then diffs this machine's changed targets and
+# asks to apply them (skipped when they are up to date), and reminds to ship a PR. An age
+# file is decrypted to a private temp file, re-encrypted (armored) only when changed, and
+# the temp file is always removed.
 function _dots-edit {
-	param([string]$File, [scriptblock]$Hook, [string[]]$Targets, [switch]$DiffFirst)
+	param([string]$Entry, [string]$File)
 	$src = chezmoi source-path
 	if ($LASTEXITCODE) { return }
+	$check = $note = $first = ''
+	if ($Entry) {
+		$check = _dots-field $Entry powershell
+		$note = _dots-field $Entry note
+		$first = _dots-field $Entry diff
+	}
 	$path = Join-Path $src $File
-	$tmp = $null
+	$snap = _dots-tempdir
+	$pane = $null
 	try {
+		if (-not (_dots-snap (Join-Path $snap before))) { return }
 		if ($File -like '*.age') {
-			$tmp = [IO.Path]::GetTempFileName()
-			chezmoi decrypt --output $tmp $path
+			$edited = Join-Path $snap edit
+			chezmoi decrypt --output $edited $path
 			if ($LASTEXITCODE) { return }
-			$before = (Get-FileHash $tmp).Hash
-			if (-not (_dots-open $tmp)) { Write-Error 'The editor failed: nothing saved.'; return }
-			if ((Get-FileHash $tmp).Hash -ne $before) {
-				chezmoi encrypt --output "$path.new" $tmp
-				if ($LASTEXITCODE) { return }
-				Move-Item -Force "$path.new" $path
-			}
-			$edited = $tmp
 		} else {
-			if (-not (_dots-open $path)) { Write-Error 'The editor failed.'; return }
 			$edited = $path
 		}
-		if ($Hook -and -not (& $Hook check $edited)) {
-			Write-Error "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($path)."
+		$before = (Get-FileHash $edited).Hash
+		$pane = _dots-live $File $edited $snap $src
+		$opened = _dots-open $edited
+		if ($pane) { tmux kill-pane -t $pane 2>$null; $pane = $null }
+		if (-not $opened) { Write-Error "The editor failed: $path unchanged."; return }
+		if ($File -like '*.age' -and (Get-FileHash $edited).Hash -ne $before) {
+			chezmoi encrypt --output "$path.new" $edited
+			if ($LASTEXITCODE) { return }
+			Move-Item -Force "$path.new" $path
+		}
+		if ($check) {
+			$global:LASTEXITCODE = 0
+			Push-Location $src
+			try { & ([scriptblock]::Create($check)) $edited | Out-Host } finally { Pop-Location }
+			if ($LASTEXITCODE) {
+				Write-Error "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($path)."
+				return
+			}
+		}
+		if (-not (_dots-snap (Join-Path $snap after))) { return }
+		$rendered = _dots-report (Join-Path $snap before) (Join-Path $snap after)
+		$here = Join-Path $snap 'after/here.json'
+		if (-not $rendered -or -not (Test-Path $here)) {
+			if (Test-Path (Join-Path $snap 'after/here.err')) { Get-Content (Join-Path $snap 'after/here.err') | Write-Host }
+			Write-Error "A configuration no longer renders, nothing applied. The source keeps the edit: run the command again to fix it ($path)."
 			return
 		}
+		# This machine's changed targets, as absolute paths; scripts run on a full apply.
+		$changed = if (Test-Path (Join-Path $snap 'before/here.json')) { _dots-changed (Join-Path $snap 'before/here.json') $here } else { @() }
+		$scripts = @($changed | Where-Object { $_ -like '.chezmoiscripts/*' } | ForEach-Object { $_.Substring(16) })
 		$dest = chezmoi target-path
-		$managed = chezmoi managed -i files
-		$apply = @(foreach ($t in $Targets) { if ($managed -contains $t) { Join-Path $dest $t } })
-		if ($apply -and -not (chezmoi status @apply)) {
+		$apply = @($changed | Where-Object { $_ -notlike '.chezmoiscripts/*' } | ForEach-Object { Join-Path $dest $_ })
+		if ($scripts) { Write-Host "Scripts changed: $($scripts -join ', ') (they run on the next full chezmoi apply)" }
+		if (-not $apply -or -not (chezmoi status @apply)) {
 			Write-Host 'Targets up to date: nothing to apply.'
-		} elseif ($apply) {
-			if ($DiffFirst) { chezmoi diff $apply[0] } else { chezmoi diff @apply }
+		} else {
+			if ($first) { chezmoi diff $apply[0] } else { chezmoi diff @apply }
 			if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
 				chezmoi apply @apply
 				if ($LASTEXITCODE) { return }
-				if ($Hook) { & $Hook applied }
+				if ($note) { Write-Host $note }
 			}
 		}
 	} finally {
-		if ($tmp) { Remove-Item -Force -ErrorAction SilentlyContinue $tmp, "$path.new" }
+		if ($pane) { tmux kill-pane -t $pane 2>$null }
+		Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $snap, "$path.new"
 	}
 	$changes = git -C $src status --short
 	if ($changes) {
@@ -104,32 +312,141 @@ function _dots-edit {
 	}
 }
 
+# _dots-usage: dots-edit --help (.chezmoitemplates/dots-edit/usage).
+function _dots-usage { (_dots-tmpl usage) -join "`n" }
+
+# _dots-view <target|entry> [--as <os>[,<role>] | --matrix]: see dots-edit --help.
+function _dots-view {
+	$mode = switch ("$($args.Count):$($args[1])") { '1:' { 'here' } '2:--matrix' { 'matrix' } '3:--as' { 'as' } }
+	if (-not $mode) { Write-Error (_dots-usage); return }
+	$arg = [string]$args[0]
+	$entries = @(_dots-entries)
+	$labels = @(_dots-tmpl matrix | Where-Object { $_ } | ForEach-Object {
+			$f = $_ -split "`t", 2
+			[pscustomobject]@{ Label = $f[0]; Data = $f[1] }
+		})
+	if ($mode -eq 'as') {
+		$as = @($args[2]) -join ','
+		$os, $role = $as -split '[,/]', 2
+		if (-not $role) { $role = 'personal' }
+		$labels = @($labels | Where-Object Label -CEQ "$os/$role")
+		if (-not $labels) { Write-Error "dots-edit: unknown configuration $as (os darwin|linux|windows, role personal|work|light)"; return }
+	}
+	$entry = $entries | Where-Object Name -CEQ $arg | Select-Object -First 1
+	if ($entry) {
+		"${arg}: $($entry.Desc)"
+		_dots-print-tree (_dots-tree $entry.Source) $entries
+		# The targets whose composition tree holds the file, per configuration.
+		if ($mode -eq 'here') { $labels = @([pscustomobject]@{ Label = 'this machine'; Data = '{}' }) }
+		'Reaches:'
+		foreach ($l in $labels) {
+			$file = _dots-datafile $l.Data
+			try { $managed = chezmoi managed -i files,symlinks,scripts -x externals -p all -f json --override-data-file $file | ConvertFrom-Json }
+			finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+			$map = @{}
+			$managed.PSObject.Properties | ForEach-Object { $map[$_.Name] = $_.Value.sourceRelative }
+			$list = @(_dots-tmpl feeds (_dots-with $l.Data @{ file = $entry.Source; managed = $map }) | Where-Object { $_ }) -join ', '
+			"  $($l.Label): $(if ($list) { $list } else { 'nothing' })"
+		}
+		return
+	}
+	# A target: its source file, found here or in the first configuration managing it.
+	$source = chezmoi source-path $arg 2>$null
+	if ($LASTEXITCODE) {
+		$source = $null
+		foreach ($l in $labels) {
+			$file = _dots-datafile $l.Data
+			try { $source = chezmoi source-path --override-data-file $file $arg 2>$null } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+			if (-not $LASTEXITCODE) { break }
+			$source = $null
+		}
+	}
+	if (-not $source) { Write-Error "dots-edit: $arg is no registry entry or managed target"; return }
+	$src = chezmoi source-path
+	_dots-print-tree (_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/')) $entries
+	if ($mode -eq 'here') {
+		'--- rendered on this machine'
+		chezmoi cat $arg
+		return
+	}
+	# One render per configuration; identical renders are grouped.
+	$groups = @()
+	$missing = @()
+	foreach ($l in $labels) {
+		$file = _dots-datafile $l.Data
+		try { $out = (chezmoi cat --override-data-file $file $arg 2>$null) -join "`n" } finally { Remove-Item -Force -ErrorAction SilentlyContinue $file }
+		if ($LASTEXITCODE) { $missing += $l.Label; continue }
+		$g = $groups | Where-Object Text -CEQ $out | Select-Object -First 1
+		if ($g) { $g.Labels += $l.Label } else { $groups += [pscustomobject]@{ Text = $out; Labels = @($l.Label) } }
+	}
+	for ($i = 0; $i -lt $groups.Count; $i++) {
+		if ($i -eq 0) {
+			"--- rendered on $($groups[0].Labels -join ', ')"
+			$groups[0].Text
+		} else {
+			"--- rendered on $($groups[$i].Labels -join ', '), against the first"
+			Compare-Object ($groups[0].Text -split "`n") ($groups[$i].Text -split "`n") | ForEach-Object {
+				$(if ($_.SideIndicator -eq '=>') { '+' } else { '-' }) + $_.InputObject
+			}
+		}
+	}
+	if ($missing) { "--- not managed on: $($missing -join ' ')" }
+}
+
+# dots-edit: edit any part of the dotfiles and see what it changes everywhere
+# (docs/OS.md#editing-your-dotfiles; dots-edit --help).
+function dots-edit {
+	$first = [string]$args[0]
+	switch -CaseSensitive ($first) {
+		{ $_ -in '-h', '--help' } { _dots-usage; return }
+		'--list' { _dots-entries | ForEach-Object { '{0,-20} {1}' -f $_.Name, $_.Desc }; return }
+		'--view' { $rest = @($args | Select-Object -Skip 1); _dots-view @rest; return }
+	}
+	if ($first -like '-*' -or $args.Count -gt 1) { Write-Error (_dots-usage); return }
+	$src = chezmoi source-path
+	if ($LASTEXITCODE) { return }
+	$entries = @(_dots-entries)
+	$arg = $first
+	if (-not $arg) {
+		$arg = (_dots-pick 'dots-edit' @($entries | ForEach-Object { "$($_.Name)`t$($_.Desc)" })) -split "`t" | Select-Object -First 1
+		if (-not $arg) { return }
+	}
+	$entry = $entries | Where-Object Name -CEQ $arg | Select-Object -First 1
+	if ($entry) { _dots-edit $entry.Name $entry.Source; return }
+	if (Test-Path -PathType Leaf (Join-Path $src $arg)) {
+		$file = $arg
+	} else {
+		# A target: pick a node of its composition tree (the only node: no picker).
+		$source = chezmoi source-path $arg 2>$null
+		if ($LASTEXITCODE) { Write-Error "dots-edit: $arg is no registry entry, source file or managed target (dots-edit --help)"; return }
+		$nodes = @(_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/') | Where-Object { Test-Path -PathType Leaf (Join-Path $src $_.Path) } | ForEach-Object {
+				$e = $entries | Where-Object Source -CEQ $_.Path | Select-Object -First 1
+				if ($e) { "$($_.Path)`t[$($e.Name)]" } else { $_.Path }
+			})
+		$pick = if ($nodes.Count -eq 1) { $nodes[0] } else { _dots-pick $arg $nodes }
+		$file = ([string]$pick -split "`t")[0]
+		if (-not $file) { return }
+	}
+	$entry = $entries | Where-Object Source -CEQ $file | Select-Object -First 1
+	_dots-edit $(if ($entry) { $entry.Name } else { '' }) $file
+}
+
 # agents-edit [core|env|personal|work]: a layer of the global agent instructions
-# (docs/OS.md#agent-instructions). Every harness file renders the same text: one diff.
+# (docs/OS.md#agent-instructions): dots-edit agents/<layer>.
 function agents-edit {
 	param([string]$Layer)
 	if (-not $Layer) { $Layer = _dots-pick 'agent layer' 'core', 'env', 'personal', 'work' }
 	if ($Layer -notin 'core', 'env', 'personal', 'work') { Write-Error 'usage: agents-edit [core|env|personal|work]'; return }
-	$file = ".chezmoitemplates/agents/$Layer.md" + $(if ($Layer -in 'personal', 'work') { '.age' })
-	_dots-edit $file -DiffFirst -Targets '.claude/CLAUDE.md', '.copilot/copilot-instructions.md', '.codex/AGENTS.md', '.config/opencode/AGENTS.md', '.pi/agent/AGENTS.md'
+	dots-edit "agents/$Layer"
 }
 
 # aliases-edit [public|private]: the alias registry or the encrypted personal aliases
-# (docs/SHELL.md#alias-registry). The registry lint must pass before apply.
+# (docs/SHELL.md#alias-registry): dots-edit aliases/<scope>.
 function aliases-edit {
 	param([string]$Scope)
 	if (-not $Scope) { $Scope = _dots-pick 'aliases' 'public', 'private' }
 	if ($Scope -notin 'public', 'private') { Write-Error 'usage: aliases-edit [public|private]'; return }
-	$file = if ($Scope -eq 'public') { '.chezmoidata/aliases.toml' } else { '.aliases.private.toml.age' }
-	_dots-edit $file -Targets '.config/shell/aliases.sh', '.config/shell/omz-aliases.zsh', '.config/powershell/aliases.ps1' -Hook {
-		param($step)
-		if ($step -eq 'check') {
-			make -C (chezmoi source-path) lint-aliases | Out-Host
-			$LASTEXITCODE -eq 0
-		} else {
-			Write-Host "Aliases applied: open a new shell, or run . $HOME/.config/powershell/aliases.ps1"
-		}
-	}
+	dots-edit "aliases/$Scope"
 }
 
 # ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
@@ -144,15 +461,8 @@ function ssh-edit {
 	if (-not $Name) {
 		$Name = _dots-pick 'ssh config' (@('config') + @(Get-ChildItem -File -Force $dir -ErrorAction SilentlyContinue | ForEach-Object Name))
 	}
-	$check = {
-		param($step, $file)
-		if ($step -eq 'check') {
-			ssh -G -F $file localhost > $null
-			$LASTEXITCODE -eq 0
-		}
-	}
 	if ($Name -eq 'config') {
-		_dots-edit 'private_dot_ssh/encrypted_private_config.age' -Targets '.ssh/config' -Hook $check
+		dots-edit ssh/config
 		return
 	}
 	if (-not $Name -or $Name -match '^\.|[\\/]') { Write-Error 'usage: ssh-edit [config|<name>]'; return }
@@ -163,7 +473,8 @@ function ssh-edit {
 		$before = (Get-FileHash $tmp).Hash
 		while ($true) {
 			if (-not (_dots-open $tmp)) { Write-Error "The editor failed: $file unchanged."; return }
-			if (& $check check $tmp) { break }
+			ssh -G -F $tmp localhost > $null
+			if ($LASTEXITCODE -eq 0) { break }
 			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
 			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
 		}

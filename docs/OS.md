@@ -147,19 +147,66 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Every command edits the chezmoi source checkout in place, shows `chezmoi diff` of what it affects, asks `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date) and prints `git status` of the source as a reminder to ship a PR (e.g. `/ship`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. A failed check applies nothing; the source keeps the edit, so run the command again to fix it. The diff shows decrypted text: do not run it where the screen is shared or recorded. Full machines only (bash/zsh and PowerShell); no argument opens an fzf picker sized to show every option (`--height=~100%`), or a numbered prompt without fzf.
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots-edit` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh and PowerShell (`dots-edit --help` prints the full usage).
 
-| Component | Command | Check before apply |
-|---|---|---|
-| Agent instructions, public layers | `agents-edit core`, `agents-edit env` | — |
-| Agent instructions, private layers | `agents-edit personal`, `agents-edit work` | — |
-| Aliases, public registry | `aliases-edit public` | `make lint-aliases` |
-| Aliases, personal (encrypted) | `aliases-edit private` | `make lint-aliases` |
-| `~/.ssh/config` (encrypted) | `ssh-edit config` | `ssh -G` parses the edited file |
-| `~/.ssh/config.d/<name>` (this machine only, unmanaged) | `ssh-edit <name>` (a new name creates the file) | `ssh -G` parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no diff, apply or PR |
-| Any other managed file | `cze <target>` (`chezmoi edit --apply`) | — |
+### Edit
 
-After `aliases-edit` applies, open a new shell (or source the alias file). Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
+| Command | Edits |
+|---|---|
+| `dots-edit` | a registry entry, picked with fzf (a numbered prompt without fzf) |
+| `dots-edit <entry>` | that entry, e.g. `dots-edit mcp`, `dots-edit agents/work`; `dots-edit --list` shows them all |
+| `dots-edit <target>` | what a target is made of: a picker over the nodes of its composition tree (`dots-edit ~/.claude/CLAUDE.md` → the stub, the partial, each layer); a target made of one file opens it directly |
+| `dots-edit <source file>` | a source file by its source-relative path, e.g. `dots-edit dot_config/git/config.tmpl` |
+| `agents-edit [core\|env\|personal\|work]`, `aliases-edit [public\|private]`, `ssh-edit config` | shortcuts for `dots-edit agents/<layer>`, `aliases/<scope>`, `ssh/config` |
+| `ssh-edit <name>` | `~/.ssh/config.d/<name>` (this machine only, unmanaged; a new name creates it): `ssh -G` parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no diff, apply or PR |
+
+Every edit, in order:
+
+1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel.
+2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux (Linux and macOS, also from PowerShell), a side pane re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor. Not on Windows yet ([#102](https://github.com/giocaizzi/dotfiles/issues/102)).
+3. **Check:** the entry's check, when it has one (`make lint-aliases`, `ssh -G`, `make lint-plugins`, `make lint-edit`).
+4. **Render after** and report the changed targets per configuration: a list, `same as <configuration>` for an identical list, or `nothing`. A configuration that no longer renders fails the edit; one that already failed before is only reported.
+5. **This machine only:** `chezmoi diff` of its changed targets (one diff when the entry says they render the same text), `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date), the entry's note (e.g. open a new shell after an alias change), and `git status` of the source as a reminder to ship a PR (e.g. `/ship`). A changed script is listed: it runs on the next full `chezmoi apply`.
+
+A failed check or render applies nothing; the source keeps the edit, so run the command again to fix it. The diff and the live pane show decrypted text: do not run them where the screen is shared or recorded.
+
+### View
+
+| Command | Shows |
+|---|---|
+| `dots-edit --view <target>` | the composition tree (each node with its registry entry, encrypted nodes marked) and the rendered content on this machine |
+| `dots-edit --view <entry>` | the entry's tree and the targets it reaches on this machine |
+| `... --as <os>[,<role>]` | the same for one configuration: os `darwin`, `linux` or `windows`; role `personal` (default), `work` or `light`. A preview, never applied |
+| `... --matrix` | every configuration: a target's identical renders grouped, the others as diffs against the first, the configurations that don't manage it listed; an entry's reached targets per configuration |
+
+The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever role takes it; `--matrix` shows which configuration takes which.
+
+Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. `modify_` targets (Claude, Copilot settings) merge into this machine's live file. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
+
+Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
+
+### Edit registry
+
+`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `--list`) and a `source` (source-relative), optionally a `check` (POSIX command run in the source dir with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
+
+**Add an editable component**
+
+**When:** a new file under `.chezmoidata/` or a new encrypted file (`make lint-edit` fails without an entry), or any component worth a name or a check.
+
+1. `dots-edit edit` and add the entry:
+   ```toml
+   [edit."<name>"]
+   desc = "<what it is>"
+   source = "<source-relative path>"
+   check = "<optional check>"
+   ```
+2. Apply when asked; ship the PR.
+
+**Verify:** `make lint-edit` passes; `dots-edit --list` lists the entry; `dots-edit --view <name>` shows the targets it reaches.
+
+**Rollback:** delete the entry (`dots-edit edit`).
+
+**Last verified:** 2026-10-18 by `scripts/dots-edit-test.sh` (bash, zsh; pwsh on Linux).
 
 ## Encrypted files (age)
 
@@ -236,7 +283,7 @@ Core holds how to work on any machine, in any harness: it names no harness-only 
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
-- **Edit a layer:** `agents-edit [core|env|personal|work]`, the flow in [Editing your dotfiles](#editing-your-dotfiles). Core and env open in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`); a private layer goes through a private temp file. The diff shows only the first rendered instruction file this machine manages (`~/.claude/CLAUDE.md` first: they all render the same text); apply writes all of them.
+- **Edit a layer:** `agents-edit [core|env|personal|work]` (or `dots-edit ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots-edit --view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role.
 - **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
 - **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
 - **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.

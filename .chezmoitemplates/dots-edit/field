@@ -1,0 +1,5 @@
+{{- /* dots-edit registry field: .dotsEdit.entry's .dotsEdit.field (.chezmoidata/edit.toml),
+  empty when unset; powershell falls back to check. */ -}}
+{{- $e := index .edit .dotsEdit.entry | default dict -}}
+{{- if eq .dotsEdit.field "powershell" }}{{ get $e "powershell" | default (get $e "check") | default "" }}
+{{- else }}{{ get $e .dotsEdit.field | default "" }}{{ end -}}
