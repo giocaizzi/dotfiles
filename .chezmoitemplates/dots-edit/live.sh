@@ -20,7 +20,7 @@ while :; do
 		if "$cz" --source "$dir/shadow" dump --exclude dirs,externals --format json 2>"$dir/live.err" |
 			jq --arg s "$dir/shadow" --arg r "$src" 'walk(if type == "string" then split($s) | join($r) else . end)' >"$dir/live.json"; then
 			jq -rn --slurpfile a "$dir/before/here.json" --slurpfile b "$dir/live.json" \
-				'$a[0] as $a | $b[0] as $b | [($a, $b) | keys[]] | unique[] | select($a[.] != $b[.])' |
+				'$a[0] as $a | $b[0] as $b | [($a, $b) | keys[]] | unique[] | select($a[.] != $b[.])' | tr -d '\r' |
 				while IFS= read -r t; do
 					jq -r --arg t "$t" '.[$t] | .contents // .linkname // ""' "$dir/before/here.json" >"$dir/a"
 					jq -r --arg t "$t" '.[$t] | .contents // .linkname // ""' "$dir/live.json" >"$dir/b"
