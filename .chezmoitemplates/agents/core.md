@@ -13,7 +13,7 @@
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
 - Reply in the language I write in; code, commits, PRs and docs stay in English unless the repo uses another language.
 - When a fact may be stale or niche (versions, CLI flags, APIs, prices, recent events), search online or read the official docs before answering; don't answer from memory, and say what you checked.
-- Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent); `git worktree remove` + `prune` as soon as the PR merges.
+- Code changes happen in a git worktree, never the main checkout. One per task (not per subtask or subagent), except that parallel agents editing code each get their own, since a shared index cross-wires their commits; `git worktree remove` + `prune` as soon as the PR merges.
 - `AGENTS.md` is practical instructions for AI coding agents. `docs/` is the documentation: the source of truth for business decisions, details, infrastructure and architecture decisions. `README.md` is for humans (quickstart, badges by maturity tier, links to docs). Keep the three separate; `AGENTS.md` and the README link to docs and never duplicate them, and agent instructions never go in the README.
 - All docs live in `docs/`. WIP notes go in `docs/wip/`. A backlog goes in `docs/backlog/` only when GitHub issues don't fit yet; otherwise use GitHub issues.
 - Always write a runbook in `docs/` for any operational procedure, and update it in the same change that alters the procedure. Mermaid only when asked.
