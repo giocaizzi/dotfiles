@@ -61,6 +61,7 @@ ADDITIONAL_TOOLS=(
 	"gitleaks"      # secret scanner
 	"actionlint"    # GitHub Actions linter
 	"hadolint"      # Dockerfile linter
+	"go"            # Go toolchain
 )
 
 # Azure CLI extensions (work machines)
@@ -161,6 +162,15 @@ install_tool_linux() {
 			a=x86_64; [ "$(uname -m)" = "aarch64" ] && a=arm64
 			curl -fsSLo "$HOME/.local/bin/hadolint" "https://github.com/hadolint/hadolint/releases/latest/download/hadolint-linux-$a"
 			chmod +x "$HOME/.local/bin/hadolint"
+			;;
+		"go")
+			# Official tarball (apt's golang-go lags); extracted per user, no sudo.
+			# go resolves GOROOT through the symlinks.
+			v=$(curl -fsSL 'https://go.dev/VERSION?m=text' | head -1)
+			a=amd64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			rm -rf "$HOME/.local/go"
+			curl -fsSL "https://go.dev/dl/$v.linux-$a.tar.gz" | tar -xz -C "$HOME/.local"
+			ln -sf "$HOME/.local/go/bin/go" "$HOME/.local/go/bin/gofmt" "$HOME/.local/bin/"
 			;;
 		"glab")
 			v=$(curl -fsSL "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases?per_page=1" | jq -r '.[0].tag_name | ltrimstr("v")')
