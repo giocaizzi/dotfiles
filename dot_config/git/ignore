@@ -81,3 +81,21 @@ yarn-error.log*
 **/.claude/agent-memory-local/
 CLAUDE.local.md
 **/.github/copilot/settings.local.json
+
+# Re-include source code and migrations. The secret/token/password/credentials
+# patterns above target data files, but also hide source files whose names merely
+# contain those words (internal/token/token.go, redact/secret.go) and SQL
+# migrations. gitleaks guards real secrets in source, so these stay visible.
+# *.db and *.sqlite* stay ignored except under testdata.
+!*.go
+!*.py
+!*.ts
+!*.tsx
+!*.js
+!*.mjs
+!*.rs
+!*.sh
+!*.ps1
+!*.sql
+!**/testdata/**
+!**/migrations/**
