@@ -38,6 +38,9 @@ $AdditionalTools = @(
     @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }
     @{ Name = 'node';       Id = 'OpenJS.NodeJS.LTS';       Cmd = 'node' }  # npm, for the language servers
     @{ Name = 'go';         Id = 'GoLang.Go';               Cmd = 'go'; Scope = 'machine' }  # MSI, no user-scope installer
+    @{ Name = 'goreleaser'; Id = 'goreleaser.goreleaser';   Cmd = 'goreleaser' }
+    @{ Name = 'syft';       Id = 'Anchore.Syft';            Cmd = 'syft' }  # SBOM generator (goreleaser sboms)
+    @{ Name = 'gopls';      Id = $null;                     Cmd = 'gopls' }  # not on winget: go install
 )
 
 # Azure CLI extensions (work machines)
@@ -98,6 +101,17 @@ function Install-Custom([string]$name) {
             Write-Info "Installing uv..."
             $env:UV_NO_MODIFY_PATH = '1'
             Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
+        }
+        'gopls' {
+            # go comes from winget in this same run; reload PATH so it is found
+            $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' + [Environment]::GetEnvironmentVariable('Path', 'Machine')
+            if (Test-Command 'go') {
+                Write-Info "Installing gopls..."
+                $env:GOBIN = Join-Path $HOME '.local\bin'
+                go install golang.org/x/tools/gopls@latest
+            } else {
+                Write-Warning "go not found; skipping gopls"
+            }
         }
         default {
             Write-Warning "No custom installer defined for $name"

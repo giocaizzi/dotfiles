@@ -62,6 +62,9 @@ ADDITIONAL_TOOLS=(
 	"actionlint"    # GitHub Actions linter
 	"hadolint"      # Dockerfile linter
 	"go"            # Go toolchain
+	"goreleaser"    # Go release builds
+	"gopls"         # Go language server
+	"syft"          # SBOM generator (goreleaser sboms)
 )
 
 # Azure CLI extensions (work machines)
@@ -171,6 +174,19 @@ install_tool_linux() {
 			rm -rf "$HOME/.local/go"
 			curl -fsSL "https://go.dev/dl/$v.linux-$a.tar.gz" | tar -xz -C "$HOME/.local"
 			ln -sf "$HOME/.local/go/bin/go" "$HOME/.local/go/bin/gofmt" "$HOME/.local/bin/"
+			;;
+		"goreleaser")
+			a=x86_64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSL "https://github.com/goreleaser/goreleaser/releases/latest/download/goreleaser_Linux_$a.tar.gz" | tar -xz -C "$HOME/.local/bin" goreleaser
+			;;
+		"gopls")
+			# No release binaries or apt package: build with go (installed above) into ~/.local/bin
+			GOBIN="$HOME/.local/bin" "$HOME/.local/bin/go" install golang.org/x/tools/gopls@latest
+			;;
+		"syft")
+			v=$(gh_latest anchore/syft)
+			a=amd64; [ "$(uname -m)" = "aarch64" ] && a=arm64
+			curl -fsSL "https://github.com/anchore/syft/releases/download/v$v/syft_${v}_linux_$a.tar.gz" | tar -xz -C "$HOME/.local/bin" syft
 			;;
 		"glab")
 			v=$(curl -fsSL "https://gitlab.com/api/v4/projects/gitlab-org%2Fcli/releases?per_page=1" | jq -r '.[0].tag_name | ltrimstr("v")')
