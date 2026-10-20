@@ -87,6 +87,18 @@ CLAUDE.local.md
 # contain those words (internal/token/token.go, redact/secret.go) and SQL
 # migrations. gitleaks guards real secrets in source, so these stay visible.
 # *.db and *.sqlite* stay ignored except under testdata.
+# A file cannot be re-included while its parent directory is ignored, so
+# directories named like internal/token/ are re-included first; the plural
+# secrets/ and credentials/ dirs (where real secret files live) stay ignored.
+!*token*/
+!*secret*/
+!*password*/
+!*credentials*/
+!*apikey*/
+!*api_key*/
+secrets/
+.secrets/
+credentials/
 !*.go
 !*.py
 !*.ts
