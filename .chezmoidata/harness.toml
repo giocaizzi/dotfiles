@@ -9,6 +9,7 @@
 [harnessPlugins]
 api = ["claude", "copilot", "codex"]
 dev-tools = ["claude", "copilot", "codex"]
+factory = ["claude", "copilot", "codex"]
 guard = ["claude", "copilot", "codex"]
 hud = ["claude", "copilot"]
 javascript = ["claude", "copilot", "codex"]
