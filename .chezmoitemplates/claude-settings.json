@@ -16,6 +16,7 @@
     "OTEL_LOG_TOOL_CONTENT": "0",
     "OTEL_RESOURCE_ATTRIBUTES": "service.namespace=claude-code,host.name={{ .chezmoi.hostname }},host.arch={{ .chezmoi.arch }},deployment.environment.name=production"{{ end }}
   },
+  "cleanupPeriodDays": 365,
   "permissions": {
     "allow": [
       "WebSearch",
