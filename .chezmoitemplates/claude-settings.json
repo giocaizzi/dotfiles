@@ -88,6 +88,10 @@
     "type": "command",
     "command": "node {{ .chezmoi.homeDir }}/.claude/plugins/marketplaces/giocaizzi-harness/plugins/hud/hooks/statusline.mjs claude"
   },
+  "subagentStatusLine": {
+    "type": "command",
+    "command": "node {{ .chezmoi.homeDir }}/.claude/plugins/marketplaces/giocaizzi-harness/plugins/hud/hooks/statusline.mjs subagent"
+  },
   {{- if eq .chezmoi.os "windows" }}
   "defaultShell": "powershell",
   {{- end }}
