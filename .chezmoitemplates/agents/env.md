@@ -12,7 +12,7 @@
 - `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
 - Tools: packages come from {{ $pm }}, through that list only; never an ad-hoc `{{ $install }}`. One-off tools run without installing (`uvx`, `npx`, `docker run`). Propose, never add on your own, a tool for the list once it was needed in two separate sessions or a repo's standard requires it.
 - Assume {{ range $i, $t := $tools }}{{ if $i }}, {{ end }}`{{ $t }}`{{ end }} are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
-- LSP (Claude Code): chezmoi installs `pyright` and `typescript-language-server` for its LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
+- LSP (Claude Code): chezmoi installs `pyright`, `typescript-language-server` and `gopls` for its LSP plugins. For symbols (definitions, references, renames) and type errors, use the LSP tool before grep; fall back to grep for text, config and unsupported languages.
 {{- if not $work }}
 
 # Own org (`giocaizzi`)
