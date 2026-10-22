@@ -48,6 +48,18 @@ function _dots-open {
 	$p.ExitCode -eq 0
 }
 
+# _dots-hash <file>: SHA-256 without relying on Get-FileHash, which is unavailable on
+# some Windows PowerShell installations.
+function _dots-hash {
+	param([string]$File)
+	$sha256 = [Security.Cryptography.SHA256]::Create()
+	try {
+		([BitConverter]::ToString($sha256.ComputeHash([IO.File]::ReadAllBytes($File)))).Replace('-', '')
+	} finally {
+		$sha256.Dispose()
+	}
+}
+
 # _dots-datafile <data> [<path>]: write chezmoi override data (a hashtable, an object or
 # a JSON string) to a .json file and return its path. Data goes through a file, never an
 # argument: Windows PowerShell strips the quotes of a JSON argument to a native command.
@@ -282,12 +294,12 @@ function _dots-edit {
 		} else {
 			$edited = $path
 		}
-		$before = (Get-FileHash $edited).Hash
+		$before = _dots-hash $edited
 		$pane = _dots-live $File $edited $snap $src
 		$opened = _dots-open $edited
 		if ($pane) { & $pane; $pane = $null }
 		if (-not $opened) { Write-Error "The editor failed: $path unchanged."; return }
-		if ($File -like '*.age' -and (Get-FileHash $edited).Hash -ne $before) {
+		if ($File -like '*.age' -and (_dots-hash $edited) -ne $before) {
 			chezmoi encrypt --output "$path.new" $edited
 			if ($LASTEXITCODE) { return }
 			Move-Item -Force "$path.new" $path
@@ -494,7 +506,7 @@ function ssh-edit {
 	$tmp = [IO.Path]::GetTempFileName()
 	try {
 		if (Test-Path $file) { Copy-Item -Force $file $tmp }
-		$before = (Get-FileHash $tmp).Hash
+		$before = _dots-hash $tmp
 		while ($true) {
 			if (-not (_dots-open $tmp)) { Write-Error "The editor failed: $file unchanged."; return }
 			ssh -G -F $tmp localhost > $null
@@ -502,7 +514,7 @@ function ssh-edit {
 			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
 			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
 		}
-		if ((Get-FileHash $tmp).Hash -ne $before) {
+		if ((_dots-hash $tmp) -ne $before) {
 			New-Item -ItemType Directory -Force $dir > $null
 			Move-Item -Force $tmp $file
 		}
