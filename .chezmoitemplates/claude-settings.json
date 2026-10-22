@@ -104,8 +104,9 @@
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true{{ if ne .chezmoi.os "windows" }},
     "gopls-lsp@claude-plugins-official": true
+    {{- end }}
   },
   "extraKnownMarketplaces": {
     "giocaizzi-harness": {
