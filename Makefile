@@ -2,7 +2,9 @@
 # (lint-tmpl) and the alias templates (lint-aliases) are rendered and linted.
 ifeq ($(OS),Windows_NT)
 # Git for Windows provides the POSIX shell required by the recipes, but does not add it to PATH.
-SHELL := $(shell git --exec-path)/../../../bin/sh.exe
+# make cannot take a SHELL path with spaces (C:/Program Files): it finds sh.exe on PATH instead.
+export PATH := $(shell git --exec-path)/../../../bin;$(PATH)
+SHELL := sh.exe
 # Git may retain CRLF in an existing working tree even when .gitattributes specifies LF.
 SHELLCHECK_EXCLUDES := -e SC1017
 endif
@@ -19,7 +21,7 @@ ZSH  := dot_zshrc dot_zprofile
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint lint-tmpl lint-aliases lint-plugins lint-edit aliases-audit test check
+.PHONY: help lint lint-tmpl lint-aliases lint-plugins lint-edit aliases-audit test test-syntax check check-fast
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -80,7 +82,14 @@ lint-edit: ## Validate the edit registry (.chezmoidata/edit.toml) and the dots-e
 aliases-audit: ## List live shell aliases the registry does not account for
 	@sh scripts/aliases-audit.sh
 
-test: ## Syntax-check bash and zsh files, test the edit commands
+test: test-syntax ## Syntax-check bash and zsh files, test the edit commands
+	@pids=''; status=0; \
+	for shell in bash pwsh; do sh scripts/dots-edit-test.sh "$$shell" & pids="$$pids $$!"; done; \
+	if [ "$(OS)" = "Windows_NT" ]; then sh scripts/dots-edit-test.sh powershell & pids="$$pids $$!"; \
+	else sh scripts/dots-edit-test.sh zsh & pids="$$pids $$!"; fi; \
+	for pid in $$pids; do wait "$$pid" || status=1; done; exit $$status
+
+test-syntax: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
 	@if command -v zsh >/dev/null 2>&1; then \
 		for f in $(ZSH); do zsh -n "$$f" || exit 1; done; \
@@ -89,6 +98,8 @@ test: ## Syntax-check bash and zsh files, test the edit commands
 	else \
 		echo "zsh is required to syntax-check zsh files."; exit 1; \
 	fi
-	@sh scripts/dots-edit-test.sh
 
 check: lint test ## lint + test
+
+# The guard plugin's stop hook prefers check-fast: the edit command tests take minutes per shell.
+check-fast: lint test-syntax ## lint + syntax checks, without the edit command tests
