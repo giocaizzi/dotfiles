@@ -9,6 +9,7 @@
 param([string]$File, [string]$Edited, [string]$Dir, [string]$Cz, [string]$Src)
 $shadow = Join-Path $Dir shadow
 $last = $null
+$sha256 = [Security.Cryptography.SHA256]::Create()
 function Get-State([string]$Path) {
 	$h = New-Object System.Collections.Hashtable ([StringComparer]::Ordinal)
 	(Get-Content -Raw $Path | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $h[$_.Name] = $_.Value }
@@ -19,7 +20,8 @@ function Get-Text($Entry) {
 }
 $before = Get-State (Join-Path $Dir 'before/here.json')
 while ((Test-Path $Dir) -and -not (Test-Path (Join-Path $Dir stop))) {
-	$sum = (Get-FileHash -ErrorAction SilentlyContinue $Edited).Hash
+	# .NET SHA-256: Get-FileHash is unavailable on some Windows PowerShell installations.
+	$sum = try { [BitConverter]::ToString($sha256.ComputeHash([IO.File]::ReadAllBytes($Edited))) } catch { $null }
 	if ($sum -and $sum -ne $last) {
 		$last = $sum
 		$target = Join-Path $shadow $File

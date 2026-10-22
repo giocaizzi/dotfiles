@@ -24,8 +24,10 @@ files remain LF through `.gitattributes`.
 | `lint-aliases` | validates the alias registry (`scripts/aliases-lint.sh`, plus the encrypted part where the age key exists), renders `aliases.sh` per OS × role (`shellcheck` as bash), `omz-aliases.zsh` (`zsh -n`), `aliases.ps1` (parsed by `pwsh` and, on Windows, Windows PowerShell 5.1) |
 | `lint-edit` | validates the edit registry (`scripts/edit-lint.sh`): every entry has a `desc`, an existing `source` and only known keys; every `.chezmoidata` file and every encrypted file has an entry; the `dots-edit` matrix lists the same harnesses and `[data]` answers as `.chezmoi.toml.tmpl` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
-| `test` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile`; `scripts/dots-edit-test.sh`: `dots-edit` (edit, per-configuration report, render failure, target and source lookup, `--view`, `--as`, `--matrix`, the live pane through a fake tmux or Windows Terminal) and `agents-edit`, `aliases-edit`, `ssh-edit` in bash, zsh and pwsh, on Windows (Git Bash) in bash, Windows PowerShell 5.1 and pwsh (each where installed) against a throwaway source copy with dummy encrypted files, a throwaway age key and a temp destination |
+| `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
+| `test` | `test-syntax`, then `scripts/dots-edit-test.sh`: `dots-edit` (edit, per-configuration report, render failure, target and source lookup, `--view`, `--as`, `--matrix`, the live pane through a fake tmux or Windows Terminal) and `agents-edit`, `aliases-edit`, `ssh-edit` in bash, zsh and pwsh, on Windows (Git Bash) in bash, Windows PowerShell 5.1 and pwsh (each where installed) against a throwaway source copy with dummy encrypted files, a throwaway age key and a temp destination |
 | `check` | `lint` + `test` |
+| `check-fast` | `lint` + `test-syntax`: the agent stop hook (guard plugin) runs it instead of `check`, since the edit command tests take minutes per shell (about 8 on Windows); run `make check` before pushing |
 
 Skipped: other `*.tmpl` files and JSON containing `{{` (need chezmoi to render), `dot_config/Code/User/settings.json` (JSONC). No `shfmt`: existing scripts mix tab and space indents.
 

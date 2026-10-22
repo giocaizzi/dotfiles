@@ -15,6 +15,7 @@ win=
 case $(uname -s) in MINGW* | MSYS* | CYGWIN*) win=1 ;; esac
 
 real=$(command -v chezmoi)
+jq=$(command -v jq)
 T=$(mktemp -d)
 if [ -n "$win" ]; then T=$(cygpath -m "$T"); fi
 trap 'rm -rf "$T"' EXIT
@@ -44,6 +45,11 @@ cat >"$T/bin/chezmoi" <<EOF
 #!/bin/sh
 exec "$real" --config "$T/chezmoi.toml" --source "$S" --destination "$T/home" \
 	--persistent-state "$T/state.boltdb" "\$@"
+EOF
+# Keep jq available when the no-fzf cases remove its shared WinGet-shim directory.
+cat >"$T/bin/jq" <<EOF
+#!/bin/sh
+exec "$jq" "\$@"
 EOF
 # Fake editor: logs the path it was given, then edits it per mode.
 cat >"$T/bin/editor" <<EOF
@@ -90,7 +96,7 @@ cat >"$T/bin/wt" <<EOF
 shift 4
 "\$@" >"$T/pane" 2>&1 &
 EOF
-chmod +x "$T/bin/chezmoi" "$T/bin/editor" "$T/bin/tmux" "$T/bin/wt"
+chmod +x "$T/bin/chezmoi" "$T/bin/editor" "$T/bin/jq" "$T/bin/tmux" "$T/bin/wt"
 if [ -n "$win" ]; then
 	sh=$(cygpath -w "$(command -v sh)")
 	printf '@"%s" --config "%s" --source "%s" --destination "%s" --persistent-state "%s" %%*\r\n' \
@@ -132,16 +138,22 @@ run() {
 	bin=$T/bin
 	if [ -n "$win" ]; then bin=$(cygpath -u "$bin"); fi
 	p=$bin:$PATH
-	# Windows has no fzf to hide: the fallback cases warn below when one is installed.
-	[ "$path" = full ] || [ -n "$win" ] || p=$bin:/usr/bin:/bin
+	if [ "$path" = nofzf ]; then
+		p=$bin:/usr/bin:/bin
+	fi
 	editor=$T/bin/editor
 	if [ -n "$win" ]; then editor=$T/bin/editor.cmd; fi
 	set +e
 	# shellcheck disable=SC2016 # expanded by the shell under test
 	case $shell in
 	pwsh | powershell)
-		printf '%b' "$answers" | TMUX=${live:-} WT_SESSION=${live:-} EDITOR="$editor $mode" PATH=$p "$(command -v "$shell")" \
-			-NoProfile -ExecutionPolicy Bypass -Command ". '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*"
+		answer_input=$(printf '%b' "$answers")
+		DOTS_EDIT_TEST_ANSWERS="$answer_input" TMUX=${live:-} WT_SESSION=${live:-} EDITOR="$editor $mode" PATH=$p "$(command -v "$shell")" \
+			-NoProfile -ExecutionPolicy Bypass -Command "\
+				\$global:dotsEditTestAnswers = [System.Collections.Queue]::new(); \
+				foreach (\$answer in (\$env:DOTS_EDIT_TEST_ANSWERS -split [System.Environment]::NewLine)) { [void]\$global:dotsEditTestAnswers.Enqueue(\$answer) }; \
+				function global:Read-Host { param([string]\$Prompt); if (\$global:dotsEditTestAnswers.Count) { \$global:dotsEditTestAnswers.Dequeue() } else { '' } }; \
+				. '$T/aliases.ps1'; \$ErrorActionPreference = 'Stop'; $*"
 		;;
 	*) printf '%b' "$answers" | TMUX=${live:-} EDITOR="$T/bin/editor $mode" PATH=$p "$shell" -c '. "$1"; shift; "$@"' sh "$T/aliases.sh" "$@" ;;
 	esac >"$T/out" 2>&1
@@ -209,11 +221,13 @@ suite() {
 	run "$shell" '' noop full agents-edit bogus
 	expect 'agents-edit bad argument: usage' usage
 
-	run "$shell" '1\nn\n' text nofzf agents-edit
-	expect 'agents-edit picker without fzf: core' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+	if ! in_powershell; then
+		run "$shell" '1\nn\n' text nofzf agents-edit
+		expect 'agents-edit picker without fzf: core' has edited-marker "$S/.chezmoitemplates/agents/core.md"
 
-	run "$shell" '9\n' noop nofzf aliases-edit
-	expect 'aliases-edit picker without fzf, invalid choice: usage' usage
+		run "$shell" '9\n' noop nofzf aliases-edit
+		expect 'aliases-edit picker without fzf, invalid choice: usage' usage
+	fi
 
 	run "$shell" '' noop full aliases-edit bogus
 	expect 'aliases-edit bad argument: usage' usage
@@ -273,10 +287,12 @@ suite() {
 	expect 'ssh-edit config.d syntax error, edit again: installed' has edited-marker "$T/home/.ssh/config.d/work"
 	expect 'ssh-edit config.d syntax error, edit again: bad line gone' lacks NotAnOption "$T/home/.ssh/config.d/work"
 
-	pre="mkdir -p '$T/home/.ssh/config.d' && : >'$T/home/.ssh/config.d/zzlocal'"
-	run "$shell" '2\n' ssh nofzf ssh-edit
-	pre=
-	expect 'ssh-edit picker without fzf: config.d file' has edited-marker "$T/home/.ssh/config.d/zzlocal"
+	if ! in_powershell; then
+		pre="mkdir -p '$T/home/.ssh/config.d' && : >'$T/home/.ssh/config.d/zzlocal'"
+		run "$shell" '2\n' ssh nofzf ssh-edit
+		pre=
+		expect 'ssh-edit picker without fzf: config.d file' has edited-marker "$T/home/.ssh/config.d/zzlocal"
+	fi
 
 	run "$shell" '' noop full ssh-edit ../x
 	expect 'ssh-edit path argument: usage' usage
@@ -302,9 +318,11 @@ suite() {
 	expect 'render failure: reported' has 'render FAILED' "$T/out"
 	expect 'render failure: no apply prompt' lacks 'apply now' "$T/out"
 
-	run "$shell" '4\nn\n' text nofzf dots-edit "$T/home/.claude/CLAUDE.md"
-	expect 'dots-edit <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
-	expect 'dots-edit <target>: nodes named' has '\[agents/personal\]' "$T/out"
+	if ! in_powershell; then
+		run "$shell" '4\nn\n' text nofzf dots-edit "$T/home/.claude/CLAUDE.md"
+		expect 'dots-edit <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+		expect 'dots-edit <target>: nodes named' has '\[agents/personal\]' "$T/out"
+	fi
 
 	run "$shell" 'n\n' text full dots-edit dot_config/tmux/tmux.conf
 	expect 'dots-edit <source file>: edited' has edited-marker "$S/dot_config/tmux/tmux.conf"
@@ -349,14 +367,16 @@ suite() {
 	fi
 }
 
-if [ -n "$win" ] && command -v fzf >/dev/null 2>&1; then
-	echo "fzf is installed: the picker fallback cases will fail" >&2
-elif [ -z "$win" ] && PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
+if [ -z "$win" ] && PATH=/usr/bin:/bin command -v fzf >/dev/null 2>&1; then
 	echo "fzf is in /usr/bin: the picker fallback cases will fail" >&2
 fi
 # Windows PowerShell 5.1 exists only on Windows; zsh is no Windows dependency.
-shells='bash zsh pwsh'
-if [ -n "$win" ]; then shells='bash powershell pwsh'; fi
+# A supplied shell list lets make run the independent fixtures concurrently.
+shells=$*
+if [ -z "$shells" ]; then
+	shells='bash zsh pwsh'
+	if [ -n "$win" ]; then shells='bash powershell pwsh'; fi
+fi
 for shell in $shells; do
 	if ! command -v "$shell" >/dev/null 2>&1; then
 		echo "Skipping the $shell edit command tests: $shell is not installed."

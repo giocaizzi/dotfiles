@@ -18,12 +18,13 @@ jq -r 'to_entries[] | .key as $n | .value |
 	(keys - ["desc", "source", "check", "powershell", "note", "diff"])[] as $k | "\($n): unknown key \($k)",
 	(if has("diff") and .diff != "first" then "\($n): diff must be \"first\"" else empty end)' \
 	"$dir/edit.json" >"$dir/errors"
-jq -r 'to_entries[] | "\(.key)\t\(.value.source // "")"' "$dir/edit.json" | while IFS='	' read -r name source; do
+jq -r 'to_entries[] | "\(.key)\t\(.value.source // "")"' "$dir/edit.json" | tr -d '\r' |
+while IFS='	' read -r name source; do
 	if [ -n "$source" ] && [ ! -f "$source" ]; then echo "$name: source $source does not exist"; fi
 done >>"$dir/errors"
 
 # Data and encrypted files are not editable through chezmoi edit: each needs an entry.
-jq -r '.[].source' "$dir/edit.json" | sort >"$dir/sources"
+jq -r '.[].source' "$dir/edit.json" | tr -d '\r' | sort >"$dir/sources"
 git ls-files '.chezmoidata/*' '*.age' | sort | comm -23 - "$dir/sources" |
 	sed 's/$/: no edit registry entry/' >>"$dir/errors"
 
