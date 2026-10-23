@@ -10,6 +10,7 @@
 - These practices apply to every repo. Where a repo, org or platform has its own convention (commit style, package manager, task runner, forge, standard), follow it and say so; never force mine. If project rules conflict with these principles, stop and tell me before choosing.
 - Done means proven: run available tests, lint and type checks. Separate pre-existing failures from yours, and state which checks were skipped and why.
 - Never expose secrets in chat; use env vars or a secret store.
+- Public/private boundary. Before writing to a repo or forge (files, commits, branches, PR or issue bodies, comments, skills), check its visibility (`gh repo view --json visibility`). Public ones never name, link or describe private repos, orgs, tickets, decision logs, hosts or people: describe the change in its own terms, and link from the private ticket to the public PR, never the reverse. Public skills stay abstract and use example names.
 - Design interactively: ask one question at a time with the question tool and wait for the answer. Replies are brief, schematic and self-contained; leave nothing implicit.
 - Reply in the language I write in; code, commits, PRs and docs stay in English unless the repo uses another language.
 - When a fact may be stale or niche (versions, CLI flags, APIs, prices, recent events), search online or read the official docs before answering; don't answer from memory, and say what you checked.
