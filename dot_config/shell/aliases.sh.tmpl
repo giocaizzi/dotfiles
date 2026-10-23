@@ -77,12 +77,58 @@ _dots_tree() {
 	_dots_tmpl tree-of "$(jq -cn --arg f "$1" --argjson d "${2:-"{}"}" '$d + {dotsEdit: {file: $f}}')"
 }
 
-# _dots_print_tree <entries>: indent the tree on stdin, naming each node's registry entry.
-_dots_print_tree() {
-	DOTS_ENTRIES=$1 awk -F'\t' '
-		BEGIN { n = split(ENVIRON["DOTS_ENTRIES"], l, "\n"); for (i = 1; i <= n; i++) { split(l[i], f, "\t"); e[f[2]] = f[1] } }
-		{ printf "%s%s %s%s%s\n", sprintf("%" ($1 * 2) "s", ""), $2, $3, ($3 in e ? "  [" e[$3] "]" : ""), ($3 ~ /\.age$/ ? "  (encrypted)" : "") }'
+# _dots_style <fd>: the colour escapes for output on <fd> ($_b bold blue: headings, $_m
+# mauve: labels and entries, $_r red, $_g green, $_y yellow, $_d dim, $_o reset), all
+# empty when <fd> is no terminal, NO_COLOR is set or TERM is dumb. Basic ANSI colours,
+# so the terminal's Catppuccin theme maps them.
+_dots_style() {
+	_b='' _m='' _r='' _g='' _y='' _d='' _o=''
+	if [ -t "$1" ] && [ -z "${NO_COLOR:-}" ] && [ "${TERM:-}" != dumb ]; then
+		_e=$(printf '\033')
+		_b="${_e}[1;34m" _m="${_e}[35m" _r="${_e}[31m" _g="${_e}[32m" _y="${_e}[33m" _d="${_e}[2m" _o="${_e}[0m"
+	fi
 }
+
+# _dots_print_tree <entries>: the tree on stdin with ├─/└─ connectors, naming each
+# node's registry entry and marking encrypted nodes.
+_dots_print_tree() (
+	_dots_style 1
+	DOTS_ENTRIES=$1 awk -F'\t' -v m="$_m" -v y="$_y" -v d="$_d" -v o="$_o" '
+		BEGIN { n = split(ENVIRON["DOTS_ENTRIES"], l, "\n"); for (i = 1; i <= n; i++) { split(l[i], f, "\t"); e[f[2]] = f[1] } }
+		{ k++; depth[k] = $1 + 0; path[k] = $3; if (depth[k] > maxd) maxd = depth[k] }
+		END {
+			# A node is last when no later sibling follows before its parent closes.
+			for (i = k; i >= 1; i--) {
+				last[i] = !open[depth[i]]
+				open[depth[i]] = 1
+				for (j = depth[i] + 1; j <= maxd; j++) open[j] = 0
+				w = 3 * depth[i] + length(path[i])
+				if (w > maxw) maxw = w
+			}
+			for (i = 1; i <= k; i++) {
+				pre = ""
+				for (j = 1; j < depth[i]; j++) pre = pre d (lastat[j] ? "   " : "│  ") o
+				if (depth[i] > 0) pre = pre d (last[i] ? "└─ " : "├─ ") o
+				lastat[depth[i]] = last[i]
+				tag = (path[i] in e ? m e[path[i]] o : "")
+				if (path[i] ~ /\.age$/) tag = tag (tag != "" ? d " · " o : "") y "encrypted" o
+				pad = (tag != "" ? sprintf("%" (maxw - 3 * depth[i] - length(path[i]) + 2) "s", "") tag : "")
+				printf "  %s%s%s\n", pre, path[i], pad
+			}
+		}'
+)
+
+# _dots_diffc: colour the unified diff on stdin (+ green, - red, @@ dim) when stdout is a
+# terminal.
+_dots_diffc() (
+	_dots_style 1
+	awk -v g="$_g" -v r="$_r" -v d="$_d" -v o="$_o" '
+		/^(\+\+\+|---) / { print d $0 o; next }
+		/^\+/ { print g $0 o; next }
+		/^-/ { print r $0 o; next }
+		/^@@/ { print d $0 o; next }
+		{ print }'
+)
 
 # _dots_join: the lines on stdin as one comma-separated line, nothing for none.
 _dots_join() { awk 'NF { printf "%s%s", (n++ ? ", " : ""), $0 }'; }
@@ -123,23 +169,24 @@ _dots_changed() {
 # changes ("same as" an earlier configuration with the same list). Fails when a
 # configuration stopped rendering; one that already failed before is only reported.
 _dots_report() (
-	echo 'Changed by this edit, per configuration (every harness selected):' >&2
+	_dots_style 2
+	printf '%s▸ changed by this edit%s %s(per configuration, every harness selected)%s\n' "$_b" "$_o" "$_d" "$_o" >&2
 	rc=0 n=0
 	while IFS='	' read -r label data; do
 		n=$((n + 1))
 		if [ ! -f "$2/$n.json" ]; then
 			if [ -f "$1/$n.json" ]; then
-				printf '  %s: render FAILED\n' "$label" >&2
+				printf "  $_m%-17s$_o ${_r}✗ render FAILED$_o\n" "$label" >&2
 				sed 's/^/    /' "$2/$n.err" >&2
 				rc=1
 			else
-				printf '  %s: render failed, already before this edit\n' "$label" >&2
+				printf "  $_m%-17s$_o ${_d}✗ render failed, already before this edit$_o\n" "$label" >&2
 				grep -v '^chezmoi: warning:' "$1/$n.err" | sed 's/^/    /' >&2
 			fi
 			continue
 		fi
 		if [ ! -f "$1/$n.json" ]; then
-			printf '  %s: renders again\n' "$label" >&2
+			printf "  $_m%-17s$_o ${_g}✓ renders again$_o\n" "$label" >&2
 			continue
 		fi
 		_dots_changed "$1/$n.json" "$2/$n.json" | _dots_join >"$2/$n.changed"
@@ -152,11 +199,11 @@ _dots_report() (
 			fi
 		done
 		if [ -n "$same" ]; then
-			printf '  %s: same as %s\n' "$label" "$same" >&2
+			printf "  $_m%-17s$_o $_d%s$_o\n" "$label" "same as $same" >&2
 		elif [ -s "$2/$n.changed" ]; then
-			printf '  %s: %s\n' "$label" "$(cat "$2/$n.changed")" >&2
+			printf "  $_m%-17s$_o %s\n" "$label" "$(cat "$2/$n.changed")" >&2
 		else
-			printf '  %s: nothing\n' "$label" >&2
+			printf "  $_m%-17s$_o ${_d}nothing$_o\n" "$label" >&2
 		fi
 	done <"$1/labels"
 	return $rc
@@ -185,6 +232,7 @@ _dots_live() {
 # file is always removed. A subshell keeps umask and traps local.
 _dots_edit() (
 	entry=$1 file=$2 check='' note='' first=''
+	_dots_style 2
 	src=$(chezmoi source-path) || return 1
 	if [ "$entry" != - ]; then
 		check=$(_dots_field "$entry" check) && note=$(_dots_field "$entry" note) &&
@@ -208,7 +256,7 @@ _dots_edit() (
 	before=$(cksum <"$edited")
 	_dots_live "$file" "$edited" "$snap"
 	if ! _dots_open "$edited"; then
-		echo "The editor failed: $src/$file unchanged." >&2
+		printf '%s✗ The editor failed: %s unchanged.%s\n' "$_r" "$src/$file" "$_o" >&2
 		return 1
 	fi
 	if [ -n "$pane" ]; then tmux kill-pane -t "$pane" 2>/dev/null; fi
@@ -223,13 +271,13 @@ _dots_edit() (
 		;;
 	esac
 	if [ -n "$check" ] && ! (cd "$src" && sh -c "$check" sh "$edited"); then
-		echo "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($src/$file)." >&2
+		printf '%s✗ Check failed, nothing applied.%s The source keeps the edit: run the command again to fix it (%s).\n' "$_r" "$_o" "$src/$file" >&2
 		return 1
 	fi
 	_dots_snap "$snap/after" || return 1
 	if ! _dots_report "$snap/before" "$snap/after" || [ ! -f "$snap/after/here.json" ]; then
 		if [ -f "$snap/after/here.err" ]; then cat "$snap/after/here.err" >&2; fi
-		echo "A configuration no longer renders, nothing applied. The source keeps the edit: run the command again to fix it ($src/$file)." >&2
+		printf '%s✗ A configuration no longer renders, nothing applied.%s The source keeps the edit: run the command again to fix it (%s).\n' "$_r" "$_o" "$src/$file" >&2
 		return 1
 	fi
 	# This machine's changed targets, as absolute paths; scripts run on a full apply.
@@ -246,25 +294,26 @@ _dots_edit() (
 $(if [ -f "$snap/before/here.json" ]; then _dots_changed "$snap/before/here.json" "$snap/after/here.json"; fi)
 EOF
 	if [ -n "$scripts" ]; then
-		echo "Scripts changed:$scripts (they run on the next full chezmoi apply)" >&2
+		printf '%s▸ scripts changed:%s%s %s(they run on the next full chezmoi apply)%s\n' "$_b" "$_o" "$scripts" "$_d" "$_o" >&2
 	fi
 	if [ $# -eq 0 ] || [ -z "$(chezmoi status "$@")" ]; then
-		echo 'Targets up to date: nothing to apply.' >&2
+		printf '%s✓ Targets up to date: nothing to apply.%s\n' "$_g" "$_o" >&2
 	else
 		if [ -n "$first" ]; then chezmoi diff "$1"; else chezmoi diff "$@"; fi
-		printf 'apply now? [y/N] ' >&2
+		printf '%sapply now? [y/N]%s ' "$_y" "$_o" >&2
 		read -r answer
 		case $answer in
 		[yY]*)
 			chezmoi apply "$@" || return 1
-			if [ -n "$note" ]; then echo "$note" >&2; fi
+			printf '%s✓ applied%s\n' "$_g" "$_o" >&2
+			if [ -n "$note" ]; then printf '%s%s%s\n' "$_d" "$note" "$_o" >&2; fi
 			;;
 		esac
 	fi
 	changes=$(git -C "$src" status --short)
 	if [ -n "$changes" ]; then
-		echo "The dotfiles source changed: ship a PR (e.g. /ship) from $src" >&2
-		printf '%s\n' "$changes" >&2
+		printf '%s▸ the dotfiles source changed:%s ship a PR (e.g. /ship) from %s\n' "$_b" "$_o" "$src" >&2
+		printf '%s\n' "$changes" | sed "s/^/  $_d/; s/\$/$_o/" >&2
 	fi
 )
 
@@ -292,6 +341,7 @@ _dots_view() (
 		return 2
 	fi
 	arg=$1
+	_dots_style 1
 	entries=$(_dots_entries) || return 1
 	tmp=$(mktemp -d) || return 1
 	trap 'rm -rf "$tmp"' EXIT
@@ -300,14 +350,14 @@ _dots_view() (
 	if [ "$mode" = as ]; then
 		_dots_config "$3" >"$tmp/labels"
 		if [ ! -s "$tmp/labels" ]; then
-			echo "dots: unknown configuration $3 (os darwin|linux|windows, role personal|work|light)" >&2
+			printf '%s✗ dots: unknown configuration %s%s (os darwin|linux|windows, role personal|work|light)\n' "$_r" "$3" "$_o" >&2
 			return 2
 		fi
 	fi
 	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v n="$arg" '$1 == n')
 	if [ -n "$entry" ]; then
 		file=$(printf '%s\n' "$entry" | cut -f2)
-		printf '%s: %s\n' "$arg" "$(printf '%s\n' "$entry" | cut -f4)"
+		printf '%s▸ %s%s %s\n' "$_b" "$arg" "$_o" "$(printf '%s\n' "$entry" | cut -f4)"
 		_dots_tree "$file" | _dots_print_tree "$entries"
 		# The targets whose composition tree holds the file, per configuration.
 		if [ "$mode" = here ]; then printf 'here\t{}\n' >"$tmp/labels"; fi
@@ -322,17 +372,17 @@ _dots_view() (
 			} &
 		done <"$tmp/labels"
 		wait
-		echo 'Reaches:'
+		printf '%s▸ reaches%s\n' "$_b" "$_o"
 		n=0
 		while IFS='	' read -r label data; do
 			n=$((n + 1))
 			if [ "$label" = here ]; then label='this machine'; fi
 			if [ ! -f "$tmp/$n" ]; then
-				printf '  %s: render failed\n' "$label"
+				printf "  $_m%-17s$_o ${_r}✗ render failed$_o\n" "$label"
 			elif [ -s "$tmp/$n" ]; then
-				printf '  %s: %s\n' "$label" "$(cat "$tmp/$n")"
+				printf "  $_m%-17s$_o %s\n" "$label" "$(cat "$tmp/$n")"
 			else
-				printf '  %s: nothing\n' "$label"
+				printf "  $_m%-17s$_o ${_d}nothing$_o\n" "$label"
 			fi
 		done <"$tmp/labels"
 		return 0
@@ -345,13 +395,14 @@ _dots_view() (
 		done <"$tmp/labels"
 	fi
 	if [ -z "$source" ]; then
-		echo "dots: $arg is no registry entry or managed target" >&2
+		printf '%s✗ dots: %s is no registry entry or managed target%s\n' "$_r" "$arg" "$_o" >&2
 		return 1
 	fi
 	src=$(chezmoi source-path) || return 1
+	printf '%s▸ tree%s\n' "$_b" "$_o"
 	_dots_tree "${source#"$src"/}" | _dots_print_tree "$entries"
 	if [ "$mode" = here ]; then
-		echo '--- rendered on this machine'
+		printf '%s▸ rendered on this machine%s\n' "$_b" "$_o"
 		chezmoi cat "$arg"
 		return
 	fi
@@ -386,15 +437,15 @@ _dots_view() (
 	for g in $(printf '%s' "$groups"); do
 		if [ -z "$first" ]; then
 			first=$g
-			printf -- '--- rendered on %s\n' "$(cat "$tmp/$g.labels")"
+			printf '%s▸ rendered on %s%s\n' "$_b" "$(cat "$tmp/$g.labels")" "$_o"
 			cat "$tmp/$g.out"
 		else
-			printf -- '--- rendered on %s, against the first\n' "$(cat "$tmp/$g.labels")"
+			printf '%s▸ rendered on %s%s %s(against the first)%s\n' "$_b" "$(cat "$tmp/$g.labels")" "$_o" "$_d" "$_o"
 			diff -u --label "$(cut -d, -f1 "$tmp/$first.labels")" --label "$(cut -d, -f1 "$tmp/$g.labels")" \
-				"$tmp/$first.out" "$tmp/$g.out"
+				"$tmp/$first.out" "$tmp/$g.out" | _dots_diffc
 		fi
 	done
-	if [ -n "$missing" ]; then printf -- '--- not managed on:%s\n' "$missing"; fi
+	if [ -n "$missing" ]; then printf '%s▸ not managed on:%s%s\n' "$_d" "$missing" "$_o"; fi
 	return 0
 )
 
@@ -404,6 +455,7 @@ _dots_view() (
 # failure: edit again, or keep the live file); no render, diff, apply or PR.
 _dots_local() (
 	entry=$1 dir=$2 name=${3:-}
+	_dots_style 2
 	check=$(_dots_field "$entry" check) || return 1
 	if [ -z "$name" ]; then
 		set --
@@ -413,7 +465,7 @@ _dots_local() (
 $(ls -A "$dir" 2>/dev/null)
 EOF
 		if [ $# -eq 0 ]; then
-			echo "dots: $dir is empty; create a file with dots $dir/<name>" >&2
+			printf '%s✗ dots: %s is empty;%s create a file with dots %s/<name>\n' "$_r" "$dir" "$_o" "$dir" >&2
 			return 1
 		fi
 		name=$(_dots_pick "$entry" "$@") || return 1
@@ -434,7 +486,7 @@ EOF
 	while :; do
 		_dots_open "$tmp" || return 1
 		if [ -z "$check" ] || sh -c "$check" sh "$tmp"; then break; fi
-		printf 'Check failed, %s unchanged. Edit again? [Y/n] ' "$dir/$name" >&2
+		printf '%s✗ Check failed, %s unchanged.%s %sEdit again? [Y/n]%s ' "$_r" "$dir/$name" "$_o" "$_y" "$_o" >&2
 		read -r answer || return 1
 		case $answer in [nN]*) return 1 ;; esac
 	done
@@ -456,7 +508,8 @@ dots() (
 			_dots_usage >&2
 			return 2
 		fi
-		_dots_entries | awk -F'\t' '{ printf "%-20s %s\n", $1, $4 }'
+		_dots_style 1
+		_dots_entries | awk -F'\t' -v m="$_m" -v o="$_o" '{ printf "%s%-20s%s %s\n", m, $1, o, $4 }'
 		return
 		;;
 	view)
@@ -508,7 +561,8 @@ EOF
 	else
 		# A target: pick a node of its composition tree (the only node: no picker).
 		source=$(chezmoi source-path "$arg" 2>/dev/null) || {
-			echo "dots: $arg is no registry entry, source file or managed target (dots help)" >&2
+			_dots_style 2
+			printf '%s✗ dots: %s is no registry entry, source file or managed target%s (dots help)\n' "$_r" "$arg" "$_o" >&2
 			return 1
 		}
 		set --
