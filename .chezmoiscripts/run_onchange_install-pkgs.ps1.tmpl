@@ -37,9 +37,16 @@ $AdditionalTools = @(
     @{ Name = 'oh-my-posh'; Id = 'JanDeDobbeleer.OhMyPosh'; Cmd = 'oh-my-posh' }
     @{ Name = 'uv';         Id = $null;                     Cmd = 'uv' }
     @{ Name = 'node';       Id = 'OpenJS.NodeJS.LTS';       Cmd = 'node' }  # npm, for the language servers
+)
+
+{{- if not (get . "work") }}
+
+# Go release tooling: personal machines only
+$AdditionalTools += @(
     @{ Name = 'goreleaser'; Id = 'goreleaser.goreleaser';   Cmd = 'goreleaser' }
     @{ Name = 'syft';       Id = 'Anchore.Syft';            Cmd = 'syft' }  # SBOM generator (goreleaser sboms)
 )
+{{- end }}
 
 # Azure CLI extensions (work machines)
 $AzExtensions = @()

@@ -6,6 +6,10 @@
 # run_after_install-harness.*; opencode and pi take the whole checkout.
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 # ----------------------------------------------------------------------------
+
+# Plugins for personal work only: work machines get them disabled.
+harnessPersonalPlugins = ["factory", "go"]
+
 [harnessPlugins]
 api = ["claude", "copilot", "codex"]
 dev-tools = ["claude", "copilot", "codex"]

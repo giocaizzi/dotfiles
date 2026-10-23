@@ -61,11 +61,18 @@ ADDITIONAL_TOOLS=(
 	"gitleaks"      # secret scanner
 	"actionlint"    # GitHub Actions linter
 	"hadolint"      # Dockerfile linter
+)
+
+{{- if not (get . "work") }}
+
+# Go stack: personal machines only
+ADDITIONAL_TOOLS+=(
 	"go"            # Go toolchain
 	"goreleaser"    # Go release builds
 	"gopls"         # Go language server
 	"syft"          # SBOM generator (goreleaser sboms)
 )
+{{- end }}
 
 # Azure CLI extensions (work machines)
 AZ_EXTENSIONS=()

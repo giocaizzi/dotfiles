@@ -15,7 +15,7 @@ $has = { param($c) [bool](Get-Command $c -ErrorAction SilentlyContinue) }
 if (& $has 'codex') {
     codex plugin marketplace add giocaizzi/harness | Out-Null
     codex plugin marketplace upgrade | Out-Null
-    foreach ($p in @({{ $c := list }}{{ range $p, $h := .harnessPlugins }}{{ if has "codex" $h }}{{ $c = append $c (squote $p) }}{{ end }}{{ end }}{{ join ", " $c }})) { codex plugin add "$p@giocaizzi-harness" | Out-Null }
+    foreach ($p in @({{ $c := list }}{{ range $p, $h := .harnessPlugins }}{{ if and (has "codex" $h) (not (and (get $ "work") (has $p $.harnessPersonalPlugins))) }}{{ $c = append $c (squote $p) }}{{ end }}{{ end }}{{ join ", " $c }})) { codex plugin add "$p@giocaizzi-harness" | Out-Null }
     node $Install codex
 }
 {{- end }}
