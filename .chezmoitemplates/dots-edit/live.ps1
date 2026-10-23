@@ -1,5 +1,5 @@
-# dots-edit live preview pane for Windows (docs/OS.md#editing-your-dotfiles), the twin of
-# live.sh, run by dots-edit in a Windows Terminal split pane:
+# dots live preview pane for Windows (docs/OS.md#editing-your-dotfiles), the twin of
+# live.sh, run by dots in a Windows Terminal split pane:
 # live.ps1 <source file> <edited file> <snapshot dir> <chezmoi> <source dir>.
 # On every save of the edited file it copies it (re-encrypted when the source file is an
 # age file) into the private source copy <snapshot dir>/shadow, renders this machine's
@@ -27,7 +27,7 @@ while ((Test-Path $Dir) -and -not (Test-Path (Join-Path $Dir stop))) {
 		$target = Join-Path $shadow $File
 		if ($File -like '*.age') { & $Cz encrypt --output $target $Edited } else { Copy-Item -Force $Edited $target }
 		try { Clear-Host } catch { }
-		"dots-edit live preview: $File on this machine (refreshes on save)"
+		"dots live preview: $File on this machine (refreshes on save)"
 		$json = Join-Path $Dir live.json
 		$err = Join-Path $Dir live.err
 		$p = Start-Process -FilePath $Cz -ArgumentList '--source', "`"$shadow`"", 'dump', '--exclude', 'dirs,externals', '--format', 'json' `

@@ -1,14 +1,16 @@
 # ----------------------------------------------------------------------------
-# Edit registry: the components `dots-edit` names (docs/OS.md#editing-your-dotfiles).
+# Edit registry: the components `dots` names (docs/OS.md#editing-your-dotfiles).
 # Any other source file or managed target is editable without an entry; an entry adds
 # a name, a description for the picker and the checks. `make lint-edit` validates it
 # and requires an entry for every .chezmoidata file and every encrypted file.
 #
 # [edit."<name>"]
-# desc       = shown by the picker and `dots-edit --list` (required)
-# source     = the file to edit, relative to the source dir (required)
+# desc       = shown by the picker and `dots list` (required)
+# source     = the file to edit, relative to the source dir (required, unless local)
+# local      = instead of source: a folder of unmanaged files, relative to the home dir;
+#              `dots <home>/<local>/<name>` edits one in place (a new name creates it)
 # check      = POSIX command run in the source dir with the edited file as $1, before
-#              anything is applied; non-zero = nothing applied
+#              anything is applied; non-zero = nothing applied (local: edit again or quit)
 # powershell = the same check for PowerShell, file as $args[0] (default: check)
 # note       = printed after an apply
 # diff       = "first": every target renders the same text, show one diff
@@ -49,8 +51,14 @@ check = "make lint-aliases"
 note = "Aliases applied: open a new shell, or source ~/.config/shell/aliases.sh (PowerShell: ~/.config/powershell/aliases.ps1)"
 
 [edit."ssh/config"]
-desc = "~/.ssh/config, shared hosts (encrypted); this machine's hosts: ssh-edit <name>"
+desc = "~/.ssh/config, hosts every full machine uses (encrypted)"
 source = "private_dot_ssh/encrypted_private_config.age"
+check = 'ssh -G -F "$1" localhost >/dev/null'
+powershell = 'ssh -G -F $args[0] localhost > $null'
+
+[edit."ssh/local"]
+desc = "~/.ssh/config.d/<name>, this machine's hosts (not managed: dots ~/.ssh/config.d/<new name> creates one)"
+local = ".ssh/config.d"
 check = 'ssh -G -F "$1" localhost >/dev/null'
 powershell = 'ssh -G -F $args[0] localhost > $null'
 
@@ -122,7 +130,7 @@ source = ".chezmoiscripts/run_onchange_install-pkgs.ps1.tmpl"
 desc = "Bitwarden Secrets Manager CLI version"
 source = ".chezmoidata/bws.toml"
 
-[edit.edit]
+[edit.registry]
 desc = "This edit registry"
 source = ".chezmoidata/edit.toml"
 check = "make lint-edit"

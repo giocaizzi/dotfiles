@@ -41,9 +41,9 @@ dot_config/readline/inputrc                        → ~/.config/readline/ (via 
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
 .chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
-    personal/work) → global instructions of every AI harness; edit with `agents-edit` (docs/OS.md → Agent instructions)
+    personal/work) → global instructions of every AI harness; edit with `dots agents/<layer>` (docs/OS.md → Agent instructions)
 .chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
-private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `ssh-edit` (also ~/.ssh/config.d/<name>, unmanaged)
+private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `dots ssh/config` (machine-only hosts: `dots ~/.ssh/config.d/<name>`, unmanaged)
 ```
 
 Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell/profile.ps1`) are thin orchestrators that source the snippets under `~/.config/shell/` (POSIX) or `~/.config/powershell/` (PS).
@@ -52,7 +52,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 
 - `.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
 - Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
-- Editing goes through `dots-edit`: a new editable component is an entry in `.chezmoidata/edit.toml` (name, source, optional check), never a new edit function; `make lint-edit` requires one for every `.chezmoidata` file and encrypted file. Logic shared by both shells lives in `.chezmoitemplates/dots-edit/`; shell-side changes need the PowerShell twin and cases in `scripts/dots-edit-test.sh`. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` also goes in `.chezmoitemplates/dots-edit/matrix`. See docs/OS.md → Editing your dotfiles.
+- Editing goes through `dots`: a new editable component is an entry in `.chezmoidata/edit.toml` (name, source or local folder, optional check), never a new edit function or shortcut; `make lint-edit` requires one for every `.chezmoidata` file and encrypted file. Logic shared by both shells lives in `.chezmoitemplates/dots-edit/`; shell-side changes need the PowerShell twin and cases in `scripts/dots-edit-test.sh`. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` also goes in `.chezmoitemplates/dots-edit/matrix`. See docs/OS.md → Editing your dotfiles.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`. `make lint` renders each `.sh.tmpl` script per OS, role and harness selection (`lint-tmpl`, needs chezmoi) and shellchecks the output.
 - Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
@@ -61,6 +61,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
+- Worktrees of this repo live outside the source dir (`~/.local/share/chezmoi-worktrees/<slug>`), not in `.claude/worktrees/`: chezmoi reads every nested `.chezmoidata/` (`.chezmoiignore` does not stop it), so a worktree inside the source merges its data into the live config.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 

@@ -75,8 +75,7 @@ message = "pipx is not used here, use uv: ..."
 - **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
   `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
 - **Functions** that are more than a command stay in the shell snippets, each with a
-  PowerShell twin where it applies: the edit commands `dots-edit` and its shortcuts
-  `agents-edit`, `aliases-edit`, `ssh-edit` (full machines, over the shared
+  PowerShell twin where it applies: the edit command `dots` (full machines, over the shared
   `_dots_edit` / `_dots-edit` and `_dots_pick` / `_dots-pick` helpers and the
   `.chezmoitemplates/dots-edit/` templates, [OS.md](./OS.md#editing-your-dotfiles)),
   `rp5-secrets`, `rp5-sync-infra` (personal Mac, POSIX only), fzf `h`.
@@ -86,12 +85,12 @@ message = "pipx is not used here, use uv: ..."
   lists aliases live in this machine's zsh and bash that the registry does not
   account for.
 
-To add or change an alias: `aliases-edit public` (edits the registry, runs
+To add or change an alias: `dots aliases/public` (edits the registry, runs
 `make lint-aliases`, diffs and offers to apply the alias files), then open a new shell.
 
 ### Personal aliases
 
-Same schema, never in plain text in the repo. Edit with `aliases-edit private`: it
+Same schema, never in plain text in the repo. Edit with `dots aliases/private`: it
 decrypts the file into a private temp file, re-encrypts it only on change, always
 removes the temp file, then lints, diffs and offers to apply like the public registry
 ([OS.md](./OS.md#editing-your-dotfiles)).
@@ -111,9 +110,8 @@ the file.
 | `free` (macOS)        | `top -l 1 -s 0 \| grep PhysMem`          | — |
 | `gs` `ga` `gc` `gd` `gp` `gl` `glog` | git shortcuts            | same |
 | `hist` / `h`          | fzf history search                       | same |
-| `cz` `cze` `czd` `cza` | `chezmoi`, `chezmoi edit --apply`, `chezmoi diff`, `chezmoi apply` | same |
-| `dots-edit` (full machines) | edit or view any part of the dotfiles: a registry entry, a target's composition tree or a source file; check, render every configuration, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
-| `agents-edit` `aliases-edit` `ssh-edit` (full machines) | `dots-edit` shortcuts: an agent instruction layer, the alias registry (public or private), `~/.ssh/config`; `ssh-edit <name>` also edits a `~/.ssh/config.d/` file | same |
+| `cz` `czd` `cza` | `chezmoi`, `chezmoi diff`, `chezmoi apply` | same |
+| `dots` (full machines) | edit or view any part of the dotfiles: a registry entry, a target's composition tree, a source file or a local file (`~/.ssh/config.d/<name>`); check, render every configuration, diff, apply ([OS.md](./OS.md#editing-your-dotfiles)) | same |
 | `openclaw` (personal Mac) | rp5-homeserver openclaw script       | — |
 | `pipx`                | refuses; use `uv tool install` / `uvx`   | same |
 | `python`              | `python3`, only where no `python` exists | — |

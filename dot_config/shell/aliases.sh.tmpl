@@ -56,9 +56,9 @@ _dots_pick() (
 )
 
 # _dots_open <file>: $EDITOR (then $VISUAL, then vi) on one file.
-_dots_open() { sh -c "${EDITOR:-${VISUAL:-vi}} \"\$1\"" dots-edit "$1"; }
+_dots_open() { sh -c "${EDITOR:-${VISUAL:-vi}} \"\$1\"" dots "$1"; }
 
-# _dots_tmpl <name> [<data JSON>]: render the dots-edit helper template
+# _dots_tmpl <name> [<data JSON>]: render the dots helper template
 # .chezmoitemplates/dots-edit/<name>, its arguments under .dotsEdit in the data JSON.
 _dots_tmpl() {
 	chezmoi execute-template --override-data "${2:-"{}"}" "{{ "{{" }} includeTemplate \"dots-edit/$1\" . }}"
@@ -268,7 +268,7 @@ EOF
 	fi
 )
 
-# _dots_usage: dots-edit --help (.chezmoitemplates/dots-edit/usage).
+# _dots_usage: dots help (.chezmoitemplates/dots-edit/usage).
 _dots_usage() { _dots_tmpl usage; }
 
 # _dots_config <os>[,<role>]: the matrix label and data JSON of one configuration
@@ -279,7 +279,7 @@ _dots_config() {
 	_dots_tmpl matrix | awk -F'\t' -v l="$os/$role" '$1 == l'
 }
 
-# _dots_view <target|entry> [--as <os>[,<role>] | --matrix]: see dots-edit --help.
+# _dots_view <target|entry> [--as <os>[,<role>] | --matrix]: see dots help.
 _dots_view() (
 	mode=
 	case $#:${2:-} in
@@ -300,7 +300,7 @@ _dots_view() (
 	if [ "$mode" = as ]; then
 		_dots_config "$3" >"$tmp/labels"
 		if [ ! -s "$tmp/labels" ]; then
-			echo "dots-edit: unknown configuration $3 (os darwin|linux|windows, role personal|work|light)" >&2
+			echo "dots: unknown configuration $3 (os darwin|linux|windows, role personal|work|light)" >&2
 			return 2
 		fi
 	fi
@@ -345,7 +345,7 @@ _dots_view() (
 		done <"$tmp/labels"
 	fi
 	if [ -z "$source" ]; then
-		echo "dots-edit: $arg is no registry entry or managed target" >&2
+		echo "dots: $arg is no registry entry or managed target" >&2
 		return 1
 	fi
 	src=$(chezmoi source-path) || return 1
@@ -398,23 +398,73 @@ _dots_view() (
 	return 0
 )
 
-# dots-edit: edit any part of the dotfiles and see what it changes everywhere
-# (docs/OS.md#editing-your-dotfiles; dots-edit --help).
-dots-edit() (
+# _dots_local <entry> <folder> [<name>]: a file of a local entry's folder (unmanaged, this
+# machine only; a new name creates it), picked when no name is given. The edit goes to a
+# private temp copy that replaces the live file only once the entry's check passes (on
+# failure: edit again, or keep the live file); no render, diff, apply or PR.
+_dots_local() (
+	entry=$1 dir=$2 name=${3:-}
+	check=$(_dots_field "$entry" check) || return 1
+	if [ -z "$name" ]; then
+		set --
+		while IFS= read -r n; do
+			if [ -f "$dir/$n" ]; then set -- "$@" "$n"; fi
+		done <<EOF
+$(ls -A "$dir" 2>/dev/null)
+EOF
+		if [ $# -eq 0 ]; then
+			echo "dots: $dir is empty; create a file with dots $dir/<name>" >&2
+			return 1
+		fi
+		name=$(_dots_pick "$entry" "$@") || return 1
+		[ -n "$name" ] || return 1
+	fi
+	case $name in
+	.* | */*)
+		_dots_usage >&2
+		return 2
+		;;
+	esac
+	umask 077
+	tmp=$(mktemp) || return 1
+	trap 'rm -f "$tmp"' EXIT
+	trap 'exit 130' HUP INT TERM
+	if [ -f "$dir/$name" ]; then cp "$dir/$name" "$tmp" || return 1; fi
+	before=$(cksum <"$tmp")
+	while :; do
+		_dots_open "$tmp" || return 1
+		if [ -z "$check" ] || sh -c "$check" sh "$tmp"; then break; fi
+		printf 'Check failed, %s unchanged. Edit again? [Y/n] ' "$dir/$name" >&2
+		read -r answer || return 1
+		case $answer in [nN]*) return 1 ;; esac
+	done
+	if [ "$(cksum <"$tmp")" != "$before" ]; then
+		mkdir -p "$dir" && mv -f "$tmp" "$dir/$name"
+	fi
+)
+
+# dots [edit] [<what>] | view <what> [...] | list | help: edit any part of the dotfiles and
+# see what it changes everywhere (docs/OS.md#editing-your-dotfiles; dots help).
+dots() (
 	case ${1:-} in
-	-h | --help)
+	help | -h | --help)
 		_dots_usage
 		return
 		;;
-	--list)
+	list)
+		if [ $# -ne 1 ]; then
+			_dots_usage >&2
+			return 2
+		fi
 		_dots_entries | awk -F'\t' '{ printf "%-20s %s\n", $1, $4 }'
 		return
 		;;
-	--view)
+	view)
 		shift
 		_dots_view "$@"
 		return
 		;;
+	edit) shift ;;
 	-*)
 		_dots_usage >&2
 		return 2
@@ -425,6 +475,7 @@ dots-edit() (
 		return 2
 	fi
 	src=$(chezmoi source-path) || return 1
+	home=$(chezmoi target-path) || return 1
 	entries=$(_dots_entries) || return 1
 	arg=${1:-}
 	if [ -z "$arg" ]; then
@@ -432,12 +483,24 @@ dots-edit() (
 		while IFS= read -r line; do set -- "$@" "$line"; done <<EOF
 $(printf '%s\n' "$entries" | awk -F'\t' '{ print $1 "\t" $4 }')
 EOF
-		arg=$(_dots_pick dots-edit "$@" | cut -f1) || return 1
+		arg=$(_dots_pick dots "$@" | cut -f1) || return 1
 		[ -n "$arg" ] || return 1
 	fi
 	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v n="$arg" '$1 == n')
 	if [ -n "$entry" ]; then
-		_dots_edit "$arg" "$(printf '%s\n' "$entry" | cut -f2)"
+		folder=$(printf '%s\n' "$entry" | cut -f5)
+		if [ -n "$folder" ]; then
+			_dots_local "$arg" "$home/$folder"
+		else
+			_dots_edit "$arg" "$(printf '%s\n' "$entry" | cut -f2)"
+		fi
+		return
+	fi
+	# A file of a local entry's folder: <home>/<local>/<name>.
+	match=$(printf '%s\n' "$entries" | awk -F'\t' -v a="$arg" -v h="$home" '$5 != "" && index(a, h "/" $5 "/") == 1 { print $1 "\t" $5; exit }')
+	if [ -n "$match" ]; then
+		dir=$home/$(printf '%s\n' "$match" | cut -f2)
+		_dots_local "$(printf '%s\n' "$match" | cut -f1)" "$dir" "${arg#"$dir"/}"
 		return
 	fi
 	if [ -f "$src/$arg" ]; then
@@ -445,7 +508,7 @@ EOF
 	else
 		# A target: pick a node of its composition tree (the only node: no picker).
 		source=$(chezmoi source-path "$arg" 2>/dev/null) || {
-			echo "dots-edit: $arg is no registry entry, source file or managed target (dots-edit --help)" >&2
+			echo "dots: $arg is no registry entry, source file or managed target (dots help)" >&2
 			return 1
 		}
 		set --
@@ -463,86 +526,6 @@ EOF
 	entry=$(printf '%s\n' "$entries" | awk -F'\t' -v s="$file" '$2 == s { print $1; exit }')
 	_dots_edit "${entry:--}" "$file"
 )
-
-# agents-edit [core|env|personal|work]: a layer of the global agent instructions
-# (docs/OS.md#agent-instructions): dots-edit agents/<layer>.
-agents-edit() (
-	layer=${1:-}
-	[ -n "$layer" ] || layer=$(_dots_pick 'agent layer' core env personal work) || return 1
-	case $layer in
-	core | env | personal | work) dots-edit "agents/$layer" ;;
-	*)
-		echo 'usage: agents-edit [core|env|personal|work]' >&2
-		return 2
-		;;
-	esac
-)
-
-# aliases-edit [public|private]: the alias registry or the encrypted personal aliases
-# (docs/SHELL.md#alias-registry): dots-edit aliases/<scope>.
-aliases-edit() (
-	scope=${1:-}
-	[ -n "$scope" ] || scope=$(_dots_pick aliases public private) || return 1
-	case $scope in
-	public | private) dots-edit "aliases/$scope" ;;
-	*)
-		echo 'usage: aliases-edit [public|private]' >&2
-		return 2
-		;;
-	esac
-)
-
-# ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
-# (this machine's hosts, not managed by chezmoi; a new name creates it). `ssh -G` must
-# parse the edit before it goes live: config before apply, a config.d file is edited in
-# a private temp copy that replaces the live file only once it passes (on failure: edit
-# again, or keep the live file). No argument: pick config or an existing config.d file.
-ssh-edit() (
-	if [ $# -gt 1 ]; then
-		echo 'usage: ssh-edit [config|<name>]' >&2
-		return 2
-	fi
-	dir=$(chezmoi target-path)/.ssh/config.d || return 1
-	name=${1:-}
-	if [ -z "$name" ]; then
-		set -- config
-		while IFS= read -r n; do
-			if [ -f "$dir/$n" ]; then set -- "$@" "$n"; fi
-		done <<EOF
-$(ls -A "$dir" 2>/dev/null)
-EOF
-		name=$(_dots_pick 'ssh config' "$@") || return 1
-	fi
-	case $name in
-	config)
-		dots-edit ssh/config
-		return
-		;;
-	'' | .* | */*)
-		echo 'usage: ssh-edit [config|<name>]' >&2
-		return 2
-		;;
-	esac
-	umask 077
-	tmp=$(mktemp) || return 1
-	trap 'rm -f "$tmp"' EXIT
-	trap 'exit 130' HUP INT TERM
-	if [ -f "$dir/$name" ]; then cp "$dir/$name" "$tmp" || return 1; fi
-	before=$(cksum <"$tmp")
-	while :; do
-		_dots_open "$tmp" || return 1
-		if _ssh_edit_hook check "$tmp"; then break; fi
-		printf 'Check failed, %s unchanged. Edit again? [Y/n] ' "$dir/$name" >&2
-		read -r answer || return 1
-		case $answer in [nN]*) return 1 ;; esac
-	done
-	if [ "$(cksum <"$tmp")" != "$before" ]; then
-		mkdir -p "$dir" && mv -f "$tmp" "$dir/$name"
-	fi
-)
-_ssh_edit_hook() {
-	if [ "$1" = check ]; then ssh -G -F "$2" localhost >/dev/null; fi
-}
 {{- end }}
 {{- if and (eq .chezmoi.os "darwin") (not (get . "light")) (not (get . "work")) }}
 
