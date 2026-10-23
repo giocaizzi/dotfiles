@@ -17,6 +17,8 @@
       "dev-tools:scout": { "model": "gpt-6-luna", "effortLevel": "low" },
       "api:api-reviewer": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
       "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "medium" },
+      "dev-tools:driver": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
+      "dev-tools:reviewer": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
       "factory:verifier": { "model": "gpt-6.1-sol", "effortLevel": "medium" }
     }
   },
