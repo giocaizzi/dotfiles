@@ -191,19 +191,19 @@ chezmoi git -- <args>           # Run git in source directory
 chezmoi doctor                  # Diagnose issues
 ```
 
-## Composed Files: `dots-edit`
+## Composed Files: `dots`
 
-Many targets are composed (a one-line stub over a partial over layers or `.chezmoidata`), so `chezmoi edit <target>` often opens the stub. `dots-edit` (shell function, full machines; docs/OS.md → Editing your dotfiles) resolves them. It is not on an agent's non-interactive PATH: run it through an interactive shell, e.g. `zsh -ic 'dots-edit --view ~/.claude/CLAUDE.md'`.
+Many targets are composed (a one-line stub over a partial over layers or `.chezmoidata`), so `chezmoi edit <target>` often opens the stub. `dots` (shell function, full machines; docs/OS.md → Editing your dotfiles) resolves them. It is not on an agent's non-interactive PATH: run it through an interactive shell, e.g. `zsh -ic 'dots view ~/.claude/CLAUDE.md'`.
 
 ```bash
-dots-edit --list                         # registry entries (.chezmoidata/edit.toml)
-dots-edit --view <target>                # composition tree: which source file to edit
-dots-edit --view <target> --matrix       # render on darwin/linux/windows x personal/work/light
-dots-edit --view <entry> --matrix        # which targets an entry reaches, per configuration
-dots-edit --view <target> --as windows,work
+dots list                                # registry entries (.chezmoidata/edit.toml)
+dots view <target>                       # composition tree: which source file to edit
+dots view <target> --matrix              # render on darwin/linux/windows x personal/work/light
+dots view <entry> --matrix               # which targets an entry reaches, per configuration
+dots view <target> --as windows,work
 ```
 
-- The edit flow (`dots-edit <entry|target>`) opens `$EDITOR` and asks `apply now?`: it is for the user. As an agent, edit the source file the tree names, then check every configuration with `--view ... --matrix` and run `make check`.
+- The edit flow (`dots <entry|target>`) opens `$EDITOR` and asks `apply now?`: it is for the user. As an agent, edit the source file the tree names, then check every configuration with `dots view ... --matrix` and run `make check`.
 - `--matrix` on agent instructions or other encrypted layers prints decrypted text: don't paste it into chat.
 - A new `.chezmoidata` file or encrypted file needs an entry in `.chezmoidata/edit.toml` (`make lint-edit` fails without one).
 

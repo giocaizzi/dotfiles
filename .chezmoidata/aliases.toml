@@ -103,9 +103,6 @@ cmd = "git log --oneline --decorate --graph"
 [alias.cz]
 cmd = "chezmoi"
 
-[alias.cze]
-cmd = "chezmoi edit --apply"
-
 [alias.czd]
 cmd = "chezmoi diff"
 

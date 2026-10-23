@@ -149,20 +149,19 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots-edit` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots-edit --help` prints the full usage).
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots help` prints the full usage).
 
 ### Edit
 
 | Command | Edits |
 |---|---|
-| `dots-edit` | a registry entry, picked with fzf (a numbered prompt without fzf) |
-| `dots-edit <entry>` | that entry, e.g. `dots-edit mcp`, `dots-edit agents/work`; `dots-edit --list` shows them all |
-| `dots-edit <target>` | what a target is made of: a picker over the nodes of its composition tree (`dots-edit ~/.claude/CLAUDE.md` → the stub, the partial, each layer); a target made of one file opens it directly |
-| `dots-edit <source file>` | a source file by its source-relative path, e.g. `dots-edit dot_config/git/config.tmpl` |
-| `agents-edit [core\|env\|personal\|work]`, `aliases-edit [public\|private]`, `ssh-edit config` | shortcuts for `dots-edit agents/<layer>`, `aliases/<scope>`, `ssh/config` |
-| `ssh-edit <name>` | `~/.ssh/config.d/<name>` (this machine only, unmanaged; a new name creates it): `ssh -G` parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no diff, apply or PR |
+| `dots` | a registry entry, picked with fzf (a numbered prompt without fzf) |
+| `dots <entry>` (also `dots edit <entry>`) | that entry, e.g. `dots mcp`, `dots agents/work`, `dots aliases/private`, `dots ssh/config`; `dots list` shows them all |
+| `dots <target>` | what a target is made of: a picker over the nodes of its composition tree (`dots ~/.claude/CLAUDE.md` → the stub, the partial, each layer); a target made of one file opens it directly |
+| `dots <source file>` | a source file by its source-relative path, e.g. `dots dot_config/git/config.tmpl` |
+| `dots <home>/<local>/<name>` | a file of a `local` entry's folder, e.g. `dots ~/.ssh/config.d/pi` (`ssh/local`: this machine only, unmanaged; a new name creates it): the entry's check parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no render, diff, apply or PR. `dots ssh/local` picks an existing file |
 
-Every edit, in order:
+Every source edit, in order:
 
 1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel.
 2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux (Linux and macOS, also from PowerShell) or, from PowerShell on Windows, Windows Terminal, a side pane re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor (`.chezmoitemplates/dots-edit/live.sh`, `live.ps1`).
@@ -176,8 +175,8 @@ A failed check or render applies nothing; the source keeps the edit, so run the 
 
 | Command | Shows |
 |---|---|
-| `dots-edit --view <target>` | the composition tree (each node with its registry entry, encrypted nodes marked) and the rendered content on this machine |
-| `dots-edit --view <entry>` | the entry's tree and the targets it reaches on this machine |
+| `dots view <target>` | the composition tree (each node with its registry entry, encrypted nodes marked) and the rendered content on this machine |
+| `dots view <entry>` | the entry's tree and the targets it reaches on this machine |
 | `... --as <os>[,<role>]` | the same for one configuration: os `darwin`, `linux` or `windows`; role `personal` (default), `work` or `light`. A preview, never applied |
 | `... --matrix` | every configuration: a target's identical renders grouped, the others as diffs against the first, the configurations that don't manage it listed; an entry's reached targets per configuration |
 
@@ -185,17 +184,17 @@ The composition tree is read from the source: `template`/`includeTemplate` names
 
 Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. `modify_` targets (Claude, Copilot settings) merge into this machine's live file. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
 
-Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`). Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
+Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`); edit through `dots`, not `chezmoi edit`. Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
 
 ### Edit registry
 
-`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `--list`) and a `source` (source-relative), optionally a `check` (POSIX command run in the source dir with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
+`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `dots list`) and a `source` (source-relative) or a `local` folder (home-relative, unmanaged files edited in place), optionally a `check` (POSIX command run in the source dir with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
 
 **Add an editable component**
 
 **When:** a new file under `.chezmoidata/` or a new encrypted file (`make lint-edit` fails without an entry), or any component worth a name or a check.
 
-1. `dots-edit edit` and add the entry:
+1. `dots registry` and add the entry (or, for a folder of unmanaged files, `local = "<home-relative folder>"` instead of `source`):
    ```toml
    [edit."<name>"]
    desc = "<what it is>"
@@ -204,19 +203,19 @@ Short aliases: `cz` (`chezmoi`), `cze` (`chezmoi edit --apply`), `czd` (`chezmoi
    ```
 2. Apply when asked; ship the PR.
 
-**Verify:** `make lint-edit` passes; `dots-edit --list` lists the entry; `dots-edit --view <name>` shows the targets it reaches.
+**Verify:** `make lint-edit` passes; `dots list` lists the entry; `dots view <name>` shows the targets it reaches.
 
-**Rollback:** delete the entry (`dots-edit edit`).
+**Rollback:** delete the entry (`dots registry`).
 
 **Last verified:** 2026-10-18 by `scripts/dots-edit-test.sh` (bash, zsh; pwsh on Linux).
 
 ## Encrypted files (age)
 
-Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`, or edit one in place with `chezmoi edit --apply <file>` (decrypts to an editor, re-encrypts on save); `~/.ssh/config` with `ssh-edit`, which also checks it ([Editing your dotfiles](#editing-your-dotfiles)).
+Secrets such as `~/.ssh/config` are committed age-encrypted (`encrypted_` in the source name). Each personal and work machine needs the private key at `~/.config/chezmoi/key.txt` (owner-only) **before** `chezmoi apply` — light machines don't, and must not hold it; copy it from another machine over a secure channel, never through the repo. The public key in `.chezmoi.toml.tmpl` is safe to publish. Add or update an encrypted file with `chezmoi add --encrypt <file>`, or edit one in place with `chezmoi edit --apply <file>` (decrypts to an editor, re-encrypts on save); `~/.ssh/config` with `dots ssh/config`, which also checks it ([Editing your dotfiles](#editing-your-dotfiles)).
 
 **SSH key names (same on every machine):** `~/.ssh/id_<type>_<service>_<account>` (+ `.pub`) — type first, then the service, then the account or organisation: `id_ed25519_github_<github-user>`, `id_ed25519_github_<work-account>`, `id_rsa_devops_<org>`. The shared `~/.ssh/config` points `Host github.com` at the personal GitHub key, so don't redefine `github.com` in `config.d/` (it would shadow the shared entry); rename the key instead. Work keys and their `Host` aliases (e.g. `github-<work>`, `azure-<org>`) live in `config.d/<name>`.
 
-**SSH hosts per machine:** the shared `~/.ssh/config` starts with `Include config.d/*` and holds only hosts every full machine uses (GitHub). Hosts that belong to one machine only — e.g. work hosts on the corporate PC, the home-server host on the personal Mac — go in `~/.ssh/config.d/<name>` there; chezmoi doesn't manage that folder, so they never enter this repo, not even encrypted. Edit them with `ssh-edit <name>` ([Editing your dotfiles](#editing-your-dotfiles)). Work keys are generated on the work machine itself. If a work Git host is the same as a personal one, give the work account its own `Host` alias in `config.d/<name>` (own key, `IdentitiesOnly yes`) and clone work repos through that alias.
+**SSH hosts per machine:** the shared `~/.ssh/config` starts with `Include config.d/*` and holds only hosts every full machine uses (GitHub). Hosts that belong to one machine only — e.g. work hosts on the corporate PC, the home-server host on the personal Mac — go in `~/.ssh/config.d/<name>` there; chezmoi doesn't manage that folder, so they never enter this repo, not even encrypted. Edit them with `dots ~/.ssh/config.d/<name>` ([Editing your dotfiles](#editing-your-dotfiles)). Work keys are generated on the work machine itself. If a work Git host is the same as a personal one, give the work account its own `Host` alias in `config.d/<name>` (own key, `IdentitiesOnly yes`) and clone work repos through that alias.
 
 ## Hardcoded by design
 
@@ -285,7 +284,7 @@ Core holds how to work on any machine, in any harness: it names no harness-only 
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
-- **Edit a layer:** `agents-edit [core|env|personal|work]` (or `dots-edit ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots-edit --view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role.
+- **Edit a layer:** `dots agents/<core|env|personal|work>` (or `dots ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role.
 - **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
 - **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
 - **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.

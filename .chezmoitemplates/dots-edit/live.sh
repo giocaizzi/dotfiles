@@ -1,5 +1,5 @@
 #!/bin/sh
-# dots-edit live preview pane (docs/OS.md#editing-your-dotfiles), run by dots-edit in a
+# dots live preview pane (docs/OS.md#editing-your-dotfiles), run by dots in a
 # tmux side pane: live.sh <source file> <edited file> <snapshot dir> <chezmoi> <source dir>.
 # On every save of the edited file it copies it (re-encrypted when the source file is an
 # age file) into the private source copy <snapshot dir>/shadow, renders this machine's
@@ -16,7 +16,7 @@ while :; do
 		*) cp "$edited" "$dir/shadow/$file" ;;
 		esac
 		printf '\033[H\033[2J'
-		echo "dots-edit live preview: $file on this machine (refreshes on save)"
+		echo "dots live preview: $file on this machine (refreshes on save)"
 		if "$cz" --source "$dir/shadow" dump --exclude dirs,externals --format json 2>"$dir/live.err" |
 			jq --arg s "$dir/shadow" --arg r "$src" 'walk(if type == "string" then split($s) | join($r) else . end)' >"$dir/live.json"; then
 			jq -rn --slurpfile a "$dir/before/here.json" --slurpfile b "$dir/live.json" \

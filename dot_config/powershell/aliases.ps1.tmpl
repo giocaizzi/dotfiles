@@ -71,7 +71,7 @@ function _dots-datafile {
 	$Path
 }
 
-# _dots-tmpl <name> [<data>]: render the dots-edit helper template
+# _dots-tmpl <name> [<data>]: render the dots helper template
 # .chezmoitemplates/dots-edit/<name>, its arguments under dotsEdit in the data.
 function _dots-tmpl {
 	param([string]$Name, $Data)
@@ -88,11 +88,11 @@ function _dots-with {
 	$d
 }
 
-# _dots-entries: the edit registry (.chezmoidata/edit.toml): Name, Source, Diff, Desc.
+# _dots-entries: the edit registry (.chezmoidata/edit.toml): Name, Source, Diff, Desc, Local.
 function _dots-entries {
 	_dots-tmpl entries | Where-Object { $_ } | ForEach-Object {
-		$f = $_ -split "`t", 4
-		[pscustomobject]@{ Name = $f[0]; Source = $f[1]; Diff = $f[2]; Desc = $f[3] }
+		$f = $_ -split "`t", 5
+		[pscustomobject]@{ Name = $f[0]; Source = $f[1]; Diff = $f[2]; Desc = $f[3]; Local = $f[4] }
 	}
 }
 
@@ -348,10 +348,10 @@ function _dots-edit {
 	}
 }
 
-# _dots-usage: dots-edit --help (.chezmoitemplates/dots-edit/usage).
+# _dots-usage: dots help (.chezmoitemplates/dots-edit/usage).
 function _dots-usage { (_dots-tmpl usage) -join "`n" }
 
-# _dots-view <target|entry> [--as <os>[,<role>] | --matrix]: see dots-edit --help.
+# _dots-view <target|entry> [--as <os>[,<role>] | --matrix]: see dots help.
 function _dots-view {
 	$mode = switch ("$($args.Count):$($args[1])") { '1:' { 'here' } '2:--matrix' { 'matrix' } '3:--as' { 'as' } }
 	if (-not $mode) { Write-Error (_dots-usage); return }
@@ -366,7 +366,7 @@ function _dots-view {
 		$os, $role = $as -split '[,/]', 2
 		if (-not $role) { $role = 'personal' }
 		$labels = @($labels | Where-Object Label -CEQ "$os/$role")
-		if (-not $labels) { Write-Error "dots-edit: unknown configuration $as (os darwin|linux|windows, role personal|work|light)"; return }
+		if (-not $labels) { Write-Error "dots: unknown configuration $as (os darwin|linux|windows, role personal|work|light)"; return }
 	}
 	$entry = $entries | Where-Object Name -CEQ $arg | Select-Object -First 1
 	if ($entry) {
@@ -397,7 +397,7 @@ function _dots-view {
 			$source = $null
 		}
 	}
-	if (-not $source) { Write-Error "dots-edit: $arg is no registry entry or managed target"; return }
+	if (-not $source) { Write-Error "dots: $arg is no registry entry or managed target"; return }
 	$src = chezmoi source-path
 	_dots-print-tree (_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/')) $entries
 	if ($mode -eq 'here') {
@@ -429,32 +429,84 @@ function _dots-view {
 	if ($missing) { "--- not managed on: $($missing -join ' ')" }
 }
 
-# dots-edit: edit any part of the dotfiles and see what it changes everywhere
-# (docs/OS.md#editing-your-dotfiles; dots-edit --help).
-function dots-edit {
-	$first = [string]$args[0]
-	switch -CaseSensitive ($first) {
-		{ $_ -in '-h', '--help' } { _dots-usage; return }
-		'--list' { _dots-entries | ForEach-Object { '{0,-20} {1}' -f $_.Name, $_.Desc }; return }
-		'--view' { $rest = @($args | Select-Object -Skip 1); _dots-view @rest; return }
+# _dots-local <entry> <folder> [<name>]: a file of a local entry's folder (unmanaged, this
+# machine only; a new name creates it), picked when no name is given. The edit goes to a
+# private temp copy that replaces the live file only once the entry's check passes (on
+# failure: edit again, or keep the live file); no render, diff, apply or PR.
+function _dots-local {
+	param([string]$Entry, [string]$Dir, [string]$Name)
+	$check = _dots-field $Entry powershell
+	if (-not $Name) {
+		$files = @(Get-ChildItem -File -Force $Dir -ErrorAction SilentlyContinue | ForEach-Object Name)
+		if (-not $files) { Write-Error "dots: $Dir is empty; create a file with dots $Dir/<name>"; return }
+		$Name = _dots-pick $Entry $files
+		if (-not $Name) { Write-Error 'dots: nothing picked'; return }
 	}
-	if ($first -like '-*' -or $args.Count -gt 1) { Write-Error (_dots-usage); return }
+	if ($Name -match '^\.|[\\/]') { Write-Error (_dots-usage); return }
+	$file = Join-Path $Dir $Name
+	$tmp = [IO.Path]::GetTempFileName()
+	try {
+		if (Test-Path $file) { Copy-Item -Force $file $tmp }
+		$before = _dots-hash $tmp
+		while ($true) {
+			if (-not (_dots-open $tmp)) { Write-Error "The editor failed: $file unchanged."; return }
+			if (-not $check) { break }
+			$global:LASTEXITCODE = 0
+			& ([scriptblock]::Create($check)) $tmp | Out-Host
+			if ($LASTEXITCODE -eq 0) { break }
+			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
+			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
+		}
+		if ((_dots-hash $tmp) -ne $before) {
+			New-Item -ItemType Directory -Force $Dir > $null
+			Move-Item -Force $tmp $file
+		}
+	} finally {
+		Remove-Item -Force -ErrorAction SilentlyContinue $tmp
+	}
+}
+
+# dots [edit] [<what>] | view <what> [...] | list | help: edit any part of the dotfiles and
+# see what it changes everywhere (docs/OS.md#editing-your-dotfiles; dots help).
+function dots {
+	$rest = @($args)
+	switch -CaseSensitive ([string]$args[0]) {
+		{ $_ -in 'help', '-h', '--help' } { _dots-usage; return }
+		'list' {
+			if ($args.Count -ne 1) { Write-Error (_dots-usage); return }
+			_dots-entries | ForEach-Object { '{0,-20} {1}' -f $_.Name, $_.Desc }; return
+		}
+		'view' { $rest = @($args | Select-Object -Skip 1); _dots-view @rest; return }
+		'edit' { $rest = @($args | Select-Object -Skip 1) }
+	}
+	$first = [string]$rest[0]
+	if ($first -like '-*' -or $rest.Count -gt 1) { Write-Error (_dots-usage); return }
 	$src = chezmoi source-path
 	if ($LASTEXITCODE) { return }
+	$dest = chezmoi target-path
 	$entries = @(_dots-entries)
 	$arg = $first
 	if (-not $arg) {
-		$arg = (_dots-pick 'dots-edit' @($entries | ForEach-Object { "$($_.Name)`t$($_.Desc)" })) -split "`t" | Select-Object -First 1
+		$arg = (_dots-pick 'dots' @($entries | ForEach-Object { "$($_.Name)`t$($_.Desc)" })) -split "`t" | Select-Object -First 1
 		if (-not $arg) { return }
 	}
 	$entry = $entries | Where-Object Name -CEQ $arg | Select-Object -First 1
-	if ($entry) { _dots-edit $entry.Name $entry.Source; return }
+	if ($entry) {
+		if ($entry.Local) { _dots-local $entry.Name (Join-Path $dest $entry.Local) } else { _dots-edit $entry.Name $entry.Source }
+		return
+	}
+	# A file of a local entry's folder: <home>/<local>/<name>.
+	$norm = $arg -replace '\\', '/'
+	foreach ($e in $entries | Where-Object Local) {
+		$dir = "$($dest -replace '\\', '/')/$($e.Local)"
+		if ($norm.StartsWith("$dir/")) { _dots-local $e.Name $dir $norm.Substring($dir.Length + 1); return }
+	}
 	if (Test-Path -PathType Leaf (Join-Path $src $arg)) {
 		$file = $arg
 	} else {
 		# A target: pick a node of its composition tree (the only node: no picker).
 		$source = _dots-quiet chezmoi source-path $arg
-		if ($LASTEXITCODE) { Write-Error "dots-edit: $arg is no registry entry, source file or managed target (dots-edit --help)"; return }
+		if ($LASTEXITCODE) { Write-Error "dots: $arg is no registry entry, source file or managed target (dots help)"; return }
 		$nodes = @(_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/') | Where-Object { Test-Path -PathType Leaf (Join-Path $src $_.Path) } | ForEach-Object {
 				$e = $entries | Where-Object Source -CEQ $_.Path | Select-Object -First 1
 				if ($e) { "$($_.Path)`t[$($e.Name)]" } else { $_.Path }
@@ -465,61 +517,5 @@ function dots-edit {
 	}
 	$entry = $entries | Where-Object Source -CEQ $file | Select-Object -First 1
 	_dots-edit $(if ($entry) { $entry.Name } else { '' }) $file
-}
-
-# agents-edit [core|env|personal|work]: a layer of the global agent instructions
-# (docs/OS.md#agent-instructions): dots-edit agents/<layer>.
-function agents-edit {
-	param([string]$Layer)
-	if (-not $Layer) { $Layer = _dots-pick 'agent layer' 'core', 'env', 'personal', 'work' }
-	if ($Layer -notin 'core', 'env', 'personal', 'work') { Write-Error 'usage: agents-edit [core|env|personal|work]'; return }
-	dots-edit "agents/$Layer"
-}
-
-# aliases-edit [public|private]: the alias registry or the encrypted personal aliases
-# (docs/SHELL.md#alias-registry): dots-edit aliases/<scope>.
-function aliases-edit {
-	param([string]$Scope)
-	if (-not $Scope) { $Scope = _dots-pick 'aliases' 'public', 'private' }
-	if ($Scope -notin 'public', 'private') { Write-Error 'usage: aliases-edit [public|private]'; return }
-	dots-edit "aliases/$Scope"
-}
-
-# ssh-edit [config|<name>]: the shared, encrypted ~/.ssh/config, or ~/.ssh/config.d/<name>
-# (this machine's hosts, not managed by chezmoi; a new name creates it). `ssh -G` must
-# parse the edit before it goes live: config before apply, a config.d file is edited in
-# a private temp copy that replaces the live file only once it passes (on failure: edit
-# again, or keep the live file). No argument: pick config or an existing config.d file.
-function ssh-edit {
-	param([string]$Name)
-	if ($args) { Write-Error 'usage: ssh-edit [config|<name>]'; return }
-	$dir = Join-Path (chezmoi target-path) '.ssh/config.d'
-	if (-not $Name) {
-		$Name = _dots-pick 'ssh config' (@('config') + @(Get-ChildItem -File -Force $dir -ErrorAction SilentlyContinue | ForEach-Object Name))
-	}
-	if ($Name -eq 'config') {
-		dots-edit ssh/config
-		return
-	}
-	if (-not $Name -or $Name -match '^\.|[\\/]') { Write-Error 'usage: ssh-edit [config|<name>]'; return }
-	$file = Join-Path $dir $Name
-	$tmp = [IO.Path]::GetTempFileName()
-	try {
-		if (Test-Path $file) { Copy-Item -Force $file $tmp }
-		$before = _dots-hash $tmp
-		while ($true) {
-			if (-not (_dots-open $tmp)) { Write-Error "The editor failed: $file unchanged."; return }
-			ssh -G -F $tmp localhost > $null
-			if ($LASTEXITCODE -eq 0) { break }
-			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
-			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
-		}
-		if ((_dots-hash $tmp) -ne $before) {
-			New-Item -ItemType Directory -Force $dir > $null
-			Move-Item -Force $tmp $file
-		}
-	} finally {
-		Remove-Item -Force -ErrorAction SilentlyContinue $tmp
-	}
 }
 {{- end }}

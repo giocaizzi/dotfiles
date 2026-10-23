@@ -1,5 +1,5 @@
 #!/bin/sh
-# Test the edit commands (dots-edit, agents-edit, aliases-edit, ssh-edit) in bash, zsh,
+# Test the dots edit command in bash, zsh,
 # pwsh and, on Windows (Git Bash), Windows PowerShell 5.1 (each where installed) against a
 # throwaway copy of this source: dummy encrypted files under a throwaway age key, a temp
 # destination, and a chezmoi wrapper pinning --config/--source/--destination/
@@ -188,175 +188,174 @@ in_powershell() { [ "$shell" = pwsh ] || [ "$shell" = powershell ]; }
 usage() { status -ne 0 && has usage: "$T/out" && { in_powershell || status -eq 2; }; }
 
 suite() {
-	run "$shell" 'y\n' text full agents-edit personal
-	expect 'agents-edit personal: edit + apply' status -eq 0
-	expect 'agents-edit personal: applied' has edited-marker "$T/home/.claude/CLAUDE.md"
-	expect 'agents-edit personal: re-encrypted, armored' armored .chezmoitemplates/agents/personal.md.age
-	expect 'agents-edit personal: temp removed' cleaned
+	run "$shell" 'y\n' text full dots agents/personal
+	expect 'dots agents/personal: edit + apply' status -eq 0
+	expect 'dots agents/personal: applied' has edited-marker "$T/home/.claude/CLAUDE.md"
+	expect 'dots agents/personal: re-encrypted, armored' armored .chezmoitemplates/agents/personal.md.age
+	expect 'dots agents/personal: temp removed' cleaned
 	if [ -z "$win" ]; then
-		expect 'agents-edit personal: umask restored for apply' test -n "$(find "$T/home/.claude/CLAUDE.md" -perm 0644)"
+		expect 'dots agents/personal: umask restored for apply' test -n "$(find "$T/home/.claude/CLAUDE.md" -perm 0644)"
 	fi
-	expect 'agents-edit: ship hint' has 'ship a PR' "$T/out"
+	expect 'dots: ship hint' has 'ship a PR' "$T/out"
 
-	run "$shell" 'n\n' text full agents-edit core
-	expect 'agents-edit core: edited, not applied' has edited-marker "$S/.chezmoitemplates/agents/core.md"
-	expect 'agents-edit core: no target written' lacks edited-marker "$T/home/.claude/CLAUDE.md"
+	run "$shell" 'n\n' text full dots edit agents/core
+	expect 'dots edit agents/core: edited, not applied' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+	expect 'dots edit agents/core: no target written' lacks edited-marker "$T/home/.claude/CLAUDE.md"
 
-	run "$shell" 'n\n' noop full agents-edit work
-	expect 'agents-edit work no-op: byte-identical' unchanged .chezmoitemplates/agents/work.md.age
-	expect 'agents-edit work no-op: temp removed' cleaned
-	expect 'agents-edit work no-op: diff in the default mode' lacks 100600 "$T/out"
+	run "$shell" 'n\n' noop full dots agents/work
+	expect 'dots agents/work no-op: byte-identical' unchanged .chezmoitemplates/agents/work.md.age
+	expect 'dots agents/work no-op: temp removed' cleaned
+	expect 'dots agents/work no-op: diff in the default mode' lacks 100600 "$T/out"
 
 	pre="'$T/bin/chezmoi' apply '$T/home/.claude/CLAUDE.md'"
-	run "$shell" '' noop full agents-edit personal
+	run "$shell" '' noop full dots agents/personal
 	pre=
-	expect 'agents-edit up to date: no apply prompt' lacks 'apply now' "$T/out"
-	expect 'agents-edit up to date: says so' has 'up to date' "$T/out"
+	expect 'dots up to date: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'dots up to date: says so' has 'up to date' "$T/out"
 
-	run "$shell" 'n\n' fail full agents-edit personal
+	run "$shell" 'n\n' fail full dots agents/personal
 	expect 'editor failure: non-zero' status -ne 0
 	expect 'editor failure: source unchanged' unchanged .chezmoitemplates/agents/personal.md.age
 	expect 'editor failure: temp removed' cleaned
 
-	run "$shell" '' noop full agents-edit bogus
-	expect 'agents-edit bad argument: usage' usage
-
 	if ! in_powershell; then
-		run "$shell" '1\nn\n' text nofzf agents-edit
-		expect 'agents-edit picker without fzf: core' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+		run "$shell" '1\nn\n' text nofzf dots
+		expect 'dots picker without fzf: first entry' has edited-marker "$S/.chezmoitemplates/agents/core.md"
 
-		run "$shell" '9\n' noop nofzf aliases-edit
-		expect 'aliases-edit picker without fzf, invalid choice: usage' usage
+		run "$shell" '99\n' noop nofzf dots
+		expect 'dots picker without fzf, invalid choice: non-zero' status -ne 0
 	fi
 
-	run "$shell" '' noop full aliases-edit bogus
-	expect 'aliases-edit bad argument: usage' usage
+	run "$shell" 'y\n' alias full dots aliases/public
+	expect 'dots aliases/public: edit + apply' status -eq 0
+	expect 'dots aliases/public: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
+	expect 'dots aliases/public: new-shell reminder' has 'open a new shell' "$T/out"
 
-	run "$shell" 'y\n' alias full aliases-edit public
-	expect 'aliases-edit public: edit + apply' status -eq 0
-	expect 'aliases-edit public: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
-	expect 'aliases-edit: new-shell reminder' has 'open a new shell' "$T/out"
+	run "$shell" 'y\n' alias full dots aliases/private
+	expect 'dots aliases/private: edit + apply' status -eq 0
+	expect 'dots aliases/private: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
+	expect 'dots aliases/private: armored' armored .aliases.private.toml.age
+	expect 'dots aliases/private: temp removed' cleaned
 
-	run "$shell" 'y\n' alias full aliases-edit private
-	expect 'aliases-edit private: edit + apply' status -eq 0
-	expect 'aliases-edit private: applied' has 'alias zzedit=' "$T/home/.config/shell/aliases.sh"
-	expect 'aliases-edit private: armored' armored .aliases.private.toml.age
-	expect 'aliases-edit private: temp removed' cleaned
+	run "$shell" 'y\n' noop full dots aliases/private
+	expect 'dots aliases/private no-op: byte-identical' unchanged .aliases.private.toml.age
 
-	run "$shell" 'y\n' noop full aliases-edit private
-	expect 'aliases-edit private no-op: byte-identical' unchanged .aliases.private.toml.age
+	run "$shell" 'y\n' badalias full dots aliases/public
+	expect 'dots aliases lint failure: non-zero' status -ne 0
+	expect 'dots aliases lint failure: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'dots aliases lint failure: nothing applied' lacks zzbad "$T/home/.config/shell/aliases.sh"
 
-	run "$shell" 'y\n' badalias full aliases-edit public
-	expect 'aliases-edit lint failure: non-zero' status -ne 0
-	expect 'aliases-edit lint failure: no apply prompt' lacks 'apply now' "$T/out"
-	expect 'aliases-edit lint failure: nothing applied' lacks zzbad "$T/home/.config/shell/aliases.sh"
+	run "$shell" 'y\n' ssh full dots ssh/config
+	expect 'dots ssh/config: edit + apply' status -eq 0
+	expect 'dots ssh/config: applied' has edited-marker "$T/home/.ssh/config"
+	expect 'dots ssh/config: armored' armored private_dot_ssh/encrypted_private_config.age
+	expect 'dots ssh/config: temp removed' cleaned
 
-	run "$shell" 'y\n' ssh full ssh-edit config
-	expect 'ssh-edit: edit + apply' status -eq 0
-	expect 'ssh-edit: applied' has edited-marker "$T/home/.ssh/config"
-	expect 'ssh-edit: armored' armored private_dot_ssh/encrypted_private_config.age
-	expect 'ssh-edit: temp removed' cleaned
+	run "$shell" 'y\n' noop full dots ssh/config
+	expect 'dots ssh/config no-op: byte-identical' unchanged private_dot_ssh/encrypted_private_config.age
 
-	run "$shell" 'y\n' noop full ssh-edit config
-	expect 'ssh-edit no-op: byte-identical' unchanged private_dot_ssh/encrypted_private_config.age
+	run "$shell" 'y\n' badssh full dots ssh/config
+	expect 'dots ssh/config syntax error: non-zero' status -ne 0
+	expect 'dots ssh/config syntax error: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'dots ssh/config syntax error: nothing applied' lacks NotAnOption "$T/home/.ssh/config"
+	expect 'dots ssh/config syntax error: temp removed' cleaned
 
-	run "$shell" 'y\n' badssh full ssh-edit config
-	expect 'ssh-edit syntax error: non-zero' status -ne 0
-	expect 'ssh-edit syntax error: no apply prompt' lacks 'apply now' "$T/out"
-	expect 'ssh-edit syntax error: nothing applied' lacks NotAnOption "$T/home/.ssh/config"
-	expect 'ssh-edit syntax error: temp removed' cleaned
+	run "$shell" '' ssh full dots "$T/home/.ssh/config.d/work"
+	expect 'dots local: created' has edited-marker "$T/home/.ssh/config.d/work"
+	expect 'dots local: source untouched' test -z "$(git -C "$S" status --short)"
+	expect 'dots local: no apply prompt' lacks 'apply now' "$T/out"
+	expect 'dots local: temp removed' cleaned
 
-	run "$shell" '' ssh full ssh-edit work
-	expect 'ssh-edit config.d: created' has edited-marker "$T/home/.ssh/config.d/work"
-	expect 'ssh-edit config.d: source untouched' test -z "$(git -C "$S" status --short)"
-	expect 'ssh-edit config.d: no apply prompt' lacks 'apply now' "$T/out"
-	expect 'ssh-edit config.d: temp removed' cleaned
-
-	run "$shell" '' noop full ssh-edit work
-	expect 'ssh-edit config.d no-op: no file created' test ! -e "$T/home/.ssh/config.d/work"
+	run "$shell" '' noop full dots "$T/home/.ssh/config.d/work"
+	expect 'dots local no-op: no file created' test ! -e "$T/home/.ssh/config.d/work"
 
 	pre="mkdir -p '$T/home/.ssh/config.d' && echo 'Host zzold' >'$T/home/.ssh/config.d/work'"
-	run "$shell" 'n\n' badssh full ssh-edit work
+	run "$shell" 'n\n' badssh full dots "$T/home/.ssh/config.d/work"
 	pre=
-	expect 'ssh-edit config.d syntax error, give up: non-zero' status -ne 0
-	expect 'ssh-edit config.d syntax error, give up: live file unchanged' test "$(cat "$T/home/.ssh/config.d/work")" = 'Host zzold'
-	expect 'ssh-edit config.d syntax error, give up: temp removed' cleaned
+	expect 'dots local check failure, give up: non-zero' status -ne 0
+	expect 'dots local check failure, give up: live file unchanged' test "$(cat "$T/home/.ssh/config.d/work")" = 'Host zzold'
+	expect 'dots local check failure, give up: temp removed' cleaned
 
-	run "$shell" '\n' badthenssh full ssh-edit work
-	expect 'ssh-edit config.d syntax error, edit again: fixed' status -eq 0
-	expect 'ssh-edit config.d syntax error, edit again: installed' has edited-marker "$T/home/.ssh/config.d/work"
-	expect 'ssh-edit config.d syntax error, edit again: bad line gone' lacks NotAnOption "$T/home/.ssh/config.d/work"
+	run "$shell" '\n' badthenssh full dots "$T/home/.ssh/config.d/work"
+	expect 'dots local check failure, edit again: fixed' status -eq 0
+	expect 'dots local check failure, edit again: installed' has edited-marker "$T/home/.ssh/config.d/work"
+	expect 'dots local check failure, edit again: bad line gone' lacks NotAnOption "$T/home/.ssh/config.d/work"
 
 	if ! in_powershell; then
 		pre="mkdir -p '$T/home/.ssh/config.d' && : >'$T/home/.ssh/config.d/zzlocal'"
-		run "$shell" '2\n' ssh nofzf ssh-edit
+		run "$shell" '1\n' ssh nofzf dots ssh/local
 		pre=
-		expect 'ssh-edit picker without fzf: config.d file' has edited-marker "$T/home/.ssh/config.d/zzlocal"
+		expect 'dots local entry, picker without fzf: file edited' has edited-marker "$T/home/.ssh/config.d/zzlocal"
 	fi
 
-	run "$shell" '' noop full ssh-edit ../x
-	expect 'ssh-edit path argument: usage' usage
+	run "$shell" '' noop full dots ssh/local
+	expect 'dots local entry, empty folder: non-zero' status -ne 0
+	expect 'dots local entry, empty folder: says how to create' has 'create a file' "$T/out"
 
-	run "$shell" '' noop full ssh-edit a b
-	expect 'ssh-edit two arguments: usage' usage
+	run "$shell" '' noop full dots "$T/home/.ssh/config.d/sub/x"
+	expect 'dots local nested path: usage' usage
 
-	run "$shell" '' noop full dots-edit --list
-	expect 'dots-edit --list: entries' has 'aliases/private' "$T/out"
+	run "$shell" '' noop full dots a b
+	expect 'dots two arguments: usage' usage
 
-	run "$shell" '' noop full dots-edit --help
-	expect 'dots-edit --help: usage' has 'usage: dots-edit' "$T/out"
+	run "$shell" '' noop full dots list
+	expect 'dots list: entries' has 'aliases/private' "$T/out"
+	expect 'dots list: local entry' has 'ssh/local' "$T/out"
 
-	run "$shell" 'n\n' mcp full dots-edit mcp
-	expect 'dots-edit mcp: edited' has edited-marker "$S/.chezmoidata/mcp.toml"
-	expect 'dots-edit mcp: report per configuration' has 'darwin/personal: .*mcp' "$T/out"
-	expect 'dots-edit mcp: identical lists grouped' has 'linux/personal: same as darwin/personal' "$T/out"
-	expect 'dots-edit mcp: work machines unaffected' has 'darwin/work: nothing' "$T/out"
-	expect 'dots-edit mcp: light not managed' has 'windows/light: nothing' "$T/out"
+	run "$shell" '' noop full dots help
+	expect 'dots help: usage' has 'usage: dots' "$T/out"
 
-	run "$shell" 'y\n' badtmpl full dots-edit agents/env
+	run "$shell" 'n\n' mcp full dots mcp
+	expect 'dots mcp: edited' has edited-marker "$S/.chezmoidata/mcp.toml"
+	expect 'dots mcp: report per configuration' has 'darwin/personal: .*mcp' "$T/out"
+	expect 'dots mcp: identical lists grouped' has 'linux/personal: same as darwin/personal' "$T/out"
+	expect 'dots mcp: work machines unaffected' has 'darwin/work: nothing' "$T/out"
+	expect 'dots mcp: light not managed' has 'windows/light: nothing' "$T/out"
+
+	run "$shell" 'y\n' badtmpl full dots agents/env
 	expect 'render failure: non-zero' status -ne 0
 	expect 'render failure: reported' has 'render FAILED' "$T/out"
 	expect 'render failure: no apply prompt' lacks 'apply now' "$T/out"
 
 	if ! in_powershell; then
-		run "$shell" '4\nn\n' text nofzf dots-edit "$T/home/.claude/CLAUDE.md"
-		expect 'dots-edit <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
-		expect 'dots-edit <target>: nodes named' has '\[agents/personal\]' "$T/out"
+		run "$shell" '4\nn\n' text nofzf dots "$T/home/.claude/CLAUDE.md"
+		expect 'dots <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+		expect 'dots <target>: nodes named' has '\[agents/personal\]' "$T/out"
 	fi
 
-	run "$shell" 'n\n' text full dots-edit dot_config/tmux/tmux.conf
-	expect 'dots-edit <source file>: edited' has edited-marker "$S/dot_config/tmux/tmux.conf"
+	run "$shell" 'n\n' text full dots dot_config/tmux/tmux.conf
+	expect 'dots <source file>: edited' has edited-marker "$S/dot_config/tmux/tmux.conf"
 
-	run "$shell" '' noop full dots-edit no/such/thing
-	expect 'dots-edit unknown argument: non-zero' status -ne 0
-	expect 'dots-edit unknown argument: says so' has 'no registry entry' "$T/out"
+	run "$shell" '' noop full dots no/such/thing
+	expect 'dots unknown argument: non-zero' status -ne 0
+	expect 'dots unknown argument: says so' has 'no registry entry' "$T/out"
 
-	run "$shell" '' noop full dots-edit --bogus
-	expect 'dots-edit bad flag: usage' usage
+	run "$shell" '' noop full dots --bogus
+	expect 'dots bad flag: usage' usage
 
-	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md"
-	expect 'dots-edit --view <target>: tree' has 'include .chezmoitemplates/agents/core.md  \[agents/core\]' "$T/out"
-	expect 'dots-edit --view <target>: rendered' has 'dummy personal layer' "$T/out"
+	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md"
+	expect 'dots view <target>: tree' has 'include .chezmoitemplates/agents/core.md  \[agents/core\]' "$T/out"
+	expect 'dots view <target>: rendered' has 'dummy personal layer' "$T/out"
 
-	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --as windows,work
-	expect 'dots-edit --view --as: other role' has 'dummy work layer' "$T/out"
-	expect 'dots-edit --view --as: labelled' has 'rendered on windows/work' "$T/out"
+	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md" --as windows,work
+	expect 'dots view --as: other role' has 'dummy work layer' "$T/out"
+	expect 'dots view --as: labelled' has 'rendered on windows/work' "$T/out"
 
-	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --as plan9
-	expect 'dots-edit --view --as unknown: non-zero' status -ne 0
+	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md" --as plan9
+	expect 'dots view --as unknown: non-zero' status -ne 0
 
-	run "$shell" '' noop full dots-edit --view "$T/home/.claude/CLAUDE.md" --matrix
-	expect 'dots-edit --view --matrix: differences as diffs' has '+dummy work layer' "$T/out"
-	expect 'dots-edit --view --matrix: unmanaged listed' has 'not managed on: darwin/light' "$T/out"
+	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md" --matrix
+	expect 'dots view --matrix: differences as diffs' has '+dummy work layer' "$T/out"
+	expect 'dots view --matrix: unmanaged listed' has 'not managed on: darwin/light' "$T/out"
 
-	run "$shell" '' noop full dots-edit --view "$T/home/.config/tmux/tmux.conf" --matrix
-	expect 'dots-edit --view --matrix: identical renders grouped' has 'rendered on darwin/personal, darwin/work, darwin/light, linux/personal' "$T/out"
+	run "$shell" '' noop full dots view "$T/home/.config/tmux/tmux.conf" --matrix
+	expect 'dots view --matrix: identical renders grouped' has 'rendered on darwin/personal, darwin/work, darwin/light, linux/personal' "$T/out"
 
-	run "$shell" '' noop full dots-edit --view mcp
-	expect 'dots-edit --view <entry>: reaches this machine' has 'this machine: ' "$T/out"
+	run "$shell" '' noop full dots view mcp
+	expect 'dots view <entry>: reaches this machine' has 'this machine: ' "$T/out"
 
 	live=1
-	run "$shell" 'n\n' slowtext full dots-edit agents/core
+	run "$shell" 'n\n' slowtext full dots agents/core
 	live=
 	# A failure report shows the pane too.
 	{ echo '--- pane'; cat "$T/pane" 2>/dev/null; } >>"$T/out"

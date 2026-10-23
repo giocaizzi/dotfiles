@@ -1,33 +1,37 @@
-usage: dots-edit [<entry> | <target> | <source file>]
-       dots-edit --view <target> | <entry> [--as <os>[,<role>] | --matrix]
-       dots-edit --list | --help
+usage: dots [edit] [<what>]
+       dots view <what> [--as <os>[,<role>] | --matrix]
+       dots list | help
 
 Edit any part of the dotfiles in the chezmoi source, then see what it changes.
 
-  dots-edit                      pick a registry entry (.chezmoidata/edit.toml)
-  dots-edit mcp                  edit an entry; dots-edit --list shows them all
-  dots-edit ~/.claude/CLAUDE.md  edit what a target is made of: pick a node of its
-                                 composition tree (layers, partials, data files)
-  dots-edit dot_config/git/config.tmpl
-                                 edit a source file by its source-relative path
+<what> is, in this order: a registry entry (.chezmoidata/edit.toml, dots list), a
+file of a local entry's folder, a source file or a managed target.
 
-Every edit renders the target state of this machine and of 9 configurations
+  dots                           pick a registry entry
+  dots agents/work               edit an entry (also: dots edit agents/work)
+  dots ~/.claude/CLAUDE.md       edit what a target is made of: pick a node of its
+                                 composition tree (layers, partials, data files)
+  dots dot_config/git/config.tmpl
+                                 edit a source file by its source-relative path
+  dots ~/.ssh/config.d/<name>    edit a local file in place (a new name creates it)
+
+Every source edit renders the target state of this machine and of 9 configurations
 (darwin, linux, windows x personal, work, light; every harness selected), opens
 $EDITOR (inside tmux a side pane shows this machine's changes on every save), runs
 the entry's check, renders again and lists the changed targets per
 configuration. A configuration that stops rendering fails the edit: nothing is
 applied. Then, for this machine only: chezmoi diff of the changed targets,
 "apply now? [y/N]", and a reminder to ship a PR. Encrypted files are edited in
-a private temp copy and re-encrypted only when changed.
+a private temp copy and re-encrypted only when changed. A local file is edited in
+a private temp copy that replaces it once the entry's check passes.
 
-  --view <target>                its composition tree and its rendered content
-  --view <entry>                 its composition tree and the targets it reaches
+  view <what>                    its composition tree and its rendered content
+                                 (an entry: the targets it reaches)
   --as <os>[,<role>]             render one configuration instead of this machine:
                                  os darwin|linux|windows, role personal (default),
                                  work or light; a preview only, never applied
   --matrix                       every configuration: identical renders grouped,
                                  the others as diffs against the first
-  --list                         the registry entries
+  list                           the registry entries
 
-Shortcuts: agents-edit, aliases-edit, ssh-edit (also ~/.ssh/config.d files).
 Docs: docs/OS.md#editing-your-dotfiles
