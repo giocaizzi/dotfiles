@@ -97,14 +97,15 @@ encryption = "age"
 # Refuse `chezmoi apply` while a git worktree of the source sits inside it: chezmoi reads
 # every nested .chezmoidata/ (.chezmoiignore does not stop it), so the worktree's
 # unfinished data would be applied. Worktrees go in ~/.local/share/chezmoi-worktrees/.
-# A non-zero pre hook aborts the apply.
+# A non-zero pre hook aborts the apply. The PowerShell script has no double quotes, so
+# Windows command-line quoting cannot split it; paths compare case-insensitively.
 [hooks.apply.pre]
 {{- if eq .chezmoi.os "windows" }}
     command = "powershell"
     args = [
         "-NoProfile",
         "-Command",
-        {{ printf "$s = '%s/'; $w = @(git -C $s worktree list --porcelain | Where-Object { $_.StartsWith(\"worktree $s\") } | ForEach-Object { $_.Substring(9) }); if ($w) { [Console]::Error.WriteLine(\"chezmoi apply refused: git worktree inside the source dir ($($w -join ', ')); its .chezmoidata would be applied. Move it to ~/.local/share/chezmoi-worktrees/ (git worktree move) or remove it.\"); exit 1 }" (.chezmoi.sourceDir | replace "'" "''") | quote }},
+        {{ printf "$s = '%s/'; $w = @(git -C $s worktree list --porcelain | Where-Object { $_.StartsWith('worktree ' + $s, [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { $_.Substring(9) }); if ($w) { [Console]::Error.WriteLine('chezmoi apply refused: git worktree inside the source dir (' + ($w -join ', ') + '); its .chezmoidata would be applied. Move it to ~/.local/share/chezmoi-worktrees/ (git worktree move) or remove it.'); exit 1 }" (.chezmoi.sourceDir | replace "'" "''") | quote }},
     ]
 {{- else }}
     command = "sh"

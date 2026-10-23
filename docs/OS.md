@@ -328,7 +328,9 @@ chezmoi reads every `.chezmoidata/` under the source dir, nested ones included, 
 
 **Hook not active yet:** the hook lives in the config, which chezmoi renders from `.chezmoi.toml.tmpl` at `chezmoi init`. After pulling this change run `chezmoi init` once (it asks nothing new and keeps every answer); `chezmoi cat-config | grep -A2 hooks.apply.pre` shows it.
 
-**Rollback:** delete the `[hooks.apply.pre]` block from `.chezmoi.toml.tmpl`, then `chezmoi init`.
+**First apply after `chezmoi init` on Windows:** run one `chezmoi apply` right away. If it fails with a PowerShell error instead of `chezmoi apply refused`, the hook itself is broken: delete the `[hooks.apply.pre]` block with `chezmoi edit-config`, apply, and report it.
+
+**Rollback:** delete the `[hooks.apply.pre]` block from `.chezmoi.toml.tmpl`, then `chezmoi init` (or, on one machine only, from its config with `chezmoi edit-config`).
 
 ## Testing the ignore matrix
 
