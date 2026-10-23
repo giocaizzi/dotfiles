@@ -112,15 +112,54 @@ function _dots-tree {
 	}
 }
 
-# _dots-print-tree <tree> <entries>: the tree indented, each node's registry entry named.
+# _dots-style: the colour escapes and glyphs (B bold blue: headings, M mauve: labels and
+# entries, R red, G green, Y yellow, D dim, O reset), the escapes empty when the output
+# is redirected, the host has no VT support, NO_COLOR is set or TERM is dumb. Basic ANSI
+# colours, so the terminal's Catppuccin theme maps them. Glyphs are built from code
+# points: Windows PowerShell 5.1 reads this BOM-less file as ANSI.
+function _dots-style {
+	$s = @{ B = ''; M = ''; R = ''; G = ''; Y = ''; D = ''; O = '' }
+	$s.Head = [string][char]0x25B8; $s.Ok = [string][char]0x2713; $s.No = [string][char]0x2717
+	$s.Mid = [string][char]0x251C + [char]0x2500; $s.End = [string][char]0x2514 + [char]0x2500
+	$s.Bar = [string][char]0x2502; $s.Dot = [string][char]0x00B7
+	if (-not $env:NO_COLOR -and $env:TERM -ne 'dumb' -and $Host.UI.SupportsVirtualTerminal -and -not [Console]::IsOutputRedirected) {
+		$e = [char]27
+		$s.B = "$e[1;34m"; $s.M = "$e[35m"; $s.R = "$e[31m"; $s.G = "$e[32m"; $s.Y = "$e[33m"; $s.D = "$e[2m"; $s.O = "$e[0m"
+	}
+	$s
+}
+
+# _dots-label <style> <label>: a configuration label, padded and coloured.
+function _dots-label { param($S, [string]$Label) "  $($S.M)$($Label.PadRight(17))$($S.O)" }
+
+# _dots-print-tree <tree> <entries>: the tree with connectors, naming each node's registry
+# entry and marking encrypted nodes.
 function _dots-print-tree {
 	param($Tree, $Entries)
-	foreach ($n in $Tree) {
+	$s = _dots-style
+	$nodes = @($Tree)
+	# A node is last when no later sibling follows before its parent closes.
+	$last = @{}
+	$open = @{}
+	for ($i = $nodes.Count - 1; $i -ge 0; $i--) {
+		$d = $nodes[$i].Depth
+		$last[$i] = -not $open[$d]
+		$open[$d] = $true
+		foreach ($k in @($open.Keys)) { if ($k -gt $d) { $open[$k] = $false } }
+	}
+	$width = ($nodes | ForEach-Object { 3 * $_.Depth + $_.Path.Length } | Measure-Object -Maximum).Maximum
+	$lastAt = @{}
+	for ($i = 0; $i -lt $nodes.Count; $i++) {
+		$n = $nodes[$i]
+		$pre = ''
+		for ($j = 1; $j -lt $n.Depth; $j++) { $pre += $s.D + $(if ($lastAt[$j]) { '   ' } else { "$($s.Bar)  " }) + $s.O }
+		if ($n.Depth -gt 0) { $pre += $s.D + $(if ($last[$i]) { $s.End } else { $s.Mid }) + ' ' + $s.O }
+		$lastAt[$n.Depth] = $last[$i]
 		$e = $Entries | Where-Object Source -CEQ $n.Path | Select-Object -First 1
-		$line = ('  ' * $n.Depth) + "$($n.How) $($n.Path)"
-		if ($e) { $line += "  [$($e.Name)]" }
-		if ($n.Path -like '*.age') { $line += '  (encrypted)' }
-		$line
+		$tag = if ($e) { "$($s.M)$($e.Name)$($s.O)" } else { '' }
+		if ($n.Path -like '*.age') { $tag += $(if ($tag) { "$($s.D) $($s.Dot) $($s.O)" } else { '' }) + "$($s.Y)encrypted$($s.O)" }
+		$pad = if ($tag) { ' ' * ($width - 3 * $n.Depth - $n.Path.Length + 2) + $tag } else { '' }
+		"  $pre$($n.Path)$pad"
 	}
 }
 
@@ -196,7 +235,8 @@ function _dots-changed {
 # configuration stopped rendering; one that already failed before is only reported.
 function _dots-report {
 	param([string]$Before, [string]$After)
-	Write-Host 'Changed by this edit, per configuration (every harness selected):'
+	$s = _dots-style
+	Write-Host "$($s.B)$($s.Head) changed by this edit$($s.O) $($s.D)(per configuration, every harness selected)$($s.O)"
 	$ok = $true
 	$seen = @()
 	$labels = @(Get-Content (Join-Path $Before labels))
@@ -206,21 +246,21 @@ function _dots-report {
 		$b = Join-Path $After "$n.json"
 		if (-not (Test-Path $b)) {
 			if (Test-Path $a) {
-				Write-Host "  ${label}: render FAILED"
+				Write-Host "$(_dots-label $s $label) $($s.R)$($s.No) render FAILED$($s.O)"
 				$ok = $false
 			} else {
-				Write-Host "  ${label}: render failed, already before this edit"
+				Write-Host "$(_dots-label $s $label) $($s.D)$($s.No) render failed, already before this edit$($s.O)"
 			}
 			Get-Content (Join-Path $After "$n.err") | Where-Object { $_ -notlike 'chezmoi: warning:*' } | ForEach-Object { Write-Host "    $_" }
 			continue
 		}
-		if (-not (Test-Path $a)) { Write-Host "  ${label}: renders again"; continue }
+		if (-not (Test-Path $a)) { Write-Host "$(_dots-label $s $label) $($s.G)$($s.Ok) renders again$($s.O)"; continue }
 		$list = (_dots-changed $a $b) -join ', '
 		$same = if ($list) { $seen | Where-Object List -CEQ $list | Select-Object -First 1 }
 		$seen += [pscustomobject]@{ Label = $label; List = $list }
-		if ($same) { Write-Host "  ${label}: same as $($same.Label)" }
-		elseif ($list) { Write-Host "  ${label}: $list" }
-		else { Write-Host "  ${label}: nothing" }
+		if ($same) { Write-Host "$(_dots-label $s $label) $($s.D)same as $($same.Label)$($s.O)" }
+		elseif ($list) { Write-Host "$(_dots-label $s $label) $list" }
+		else { Write-Host "$(_dots-label $s $label) $($s.D)nothing$($s.O)" }
 	}
 	$ok
 }
@@ -274,6 +314,7 @@ function _dots-live {
 # the temp file is always removed.
 function _dots-edit {
 	param([string]$Entry, [string]$File)
+	$s = _dots-style
 	$src = chezmoi source-path
 	if ($LASTEXITCODE) { return }
 	$check = $note = $first = ''
@@ -326,15 +367,16 @@ function _dots-edit {
 		$scripts = @($changed | Where-Object { $_ -like '.chezmoiscripts/*' } | ForEach-Object { $_.Substring(16) })
 		$dest = chezmoi target-path
 		$apply = @($changed | Where-Object { $_ -notlike '.chezmoiscripts/*' } | ForEach-Object { Join-Path $dest $_ })
-		if ($scripts) { Write-Host "Scripts changed: $($scripts -join ', ') (they run on the next full chezmoi apply)" }
+		if ($scripts) { Write-Host "$($s.B)$($s.Head) scripts changed:$($s.O) $($scripts -join ', ') $($s.D)(they run on the next full chezmoi apply)$($s.O)" }
 		if (-not $apply -or -not (chezmoi status @apply)) {
-			Write-Host 'Targets up to date: nothing to apply.'
+			Write-Host "$($s.G)$($s.Ok) Targets up to date: nothing to apply.$($s.O)"
 		} else {
 			if ($first) { chezmoi diff $apply[0] } else { chezmoi diff @apply }
-			if ((Read-Host 'apply now? [y/N]') -match '^[yY]') {
+			if ((Read-Host "$($s.Y)apply now? [y/N]$($s.O)") -match '^[yY]') {
 				chezmoi apply @apply
 				if ($LASTEXITCODE) { return }
-				if ($note) { Write-Host $note }
+				Write-Host "$($s.G)$($s.Ok) applied$($s.O)"
+				if ($note) { Write-Host "$($s.D)$note$($s.O)" }
 			}
 		}
 	} finally {
@@ -343,8 +385,8 @@ function _dots-edit {
 	}
 	$changes = git -C $src status --short
 	if ($changes) {
-		Write-Host "The dotfiles source changed: ship a PR (e.g. /ship) from $src"
-		$changes | Write-Host
+		Write-Host "$($s.B)$($s.Head) the dotfiles source changed:$($s.O) ship a PR (e.g. /ship) from $src"
+		$changes | ForEach-Object { Write-Host "  $($s.D)$_$($s.O)" }
 	}
 }
 
@@ -356,6 +398,7 @@ function _dots-view {
 	$mode = switch ("$($args.Count):$($args[1])") { '1:' { 'here' } '2:--matrix' { 'matrix' } '3:--as' { 'as' } }
 	if (-not $mode) { Write-Error (_dots-usage); return }
 	$arg = [string]$args[0]
+	$s = _dots-style
 	$entries = @(_dots-entries)
 	$labels = @(_dots-tmpl matrix | Where-Object { $_ } | ForEach-Object {
 			$f = $_ -split "`t", 2
@@ -370,11 +413,11 @@ function _dots-view {
 	}
 	$entry = $entries | Where-Object Name -CEQ $arg | Select-Object -First 1
 	if ($entry) {
-		"${arg}: $($entry.Desc)"
+		"$($s.B)$($s.Head) $arg$($s.O) $($entry.Desc)"
 		_dots-print-tree (_dots-tree $entry.Source) $entries
 		# The targets whose composition tree holds the file, per configuration.
 		if ($mode -eq 'here') { $labels = @([pscustomobject]@{ Label = 'this machine'; Data = '{}' }) }
-		'Reaches:'
+		"$($s.B)$($s.Head) reaches$($s.O)"
 		foreach ($l in $labels) {
 			$file = _dots-datafile $l.Data
 			try { $managed = chezmoi managed -i files,symlinks,scripts -x externals -p all -f json --override-data-file $file | ConvertFrom-Json }
@@ -382,7 +425,7 @@ function _dots-view {
 			$map = @{}
 			$managed.PSObject.Properties | ForEach-Object { $map[$_.Name] = $_.Value.sourceRelative }
 			$list = @(_dots-tmpl feeds (_dots-with $l.Data @{ file = $entry.Source; managed = $map }) | Where-Object { $_ }) -join ', '
-			"  $($l.Label): $(if ($list) { $list } else { 'nothing' })"
+			"$(_dots-label $s $l.Label) $(if ($list) { $list } else { "$($s.D)nothing$($s.O)" })"
 		}
 		return
 	}
@@ -399,9 +442,10 @@ function _dots-view {
 	}
 	if (-not $source) { Write-Error "dots: $arg is no registry entry or managed target"; return }
 	$src = chezmoi source-path
+	"$($s.B)$($s.Head) tree$($s.O)"
 	_dots-print-tree (_dots-tree ($source.Substring($src.Length + 1) -replace '\\', '/')) $entries
 	if ($mode -eq 'here') {
-		'--- rendered on this machine'
+		"$($s.B)$($s.Head) rendered on this machine$($s.O)"
 		chezmoi cat $arg
 		return
 	}
@@ -417,16 +461,16 @@ function _dots-view {
 	}
 	for ($i = 0; $i -lt $groups.Count; $i++) {
 		if ($i -eq 0) {
-			"--- rendered on $($groups[0].Labels -join ', ')"
+			"$($s.B)$($s.Head) rendered on $($groups[0].Labels -join ', ')$($s.O)"
 			$groups[0].Text
 		} else {
-			"--- rendered on $($groups[$i].Labels -join ', '), against the first"
+			"$($s.B)$($s.Head) rendered on $($groups[$i].Labels -join ', ')$($s.O) $($s.D)(against the first)$($s.O)"
 			Compare-Object ($groups[0].Text -split "`n") ($groups[$i].Text -split "`n") | ForEach-Object {
-				$(if ($_.SideIndicator -eq '=>') { '+' } else { '-' }) + $_.InputObject
+				if ($_.SideIndicator -eq '=>') { "$($s.G)+$($_.InputObject)$($s.O)" } else { "$($s.R)-$($_.InputObject)$($s.O)" }
 			}
 		}
 	}
-	if ($missing) { "--- not managed on: $($missing -join ' ')" }
+	if ($missing) { "$($s.D)$($s.Head) not managed on: $($missing -join ' ')$($s.O)" }
 }
 
 # _dots-local <entry> <folder> [<name>]: a file of a local entry's folder (unmanaged, this
@@ -435,6 +479,7 @@ function _dots-view {
 # failure: edit again, or keep the live file); no render, diff, apply or PR.
 function _dots-local {
 	param([string]$Entry, [string]$Dir, [string]$Name)
+	$s = _dots-style
 	$check = _dots-field $Entry powershell
 	if (-not $Name) {
 		$files = @(Get-ChildItem -File -Force $Dir -ErrorAction SilentlyContinue | ForEach-Object Name)
@@ -454,7 +499,7 @@ function _dots-local {
 			$global:LASTEXITCODE = 0
 			& ([scriptblock]::Create($check)) $tmp | Out-Host
 			if ($LASTEXITCODE -eq 0) { break }
-			$answer = Read-Host "Check failed, $file unchanged. Edit again? [Y/n]"
+			$answer = Read-Host "$($s.R)$($s.No) Check failed, $file unchanged.$($s.O) $($s.Y)Edit again? [Y/n]$($s.O)"
 			if ($null -eq $answer -or $answer -match '^[nN]') { Write-Error "Check failed: $file unchanged."; return }
 		}
 		if ((_dots-hash $tmp) -ne $before) {
@@ -474,7 +519,8 @@ function dots {
 		{ $_ -in 'help', '-h', '--help' } { _dots-usage; return }
 		'list' {
 			if ($args.Count -ne 1) { Write-Error (_dots-usage); return }
-			_dots-entries | ForEach-Object { '{0,-20} {1}' -f $_.Name, $_.Desc }; return
+			$s = _dots-style
+			_dots-entries | ForEach-Object { '{0}{1,-20}{2} {3}' -f $s.M, $_.Name, $s.O, $_.Desc }; return
 		}
 		'view' { $rest = @($args | Select-Object -Skip 1); _dots-view @rest; return }
 		'edit' { $rest = @($args | Select-Object -Skip 1) }
