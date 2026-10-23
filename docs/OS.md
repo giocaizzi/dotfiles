@@ -314,6 +314,24 @@ Managed settings per harness:
 - Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
+## Working copies (git worktrees)
+
+chezmoi reads every `.chezmoidata/` under the source dir, nested ones included, and `.chezmoiignore` does not stop it. A git worktree of this repo inside `~/.local/share/chezmoi` (e.g. `.claude/worktrees/<slug>`) therefore merges its unfinished data into this machine's config. Worktrees of this repo live in `~/.local/share/chezmoi-worktrees/<slug>`, and a pre-apply hook (`[hooks.apply.pre]` in `.chezmoi.toml.tmpl`, sh or Windows PowerShell) refuses `chezmoi apply` while any worktree sits inside the source dir. `chezmoi diff`, `status` and `dots view` don't run the hook: they still show the merged data.
+
+**When:** starting a task in this repo, or `chezmoi apply` fails with `chezmoi apply refused: … worktree`.
+
+1. New task: `git -C ~/.local/share/chezmoi worktree add ~/.local/share/chezmoi-worktrees/<slug> -b <branch> origin/main`.
+2. A worktree already inside: `git -C ~/.local/share/chezmoi worktree move <path> ~/.local/share/chezmoi-worktrees/<slug>` (or `git worktree remove <path>` once its PR merged).
+3. Retry `chezmoi apply`.
+
+**Verify:** `git -C ~/.local/share/chezmoi worktree list` shows no path under `~/.local/share/chezmoi/`; `chezmoi apply` runs.
+
+**Hook not active yet:** the hook lives in the config, which chezmoi renders from `.chezmoi.toml.tmpl` at `chezmoi init`. After pulling this change run `chezmoi init` once (it asks nothing new and keeps every answer); `chezmoi cat-config | grep -A2 hooks.apply.pre` shows it.
+
+**First apply after `chezmoi init` on Windows:** run one `chezmoi apply` right away. If it fails with a PowerShell error instead of `chezmoi apply refused`, the hook itself is broken: delete the `[hooks.apply.pre]` block with `chezmoi edit-config`, apply, and report it.
+
+**Rollback:** delete the `[hooks.apply.pre]` block from `.chezmoi.toml.tmpl`, then `chezmoi init` (or, on one machine only, from its config with `chezmoi edit-config`).
+
 ## Testing the ignore matrix
 
 ```sh

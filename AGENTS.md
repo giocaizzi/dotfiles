@@ -61,7 +61,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
-- Worktrees of this repo live outside the source dir (`~/.local/share/chezmoi-worktrees/<slug>`), not in `.claude/worktrees/`: chezmoi reads every nested `.chezmoidata/` (`.chezmoiignore` does not stop it), so a worktree inside the source merges its data into the live config.
+- Worktrees of this repo live outside the source dir (`~/.local/share/chezmoi-worktrees/<slug>`), not in `.claude/worktrees/`: chezmoi reads every nested `.chezmoidata/` (`.chezmoiignore` does not stop it), so a worktree inside the source merges its data into the live config. A pre-apply hook in `.chezmoi.toml.tmpl` refuses `chezmoi apply` while one exists.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 
