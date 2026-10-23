@@ -149,7 +149,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots help` prints the full usage).
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots help` prints the full usage). On a terminal the output is coloured with the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
 
 ### Edit
 

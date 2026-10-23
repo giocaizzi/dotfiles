@@ -307,10 +307,10 @@ suite() {
 
 	run "$shell" 'n\n' mcp full dots mcp
 	expect 'dots mcp: edited' has edited-marker "$S/.chezmoidata/mcp.toml"
-	expect 'dots mcp: report per configuration' has 'darwin/personal: .*mcp' "$T/out"
-	expect 'dots mcp: identical lists grouped' has 'linux/personal: same as darwin/personal' "$T/out"
-	expect 'dots mcp: work machines unaffected' has 'darwin/work: nothing' "$T/out"
-	expect 'dots mcp: light not managed' has 'windows/light: nothing' "$T/out"
+	expect 'dots mcp: report per configuration' has 'darwin/personal  *.*mcp' "$T/out"
+	expect 'dots mcp: identical lists grouped' has 'linux/personal  *same as darwin/personal' "$T/out"
+	expect 'dots mcp: work machines unaffected' has 'darwin/work  *nothing' "$T/out"
+	expect 'dots mcp: light not managed' has 'windows/light  *nothing' "$T/out"
 
 	run "$shell" 'y\n' badtmpl full dots agents/env
 	expect 'render failure: non-zero' status -ne 0
@@ -334,7 +334,7 @@ suite() {
 	expect 'dots bad flag: usage' usage
 
 	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md"
-	expect 'dots view <target>: tree' has 'include .chezmoitemplates/agents/core.md  \[agents/core\]' "$T/out"
+	expect 'dots view <target>: tree' has '─ .chezmoitemplates/agents/core.md  *agents/core$' "$T/out"
 	expect 'dots view <target>: rendered' has 'dummy personal layer' "$T/out"
 
 	run "$shell" '' noop full dots view "$T/home/.claude/CLAUDE.md" --as windows,work
@@ -352,7 +352,7 @@ suite() {
 	expect 'dots view --matrix: identical renders grouped' has 'rendered on darwin/personal, darwin/work, darwin/light, linux/personal' "$T/out"
 
 	run "$shell" '' noop full dots view mcp
-	expect 'dots view <entry>: reaches this machine' has 'this machine: ' "$T/out"
+	expect 'dots view <entry>: reaches this machine' has 'this machine  ' "$T/out"
 
 	live=1
 	run "$shell" 'n\n' slowtext full dots agents/core
