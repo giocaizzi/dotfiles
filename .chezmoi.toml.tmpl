@@ -18,7 +18,7 @@
 {{- if $work }}
 {{- $workEmail = promptStringOnce . "workEmail" "[ WORK EMAIL ] Email — default for every repo on this work machine" (get . "workEmail" | default "") -}}
 {{- $githubUser = promptStringOnce . "githubUser" "[ PERSONAL GITHUB ] Username (blank = none) — github.com repos use your personal email; all others use the work email" (get . "githubUser" | default "") -}}
-{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra URL globs, comma-separated (blank = none) — * matches one path segment; end with /** or :*/**; e.g. https://git.example.com/**,git@git.example.com:*/**" (get . "personalGitRemote" | default "") -}}
+{{- $personalGitRemote = promptStringOnce . "personalGitRemote" "[ PERSONAL REMOTES ] Extra github.com orgs or URL globs, comma-separated (blank = none) — a bare name is a github.com org; in a glob * matches one path segment, end with /** or :*/**; e.g. other-org,https://git.example.com/**,git@git.example.com:*/**" (get . "personalGitRemote" | default "") -}}
 {{- end }}
 {{- /* Bitwarden Secrets Manager: one machine-account token per machine, scoped to
        one project (personal or work); renders the env secrets files. The token

@@ -5,15 +5,21 @@
 {{- else }}
 	email = {{ .gitEmail }}
 {{- end }}
+{{- $owners := list }}
+{{- $extra := list }}
+{{- with get . "githubUser" }}{{ $owners = append $owners . }}{{ end }}
+{{- range splitList "," (get . "personalGitRemote") }}{{ with trim . }}
+{{- if regexMatch "^[A-Za-z0-9][A-Za-z0-9-]*$" . }}{{ $owners = append $owners . }}{{ else }}{{ $extra = append $extra . }}{{ end }}
+{{- end }}{{ end }}
 {{- $globs := list }}
-{{- with get . "githubUser" }}
+{{- range $owners }}
 {{- $globs = concat $globs (list (printf "git@github.com:%s/**" .) (printf "ssh://git@github.com/%s/**" .) (printf "https://github.com/%s/**" .) (printf "https://*@github.com/%s/**" .)) }}
 {{- end }}
-{{- range splitList "," (get . "personalGitRemote") }}{{ with trim . }}{{ $globs = append $globs . }}{{ end }}{{ end }}
+{{- $globs = concat $globs $extra }}
 {{- if $globs }}
 
 # Work machine: the work email is the default; repos with a matching remote
-# URL (the personal GitHub user plus any extra globs) use the personal email
+# URL (the personal GitHub user, extra github.com orgs and any extra globs) use the personal email
 # (~/.config/git/personal), wherever they live
 {{- range $globs }}
 [includeIf "hasconfig:remote.*.url:{{ . }}"]
