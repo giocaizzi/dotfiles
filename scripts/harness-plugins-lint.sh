@@ -10,6 +10,9 @@ touch "$dir/chezmoi.toml"
 
 chezmoi execute-template --config "$dir/chezmoi.toml" --source . \
 	'{{ keys .harnessPlugins | sortAlpha | join "\n" }}' | sort >"$dir/listed"
+unknown=$(chezmoi execute-template --config "$dir/chezmoi.toml" --source . \
+	'{{ range .harnessPersonalPlugins }}{{ if not (hasKey $.harnessPlugins .) }}{{ . }} {{ end }}{{ end }}')
+[ -z "$unknown" ] || { echo "lint-plugins: harnessPersonalPlugins not in [harnessPlugins]: $unknown"; exit 1; }
 if [ -n "${HARNESS_DIR:-}" ]; then
 	find "$HARNESS_DIR/plugins" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort >"$dir/upstream"
 else

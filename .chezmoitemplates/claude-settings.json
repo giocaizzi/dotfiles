@@ -98,13 +98,13 @@
   "disableClaudeAiConnectors": true,
   "enabledPlugins": {
     {{- range $p, $h := .harnessPlugins }}{{ if has "claude" $h }}
-    "{{ $p }}@giocaizzi-harness": true,
+    "{{ $p }}@giocaizzi-harness": {{ (not (and (get $ "work") (has $p $.harnessPersonalPlugins))) }},
     {{- end }}{{ end }}
     "next-steps@claude-community": false,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true{{ if ne .chezmoi.os "windows" }},
+    "typescript-lsp@claude-plugins-official": true{{ if and (ne .chezmoi.os "windows") (not (get . "work")) }},
     "gopls-lsp@claude-plugins-official": true
     {{- end }}
   },

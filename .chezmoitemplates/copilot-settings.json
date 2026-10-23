@@ -7,7 +7,7 @@
       }
     }
   },
-  "enabledPlugins": {{ $on := dict }}{{ range $p, $h := .harnessPlugins }}{{ if has "copilot" $h }}{{ $_ := set $on (printf "%s@giocaizzi-harness" $p) true }}{{ end }}{{ end }}{{ $on | toJson }},
+  "enabledPlugins": {{ $on := dict }}{{ range $p, $h := .harnessPlugins }}{{ if has "copilot" $h }}{{ $_ := set $on (printf "%s@giocaizzi-harness" $p) (not (and (get $ "work") (has $p $.harnessPersonalPlugins))) }}{{ end }}{{ end }}{{ $on | toJson }},
   "statusLine": {
     "type": "command",
     "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"

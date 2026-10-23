@@ -20,7 +20,7 @@ files remain LF through `.gitattributes`.
 |---|---|
 | `lint` | `lint-tmpl` + `lint-aliases` + `lint-plugins` + `lint-edit`, then `shellcheck` on tracked `*.sh` and the bash rc files (`dot_bashrc`, `dot_bash_profile`, `dot_profile`, as bash); `jq empty` on tracked JSON and on the renders of `.chezmoitemplates/{vscode-mcp,claude-settings,copilot-settings}.json` (personal and work) |
 | `lint-tmpl` | renders `.chezmoiscripts/*.sh.tmpl` per OS × role × harness selection, `shellcheck` the output |
-| `lint-plugins` | `.chezmoidata/harness.toml` lists exactly the `plugins/` directories of `giocaizzi/harness` (`scripts/harness-plugins-lint.sh`): main through `gh api` (CI passes `GH_TOKEN`), or a local checkout with `HARNESS_DIR=<path>` |
+| `lint-plugins` | `.chezmoidata/harness.toml` lists exactly the `plugins/` directories of `giocaizzi/harness` (`scripts/harness-plugins-lint.sh`): main through `gh api` (CI passes `GH_TOKEN`), or a local checkout with `HARNESS_DIR=<path>`; every `harnessPersonalPlugins` entry is one of them |
 | `lint-aliases` | validates the alias registry (`scripts/aliases-lint.sh`, plus the encrypted part where the age key exists), renders `aliases.sh` per OS × role (`shellcheck` as bash), `omz-aliases.zsh` (`zsh -n`), `aliases.ps1` (parsed by `pwsh` and, on Windows, Windows PowerShell 5.1) |
 | `lint-edit` | validates the edit registry (`scripts/edit-lint.sh`): every entry has a `desc`, an existing `source` and only known keys; every `.chezmoidata` file and every encrypted file has an entry; the `dots-edit` matrix lists the same harnesses and `[data]` answers as `.chezmoi.toml.tmpl` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
