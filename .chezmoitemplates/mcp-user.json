@@ -1,5 +1,7 @@
 {{- /* User-scope MCP servers for this machine's role as JSON {name: url}: .chezmoidata/mcp.toml
-       [mcp.user], plus [mcp.personal] unless it is a work machine. */ -}}
+       [mcp.user], plus [mcp.personal] unless it is a work machine. Plain URLs only: the
+       pre-registered OAuth client table is for [mcp.ops]. */ -}}
 {{- $out := deepCopy .mcp.user -}}
 {{- if not (get . "work") }}{{ $out = merge $out .mcp.personal }}{{ end -}}
+{{- range $n, $v := $out }}{{ if not (kindIs "string" $v) }}{{ fail (printf "mcp.toml: %s: an OAuth client table belongs in [mcp.ops]" $n) }}{{ end }}{{ end -}}
 {{- $out | toJson -}}

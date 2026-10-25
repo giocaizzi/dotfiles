@@ -1,5 +1,9 @@
-{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for VS Code. */ -}}
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for VS Code. A pre-registered
+       OAuth client gets `oauth.clientId`; VS Code uses its own redirect URIs, not callback_port. */ -}}
 {{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
 {{- $out := dict -}}
-{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "type" "http" "url" $u) }}{{ end -}}
+{{- range $n, $v := $s -}}
+{{- if kindIs "string" $v }}{{ $_ := set $out $n (dict "type" "http" "url" $v) }}
+{{- else }}{{ $_ := set $out $n (dict "type" "http" "url" $v.url "oauth" (dict "clientId" $v.client_id)) }}{{ end -}}
+{{- end -}}
 {{- dict "servers" $out | toPrettyJson }}

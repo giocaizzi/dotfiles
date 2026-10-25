@@ -1,6 +1,7 @@
-{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Codex (trusted in ~/.codex/config.toml). */ -}}
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Codex (trusted in ~/.codex/config.toml).
+       A pre-registered OAuth client is skipped: Codex keeps its secret only in plaintext config. */ -}}
 {{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
-{{- range $n, $u := $s }}
+{{- range $n, $u := $s }}{{ if kindIs "string" $u }}
 [mcp_servers.{{ $n }}]
 url = {{ $u | quote }}
-{{ end -}}
+{{ end }}{{ end -}}

@@ -1,12 +1,21 @@
-{{- /* One MCP layer of .chezmoidata/mcp.toml as JSON {name: url}, each `${VAR}`
-       replaced by the variable from the environment when it is set. Pass the
-       layer: includeTemplate "mcp-servers.json" .mcp.ops */ -}}
+{{- /* One MCP layer of .chezmoidata/mcp.toml as JSON: {name: url} for a plain entry,
+       {name: {url, client_id, callback_port}} for a pre-registered OAuth client, each
+       `${VAR}` in url and client_id replaced by the variable from the environment when
+       it is set. Pass the layer: includeTemplate "mcp-servers.json" .mcp.ops */ -}}
 {{- $out := dict -}}
-{{- range $name, $url := . -}}
-{{- range $ref := regexFindAll "\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}" $url -1 -}}
-{{- $v := env (trimSuffix "}" (trimPrefix "${" $ref)) -}}
-{{- if $v }}{{ $url = replace $ref $v $url }}{{ end -}}
+{{- range $name, $v := . -}}
+{{- $e := dict "url" $v -}}
+{{- if not (kindIs "string" $v) }}{{ $e = deepCopy $v }}{{ end -}}
+{{- range $k := list "url" "client_id" -}}
+{{- with get $e $k -}}
+{{- $s := . -}}
+{{- range $ref := regexFindAll "\\$\\{[A-Za-z_][A-Za-z0-9_]*\\}" $s -1 -}}
+{{- $val := env (trimSuffix "}" (trimPrefix "${" $ref)) -}}
+{{- if $val }}{{ $s = replace $ref $val $s }}{{ end -}}
 {{- end -}}
-{{- $_ := set $out $name $url -}}
+{{- $_ := set $e $k $s -}}
+{{- end -}}
+{{- end -}}
+{{- if kindIs "string" $v }}{{ $_ := set $out $name $e.url }}{{ else }}{{ $_ := set $out $name $e }}{{ end -}}
 {{- end -}}
 {{- $out | toJson -}}
