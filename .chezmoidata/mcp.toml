@@ -15,6 +15,9 @@
 notion = "https://mcp.notion.com/mcp"
 
 # Workspace folder ~/ops (personal machines): personal servers tied to no repo.
+# A server whose authorization server needs a pre-registered OAuth client is an
+# inline table { url, client_id, callback_port } (both OAuth keys required, ~/ops
+# only); its client secret is set once per machine and harness, never here.
 [mcp.ops]
 firefly = "https://mcp-connector-firefly.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 firefly-admin = "https://mcp-connector-firefly.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp?toolset=admin"
@@ -23,3 +26,4 @@ greenhouse = "https://mcp-connector-greenhouse.${MCP_CONNECTOR_ACCOUNT}.workers.
 n8n = "https://mcp-connector-n8n.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 netdata = "https://mcp-connector-netdata.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 portainer = "https://mcp-connector-portainer.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
+google-docs = { url = "https://docsmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_DOCS_CLIENT_ID}", callback_port = 8765 }
