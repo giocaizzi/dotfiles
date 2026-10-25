@@ -1,5 +1,10 @@
-{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Claude Code and Copilot CLI. */ -}}
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Claude Code and Copilot CLI.
+       A pre-registered OAuth client gets Claude Code's `oauth` object; Copilot CLI has no fixed
+       callback port for it, so it does not sign in there (docs/OS.md#mcp-servers). */ -}}
 {{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
 {{- $out := dict -}}
-{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "type" "http" "url" $u) }}{{ end -}}
+{{- range $n, $v := $s -}}
+{{- if kindIs "string" $v }}{{ $_ := set $out $n (dict "type" "http" "url" $v) }}
+{{- else }}{{ $_ := set $out $n (dict "type" "http" "url" $v.url "oauth" (dict "clientId" $v.client_id "callbackPort" $v.callback_port)) }}{{ end -}}
+{{- end -}}
 {{- dict "mcpServers" $out | toPrettyJson }}

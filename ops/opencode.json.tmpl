@@ -1,5 +1,6 @@
-{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for opencode. */ -}}
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for opencode.
+       A pre-registered OAuth client is skipped: opencode has no store for its client secret. */ -}}
 {{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
 {{- $out := dict -}}
-{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end -}}
+{{- range $n, $u := $s }}{{ if kindIs "string" $u }}{{ $_ := set $out $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end }}{{ end -}}
 {{- dict "$schema" "https://opencode.ai/config.json" "mcp" $out | toPrettyJson }}

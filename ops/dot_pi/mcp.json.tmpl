@@ -1,5 +1,6 @@
-{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for pi. */ -}}
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for pi.
+       A pre-registered OAuth client is skipped: pi has no store for its client secret. */ -}}
 {{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
 {{- $out := dict -}}
-{{- range $n, $u := $s }}{{ $_ := set $out $n (dict "url" $u) }}{{ end -}}
+{{- range $n, $u := $s }}{{ if kindIs "string" $u }}{{ $_ := set $out $n (dict "url" $u) }}{{ end }}{{ end -}}
 {{- dict "mcpServers" $out | toPrettyJson }}
