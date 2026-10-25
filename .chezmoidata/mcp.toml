@@ -27,9 +27,10 @@ n8n = "https://mcp-connector-n8n.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 netdata = "https://mcp-connector-netdata.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 portainer = "https://mcp-connector-portainer.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp"
 # Google Workspace: one pre-registered OAuth client serves every server.
-google-calendar = { url = "https://calendarmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
-google-docs = { url = "https://docsmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
-google-drive = { url = "https://drivemcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
-google-gmail = { url = "https://gmailmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
-google-sheets = { url = "https://sheetsmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
-google-slides = { url = "https://slidesmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# Disabled for now: the Google Workspace MCP servers are in Developer Preview and need an enrolled project.
+# google-calendar = { url = "https://calendarmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# google-docs = { url = "https://docsmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# google-drive = { url = "https://drivemcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# google-gmail = { url = "https://gmailmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# google-sheets = { url = "https://sheetsmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
+# google-slides = { url = "https://slidesmcp.googleapis.com/mcp/v1", client_id = "${MCP_GOOGLE_CLIENT_ID}", callback_port = 8765 }
