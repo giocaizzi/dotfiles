@@ -69,6 +69,8 @@
   "chat.plugins.enabled": true,
   "chat.plugins.marketplaces": ["giocaizzi/harness"],
   "chat.promptFilesRecommendations": {},
+  // let a subagent spawn its own (the harness driver fans out to workers)
+  "chat.subagents.allowInvocationsFromSubagents": true,
   "chat.tools.terminal.autoApprove": {
     "chezmoi": true,
     "cp": true,
