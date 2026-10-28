@@ -1,0 +1,9 @@
+{{- /* Language servers for Copilot CLI (~/.copilot/lsp-config.json, key lspServers).
+       The machine installs the servers (install list); gopls is not installed on work machines. */ -}}
+{{- $servers := dict
+  "python" (dict "command" "pyright-langserver" "args" (list "--stdio") "fileExtensions" (dict ".py" "python" ".pyw" "python" ".pyi" "python"))
+  "typescript" (dict "command" "typescript-language-server" "args" (list "--stdio") "fileExtensions" (dict ".ts" "typescript" ".tsx" "typescriptreact" ".js" "javascript" ".jsx" "javascriptreact" ".mjs" "javascript" ".cjs" "javascript" ".mts" "typescript" ".cts" "typescript")) -}}
+{{- if not (get . "work") -}}
+{{-   $_ := set $servers "go" (dict "command" "gopls" "args" (list) "fileExtensions" (dict ".go" "go")) -}}
+{{- end -}}
+{{- dict "lspServers" $servers | toPrettyJson -}}

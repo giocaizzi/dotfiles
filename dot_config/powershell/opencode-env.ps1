@@ -1,0 +1,4 @@
+# opencode LSP: the tool is experimental and off by default; servers come from the
+# install list, so opencode must not download its own.
+$env:OPENCODE_EXPERIMENTAL_LSP_TOOL = 'true'
+$env:OPENCODE_DISABLE_LSP_DOWNLOAD  = 'true'
