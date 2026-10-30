@@ -1,10 +1,12 @@
 {{- /* chezmoi:modify-template */ -}}
 {{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) merged into
-       opencode's config; other keys stay. The live file is read as JSON, so
+       opencode's config, plus lsp (built-in servers on unless the user set an lsp map; the machine installs them, and
+       OPENCODE_DISABLE_LSP_DOWNLOAD in ~/.config/shell/opencode-env.sh stops downloads); other keys stay. The live file is read as JSON, so
        keep it free of comments. */ -}}
 {{- $current := dict "$schema" "https://opencode.ai/config.json" -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $servers := get $current "mcp" | default dict -}}
 {{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $servers $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end -}}
 {{- $_ := set $current "mcp" $servers -}}
+{{- if not (kindIs "map" (get $current "lsp")) }}{{ $_ := set $current "lsp" true }}{{ end -}}
 {{- $current | toPrettyJson }}
