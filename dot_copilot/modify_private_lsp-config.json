@@ -1,6 +1,6 @@
 {{- /* chezmoi:modify-template */ -}}
 {{- /* Managed servers (.chezmoitemplates/copilot-lsp-config.json) win by name; servers
-       added with /lsp in Copilot stay. */ -}}
+       added by editing the file stay. */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $managed := includeTemplate "copilot-lsp-config.json" . | fromJson -}}
