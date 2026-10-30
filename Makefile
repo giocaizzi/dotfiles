@@ -31,7 +31,7 @@ lint: lint-tmpl lint-aliases lint-plugins lint-edit ## shellcheck shell scripts,
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
-	for t in vscode-mcp.json claude-settings.json copilot-settings.json copilot-lsp-config.json; do for d in '{}' '{"work":true}'; do \
+	for t in vscode-mcp.json claude-settings.json copilot-settings.json; do for d in '{}' '{"work":true}'; do \
 		chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$d" \
 			< .chezmoitemplates/$$t | jq empty || { echo "invalid JSON: $$t $$d"; exit 1; }; \
 	done; done; rm -rf "$$dir"

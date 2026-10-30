@@ -154,8 +154,6 @@ AppData/Roaming/Code - Insiders
 {{ end }}
 {{ if not (has "opencode" $harnesses) }}
 .config/opencode
-.config/shell/opencode-env.sh
-.config/powershell/opencode-env.ps1
 {{ end }}
 {{ if not (has "pi" $harnesses) }}
 .pi

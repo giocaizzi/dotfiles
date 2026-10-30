@@ -21,11 +21,6 @@ if [ -f "$XDG_CONFIG_HOME/shell/secrets.sh" ]; then
 	. "$XDG_CONFIG_HOME/shell/secrets.sh"
 fi
 
-# opencode env (only deployed when the opencode harness is selected)
-if [ -f "$XDG_CONFIG_HOME/shell/opencode-env.sh" ]; then
-	. "$XDG_CONFIG_HOME/shell/opencode-env.sh"
-fi
-
 export EDITOR='vim'
 export VISUAL='vim'
 
