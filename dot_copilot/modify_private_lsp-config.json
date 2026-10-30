@@ -1,9 +1,0 @@
-{{- /* chezmoi:modify-template */ -}}
-{{- /* Managed servers (.chezmoitemplates/copilot-lsp-config.json) win by name; servers
-       added by editing the file stay. */ -}}
-{{- $current := dict -}}
-{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
-{{- $managed := includeTemplate "copilot-lsp-config.json" . | fromJson -}}
-{{- $servers := get $current "lspServers" | default dict -}}
-{{- $_ := set $current "lspServers" (mergeOverwrite $servers $managed.lspServers) -}}
-{{- $current | toPrettyJson }}

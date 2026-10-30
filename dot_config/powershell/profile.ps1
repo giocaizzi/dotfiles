@@ -12,10 +12,6 @@
 $secretsFile = Join-Path $HOME ".config\powershell\secrets.ps1"
 if (Test-Path $secretsFile) { . $secretsFile }
 
-# opencode env (only deployed when the opencode harness is selected)
-$opencodeEnvFile = Join-Path $HOME ".config\powershell\opencode-env.ps1"
-if (Test-Path $opencodeEnvFile) { . $opencodeEnvFile }
-
 $env:EDITOR     = 'vim'
 $env:VISUAL     = 'vim'
 $env:POSH_THEME = Join-Path $HOME '.config\oh-my-posh\theme.omp.json'

@@ -13,10 +13,10 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
         ├─ rendered into ──→  ~/.config/shell/omz-aliases.zsh     (Oh My Zsh alias sets, zsh)
         └─ rendered into ──→  ~/.config/powershell/aliases.ps1    (PowerShell)
 
-~/.profile        sources →  ~/.config/shell/{secrets.sh, opencode-env.sh}  (environment only, inherited)
+~/.profile        sources →  ~/.config/shell/secrets.sh  (environment only, inherited)
 ~/.bashrc         sources →  ~/.profile (once) + ~/.config/shell/{aliases.sh, fzf.sh} + bash-specific
 ~/.zshrc          sources →  omz-aliases.zsh + Oh My Zsh + ~/.config/shell/{aliases.sh, fzf.sh} + zsh-specific
-profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, opencode-env.ps1, aliases.ps1, coreutils.ps1, fzf.ps1} + PSReadLine
+profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, coreutils.ps1, fzf.ps1} + PSReadLine
 ```
 
 ## Files
@@ -25,18 +25,16 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 
 | File                                     | Role                                                                    | OS scope            |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `JAVA_HOME`; sources `secrets.sh` and `opencode-env.sh` | Unix + Git Bash |
+| `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `JAVA_HOME`; sources `secrets.sh` | Unix + Git Bash |
 | `dot_bash_profile`                       | Login-shell wrapper → sources `.bashrc` (which sources `.profile` once) | Unix                |
 | `dot_bashrc`                             | Bash: loads `.profile` once, then **returns for non-interactive shells** (`ssh host cmd`, scp, rsync); snippets, history (timestamped), completion, FZF bindings, oh-my-posh | Unix + Git Bash |
 | `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` sets the Oh My Zsh alias sets, loads Oh My Zsh, then the snippets (so registry aliases win), history, FZF bindings, oh-my-posh | macOS only |
 | `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
 | `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases and refused commands (rendered from the registry), `ls` colours, `python` fallback, the edit commands (full machines), `rp5-secrets` (personal Mac) | Unix + Git Bash |
 | `dot_config/shell/omz-aliases.zsh.tmpl`  | `zstyle ':omz:…' aliases` per Oh My Zsh lib/plugin (from `[aliasExternal.zsh]`) | macOS (zsh) |
-| `dot_config/shell/opencode-env.sh`       | `OPENCODE_EXPERIMENTAL_LSP_TOOL` and `OPENCODE_DISABLE_LSP_DOWNLOAD` (only with the `opencode` harness) | Unix + Git Bash     |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |
 | `dot_config/powershell/aliases.ps1.tmpl` | PowerShell functions (rendered from the registry), the edit commands (full machines) | Windows             |
 | `dot_config/powershell/coreutils.ps1`    | uutils first on PATH; removes the cmdlet aliases it shadows (`ls`, `cat`, `rm`, ...) — use `Get-ChildItem` etc. for objects | Windows |
-| `dot_config/powershell/opencode-env.ps1` | same two opencode env vars (only with the `opencode` harness)           | Windows             |
 | `dot_config/powershell/fzf.ps1`          | PSFzf + `FZF_*` env vars + `h`/`history` fuzzy history                  | Windows             |
 | `.chezmoidata/aliases.toml`              | Alias registry: every alias, refused command and framework alias set    | all                 |
 | `.aliases.private.toml.age`              | Personal aliases, same schema, age-encrypted; read on non-light machines with the age key | all |
