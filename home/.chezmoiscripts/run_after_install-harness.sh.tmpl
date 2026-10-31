@@ -1,3 +1,6 @@
+{{- /* Runs on Unix machines with codex, opencode or pi only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $h := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (ne .chezmoi.os "windows") (or (has "codex" $h) (has "opencode" $h) (has "pi" $h)) -}}
 #!/usr/bin/env bash
 # giocaizzi/harness for the harnesses that do not install it from their own settings
 # (Claude Code and Copilot CLI do: .chezmoitemplates/{claude,copilot}-settings.json).
@@ -32,3 +35,4 @@ if command -v pi >/dev/null 2>&1 && ! pi list 2>/dev/null | grep -qF "$HARNESS";
 fi
 {{- end }}
 exit 0
+{{ end -}}

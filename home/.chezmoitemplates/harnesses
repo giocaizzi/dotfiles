@@ -1,1 +1,4 @@
-{{- if hasKey . "harnesses" }}{{ .harnesses | join " " }}{{ end -}}
+{{- /* This machine's AI harnesses (data.harnesses, chosen at chezmoi init), space-separated:
+       none on light machines or in a config without the key. Read it only as
+       includeTemplate "harnesses" . | splitList " " */ -}}
+{{- if and (hasKey . "harnesses") (not (get . "light")) }}{{ .harnesses | join " " }}{{ end -}}

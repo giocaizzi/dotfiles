@@ -34,12 +34,14 @@ How each managed file maps to its destination per OS. Canonical sources live und
 
 | Script                                       | macOS | Linux | Windows |
 | -------------------------------------------- | :---: | :---: | :-----: |
-| `run_once_init-untracked-env.sh` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
-| `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
-| `run_once_after_create-xdg-dirs.sh` → creates `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` |  ✓    |  ✓    |   —     |
+| `run_once_init-untracked-env.sh.tmpl` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
+| `run_once_init-untracked-env.ps1.tmpl` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
+| `run_once_after_create-xdg-dirs.sh.tmpl` → creates `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` |  ✓    |  ✓    |   —     |
 | `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
-| `run_after_link-pwsh-profile.ps1` → resolves the real Documents folder (OneDrive/locale) and links the profile |  —    |  —    |   ✓     |
+| `run_after_link-pwsh-profile.ps1.tmpl` → resolves the real Documents folder (OneDrive/locale) and links the profile |  —    |  —    |   ✓     |
 | `run_onchange_install-pkgs.ps1.tmpl`         |  —    |  —    |   ✓     |
+
+Each script states where it runs: its body is wrapped in a condition (OS; harness for the harness scripts), and elsewhere it renders empty, which chezmoi skips. No script is listed in `.chezmoiignore`.
 
 The install scripts use the platform-native package manager (brew on macOS, apt or official release binaries in `~/.local/bin` on Linux, winget on Windows). Full machines get the core CLIs (`fzf jq git vim fd gh tmux shellcheck shfmt`), uv + Python, oh-my-posh, Node, the language servers and the linters `gitleaks`, `actionlint`, `hadolint`. Personal full machines (not `work`) also get the Go release tools `goreleaser` and `syft` (brew; release tarballs in `~/.local/bin` on Linux; winget `goreleaser.goreleaser` and `Anchore.Syft`); on macOS and Linux also Go (brew `go`; official tarball in `~/.local/go` on Linux, since apt's lags) and `gopls` (brew; `go install` into `~/.local/bin` on Linux); Windows does not bootstrap either. [Machine roles](#machine-roles) lists what `light` and `work` change.
 
@@ -86,7 +88,7 @@ Re-running `chezmoi init`:
 
 ### AI harnesses
 
-Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
+Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none (even with the key set). A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads. Each harness's targets are listed once, in `[harnessTargets]` (`.chezmoidata/harness.toml`): `.chezmoiignore` skips the targets of every harness not selected.
 
 | Harness | Managed only when selected |
 |---|---|
@@ -334,7 +336,7 @@ Managed settings per harness:
 ```sh
 chezmoi execute-template \
   --override-data '{"light":false,"work":false,"harnesses":["claude"],"chezmoi":{"os":"darwin"}}' \
-  < .chezmoiignore   # vary os (darwin/linux/windows), light, work, harnesses
+  < home/.chezmoiignore   # vary os (darwin/linux/windows), light, work, harnesses
 ```
 
 For the live OS, `chezmoi managed` and `chezmoi ignored` show the actual split.

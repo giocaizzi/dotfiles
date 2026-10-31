@@ -1,3 +1,5 @@
+{{- /* Runs on Unix only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if ne .chezmoi.os "windows" -}}
 #!/bin/sh
 # Creates ~/.config/shell/secrets.sh if it doesn't exist.
 # This file is sourced by ~/.profile to load secret environment variables.
@@ -17,3 +19,4 @@ STUB
 fi
 
 chmod 600 "$SECRETS_FILE"
+{{ end -}}

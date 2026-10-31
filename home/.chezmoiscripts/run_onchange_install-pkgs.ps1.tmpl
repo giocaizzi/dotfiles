@@ -1,3 +1,5 @@
+{{- /* Runs on Windows only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
 #Requires -Version 5.1
 $ErrorActionPreference = "Stop"
 
@@ -247,3 +249,4 @@ foreach ($mod in $PSModules) {
 Write-Host ""
 Write-Host "All packages installed successfully" -ForegroundColor Green
 Write-Host "Note: open a new shell session for PATH changes to take effect." -ForegroundColor Yellow
+{{ end -}}

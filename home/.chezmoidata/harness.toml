@@ -20,3 +20,21 @@ hud = ["claude", "copilot"]
 javascript = ["claude", "copilot", "codex"]
 python = ["claude", "copilot", "codex"]
 sounds = ["claude", "codex"]
+
+# Targets each harness owns: .chezmoiignore skips them where the harness is not selected
+# (light machines select none). Shared targets stay explicit there: ~/.copilot (also
+# VS Code's instructions) and ops/.mcp.json (claude or copilot).
+[harnessTargets]
+claude = [".claude"]
+codex = [".codex", "ops/.codex"]
+opencode = [".config/opencode", "ops/opencode.json"]
+pi = [".pi", "ops/.pi"]
+vscode = [
+    ".config/Code",
+    ".config/Code - Insiders",
+    "Library/Application Support/Code",
+    "Library/Application Support/Code - Insiders",
+    "AppData/Roaming/Code",
+    "AppData/Roaming/Code - Insiders",
+    "ops/.vscode",
+]

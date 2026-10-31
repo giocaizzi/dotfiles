@@ -1,3 +1,5 @@
+{{- /* Runs on Windows only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
 $ErrorActionPreference = "Stop"
 
 # Links the canonical PowerShell profile into PowerShell's real Documents
@@ -30,3 +32,4 @@ foreach ($dir in "PowerShell", "WindowsPowerShell") {
     if ($LASTEXITCODE -ne 0) { throw "mklink failed for $link (enable Developer Mode or run as admin)" }
     Write-Host "Linked $link -> $target"
 }
+{{ end -}}

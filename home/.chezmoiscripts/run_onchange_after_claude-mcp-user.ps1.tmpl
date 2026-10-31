@@ -1,3 +1,6 @@
+{{- /* Runs on Windows machines with claude only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $h := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (has "claude" $h) -}}
 # Claude Code user-scope MCP servers for this machine's role (.chezmoitemplates/mcp-user.json;
 # add-only: remove a dropped server by hand, `claude mcp remove -s user <name>`). Re-runs when the
 # list changes. A missing CLI is skipped. Runbook: docs/OS.md#mcp-servers.
@@ -7,3 +10,4 @@ if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { exit 0 }
 claude mcp get '{{ $name }}' *> $null
 if ($LASTEXITCODE -ne 0) { claude mcp add -s user --transport http '{{ $name }}' '{{ $url }}' | Out-Null }
 {{- end }}
+{{ end -}}

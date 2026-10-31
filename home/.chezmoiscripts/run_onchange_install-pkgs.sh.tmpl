@@ -1,3 +1,5 @@
+{{- /* Runs on Unix only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 set -e
 
@@ -338,3 +340,4 @@ fi
 
 echo -e "\n${GREEN}✓ All packages installed successfully${NC}"
 {{- end }}
+{{- end -}}

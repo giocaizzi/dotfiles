@@ -53,9 +53,9 @@
 
 # giocaizzi/harness checkout for the harnesses that install it from a clone (opencode,
 # pi, Codex agents): .chezmoiscripts/run_after_install-harness.* runs its installer.
-# Full machines with any of the three selected (data.harnesses); light machines have no AI agents.
+# Machines with any of the three selected (data.harnesses; light machines select none).
 {{- $harnesses := includeTemplate "harnesses" . | splitList " " }}
-{{- if and (not (get . "light")) (or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses)) }}
+{{- if or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses) }}
 [".local/share/giocaizzi-harness"]
     type = "git-repo"
     url = "https://github.com/giocaizzi/harness.git"

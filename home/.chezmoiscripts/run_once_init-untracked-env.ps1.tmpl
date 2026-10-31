@@ -1,3 +1,5 @@
+{{- /* Runs on Windows only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
 $ErrorActionPreference = "Stop"
 
 # Creates ~\.config\powershell\secrets.ps1 if it doesn't exist.
@@ -26,3 +28,4 @@ icacls (Split-Path $secretsFile) /inheritance:r /grant:r "${me}:(OI)(CI)F" | Out
 if ($LASTEXITCODE -ne 0) { throw "icacls failed to restrict $(Split-Path $secretsFile)" }
 icacls $secretsFile /inheritance:r /grant:r "${me}:(F)" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "icacls failed to restrict $secretsFile" }
+{{ end -}}

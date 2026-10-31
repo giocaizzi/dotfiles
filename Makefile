@@ -39,13 +39,14 @@ lint: lint-tmpl lint-aliases lint-plugins lint-edit ## shellcheck shell scripts,
 	done; done; rm -rf "$$dir"
 
 # Isolated empty config, so the renders never read this machine's answers. A render for one
-# OS leaves the other OS's package lists unset-but-unused (SC2034).
+# OS leaves the other OS's package lists unset-but-unused (SC2034). An empty render is a
+# script that does not apply there: chezmoi skips it, and so does the lint.
 lint-tmpl: ## Render script templates with chezmoi, shellcheck the output
 	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
 	for f in $(SH_TMPL); do for os in darwin linux; do for d in $(TMPL_DATA); do \
 		chezmoi execute-template --config "$$dir/chezmoi.toml" --source . \
 			--override-data "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" < "$$f" > "$$dir/out.sh" && \
-		shellcheck -e SC2034 "$$dir/out.sh" || { echo "lint-tmpl: $$f os=$$os $$d"; exit 1; }; \
+		{ ! grep -q '[^[:space:]]' "$$dir/out.sh" || shellcheck -e SC2034 "$$dir/out.sh"; } || { echo "lint-tmpl: $$f os=$$os $$d"; exit 1; }; \
 	done; done; done; rm -rf "$$dir"
 
 # Validate the registry, then render the alias files per OS × role: aliases.sh is

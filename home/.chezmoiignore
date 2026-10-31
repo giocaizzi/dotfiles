@@ -56,71 +56,38 @@ Library
 {{ end }}
 
 # --- not Windows ---
+# Scripts are not listed in this file: each one renders empty (and is skipped) where
+# it does not apply (.chezmoiscripts/).
 {{ if ne .chezmoi.os "windows" }}
 AppData
 .config/powershell
 vimfiles
-.chezmoiscripts/init-untracked-env.ps1
-.chezmoiscripts/install-pkgs.ps1
-.chezmoiscripts/link-pwsh-profile.ps1
-.chezmoiscripts/install-harness.ps1
-.chezmoiscripts/sync-vscode-extensions.ps1
-.chezmoiscripts/claude-mcp-user.ps1
 {{ end }}
 
 # --- Light machines (data.light, asked once by `chezmoi init`) ---
-# Shell, git, vim and the prompt only: no editors, terminals or AI agents.
+# Shell, git, vim and the prompt only: no editors, terminals or AI agents. Harness
+# targets need no entry here: light machines select no harness (next block).
 # (The font external is skipped in .chezmoiexternal.toml.tmpl.)
 # `get` tolerates configs created before the light key existed.
 {{ if get . "light" }}
-.claude
-.copilot
-.codex
-.pi
-.config/opencode
-.chezmoiscripts/install-harness.sh
-.chezmoiscripts/install-harness.ps1
-.chezmoiscripts/claude-mcp-user.sh
-.chezmoiscripts/claude-mcp-user.ps1
 ops
-.config/Code
-.config/Code - Insiders
-.chezmoiscripts/sync-vscode-extensions.sh
-.chezmoiscripts/sync-vscode-extensions.ps1
 .config/ghostty
 # Outbound-only SSH config; skipping it (the only encrypted file) means light
 # machines never need the age key, which decrypts every secret in this repo.
 .ssh
 {{ end }}
 
-# --- AI harnesses (data.harnesses, chosen by `chezmoi init`; light machines skip them all above) ---
-# Only selected harnesses get their configs. A config without the key gets none
-# (.chezmoitemplates/harnesses).
+# --- AI harnesses (data.harnesses, chosen by `chezmoi init`; none on light machines) ---
+# Each harness's targets ([harnessTargets] in .chezmoidata/harness.toml) are skipped
+# where it is not selected.
 {{ $harnesses := includeTemplate "harnesses" . | splitList " " }}
-{{ if not (has "claude" $harnesses) }}
-.claude
-.chezmoiscripts/claude-mcp-user.sh
-.chezmoiscripts/claude-mcp-user.ps1
+{{ range $harness, $targets := .harnessTargets }}
+{{   if not (has $harness $harnesses) }}
+{{     $targets | join "\n" }}
+{{   end }}
 {{ end }}
 {{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
 ops/.mcp.json
-{{ end }}
-{{ if not (has "codex" $harnesses) }}
-ops/.codex
-{{ end }}
-{{ if not (has "opencode" $harnesses) }}
-ops/opencode.json
-{{ end }}
-{{ if not (has "pi" $harnesses) }}
-ops/.pi
-{{ end }}
-{{ if not (has "vscode" $harnesses) }}
-ops/.vscode
-{{ end }}
-# ~/ops holds personal servers: personal machines only (work PCs get no
-# personal account, like the personal vault and telemetry).
-{{ if get . "work" }}
-ops
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}
 {{   if has "vscode" $harnesses }}
@@ -131,28 +98,10 @@ ops
 .copilot
 {{   end }}
 {{ end }}
-{{ if not (has "vscode" $harnesses) }}
-.config/Code
-.config/Code - Insiders
-Library/Application Support/Code
-Library/Application Support/Code - Insiders
-AppData/Roaming/Code
-AppData/Roaming/Code - Insiders
-.chezmoiscripts/sync-vscode-extensions.sh
-.chezmoiscripts/sync-vscode-extensions.ps1
-{{ end }}
-{{ if not (has "codex" $harnesses) }}
-.codex
-{{ end }}
-{{ if not (has "opencode" $harnesses) }}
-.config/opencode
-{{ end }}
-{{ if not (has "pi" $harnesses) }}
-.pi
-{{ end }}
-{{ if not (or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses)) }}
-.chezmoiscripts/install-harness.sh
-.chezmoiscripts/install-harness.ps1
+# ~/ops holds personal servers: personal machines only (work PCs get no
+# personal account, like the personal vault and telemetry).
+{{ if get . "work" }}
+ops
 {{ end }}
 
 # Personal-email override only where personal remotes are configured (work machines)
@@ -162,16 +111,10 @@ AppData/Roaming/Code - Insiders
 
 # --- Windows only ---
 # Vim on Windows reads ~/vimfiles/vimrc (symlink → dot_config/vim/vimrc), not
-# the XDG path. Bash setup scripts are Unix-only. The .config/shell snippets and POSIX rc
-# files (.profile, .bashrc, .bash_profile) ARE kept so Git Bash and WSL users
-# get the same aliases/PATH as native Unix.
+# the XDG path. The .config/shell snippets and POSIX rc files (.profile, .bashrc,
+# .bash_profile) ARE kept so Git Bash and WSL users get the same aliases/PATH as
+# native Unix.
 {{ if eq .chezmoi.os "windows" }}
 .config/vim
 .config/tmux
-.chezmoiscripts/init-untracked-env.sh
-.chezmoiscripts/create-xdg-dirs.sh
-.chezmoiscripts/install-pkgs.sh
-.chezmoiscripts/install-harness.sh
-.chezmoiscripts/sync-vscode-extensions.sh
-.chezmoiscripts/claude-mcp-user.sh
 {{ end }}

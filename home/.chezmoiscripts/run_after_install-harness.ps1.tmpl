@@ -1,3 +1,6 @@
+{{- /* Runs on Windows machines with codex, opencode or pi only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $h := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (or (has "codex" $h) (has "opencode" $h) (has "pi" $h)) -}}
 #Requires -Version 5.1
 # giocaizzi/harness for the harnesses that do not install it from their own settings
 # (Claude Code and Copilot CLI do: .chezmoitemplates/{claude,copilot}-settings.json).
@@ -30,3 +33,4 @@ if (& $has 'opencode') { node $Install opencode }
 if ((& $has 'pi') -and -not ((pi list 2>$null) -match [regex]::Escape($Harness))) { pi install $Harness }
 {{- end }}
 exit 0
+{{ end -}}

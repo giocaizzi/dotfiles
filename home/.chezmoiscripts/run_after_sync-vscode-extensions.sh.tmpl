@@ -1,3 +1,6 @@
+{{- /* Runs on Unix machines with vscode only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $h := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (ne .chezmoi.os "windows") (has "vscode" $h) -}}
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -19,3 +22,4 @@ while IFS= read -r extension; do
 done <<'EXTENSIONS'
 {{ template "vscode-extensions" . }}
 EXTENSIONS
+{{ end -}}
