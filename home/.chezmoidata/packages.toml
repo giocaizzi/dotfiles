@@ -32,7 +32,8 @@
 #   stripComponents = archive path components to drop
 #   roles    = as above
 #
-# Bump a release: chezmoi dots outdated (prints new versions and checksums).
+# Update: `chezmoi dots outdated` lists newer releases, `chezmoi dots bump` rewrites
+# versions and checksums here (docs/OS.md#packages).
 # ----------------------------------------------------------------------------
 
 # --- Core: every machine ---
@@ -285,8 +286,7 @@ target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
 "linux/arm64" = "f6198ef8090f404dbb771abfee086eb8c48ac177f30da7fd3510aca35b344b5d"
 
 [release.go]
-# Official toolchain (apt's golang-go lags), per user. dl.google.com publishes no
-# checksum file chezmoi could read: chezmoi dots outdated computes them.
+# Official toolchain (apt's golang-go lags), per user.
 roles = ["personal"]
 version = "1.27.3"
 url = "https://go.dev/dl/go{version}.linux-{target}.tar.gz"
@@ -294,6 +294,10 @@ type = "archive"
 dest = ".local/go"
 stripComponents = 1
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.go.sha256]
+"linux/amd64" = "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
+"linux/arm64" = "a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49"
 
 [release.goreleaser]
 roles = ["personal"]
