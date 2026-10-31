@@ -5,7 +5,7 @@ description: Manages dotfiles across machines with chezmoi. Use when working in 
 
 # Chezmoi Dotfiles Management
 
-Source dir: `~/.local/share/chezmoi` (this repo) | Destination: `~`  
+Source dir: `~/.local/share/chezmoi` (this repo); source state: its `home/` (`.chezmoiroot`) | Destination: `~`  
 Docs: https://www.chezmoi.io | Template engine: Go `text/template` + sprig + chezmoi functions
 
 ## Source State File Naming

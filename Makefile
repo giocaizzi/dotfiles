@@ -10,16 +10,18 @@ SHELLCHECK_EXCLUDES := -e SC1017
 endif
 
 SHELLCHECK_EXCLUDES ?=
+# The source state (.chezmoiroot); chezmoi --source . resolves it on its own.
+SRC := home
 SCRIPTS := $(shell git ls-files '*.sh')
-SH_TMPL := $(shell git ls-files '.chezmoiscripts/*.sh.tmpl')
+SH_TMPL := $(shell git ls-files '$(SRC)/.chezmoiscripts/*.sh.tmpl')
 # --override-data per render: OS × role × harness selection.
 TMPL_DATA := '"light":false' '"light":true' '"work":true' '"harnesses":["opencode"]' '"harnesses":["claude","copilot","vscode","codex","opencode","pi"]' 
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
-RC   := dot_bashrc dot_bash_profile dot_profile
+RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
 SH   := $(SCRIPTS) $(RC)
-ZSH  := dot_zshrc dot_zprofile
+ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
 # settings.json is VS Code JSONC (comments), not strict JSON.
-JSON := $(filter-out dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
+JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
 .PHONY: help lint lint-tmpl lint-aliases lint-plugins lint-edit aliases-audit test test-syntax check check-fast
 
@@ -33,7 +35,7 @@ lint: lint-tmpl lint-aliases lint-plugins lint-edit ## shellcheck shell scripts,
 	@dir=$$(mktemp -d) && touch "$$dir/chezmoi.toml" && \
 	for t in vscode-mcp.json claude-settings.json copilot-settings.json; do for d in '{}' '{"work":true}'; do \
 		chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$d" \
-			< .chezmoitemplates/$$t | jq empty || { echo "invalid JSON: $$t $$d"; exit 1; }; \
+			< $(SRC)/.chezmoitemplates/$$t | jq empty || { echo "invalid JSON: $$t $$d"; exit 1; }; \
 	done; done; rm -rf "$$dir"
 
 # Isolated empty config, so the renders never read this machine's answers. A render for one
@@ -56,13 +58,13 @@ lint-aliases: ## Validate the alias registry and lint the rendered alias files
 	touch "$$dir/chezmoi.toml" && \
 	render() { chezmoi execute-template --config "$$dir/chezmoi.toml" --source . --override-data "$$1" < "$$2"; } && \
 	for os in darwin linux windows; do for d in $(TMPL_DATA); do \
-		render "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" dot_config/shell/aliases.sh.tmpl > "$$dir/aliases.sh" && \
+		render "{\"chezmoi\":{\"os\":\"$$os\"},$$d}" $(SRC)/dot_config/shell/aliases.sh.tmpl > "$$dir/aliases.sh" && \
 		shellcheck -s bash "$$dir/aliases.sh" || { echo "lint-aliases: aliases.sh os=$$os $$d"; exit 1; }; \
 	done; done && \
-	render '{}' dot_config/shell/omz-aliases.zsh.tmpl > "$$dir/omz.zsh" && \
+	render '{}' $(SRC)/dot_config/shell/omz-aliases.zsh.tmpl > "$$dir/omz.zsh" && \
 	{ ! command -v zsh >/dev/null 2>&1 || zsh -n "$$dir/omz.zsh"; } && \
 	for d in $(TMPL_DATA); do \
-		render "{\"chezmoi\":{\"os\":\"windows\"},$$d}" dot_config/powershell/aliases.ps1.tmpl > "$$dir/aliases.ps1" && \
+		render "{\"chezmoi\":{\"os\":\"windows\"},$$d}" $(SRC)/dot_config/powershell/aliases.ps1.tmpl > "$$dir/aliases.ps1" && \
 		for ps in pwsh powershell; do \
 			if command -v $$ps >/dev/null 2>&1; then \
 				$$ps -NoProfile -Command "\$$e = \$$null; [void][System.Management.Automation.Language.Parser]::ParseFile('$$dir/aliases.ps1', [ref]\$$null, [ref]\$$e); if (\$$e) { \$$e; exit 1 }" \

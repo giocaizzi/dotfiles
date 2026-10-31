@@ -73,46 +73,15 @@ encryption = "age"
 
 # Configures `chezmoi merge`: the 3-way merge tool used to reconcile drift
 # between source (chezmoi), target (rendered) and destination (home) files.
-# Unrelated to git's merge configuration.
-[merge]
+# Unrelated to git's merge configuration. chezmoi's default is vimdiff, which
+# Windows lacks: there vim runs in diff mode.
 {{- if eq .chezmoi.os "windows" }}
+[merge]
     command = "vim"
     args = [
         "-d",
         {{ printf "%q" "{{ .Destination }}" }},
         {{ printf "%q" "{{ .Source }}" }},
         {{ printf "%q" "{{ .Target }}" }},
-    ]
-{{- end }}
-{{- if eq .chezmoi.os "darwin" }}
-    command = "vimdiff"
-    args = [
-        {{ printf "%q" "{{ .Destination }}" }},
-        {{ printf "%q" "{{ .Source }}" }},
-        {{ printf "%q" "{{ .Target }}" }},
-    ]
-{{- end }}
-    
-
-# Refuse `chezmoi apply` while a git worktree of the source sits inside it: chezmoi reads
-# every nested .chezmoidata/ (.chezmoiignore does not stop it), so the worktree's
-# unfinished data would be applied. Worktrees go in ~/.local/share/chezmoi-worktrees/.
-# A non-zero pre hook aborts the apply. The PowerShell script has no double quotes, so
-# Windows command-line quoting cannot split it; paths compare case-insensitively.
-[hooks.apply.pre]
-{{- if eq .chezmoi.os "windows" }}
-    command = "powershell"
-    args = [
-        "-NoProfile",
-        "-Command",
-        {{ printf "$s = '%s/'; $w = @(git -C $s worktree list --porcelain | Where-Object { $_.StartsWith('worktree ' + $s, [StringComparison]::OrdinalIgnoreCase) } | ForEach-Object { $_.Substring(9) }); if ($w) { [Console]::Error.WriteLine('chezmoi apply refused: git worktree inside the source dir (' + ($w -join ', ') + '); its .chezmoidata would be applied. Move it to ~/.local/share/chezmoi-worktrees/ (git worktree move) or remove it.'); exit 1 }" (.chezmoi.sourceDir | replace "'" "''") | quote }},
-    ]
-{{- else }}
-    command = "sh"
-    args = [
-        "-c",
-        "git -C \"$1\" worktree list --porcelain | awk -v s=\"$1/\" 'index($0, \"worktree \" s) == 1 { print \"  \" substr($0, 10); bad = 1 } END { exit bad }' >&2 || { echo \"chezmoi apply refused: the git worktree(s) above are inside the source dir; their .chezmoidata would be applied. Move them to ~/.local/share/chezmoi-worktrees/ (git worktree move) or remove them.\" >&2; exit 1; }",
-        "sh",
-        {{ .chezmoi.sourceDir | quote }},
     ]
 {{- end }}

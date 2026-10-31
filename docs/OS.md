@@ -1,6 +1,6 @@
 # OS-Specific Configuration
 
-How each managed file maps to its destination per OS. Canonical sources live under `dot_config/` in the repo; OS-specific destinations symlink to them via `{{ .chezmoi.sourceDir }}/...`.
+How each managed file maps to its destination per OS. Canonical sources live under `dot_config/` in the source state (`home/`, [Source layout](#source-layout-chezmoiroot)); OS-specific destinations symlink to them via `{{ .chezmoi.sourceDir }}/...`.
 
 ## Destination matrix
 
@@ -188,7 +188,7 @@ Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`)
 
 ### Edit registry
 
-`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `dots list`) and a `source` (source-relative) or a `local` folder (home-relative, unmanaged files edited in place), optionally a `check` (POSIX command run in the source dir with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
+`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `dots list`) and a `source` (source-relative) or a `local` folder (home-relative, unmanaged files edited in place), optionally a `check` (POSIX command run in the repo root, chezmoi's working tree, with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
 
 **Add an editable component**
 
@@ -323,23 +323,11 @@ Managed settings per harness:
 - Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
-## Working copies (git worktrees)
+## Source layout (`.chezmoiroot`)
 
-chezmoi reads every `.chezmoidata/` under the source dir, nested ones included, and `.chezmoiignore` does not stop it. A git worktree of this repo inside `~/.local/share/chezmoi` (e.g. `.claude/worktrees/<slug>`) therefore merges its unfinished data into this machine's config. Worktrees of this repo live in `~/.local/share/chezmoi-worktrees/<slug>`, and a pre-apply hook (`[hooks.apply.pre]` in `.chezmoi.toml.tmpl`, sh or Windows PowerShell) refuses `chezmoi apply` while any worktree sits inside the source dir. `chezmoi diff`, `status` and `dots view` don't run the hook: they still show the merged data.
+`.chezmoiroot` makes `home/` the source state: every source path in these docs (`dot_config/…`, `.chezmoidata/…`) is relative to it, and `chezmoi source-path` prints `~/.local/share/chezmoi/home`. The repo root holds what is never deployed (docs, `scripts/`, `tools/`, `Makefile`, agent config), so `.chezmoiignore` has no repo-meta block, and a git worktree anywhere in the repo (e.g. `.claude/worktrees/<slug>`) sits outside the source state: chezmoi never reads its `.chezmoidata`.
 
-**When:** starting a task in this repo, or `chezmoi apply` fails with `chezmoi apply refused: … worktree`.
-
-1. New task: `git -C ~/.local/share/chezmoi worktree add ~/.local/share/chezmoi-worktrees/<slug> -b <branch> origin/main`.
-2. A worktree already inside: `git -C ~/.local/share/chezmoi worktree move <path> ~/.local/share/chezmoi-worktrees/<slug>` (or `git worktree remove <path>` once its PR merged).
-3. Retry `chezmoi apply`.
-
-**Verify:** `git -C ~/.local/share/chezmoi worktree list` shows no path under `~/.local/share/chezmoi/`; `chezmoi apply` runs.
-
-**Hook not active yet:** the hook lives in the config, which chezmoi renders from `.chezmoi.toml.tmpl` at `chezmoi init`. After pulling this change run `chezmoi init` once (it asks nothing new and keeps every answer); `chezmoi cat-config | grep -A2 hooks.apply.pre` shows it.
-
-**First apply after `chezmoi init` on Windows:** run one `chezmoi apply` right away. If it fails with a PowerShell error instead of `chezmoi apply refused`, the hook itself is broken: delete the `[hooks.apply.pre]` block with `chezmoi edit-config`, apply, and report it.
-
-**Rollback:** delete the `[hooks.apply.pre]` block from `.chezmoi.toml.tmpl`, then `chezmoi init` (or, on one machine only, from its config with `chezmoi edit-config`).
+**After pulling the move:** run `chezmoi init` once (it asks nothing new): it drops the old `[hooks.apply.pre]` worktree guard from this machine's config.
 
 ## Testing the ignore matrix
 

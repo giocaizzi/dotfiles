@@ -8,7 +8,7 @@ This is the user's [chezmoi](https://chezmoi.io/) dotfiles configuration, managi
 
 ## Architecture (single sources → per-OS destinations)
 
-Canonical configs live under `dot_config/<xdg-path>/`. On Linux they deploy directly; on macOS/Windows they are symlink targets referenced via `{{ .chezmoi.sourceDir }}/...` from `Library/` or `AppData/` paths.
+The source state is `home/` (`.chezmoiroot`); paths below are relative to it. The repo root holds only what is never deployed (docs, `scripts/`, `tools/`, `Makefile`). Canonical configs live under `dot_config/<xdg-path>/`. On Linux they deploy directly; on macOS/Windows they are symlink targets referenced via `{{ .chezmoi.sourceDir }}/...` from `Library/` or `AppData/` paths.
 
 ```bash
 dot_config/Code/User/{settings,keybindings}.json
@@ -50,7 +50,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 
 ## Working in this repo
 
-- `.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
+- `home/.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
 - Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
 - Editing goes through `dots`: a new editable component is an entry in `.chezmoidata/edit.toml` (name, source or local folder, optional check), never a new edit function or shortcut; `make lint-edit` requires one for every `.chezmoidata` file and encrypted file. Logic shared by both shells lives in `.chezmoitemplates/dots-edit/`; shell-side changes need the PowerShell twin and cases in `scripts/dots-edit-test.sh`. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` also goes in `.chezmoitemplates/dots-edit/matrix`. See docs/OS.md → Editing your dotfiles.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
@@ -61,7 +61,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
-- Worktrees of this repo live outside the source dir (`~/.local/share/chezmoi-worktrees/<slug>`), not in `.claude/worktrees/`: chezmoi reads every nested `.chezmoidata/` (`.chezmoiignore` does not stop it), so a worktree inside the source merges its data into the live config. A pre-apply hook in `.chezmoi.toml.tmpl` refuses `chezmoi apply` while one exists.
+- Worktrees can live anywhere, `.claude/worktrees/` included: they sit outside `home/`, so chezmoi never reads their `.chezmoidata`. See docs/OS.md → Source layout.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 

@@ -347,7 +347,8 @@ function _dots-edit {
 		}
 		if ($check) {
 			$global:LASTEXITCODE = 0
-			Push-Location $src
+			# Checks run in the git working tree (the repo root; the source dir is home/ in it).
+			Push-Location (chezmoi dump-config --format json | ConvertFrom-Json).workingTree
 			try { & ([scriptblock]::Create($check)) $edited | Out-Host } finally { Pop-Location }
 			if ($LASTEXITCODE) {
 				Write-Error "Check failed, nothing applied. The source keeps the edit: run the command again to fix it ($path)."

@@ -270,7 +270,8 @@ _dots_edit() (
 		umask "$mask"
 		;;
 	esac
-	if [ -n "$check" ] && ! (cd "$src" && sh -c "$check" sh "$edited"); then
+	# Checks run in the git working tree (the repo root; the source dir is home/ in it).
+	if [ -n "$check" ] && ! (cd "$(chezmoi dump-config --format json | jq -r .workingTree)" && sh -c "$check" sh "$edited"); then
 		printf '%s✗ Check failed, nothing applied.%s The source keeps the edit: run the command again to fix it (%s).\n' "$_r" "$_o" "$src/$file" >&2
 		return 1
 	fi

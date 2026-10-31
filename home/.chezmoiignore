@@ -5,18 +5,10 @@
 # Reference: https://chezmoi.io/docs/reference/chezmoiignore/
 # ============================================================================
 
-# ----------------------------------------------------------------------------
-# Repo meta — never apply
-# ----------------------------------------------------------------------------
-README.md
-AGENTS.md
-LICENSE
-Makefile
-scripts
+# Repo meta (README, docs, scripts, tools, …) sits outside the source state:
+# .chezmoiroot makes home/ the root, so nothing here needs ignoring.
 # Git Bash crash dumps left in the source dir (also git-ignored globally)
 *.stackdump
-.agents
-docs
 
 # Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
 # bws project ID (token in the OS keyring) and bws is installed (the first apply

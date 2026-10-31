@@ -9,7 +9,7 @@
 # source     = the file to edit, relative to the source dir (required, unless local)
 # local      = instead of source: a folder of unmanaged files, relative to the home dir;
 #              `dots <home>/<local>/<name>` edits one in place (a new name creates it)
-# check      = POSIX command run in the source dir with the edited file as $1, before
+# check      = POSIX command run in the repo root (chezmoi's working tree) with the edited file as $1, before
 #              anything is applied; non-zero = nothing applied (local: edit again or quit)
 # powershell = the same check for PowerShell, file as $args[0] (default: check)
 # note       = printed after an apply

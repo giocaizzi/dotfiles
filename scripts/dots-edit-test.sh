@@ -20,6 +20,8 @@ T=$(mktemp -d)
 if [ -n "$win" ]; then T=$(cygpath -m "$T"); fi
 trap 'rm -rf "$T"' EXIT
 S=$T/src
+# The source state inside the copy (.chezmoiroot).
+H=$S/home
 mkdir "$T/bin"
 
 "$real" age-keygen -o "$T/key.txt" 2>/dev/null
@@ -107,8 +109,8 @@ fi
 # The source copy: no scripts, externals or removals, dummy encrypted files, a git repo.
 mkdir "$S"
 git ls-files -z | tar -cf - --null -T - | tar -xf - -C "$S"
-rm -rf "$S/.chezmoiscripts" "$S/.chezmoiexternal.toml.tmpl" "$S/.chezmoiremove" "$S/.chezmoi.toml.tmpl"
-enc() { printf '%b' "$2" | "$T/bin/chezmoi" encrypt >"$S/$1"; }
+rm -rf "$H/.chezmoiscripts" "$H/.chezmoiexternal.toml.tmpl" "$H/.chezmoiremove" "$H/.chezmoi.toml.tmpl"
+enc() { printf '%b' "$2" | "$T/bin/chezmoi" encrypt >"$H/$1"; }
 enc .aliases.private.toml.age '[alias.zzprivate]\ncmd = "echo private"\n'
 enc .chezmoitemplates/agents/personal.md.age 'dummy personal layer\n'
 enc .chezmoitemplates/agents/work.md.age 'dummy work layer\n'
@@ -117,8 +119,8 @@ git -C "$S" init -q
 git -C "$S" add -A
 git -C "$S" -c user.name=test -c user.email=test@example.invalid -c commit.gpgsign=false \
 	-c core.hooksPath=/dev/null commit -qm fixture
-"$T/bin/chezmoi" execute-template <"$S/dot_config/shell/aliases.sh.tmpl" >"$T/aliases.sh"
-"$T/bin/chezmoi" execute-template <"$S/dot_config/powershell/aliases.ps1.tmpl" >"$T/aliases.ps1"
+"$T/bin/chezmoi" execute-template <"$H/dot_config/shell/aliases.sh.tmpl" >"$T/aliases.sh"
+"$T/bin/chezmoi" execute-template <"$H/dot_config/powershell/aliases.ps1.tmpl" >"$T/aliases.ps1"
 
 pass=0
 fail=0
@@ -175,8 +177,8 @@ expect() {
 status() { test "$st" "$1" "$2"; }
 has() { grep -q "$1" "$2" 2>/dev/null; }
 lacks() { ! grep -q "$1" "$2" 2>/dev/null; }
-armored() { [ "$(head -n 1 "$S/$1")" = '-----BEGIN AGE ENCRYPTED FILE-----' ]; }
-unchanged() { git -C "$S" diff --quiet -- "$1"; }
+armored() { [ "$(head -n 1 "$H/$1")" = '-----BEGIN AGE ENCRYPTED FILE-----' ]; }
+unchanged() { git -C "$H" diff --quiet -- "$1"; }
 # The decrypted temp file the editor got is gone, and no .new file is left.
 cleaned() {
 	f=$(cat "$T/edited")
@@ -199,7 +201,7 @@ suite() {
 	expect 'dots: ship hint' has 'ship a PR' "$T/out"
 
 	run "$shell" 'n\n' text full dots edit agents/core
-	expect 'dots edit agents/core: edited, not applied' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+	expect 'dots edit agents/core: edited, not applied' has edited-marker "$H/.chezmoitemplates/agents/core.md"
 	expect 'dots edit agents/core: no target written' lacks edited-marker "$T/home/.claude/CLAUDE.md"
 
 	run "$shell" 'n\n' noop full dots agents/work
@@ -220,7 +222,7 @@ suite() {
 
 	if ! in_powershell; then
 		run "$shell" '1\nn\n' text nofzf dots
-		expect 'dots picker without fzf: first entry' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+		expect 'dots picker without fzf: first entry' has edited-marker "$H/.chezmoitemplates/agents/core.md"
 
 		run "$shell" '99\n' noop nofzf dots
 		expect 'dots picker without fzf, invalid choice: non-zero' status -ne 0
@@ -306,7 +308,7 @@ suite() {
 	expect 'dots help: usage' has 'usage: dots' "$T/out"
 
 	run "$shell" 'n\n' mcp full dots mcp
-	expect 'dots mcp: edited' has edited-marker "$S/.chezmoidata/mcp.toml"
+	expect 'dots mcp: edited' has edited-marker "$H/.chezmoidata/mcp.toml"
 	expect 'dots mcp: report per configuration' has 'darwin/personal  *.*mcp' "$T/out"
 	expect 'dots mcp: identical lists grouped' has 'linux/personal  *same as darwin/personal' "$T/out"
 	expect 'dots mcp: work machines unaffected' has 'darwin/work  *nothing' "$T/out"
@@ -319,12 +321,12 @@ suite() {
 
 	if ! in_powershell; then
 		run "$shell" '4\nn\n' text nofzf dots "$T/home/.claude/CLAUDE.md"
-		expect 'dots <target>: tree node picked' has edited-marker "$S/.chezmoitemplates/agents/core.md"
+		expect 'dots <target>: tree node picked' has edited-marker "$H/.chezmoitemplates/agents/core.md"
 		expect 'dots <target>: nodes named' has '\[agents/personal\]' "$T/out"
 	fi
 
 	run "$shell" 'n\n' text full dots dot_config/tmux/tmux.conf
-	expect 'dots <source file>: edited' has edited-marker "$S/dot_config/tmux/tmux.conf"
+	expect 'dots <source file>: edited' has edited-marker "$H/dot_config/tmux/tmux.conf"
 
 	run "$shell" '' noop full dots no/such/thing
 	expect 'dots unknown argument: non-zero' status -ne 0

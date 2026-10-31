@@ -5,6 +5,8 @@
 # (.chezmoitemplates/dots-edit/matrix) lists the same harnesses and [data] answers as
 # .chezmoi.toml.tmpl. Run from the repo root.
 set -eu
+# The source state (.chezmoiroot): registry paths are relative to it.
+src=home
 
 dir=$(mktemp -d)
 trap 'rm -rf "$dir"' EXIT
@@ -23,23 +25,23 @@ jq -r 'to_entries[] | .key as $n | .value |
 	"$dir/edit.json" >"$dir/errors"
 jq -r 'to_entries[] | "\(.key)\t\(.value.source // "")"' "$dir/edit.json" | tr -d '\r' |
 while IFS='	' read -r name source; do
-	if [ -n "$source" ] && [ ! -f "$source" ]; then echo "$name: source $source does not exist"; fi
+	if [ -n "$source" ] && [ ! -f "$src/$source" ]; then echo "$name: source $source does not exist"; fi
 done >>"$dir/errors"
 
 # Data and encrypted files are not editable through chezmoi edit: each needs an entry.
 jq -r '.[].source // empty' "$dir/edit.json" | tr -d '\r' | sort >"$dir/sources"
-git ls-files '.chezmoidata/*' '*.age' | sort | comm -23 - "$dir/sources" |
+git -C "$src" ls-files '.chezmoidata/*' '*.age' | sort | comm -23 - "$dir/sources" |
 	sed 's/$/: no edit registry entry/' >>"$dir/errors"
 
 # The matrix mirrors the config template: the harness list and the [data] keys.
 harnesses() { grep -o 'list "claude"[^}]*' "$1" | head -n 1 | tr -s ' -' ' '; }
-if [ "$(harnesses .chezmoi.toml.tmpl)" != "$(harnesses .chezmoitemplates/dots-edit/matrix)" ]; then
+if [ "$(harnesses "$src/.chezmoi.toml.tmpl")" != "$(harnesses "$src/.chezmoitemplates/dots-edit/matrix")" ]; then
 	echo 'dots-edit/matrix: the harness list differs from the one in .chezmoi.toml.tmpl' >>"$dir/errors"
 fi
-sed -n '/^\[data\]/,/^\[[a-z]/s/^ *\([A-Za-z]*\) = .*/\1/p' .chezmoi.toml.tmpl | sort >"$dir/data-keys"
+sed -n '/^\[data\]/,/^\[[a-z]/s/^ *\([A-Za-z]*\) = .*/\1/p' "$src/.chezmoi.toml.tmpl" | sort >"$dir/data-keys"
 {
 	printf '%s\n' light work harnesses
-	grep -o -e 'range list "[^}]*}' -e 'set [$]answers "[A-Za-z]*" ""' .chezmoitemplates/dots-edit/matrix |
+	grep -o -e 'range list "[^}]*}' -e 'set [$]answers "[A-Za-z]*" ""' "$src/.chezmoitemplates/dots-edit/matrix" |
 		sed 's/ ""$//' | grep -o '"[A-Za-z]*"' | tr -d '"'
 } | sort >"$dir/matrix-keys"
 if ! cmp -s "$dir/data-keys" "$dir/matrix-keys"; then
