@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -54,7 +55,7 @@ func TestPlanSkipsMissingTools(t *testing.T) {
 func TestPlanLinuxNpmPrefix(t *testing.T) {
 	t.Parallel()
 	for _, s := range Plan(env("linux")) {
-		if s.Name == "npm" && !strings.Contains(strings.Join(s.Cmds[0], " "), "--prefix /h/.local") {
+		if s.Name == "npm" && !strings.Contains(strings.Join(s.Cmds[0], " "), "--prefix "+filepath.Join("/h", ".local")) {
 			t.Errorf("npm cmd = %v, want the user prefix", s.Cmds[0])
 		}
 	}

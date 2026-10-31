@@ -71,7 +71,7 @@ func newEnv(t *testing.T) *env {
 	}
 	write(filepath.Join(e.src, ".chezmoi.toml.tmpl"), configTemplate)
 	write(filepath.Join(e.src, ".chezmoidata", "edit.toml"), registry)
-	write(filepath.Join(e.src, "dot_note.tmpl"), "hello {{ if .work }}work{{ else }}home{{ end }}\n")
+	write(filepath.Join(e.src, "dot_note.tmpl"), "hello {{ if get . \"work\" }}work{{ else }}home{{ end }}\n")
 	cfg := filepath.Join(root, "chezmoi.toml")
 	write(cfg, "destDir = "+quote(e.dest)+"\npersistentState = "+quote(filepath.Join(root, "state.boltdb"))+"\n[data]\n    work = false\n    light = false\n    harnesses = []\n")
 	if err := os.MkdirAll(e.dest, 0o755); err != nil {
