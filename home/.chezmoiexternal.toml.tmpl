@@ -10,7 +10,12 @@
 # package-manager registration. Use symlinks for: canonical per-OS configs.
 #
 # Reference: https://chezmoi.io/reference/special-files-and-directories/chezmoiexternal-format/
+#
+# `chezmoi dots` renders the source for previews with dotsRender set: no externals then,
+# so a preview of another OS or role never downloads its binaries (chezmoi fetches every
+# external while reading the source state, even for a dump that excludes them).
 # ============================================================================
+{{ if not (get . "dotsRender") -}}
 
 # Catppuccin colorscheme for Vim — native vim8+ pack plugin.
 # `:colorscheme catppuccin_mocha` in dot_config/vim/vimrc activates it.
@@ -82,4 +87,5 @@
     refreshPeriod = "168h"
     clone.args = ["--depth", "1"]
     pull.args = ["--ff-only"]
+{{- end }}
 {{- end }}
