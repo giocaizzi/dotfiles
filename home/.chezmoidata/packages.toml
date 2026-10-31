@@ -329,3 +329,27 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.glab.sha256]
 "linux/amd64" = "f386519ba83e9482979992ee7f60eeebee4d95b950f95f4fe7289e0a1b1ea74c"
 "linux/arm64" = "de5e92c9c8b306eeebb19daa854d48101b78328850e7b9cd677ecd6f98cd4391"
+
+[release.chezmoi-dots]
+# The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
+# on a dots-vX.Y.Z tag. A bare binary per platform.
+version = "0.1.0"
+url = "https://github.com/giocaizzi/dotfiles/releases/download/dots-v{version}/chezmoi-dots_{version}_{target}"
+type = "file"
+exe = true
+
+[release.chezmoi-dots.target]
+"darwin/amd64" = "darwin_amd64"
+"darwin/arm64" = "darwin_arm64"
+"linux/amd64" = "linux_amd64"
+"linux/arm64" = "linux_arm64"
+"windows/amd64" = "windows_amd64.exe"
+"windows/arm64" = "windows_arm64.exe"
+
+[release.chezmoi-dots.sha256]
+"darwin/amd64" = "c5fede29375f1f1a74609fb9b8e2f0821948df5148210b93db8bff673289f12a"
+"darwin/arm64" = "a3dfc64a54a3405a06b2907c8982630ad4753683ae0d6773d3d67680fe95b94a"
+"linux/amd64" = "61a559225e6fe68e317bef0cc79995b4b5eaf777bf792ffaa7a8601716235a32"
+"linux/arm64" = "751ef04ac3764eb5f5584b1b4d3d7056595209650f87795bcce7d747243393e3"
+"windows/amd64" = "2723d52065e282bee2d9983d74531724c825935956277fc8013d3e399a3a1736"
+"windows/arm64" = "9d79b63277774d291577eadbc7cb28ea7719a636f5adf6fbcc640e333e8261d8"

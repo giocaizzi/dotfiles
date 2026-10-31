@@ -252,8 +252,8 @@ Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`;
 
 **When:** a new machine, or while no release is pinned yet.
 
-1. With a release pinned (`[release.chezmoi-dots]` in `packages.toml`), `chezmoi apply` installs it into `~/.local/bin`; nothing else to do.
-2. Before the first release, or to run a local build: `make -C tools/dots install` (builds and copies it to `~/.local/bin`).
+1. `chezmoi apply` installs the pinned release (`[release.chezmoi-dots]` in `packages.toml`) into `~/.local/bin`; nothing else to do.
+2. To run a local build instead: `make -C tools/dots install` (builds and copies it to `~/.local/bin`).
 
 **Verify:** `chezmoi dots version`.
 
@@ -262,7 +262,7 @@ Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`;
 **When:** the plugin changed in a way worth shipping.
 
 1. Tag the merge commit on `main`: `git tag dots-vX.Y.Z && git push origin dots-vX.Y.Z`. The `release-dots` workflow builds static binaries for the six platforms, writes `checksums.txt`, attests them and creates the GitHub release.
-2. First release only: add `[release.chezmoi-dots]` to `packages.toml` (`type = "file"`, `url` of the asset, one `target` and `sha256` per platform, `dest` under `.local/bin`), copying the shape of another `[release.*]`; later releases are picked up by `chezmoi dots bump`.
+2. Pin it: `chezmoi dots bump chezmoi-dots` rewrites the version and the six checksums of `[release.chezmoi-dots]` in `packages.toml` (the weekly `bump-releases` PR does it too); review, ship the PR, `chezmoi apply` installs it.
 
 **Verify:** the release lists six binaries and `checksums.txt`; `chezmoi dots outdated` is clean after the bump.
 
