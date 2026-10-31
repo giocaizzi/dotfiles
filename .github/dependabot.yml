@@ -9,3 +9,14 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+  - package-ecosystem: gomod
+    directory: /tools/dots
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      minor-patch:
+        update-types: [minor, patch]
+      major:
+        update-types: [major]
