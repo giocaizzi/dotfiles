@@ -272,7 +272,7 @@ func (l Linter) templates(ctx context.Context) ([]finding.Finding, error) {
 func (l Linter) templateFiles() ([]string, error) {
 	out := []string{
 		"dot_config/shell/aliases.sh.tmpl", "dot_config/shell/omz-aliases.zsh.tmpl", "dot_config/powershell/aliases.ps1.tmpl",
-		".chezmoitemplates/vscode-mcp.json", ".chezmoitemplates/claude-settings.json", ".chezmoitemplates/copilot-settings.json",
+		".chezmoitemplates/vscode-mcp.json", ".chezmoitemplates/claude-settings.json", ".chezmoitemplates/copilot-settings.json", ".chezmoitemplates/antigravity-settings.json",
 	}
 	scripts, err := filepath.Glob(filepath.Join(l.Src, ".chezmoiscripts", "*.tmpl"))
 	if err != nil {

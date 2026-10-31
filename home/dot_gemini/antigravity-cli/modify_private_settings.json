@@ -1,41 +1,11 @@
 {{- /* chezmoi:modify-template */ -}}
-{{- /* Managed Antigravity settings: toolPermission and permissions baseline
-       aligned with Claude Code and Copilot CLI; local settings survive. */ -}}
+{{- /* Managed keys (.chezmoitemplates/antigravity-settings.json) win; keys
+       Antigravity writes itself (e.g. model, trustedWorkspaces, statusLine) stay local. */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
-{{- $perms := get $current "permissions" | default dict -}}
-{{- $allow := get $perms "allow" | default list -}}
-{{- $baseAllow := list
-  "command(git)"
-  "command(make)"
-  "command(uv)"
-  "command(npm)"
-  "command(node)"
-  "command(ls)"
-  "command(pwd)"
-  "command(cat)"
-  "command(head)"
-  "command(tail)"
-  "command(grep)"
-  "command(rg)"
-  "command(fd)"
-  "command(find)"
-  "command(mkdir)"
-  "command(cp)"
-  "command(mv)"
-  "command(rm)"
-  "command(touch)"
-  "command(echo)"
-  "command(which)"
-  "command(test)"
-  "command(diff)"
-  "command(awk)"
-  "command(sed)"
-  "command(python)"
-  "command(python3)"
--}}
-{{- $mergedAllow := concat $allow $baseAllow | uniq -}}
-{{- $_ := set $perms "allow" $mergedAllow -}}
-{{- $_ := set $current "toolPermission" "proceed-in-sandbox" -}}
-{{- $_ := set $current "permissions" $perms -}}
-{{- $current | toPrettyJson }}
+{{- $managed := includeTemplate "antigravity-settings.json" . | fromJson -}}
+{{- if lookPath "jq" }}
+{{- output "jq" "-n" "--argjson" "c" (.chezmoi.stdin | default "{}") "--argjson" "m" ($managed | toJson) "$c * $m" | trimSuffix "\n" }}
+{{- else }}
+{{- mergeOverwrite $current $managed | toPrettyJson }}
+{{- end }}

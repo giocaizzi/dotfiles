@@ -9,7 +9,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
 | `.chezmoitemplates/vscode-mcp.json` (`mcp.json.tmpl` in each Code / Code - Insiders `User/` folder) | `~/Library/Application Support/Code*/User/mcp.json` (rendered) | `~/.config/Code*/User/mcp.json` (rendered) | `%APPDATA%\Code*\User\mcp.json` (rendered) |
 | same + Insiders                                      | `~/Library/.../Code - Insiders/User/` (symlinks → stable)   | `~/.config/Code - Insiders/User/` (symlinks → stable) | `%APPDATA%\Code - Insiders\User\` (symlinks → stable)                       |
-| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` (rendered) | same | same |
+| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md`, `~/.gemini/config/AGENTS.md` (rendered) | same | same |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
@@ -23,6 +23,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
 | `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
 | `dot_claude/modify_settings.json` (merge)            | `~/.claude/settings.json`                                   | same                                           | same                                                                               |
+| `dot_gemini/antigravity-cli/modify_private_settings.json` (merge) | `~/.gemini/antigravity-cli/settings.json`      | same                                           | same                                                                               |
 | `dot_config/git/personal.tmpl` (work machines only)  | `~/.config/git/personal`                                    | same                                           | same                                                                               |
 | `dot_config/readline/inputrc`                        | `~/.config/readline/inputrc` (via `$INPUTRC`)               | same                                           | same (Git Bash)                                                                    |
 | `dot_config/tmux/tmux.conf`                          | `~/.config/tmux/tmux.conf`                                  | same                                           | — (no tmux)                                                                        |
@@ -89,7 +90,7 @@ Re-running `chezmoi init`:
 
 ### AI harnesses
 
-Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none (even with the key set). A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads. Each harness's targets are listed once, in `[harnessTargets]` (`.chezmoidata/harness.toml`): `.chezmoiignore` skips the targets of every harness not selected.
+Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi`, `antigravity` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none (even with the key set). A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads. Each harness's targets are listed once, in `[harnessTargets]` (`.chezmoidata/harness.toml`): `.chezmoiignore` skips the targets of every harness not selected.
 
 | Harness | Managed only when selected |
 |---|---|
@@ -99,8 +100,9 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 | `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_onchange_after_install-harness.*` |
 | `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_onchange_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_onchange_after_install-harness.*` |
+| `antigravity` | `~/.gemini/config/AGENTS.md`, `~/.gemini/config/mcp_config.json` (merge: user MCP servers), `~/.gemini/antigravity-cli/settings.json` (merge: `agentMode: "auto"`, `toolPermission: "always-proceed"`, `enableTerminalSandbox: false`, `allowNonWorkspaceAccess: true`, `permissions`); Antigravity wiring in `run_onchange_after_install-harness.*` |
 
-Shared: the `giocaizzi-harness` external and the `run_onchange_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
+Shared: the `giocaizzi-harness` external and the `run_onchange_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi`, `antigravity` is.
 
 Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
 

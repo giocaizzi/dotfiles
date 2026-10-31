@@ -33,7 +33,7 @@
        without the key gets none (.chezmoitemplates/harnesses). */ -}}
 {{- $harnesses := list -}}
 {{- if not $light }}
-{{- $all := list "claude" "copilot" "vscode" "codex" "opencode" "pi" -}}
+{{- $all := list "claude" "copilot" "vscode" "codex" "opencode" "pi" "antigravity" -}}
 {{- $harnesses = promptMultichoiceOnce . "harnesses" "[ AI HARNESSES ] Which harness configs to manage? (space toggles; Enter confirms; chezmoi never installs the CLIs)" $all (get . "harnesses" | default list) -}}
 {{- end }}
 {{- $bwsProject := "" -}}

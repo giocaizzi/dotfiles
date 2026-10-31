@@ -25,6 +25,7 @@ sounds = ["claude", "codex"]
 # (light machines select none). Shared targets stay explicit there: ~/.copilot (also
 # VS Code's instructions) and ops/.mcp.json (claude or copilot).
 [harnessTargets]
+antigravity = [".gemini"]
 claude = [".claude"]
 codex = [".codex", "ops/.codex"]
 opencode = [".config/opencode", "ops/opencode.json"]

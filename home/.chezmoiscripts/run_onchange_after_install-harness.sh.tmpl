@@ -1,6 +1,6 @@
-{{- /* Runs on Unix machines with codex, opencode or pi only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- /* Runs on Unix machines with codex, opencode, pi or antigravity only: elsewhere it renders empty and chezmoi skips it. */ -}}
 {{- $h := includeTemplate "harnesses" . | splitList " " -}}
-{{- if and (ne .chezmoi.os "windows") (or (has "codex" $h) (has "opencode" $h) (has "pi" $h)) -}}
+{{- if and (ne .chezmoi.os "windows") (or (has "codex" $h) (has "opencode" $h) (has "pi" $h) (has "antigravity" $h)) -}}
 #!/usr/bin/env bash
 # giocaizzi/harness for the harnesses that do not install it from their own settings
 # (Claude Code and Copilot CLI do: .chezmoitemplates/{claude,copilot}-settings.json).
@@ -34,6 +34,11 @@ command -v opencode >/dev/null 2>&1 && node "$HARNESS/scripts/install.mjs" openc
 if command -v pi >/dev/null 2>&1 && ! pi list 2>/dev/null | grep -qF "$HARNESS"; then
 	pi install "$HARNESS"
 fi
+{{- end }}
+{{- if has "antigravity" $harnesses }}
+
+# Antigravity: skills, agents and guard hooks from the checkout.
+command -v agy >/dev/null 2>&1 && node "$HARNESS/scripts/install.mjs" antigravity
 {{- end }}
 exit 0
 {{ end -}}

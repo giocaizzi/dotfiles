@@ -42,7 +42,7 @@ dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
 .chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
     personal/work) → global instructions of every AI harness; edit with `dots agents/<layer>` (docs/OS.md → Agent instructions)
-.chezmoitemplates/{claude,copilot}-settings.json   → merged into ~/.claude, ~/.copilot settings.json by modify_ templates
+.chezmoitemplates/{claude,copilot,antigravity}-settings.json   → merged into ~/.claude, ~/.copilot, ~/.gemini/antigravity-cli settings.json by modify_ templates
 private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `dots ssh/config` (machine-only hosts: `dots ~/.ssh/config.d/<name>`, unmanaged)
 ```
 
