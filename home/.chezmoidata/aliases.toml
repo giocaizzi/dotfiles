@@ -19,7 +19,7 @@
 # [aliasBlock.<name>]   refuse a command and print `message`
 # [aliasExternal.zsh]   Oh My Zsh alias sets, by zstyle context: true keeps them
 #
-# `make lint` validates this file; `make aliases-audit` lists live aliases that
+# `make lint` validates this file; `chezmoi dots audit aliases` lists live aliases that
 # come from nowhere declared here. See docs/SHELL.md.
 # ----------------------------------------------------------------------------
 
@@ -108,6 +108,11 @@ cmd = "chezmoi diff"
 
 [alias.cza]
 cmd = "chezmoi apply"
+
+[alias.dots]
+cmd = "chezmoi dots"
+machines = ["personal", "work"]
+why = "the chezmoi-dots plugin is installed on full machines only"
 
 # --- Projects ---
 [alias.openclaw]

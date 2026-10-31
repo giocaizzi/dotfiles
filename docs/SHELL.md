@@ -75,18 +75,17 @@ message = "pipx is not used here, use uv: ..."
 - **Frameworks:** every Oh My Zsh lib and plugin alias set is off unless declared
   `true` in `[aliasExternal.zsh]`; registry aliases load after Oh My Zsh and win.
 - **Functions** that are more than a command stay in the shell snippets, each with a
-  PowerShell twin where it applies: the edit command `dots` (full machines, over the shared
-  `_dots_edit` / `_dots-edit` and `_dots_pick` / `_dots-pick` helpers and the
-  `.chezmoitemplates/dots-edit/` templates, [OS.md](./OS.md#editing-your-dotfiles)),
-  `rp5-secrets`, `rp5-sync-infra` (personal Mac, POSIX only), fzf `h`.
-- **Checks:** `make lint` validates the registry (every alias names its shells, a
-  one-shell alias says why, known OS and role values) and lints the rendered files
-  per OS and role; CI also parses `aliases.ps1` with `pwsh`. `make aliases-audit`
-  lists aliases live in this machine's zsh and bash that the registry does not
-  account for.
+  PowerShell twin where it applies: `rp5-secrets`, `rp5-sync-infra` (personal Mac, POSIX
+  only), fzf `h`. `dots` is not one: it is an alias for the `chezmoi dots` plugin
+  ([OS.md](./OS.md#editing-your-dotfiles)).
+- **Checks:** `make lint` (`chezmoi dots lint aliases templates`) validates the registry
+  (every alias names its shells, a one-shell alias says why, known OS and role values) and
+  lints the rendered files per OS and role; CI also parses `aliases.ps1` with `pwsh`.
+  `chezmoi dots audit aliases` (`make aliases-audit`) lists aliases live in this
+  machine's zsh and bash that the registry does not account for.
 
 To add or change an alias: `dots aliases/public` (edits the registry, runs
-`make lint-aliases`, diffs and offers to apply the alias files), then open a new shell.
+`chezmoi dots lint aliases templates`, diffs and offers to apply the alias files), then open a new shell.
 
 ### Personal aliases
 
