@@ -1,0 +1,9 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) merged into
+       Antigravity's mcp_config.json; servers configured in the file stay. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $servers := get $current "mcpServers" | default dict -}}
+{{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $servers $n (dict "url" $u) }}{{ end -}}
+{{- $_ := set $current "mcpServers" $servers -}}
+{{- $current | toPrettyJson }}
