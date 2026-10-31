@@ -93,7 +93,7 @@ func (l Live) sync(ctx context.Context) error {
 		}
 	}
 	dst := filepath.Join(l.Shadow, filepath.FromSlash(l.File))
-	if err := os.WriteFile(dst, b, 0o600); err != nil {
+	if err := os.WriteFile(dst, b, 0o600); err != nil { //nolint:gosec // dst is inside the shadow source dir this process created
 		return fmt.Errorf("write %s: %w", dst, err)
 	}
 	return nil
@@ -124,7 +124,7 @@ func text(e chez.Entry) string {
 }
 
 func hash(path string) ([sha256.Size]byte, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec // path is the edited file the live view watches
 	if err != nil {
 		return [sha256.Size]byte{}, fmt.Errorf("read %s: %w", path, err)
 	}
@@ -143,11 +143,11 @@ func CopyTree(src, dst string) error {
 		case d.IsDir():
 			return os.MkdirAll(target, 0o700)
 		case d.Type().IsRegular():
-			b, err := os.ReadFile(p)
+			b, err := os.ReadFile(p) //nolint:gosec // p comes from walking the source tree the caller chose
 			if err != nil {
-				return err
+				return fmt.Errorf("read %s: %w", p, err)
 			}
-			return os.WriteFile(target, b, 0o600)
+			return os.WriteFile(target, b, 0o600) //nolint:gosec // target is inside the destination tree the caller chose
 		}
 		return nil
 	})
@@ -181,8 +181,10 @@ func (p Pane) Start(ctx context.Context, a PreviewArgs) func() {
 	if err := CopyTree(p.Src, shadow); err != nil {
 		return none
 	}
-	args := []string{p.Exe, "live", "--bin", p.Bin, "--src", shadow, "--real-src", p.Src,
-		"--file", a.File, "--edited", a.Edited, "--dir", a.Scratch}
+	args := []string{
+		p.Exe, "live", "--bin", p.Bin, "--src", shadow, "--real-src", p.Src,
+		"--file", a.File, "--edited", a.Edited, "--dir", a.Scratch,
+	}
 	for _, g := range p.Global {
 		args = append(args, "--global", g)
 	}

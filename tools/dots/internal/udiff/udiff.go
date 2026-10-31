@@ -13,7 +13,7 @@ func Diff(nameA, nameB, a, b string) string {
 	x, y := lines(a), lines(b)
 	ops := edits(x, y)
 	var out strings.Builder
-	any := false
+	changed := false
 	for i := 0; i < len(ops); {
 		if ops[i].kind == ' ' {
 			i++
@@ -29,9 +29,9 @@ func Diff(nameA, nameB, a, b string) string {
 			end++
 		}
 		end = min(lastChange+context+1, len(ops))
-		if !any {
+		if !changed {
 			fmt.Fprintf(&out, "--- %s\n+++ %s\n", nameA, nameB)
-			any = true
+			changed = true
 		}
 		hunk(&out, ops[start:end])
 		i = end

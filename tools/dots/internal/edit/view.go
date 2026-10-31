@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"golang.org/x/sync/errgroup"
@@ -90,12 +91,7 @@ func (s *Service) viewEntry(ctx context.Context, name, source, desc string, runs
 	g.SetLimit(4)
 	for i, r := range runs {
 		g.Go(func() error {
-			managed, err := s.CZ.Managed(ctx, r.o)
-			if err != nil {
-				fail[i] = err
-				return nil
-			}
-			reach[i] = strings.Join(s.Tree.Feeds(managed, source), ", ")
+			reach[i], fail[i] = s.reaches(ctx, r.o, source)
 			return nil
 		})
 	}
@@ -114,15 +110,52 @@ func (s *Service) viewEntry(ctx context.Context, name, source, desc string, runs
 	return nil
 }
 
-func (s *Service) viewTarget(ctx context.Context, target string, mode ViewMode, runs []run) error {
-	st := s.Style
-	source := ""
-	for _, r := range append([]run{{}}, runs...) {
-		if p, err := s.CZ.SourcePath(ctx, target, r.o); err == nil {
-			source = p
-			break
+// reaches lists, comma-separated, the targets one configuration builds from source.
+func (s *Service) reaches(ctx context.Context, o chez.Overrides, source string) (string, error) {
+	managed, err := s.CZ.Managed(ctx, o)
+	if err != nil {
+		return "", fmt.Errorf("managed targets: %w", err)
+	}
+	return strings.Join(s.Tree.Feeds(managed, source), ", "), nil
+}
+
+// renderGroup is a set of configurations a target renders identically on.
+type renderGroup struct {
+	labels []string
+	text   string
+}
+
+// groupRenders groups the runs by rendered text; rendered[i] is nil when run i does
+// not manage the target, and its label goes to missing.
+func groupRenders(runs []run, rendered []*string) (groups []*renderGroup, missing []string) {
+	for i, r := range runs {
+		if rendered[i] == nil {
+			missing = append(missing, r.label)
+			continue
+		}
+		found := slices.IndexFunc(groups, func(g *renderGroup) bool { return g.text == *rendered[i] })
+		if found < 0 {
+			groups = append(groups, &renderGroup{labels: []string{r.label}, text: *rendered[i]})
+		} else {
+			groups[found].labels = append(groups[found].labels, r.label)
 		}
 	}
+	return groups, missing
+}
+
+// firstSource finds the source file of target, on this machine or else on any run.
+func (s *Service) firstSource(ctx context.Context, target string, runs []run) string {
+	for _, r := range append([]run{{}}, runs...) {
+		if p, err := s.CZ.SourcePath(ctx, target, r.o); err == nil {
+			return p
+		}
+	}
+	return ""
+}
+
+func (s *Service) viewTarget(ctx context.Context, target string, mode ViewMode, runs []run) error {
+	st := s.Style
+	source := s.firstSource(ctx, target, runs)
 	if source == "" {
 		fmt.Fprintf(s.Err, "%s✗ dots: %s is no registry entry or managed target%s\n", st.R, target, st.O)
 		return ErrReported
@@ -155,30 +188,7 @@ func (s *Service) viewTarget(ctx context.Context, target string, mode ViewMode, 
 		})
 	}
 	_ = g.Wait()
-	type group struct {
-		labels []string
-		text   string
-	}
-	var groups []*group
-	var missing []string
-	for i, r := range runs {
-		if rendered[i] == nil {
-			missing = append(missing, r.label)
-			continue
-		}
-		var found *group
-		for _, g := range groups {
-			if g.text == *rendered[i] {
-				found = g
-				break
-			}
-		}
-		if found == nil {
-			groups = append(groups, &group{labels: []string{r.label}, text: *rendered[i]})
-		} else {
-			found.labels = append(found.labels, r.label)
-		}
-	}
+	groups, missing := groupRenders(runs, rendered)
 	for i, g := range groups {
 		if i == 0 {
 			fmt.Fprintf(s.Out, "%s▸ rendered on %s%s\n%s", st.B, strings.Join(g.labels, ", "), st.O, g.text)

@@ -202,7 +202,7 @@ func (c *Client) Status(ctx context.Context, targets ...string) (string, error) 
 }
 
 // Diff writes chezmoi diff for targets to w.
-func (c *Client) Diff(ctx context.Context, w io.Writer, errw io.Writer, targets ...string) error {
+func (c *Client) Diff(ctx context.Context, w, errw io.Writer, targets ...string) error {
 	return c.stream(ctx, w, errw, nil, append([]string{"diff"}, targets...)...)
 }
 

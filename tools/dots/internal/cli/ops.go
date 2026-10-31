@@ -127,7 +127,7 @@ func (d Deps) bump(ctx context.Context, args []string) error {
 			return fmt.Errorf("%w: unknown release in %v", ErrUsage, names)
 		}
 	}
-	text, err := os.ReadFile(file)
+	text, err := os.ReadFile(file) //nolint:gosec // file is the package registry in the user's own dotfiles source
 	if err != nil {
 		return fmt.Errorf("read %s: %w", file, err)
 	}
@@ -180,7 +180,7 @@ func (d Deps) upgrade(ctx context.Context, args []string) error {
 		return fmt.Errorf("%w: %w", ErrUsage, err)
 	}
 	if err := upgrade.Run(ctx, d.Runner, steps, *dry, d.Stdout, d.Stderr); err != nil {
-		return err //nolint:wrapcheck // the steps' own errors, already named
+		return err
 	}
 	if len(only) == 0 || slices.Contains(only, "releases") {
 		fmt.Fprintln(d.Stdout, "==> releases: pinned binaries")
@@ -193,7 +193,7 @@ func (d Deps) live(ctx context.Context, args []string) error {
 	fs := newFlags("live")
 	bin := fs.String("bin", "chezmoi", "")
 	src := fs.String("src", "", "")
-	real := fs.String("real-src", "", "")
+	realSrc := fs.String("real-src", "", "")
 	file := fs.String("file", "", "")
 	edited := fs.String("edited", "", "")
 	dir := fs.String("dir", "", "")
@@ -204,7 +204,7 @@ func (d Deps) live(ctx context.Context, args []string) error {
 	}
 	cz := chez.New(d.Runner, *bin, append(slices.Clone(global), "--source", *src)...)
 	l := edit.Live{
-		CZ: cz, File: *file, Edited: *edited, Shadow: *src, RealSrc: *real, Dir: *dir,
+		CZ: cz, File: *file, Edited: *edited, Shadow: *src, RealSrc: *realSrc, Dir: *dir,
 		Out: d.Stdout, Style: term.NewStyle(d.Stdout, d.Getenv), Interval: 500 * time.Millisecond,
 	}
 	return l.Loop(ctx)

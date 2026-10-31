@@ -36,19 +36,21 @@ var ErrReported = edit.ErrReported
 // ErrUsage is returned for a command line that makes no sense.
 var ErrUsage = edit.ErrUsage
 
+const cmdEdit = "edit"
+
 // Run runs one command line (the arguments after `chezmoi dots`).
 func Run(ctx context.Context, d Deps, args []string) error {
-	cmd, rest := "edit", args
+	cmd, rest := cmdEdit, args
 	if len(args) > 0 {
 		switch args[0] {
-		case "edit", "view", "list", "lint", "outdated", "bump", "upgrade", "live", "version", "help":
+		case cmdEdit, "view", "list", "lint", "audit", "outdated", "bump", "upgrade", "live", "version", "help":
 			cmd, rest = args[0], args[1:]
 		case "-h", "--help":
 			cmd = "help"
 		}
 	}
 	switch cmd {
-	case "edit":
+	case cmdEdit:
 		return d.edit(ctx, rest)
 	case "view":
 		return d.view(ctx, rest)
@@ -56,6 +58,8 @@ func Run(ctx context.Context, d Deps, args []string) error {
 		return d.list(ctx, rest)
 	case "lint":
 		return d.lint(ctx, rest)
+	case "audit":
+		return d.audit(ctx, rest)
 	case "outdated":
 		return d.outdated(ctx, rest)
 	case "bump":
@@ -98,6 +102,7 @@ usage: chezmoi dots [edit] [<what>]
        chezmoi dots view <what> [--as <os>[,<role>] | --matrix]
        chezmoi dots list
        chezmoi dots lint [registry|aliases|packages|plugins|matrix|templates]... [--harness-dir <dir>]
+       chezmoi dots audit aliases
        chezmoi dots outdated
        chezmoi dots bump [--dry-run] [<release>]...
        chezmoi dots upgrade [--dry-run] [<step>]...
@@ -138,6 +143,8 @@ copy that replaces it once the entry's check passes.
   lint                           check the registries, the config template and every
                                  rendered script and alias template (all checks, or
                                  the ones named)
+  audit aliases                  list the aliases live in this machine's zsh and bash
+                                 that the registry does not account for (exit 1 if any)
   outdated                       the pinned release binaries with a newer version
   bump                           pin the newer versions and their checksums in
                                  .chezmoidata/packages.toml (all, or the ones named)

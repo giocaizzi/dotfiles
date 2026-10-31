@@ -76,25 +76,36 @@ func (l Linter) aliases(ctx context.Context) ([]finding.Finding, error) {
 	}
 	out := aliasreg.Validate(data)
 	// The private registry needs this machine's age key; where there is none it is skipped.
-	real, err := l.Real.Data(ctx, nil)
+	realData, err := l.Real.Data(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
-	if identity := ageIdentity(real); identity != "" {
-		if _, err := os.Stat(identity); err == nil {
-			tmpl := `{{ include ".aliases.private.toml.age" | decrypt | fromToml | toJson }}`
-			b, err := l.Real.Execute(ctx, nil, []byte(tmpl), false)
-			if err != nil {
-				return nil, err
+	if identity := ageIdentity(realData); identity != "" {
+		if _, statErr := os.Stat(identity); statErr == nil {
+			private, privErr := l.privateAliases(ctx)
+			if privErr != nil {
+				return nil, privErr
 			}
-			var private map[string]any
-			if err := json.Unmarshal(b, &private); err != nil {
-				return nil, fmt.Errorf("decode private aliases: %w", err)
-			}
-			for _, f := range aliasreg.Validate(private) {
-				out = append(out, finding.New("private "+f.Where, "%s", f.Message))
-			}
+			out = append(out, private...)
 		}
+	}
+	return out, nil
+}
+
+// privateAliases validates the encrypted private registry, decrypted with this machine's key.
+func (l Linter) privateAliases(ctx context.Context) ([]finding.Finding, error) {
+	tmpl := `{{ include ".aliases.private.toml.age" | decrypt | fromToml | toJson }}`
+	b, err := l.Real.Execute(ctx, nil, []byte(tmpl), false)
+	if err != nil {
+		return nil, err
+	}
+	var private map[string]any
+	if err = json.Unmarshal(b, &private); err != nil {
+		return nil, fmt.Errorf("decode private aliases: %w", err)
+	}
+	var out []finding.Finding
+	for _, f := range aliasreg.Validate(private) {
+		out = append(out, finding.New("private "+f.Where, "%s", f.Message))
 	}
 	return out, nil
 }
@@ -285,7 +296,7 @@ func (l Linter) renderAndLint(ctx context.Context, file string, tmpl []byte, e m
 	}
 	ext := filepath.Ext(strings.TrimSuffix(file, ".tmpl"))
 	path := filepath.Join(l.Scratch, fmt.Sprintf("render-%d-%s%s", n, strings.ReplaceAll(file, "/", "_"), ext))
-	if err := os.WriteFile(path, rendered, 0o600); err != nil {
+	if err := os.WriteFile(path, rendered, 0o600); err != nil { //nolint:gosec // path is inside the linter's own scratch dir
 		return []finding.Finding{finding.New(where, "write render: %v", err)}
 	}
 	var argv []string

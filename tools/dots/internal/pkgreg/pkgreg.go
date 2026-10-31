@@ -35,13 +35,13 @@ var (
 
 // Validate checks the package and release tables of data.
 func Validate(data map[string]any) []finding.Finding {
-	var out []finding.Finding
 	pkgs, _ := data["package"].(map[string]any)
+	rels, _ := data["release"].(map[string]any)
+	out := make([]finding.Finding, 0, len(pkgs)+len(rels))
 	for _, n := range sortedKeys(pkgs) {
 		p, _ := pkgs[n].(map[string]any)
 		out = append(out, validatePackage(n, p)...)
 	}
-	rels, _ := data["release"].(map[string]any)
 	for _, n := range sortedKeys(rels) {
 		r, _ := rels[n].(map[string]any)
 		out = append(out, validateRelease(n, r)...)
@@ -126,8 +126,8 @@ type Release struct {
 
 // Releases reads the release table.
 func Releases(data map[string]any) []Release {
-	var out []Release
 	rels, _ := data["release"].(map[string]any)
+	out := make([]Release, 0, len(rels))
 	for _, n := range sortedKeys(rels) {
 		r, _ := rels[n].(map[string]any)
 		rel := Release{Name: n, Targets: map[string]string{}}

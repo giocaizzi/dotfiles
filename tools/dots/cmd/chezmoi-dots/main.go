@@ -57,9 +57,20 @@ func run(ctx context.Context, args []string, getenv func(string) string, stdin i
 	}
 }
 
+// buildVersion is the release version, set by the release build (-ldflags -X); a
+// package variable is the only way to stamp a subdirectory module's tag into the binary.
+var buildVersion string //nolint:gochecknoglobals // set at link time
+
 func version() string {
-	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" {
-		return bi.Main.Version
+	if buildVersion != "" {
+		return buildVersion
+	}
+	if bi, ok := debug.ReadBuildInfo(); ok {
+		for _, kv := range bi.Settings {
+			if kv.Key == "vcs.revision" && len(kv.Value) >= 7 {
+				return "devel-" + kv.Value[:7]
+			}
+		}
 	}
 	return "devel"
 }

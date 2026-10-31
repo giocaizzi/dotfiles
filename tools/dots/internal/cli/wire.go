@@ -72,7 +72,7 @@ func (d Deps) service(ctx context.Context, style term.Style) (*edit.Service, err
 }
 
 func (d Deps) edit(ctx context.Context, args []string) error {
-	pos, err := parse(newFlags("edit"), args)
+	pos, err := parse(newFlags(cmdEdit), args)
 	if err != nil {
 		return err
 	}

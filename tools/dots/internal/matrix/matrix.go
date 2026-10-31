@@ -29,11 +29,16 @@ type Config struct {
 func OSes() []string { return []string{"darwin", "linux", "windows"} }
 
 // Roles are the machine roles.
-func Roles() []string { return []string{"personal", "work", "light"} }
+func Roles() []string { return []string{"personal", roleWork, roleLight} }
+
+const (
+	roleWork  = "work"
+	roleLight = "light"
+)
 
 // All returns every configuration, OS-major.
 func All() []Config {
-	var all []Config
+	all := make([]Config, 0, len(OSes())*len(Roles()))
 	for _, o := range OSes() {
 		for _, r := range Roles() {
 			all = append(all, Config{OS: o, Role: r})
@@ -60,6 +65,7 @@ func Parse(s string) (Config, error) {
 // Entry is a configuration with the data it renders with.
 type Entry struct {
 	Config
+
 	Overrides chez.Overrides
 }
 
@@ -100,8 +106,8 @@ func DataKeys(tmpl []byte) []string {
 func Seed(role string, local map[string]any, harnesses []string) map[string]any {
 	str := func(k string) string { v, _ := local[k].(string); return v }
 	seed := map[string]any{
-		"light":        role == "light",
-		"work":         role == "work",
+		"light":        role == roleLight,
+		"work":         role == roleWork,
 		"harnesses":    harnesses,
 		"bwsProjectId": "",
 	}
@@ -150,7 +156,7 @@ func TOML(seed map[string]any) string {
 // Build renders the config template once per role and returns every configuration
 // with its overrides. cz must target the source dir src; scratch is a temp dir.
 func Build(ctx context.Context, cz *chez.Client, src, scratch string) ([]Entry, error) {
-	tmpl, err := os.ReadFile(filepath.Join(src, ".chezmoi.toml.tmpl"))
+	tmpl, err := os.ReadFile(filepath.Join(src, ".chezmoi.toml.tmpl")) //nolint:gosec // src is the user's own dotfiles source dir
 	if err != nil {
 		return nil, fmt.Errorf("read config template: %w", err)
 	}
@@ -174,7 +180,7 @@ func Build(ctx context.Context, cz *chez.Client, src, scratch string) ([]Entry, 
 			return nil, fmt.Errorf("render config template for %s: %w", role, err)
 		}
 		renderedPath := filepath.Join(scratch, "config-"+role+".toml")
-		if err := os.WriteFile(renderedPath, rendered, 0o600); err != nil {
+		if err = os.WriteFile(renderedPath, rendered, 0o600); err != nil { //nolint:gosec // renderedPath is inside the scratch dir this process created
 			return nil, fmt.Errorf("write rendered config: %w", err)
 		}
 		got, err := cz.With("--config", renderedPath).Data(ctx, nil)

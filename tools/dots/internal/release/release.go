@@ -108,7 +108,7 @@ func (f Finder) get(ctx context.Context, url string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("get %s: %w", url, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("get %s: %s", url, resp.Status)
 	}
 	return resp.Body, nil
@@ -133,18 +133,24 @@ func (f Finder) Check(ctx context.Context, rels []pkgreg.Release) []Status {
 	g.SetLimit(6)
 	for i, r := range rels {
 		g.Go(func() error {
-			out[i] = Status{Release: r}
-			up, err := r.Upstream()
-			if err != nil {
-				out[i].Err = err
-				return nil
-			}
-			out[i].Latest, out[i].Err = f.Latest(ctx, up)
+			out[i] = f.status(ctx, r)
 			return nil
 		})
 	}
 	_ = g.Wait()
 	return out
+}
+
+// status looks up one release; a failure is recorded in the Status, not returned.
+func (f Finder) status(ctx context.Context, r pkgreg.Release) Status {
+	st := Status{Release: r}
+	up, err := r.Upstream()
+	if err != nil {
+		st.Err = err
+		return st
+	}
+	st.Latest, st.Err = f.Latest(ctx, up)
+	return st
 }
 
 // Sums downloads version of r for every platform and returns the checksums.

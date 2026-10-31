@@ -5,6 +5,19 @@ runs it (the registry alias `dots` is `chezmoi dots`). It replaces the twin POSI
 `dots` functions, the `.chezmoitemplates/dots-edit/` helpers and the `scripts/*-lint.sh`
 checks with one tested Go binary.
 
+## As built
+
+Where the code differs from the first design below, the code wins:
+
+- Flags use the standard library `flag` (no cobra); a hand-written dispatcher in `internal/cli`.
+- `live` polls the edited file's mtime and hash (no fsnotify); the side pane opens in tmux, or in Windows Terminal on Windows.
+- The picker runs fzf when installed, else a numbered prompt (no fuzzy-finder library).
+- The composition tree reads template edges with patterns (`internal/tree`), not the template AST: exact for how this repository writes templates, and a branch is listed whichever role takes it.
+- TOML is read through `chezmoi data` (no TOML library); the registry rewrite in `pkgreg.SetRelease` is a line-preserving text edit so comments and order survive.
+- End-to-end tests call `cli.Run` against a real chezmoi and a fixture source (`internal/cli/e2e_test.go`), not `testscript`.
+- `dotsRender`: an override-data flag set on every read-only render; `.chezmoiexternal.toml.tmpl` renders empty under it, because chezmoi fetches every external while reading the source state, even for a `dump` that excludes them.
+- `audit aliases` (port of the old `aliases-audit.sh`) and the release version (`-ldflags -X main.buildVersion`, set by the release workflow) were added.
+
 ## Goals and rules
 
 1. **Never on the apply path.** Templates, `modify_` files, hooks and scripts never call the

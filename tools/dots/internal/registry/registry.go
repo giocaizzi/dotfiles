@@ -100,6 +100,21 @@ func parseEntry(name string, m map[string]any) (Entry, []finding.Finding) {
 	if e.Desc == "" {
 		bad("desc is required")
 	}
+	checkWhere(m, e, bad)
+	if d, ok := m["diff"]; ok {
+		if d != "first" {
+			bad(`diff must be "first"`)
+		}
+		e.First = d == "first"
+	}
+	if c, ok := m["check"]; ok {
+		e.Check = parseCheck(c, bad)
+	}
+	return e, out
+}
+
+// checkWhere checks that an entry points at exactly one place: a local folder or a source file.
+func checkWhere(m map[string]any, e Entry, bad func(string, ...any)) {
 	_, hasLocal := m["local"]
 	switch {
 	case hasLocal:
@@ -115,27 +130,24 @@ func parseEntry(name string, m map[string]any) (Entry, []finding.Finding) {
 	case e.Source == "":
 		bad("source is required")
 	}
-	if d, ok := m["diff"]; ok {
-		if d != "first" {
-			bad(`diff must be "first"`)
-		}
-		e.First = d == "first"
+}
+
+// parseCheck reads the check command, keeping the strings before the first non-string.
+func parseCheck(c any, bad func(string, ...any)) []string {
+	list, isList := c.([]any)
+	if !isList || len(list) == 0 {
+		bad("check must be a command as a list: [\"make\", \"lint\"], with {file} for the edited file")
 	}
-	if c, ok := m["check"]; ok {
-		list, isList := c.([]any)
-		if !isList || len(list) == 0 {
-			bad("check must be a command as a list: [\"make\", \"lint\"], with {file} for the edited file")
+	var check []string
+	for _, a := range list {
+		s, isStr := a.(string)
+		if !isStr {
+			bad("check must be a list of strings")
+			break
 		}
-		for _, a := range list {
-			s, isStr := a.(string)
-			if !isStr {
-				bad("check must be a list of strings")
-				break
-			}
-			e.Check = append(e.Check, s)
-		}
+		check = append(check, s)
 	}
-	return e, out
+	return check
 }
 
 // Validate checks the registry against the source tree: every source exists, and

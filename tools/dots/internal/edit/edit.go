@@ -99,8 +99,9 @@ type Service struct {
 // file (source-relative) or a managed target. Empty picks a registry entry.
 func (s *Service) Run(ctx context.Context, what string) error {
 	if what == "" {
-		items := make([]string, 0)
-		for _, n := range s.Registry.Names() {
+		names := s.Registry.Names()
+		items := make([]string, 0, len(names))
+		for _, n := range names {
 			e, _ := s.Registry.Get(n)
 			items = append(items, n+"\t"+e.Desc)
 		}
@@ -129,7 +130,7 @@ func (s *Service) Run(ctx context.Context, what string) error {
 			return s.editLocal(ctx, e, dir, strings.TrimPrefix(rel, e.Local+"/"))
 		}
 	}
-	if fi, err := os.Stat(filepath.Join(s.Src, filepath.FromSlash(what))); err == nil && fi.Mode().IsRegular() {
+	if fi, statErr := os.Stat(filepath.Join(s.Src, filepath.FromSlash(what))); statErr == nil && fi.Mode().IsRegular() {
 		return s.editFile(ctx, filepath.ToSlash(what))
 	}
 	file, err := s.pickNode(ctx, what)
@@ -159,7 +160,7 @@ func (s *Service) pickNode(ctx context.Context, target string) (string, error) {
 	}
 	var files, items []string
 	for _, n := range s.Tree.Of(filepath.ToSlash(rel)) {
-		if fi, err := os.Stat(filepath.Join(s.Src, filepath.FromSlash(n.Path))); err != nil || !fi.Mode().IsRegular() {
+		if fi, statErr := os.Stat(filepath.Join(s.Src, filepath.FromSlash(n.Path))); statErr != nil || !fi.Mode().IsRegular() {
 			continue
 		}
 		files = append(files, n.Path)
@@ -233,45 +234,21 @@ func (s *Service) editSource(ctx context.Context, e *registry.Entry, file string
 	edited := path
 	encrypted := strings.HasSuffix(file, ".age")
 	if encrypted {
-		plain, err := s.CZ.Decrypt(ctx, path)
-		if err != nil {
-			return fmt.Errorf("decrypt %s: %w", file, err)
-		}
-		edited = filepath.Join(scratch, "edit")
-		if err := os.WriteFile(edited, plain, 0o600); err != nil {
-			return fmt.Errorf("write private copy: %w", err)
-		}
-	}
-	sumBefore, err := sum(edited)
-	if err != nil {
-		return err
-	}
-	stop := func() {}
-	if s.Preview != nil && before.here.err == nil {
-		stop = s.Preview.Start(ctx, PreviewArgs{File: file, Edited: edited, Scratch: scratch, Baseline: before.here.state})
-	}
-	editErr := s.Editor.Edit(ctx, edited)
-	stop()
-	if editErr != nil {
-		fmt.Fprintf(s.Err, "%s✗ The editor failed: %s unchanged.%s\n", s.Style.R, path, s.Style.O)
-		return ErrReported
-	}
-	if sumAfter, err := sum(edited); err != nil {
-		return err
-	} else if encrypted && sumAfter != sumBefore {
-		if err := s.reencrypt(ctx, edited, path); err != nil {
+		if edited, err = s.privateCopy(ctx, path, file, scratch); err != nil {
 			return err
 		}
 	}
-	if e != nil && len(e.Check) > 0 {
-		wt, err := s.CZ.WorkingTree(ctx)
-		if err != nil {
-			return fmt.Errorf("working tree: %w", err)
+	changed, err := s.openEditor(ctx, file, path, edited, scratch, before.here)
+	if err != nil {
+		return err
+	}
+	if encrypted && changed {
+		if err = s.reencrypt(ctx, edited, path); err != nil {
+			return err
 		}
-		if err := s.Check.Check(ctx, wt, withFile(e.Check, edited)); err != nil {
-			fmt.Fprintf(s.Err, "%s✗ Check failed, nothing applied.%s The source keeps the edit: run the command again to fix it (%s).\n", s.Style.R, s.Style.O, path)
-			return ErrReported
-		}
+	}
+	if err = s.runCheck(ctx, e, edited, path); err != nil {
+		return err
 	}
 	after := s.snapshot(ctx, entries)
 	if !s.report(entries, before, after) || after.here.err != nil {
@@ -284,8 +261,61 @@ func (s *Service) editSource(ctx context.Context, e *registry.Entry, file string
 	return s.apply(ctx, e, before, after)
 }
 
+// privateCopy decrypts the source file into the scratch dir and returns the copy's path.
+func (s *Service) privateCopy(ctx context.Context, path, file, scratch string) (string, error) {
+	plain, err := s.CZ.Decrypt(ctx, path)
+	if err != nil {
+		return "", fmt.Errorf("decrypt %s: %w", file, err)
+	}
+	copyPath := filepath.Join(scratch, "edit")
+	if err = os.WriteFile(copyPath, plain, 0o600); err != nil {
+		return "", fmt.Errorf("write private copy: %w", err)
+	}
+	return copyPath, nil
+}
+
+// openEditor runs the editor on edited, with the preview beside it, and reports
+// whether the file changed.
+func (s *Service) openEditor(ctx context.Context, file, path, edited, scratch string, here result) (bool, error) {
+	sumBefore, err := sum(edited)
+	if err != nil {
+		return false, err
+	}
+	stop := func() {}
+	if s.Preview != nil && here.err == nil {
+		stop = s.Preview.Start(ctx, PreviewArgs{File: file, Edited: edited, Scratch: scratch, Baseline: here.state})
+	}
+	editErr := s.Editor.Edit(ctx, edited)
+	stop()
+	if editErr != nil {
+		fmt.Fprintf(s.Err, "%s✗ The editor failed: %s unchanged.%s\n", s.Style.R, path, s.Style.O)
+		return false, ErrReported
+	}
+	sumAfter, err := sum(edited)
+	if err != nil {
+		return false, err
+	}
+	return sumAfter != sumBefore, nil
+}
+
+// runCheck runs the entry's check command, if it has one, on the edited file.
+func (s *Service) runCheck(ctx context.Context, e *registry.Entry, edited, path string) error {
+	if e == nil || len(e.Check) == 0 {
+		return nil
+	}
+	wt, err := s.CZ.WorkingTree(ctx)
+	if err != nil {
+		return fmt.Errorf("working tree: %w", err)
+	}
+	if err = s.Check.Check(ctx, wt, withFile(e.Check, edited)); err != nil {
+		fmt.Fprintf(s.Err, "%s✗ Check failed, nothing applied.%s The source keeps the edit: run the command again to fix it (%s).\n", s.Style.R, s.Style.O, path)
+		return ErrReported
+	}
+	return nil
+}
+
 func (s *Service) reencrypt(ctx context.Context, edited, path string) error {
-	plain, err := os.ReadFile(edited)
+	plain, err := os.ReadFile(edited) //nolint:gosec // edited is the source file being edited or its private copy in the scratch dir
 	if err != nil {
 		return fmt.Errorf("read %s: %w", edited, err)
 	}
@@ -312,13 +342,7 @@ func (s *Service) apply(ctx context.Context, e *registry.Entry, before, after sn
 	}
 	var targets, scripts []string
 	if before.here.err == nil {
-		for _, t := range chez.Changed(before.here.state, after.here.state) {
-			if name, ok := strings.CutPrefix(t, ".chezmoiscripts/"); ok {
-				scripts = append(scripts, name)
-			} else {
-				targets = append(targets, filepath.Join(home, filepath.FromSlash(t)))
-			}
-		}
+		targets, scripts = changedTargets(home, before.here.state, after.here.state)
 	}
 	st := s.Style
 	if len(scripts) > 0 {
@@ -332,33 +356,60 @@ func (s *Service) apply(ctx context.Context, e *registry.Entry, before, after sn
 	}
 	if pending == "" {
 		fmt.Fprintf(s.Err, "%s✓ Targets up to date: nothing to apply.%s\n", st.G, st.O)
-	} else {
-		show := targets
-		if e != nil && e.First {
-			show = targets[:1]
-		}
-		if err := s.CZ.Diff(ctx, s.Out, s.Err, show...); err != nil {
-			return fmt.Errorf("diff: %w", err)
-		}
-		yes, err := s.Prompt.Confirm(st.Y+"apply now?"+st.O, false)
-		if err != nil {
-			return fmt.Errorf("confirm: %w", err)
-		}
-		if yes {
-			if err := s.CZ.Apply(ctx, s.Out, s.Err, targets...); err != nil {
-				return fmt.Errorf("apply: %w", err)
-			}
-			fmt.Fprintf(s.Err, "%s✓ applied%s\n", st.G, st.O)
-			if e != nil && e.Note != "" {
-				fmt.Fprintf(s.Err, "%s%s%s\n", st.D, e.Note, st.O)
-			}
+	} else if err = s.offerApply(ctx, e, targets); err != nil {
+		return err
+	}
+	return s.reportSourceChanges(ctx)
+}
+
+// changedTargets splits what the edit changed into target paths under home and
+// the names of the scripts chezmoi runs on its next full apply.
+func changedTargets(home string, before, after chez.State) (targets, scripts []string) {
+	for _, t := range chez.Changed(before, after) {
+		if name, ok := strings.CutPrefix(t, ".chezmoiscripts/"); ok {
+			scripts = append(scripts, name)
+		} else {
+			targets = append(targets, filepath.Join(home, filepath.FromSlash(t)))
 		}
 	}
+	return targets, scripts
+}
+
+// offerApply shows the diff of the targets and applies them when the user agrees.
+func (s *Service) offerApply(ctx context.Context, e *registry.Entry, targets []string) error {
+	st := s.Style
+	show := targets
+	if e != nil && e.First {
+		show = targets[:1]
+	}
+	if err := s.CZ.Diff(ctx, s.Out, s.Err, show...); err != nil {
+		return fmt.Errorf("diff: %w", err)
+	}
+	yes, err := s.Prompt.Confirm(st.Y+"apply now?"+st.O, false)
+	if err != nil {
+		return fmt.Errorf("confirm: %w", err)
+	}
+	if !yes {
+		return nil
+	}
+	if err = s.CZ.Apply(ctx, s.Out, s.Err, targets...); err != nil {
+		return fmt.Errorf("apply: %w", err)
+	}
+	fmt.Fprintf(s.Err, "%s✓ applied%s\n", st.G, st.O)
+	if e != nil && e.Note != "" {
+		fmt.Fprintf(s.Err, "%s%s%s\n", st.D, e.Note, st.O)
+	}
+	return nil
+}
+
+// reportSourceChanges tells the user the dotfiles source has uncommitted changes.
+func (s *Service) reportSourceChanges(ctx context.Context) error {
+	st := s.Style
 	wt, err := s.CZ.WorkingTree(ctx)
 	if err != nil {
 		return fmt.Errorf("working tree: %w", err)
 	}
-	if changes, err := s.Git.Status(ctx, wt); err == nil && changes != "" {
+	if changes, gitErr := s.Git.Status(ctx, wt); gitErr == nil && changes != "" {
 		fmt.Fprintf(s.Err, "%s▸ the dotfiles source changed:%s ship a PR (e.g. /ship) from %s\n", st.B, st.O, wt)
 		for line := range strings.SplitSeq(changes, "\n") {
 			fmt.Fprintf(s.Err, "  %s%s%s\n", st.D, line, st.O)
@@ -421,7 +472,7 @@ func withFile(argv []string, file string) []string {
 }
 
 func sum(path string) ([32]byte, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) //nolint:gosec // path is the source file being edited or its private copy
 	if err != nil {
 		return [32]byte{}, fmt.Errorf("read %s: %w", path, err)
 	}

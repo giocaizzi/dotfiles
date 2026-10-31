@@ -13,6 +13,12 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
 )
 
+const (
+	verbUpdate  = "update"
+	verbUpgrade = "upgrade"
+	binBrew     = "brew"
+)
+
 // Step is one update: a name, why it exists and the commands that do it.
 type Step struct {
 	Name string
@@ -33,30 +39,30 @@ type Env struct {
 func Plan(e Env) []Step {
 	steps := []Step{{
 		Name: "dotfiles", Desc: "pull the dotfiles and apply them (refreshes due externals)",
-		Cmds: [][]string{{e.Bin, "update", "--refresh-externals"}},
+		Cmds: [][]string{{e.Bin, verbUpdate, "--refresh-externals"}},
 	}}
 	switch e.GOOS {
 	case "darwin":
 		steps = append(steps, Step{
-			Name: "brew", Desc: "Homebrew formulae and casks",
-			Cmds: [][]string{{"brew", "update"}, {"brew", "upgrade"}, {"brew", "upgrade", "--cask"}},
+			Name: binBrew, Desc: "Homebrew formulae and casks",
+			Cmds: [][]string{{binBrew, verbUpdate}, {binBrew, verbUpgrade}, {binBrew, verbUpgrade, "--cask"}},
 		})
 	case "linux":
 		steps = append(steps, Step{
 			Name: "apt", Desc: "apt packages",
-			Cmds: [][]string{{"sudo", "apt-get", "update"}, {"sudo", "apt-get", "upgrade", "-y"}},
+			Cmds: [][]string{{"sudo", "apt-get", verbUpdate}, {"sudo", "apt-get", verbUpgrade, "-y"}},
 		})
 	case "windows":
 		steps = append(steps, Step{
 			Name: "winget", Desc: "winget packages",
-			Cmds: [][]string{{"winget", "upgrade", "--all", "--silent", "--accept-package-agreements", "--accept-source-agreements"}},
+			Cmds: [][]string{{"winget", verbUpgrade, "--all", "--silent", "--accept-package-agreements", "--accept-source-agreements"}},
 		})
 	}
-	uv := Step{Name: "uv", Desc: "uv tools (and uv itself where its own installer put it)", Cmds: [][]string{{"uv", "tool", "upgrade", "--all"}}}
+	uv := Step{Name: "uv", Desc: "uv tools (and uv itself where its own installer put it)", Cmds: [][]string{{"uv", "tool", verbUpgrade, "--all"}}}
 	if e.GOOS != "darwin" {
-		uv.Cmds = append([][]string{{"uv", "self", "update"}}, uv.Cmds...)
+		uv.Cmds = append([][]string{{"uv", "self", verbUpdate}}, uv.Cmds...)
 	}
-	npm := []string{"npm", "update", "-g"}
+	npm := []string{"npm", verbUpdate, "-g"}
 	if e.GOOS == "linux" {
 		npm = append(npm, "--prefix", filepath.Join(e.Home, ".local"))
 	}

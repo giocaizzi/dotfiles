@@ -112,7 +112,9 @@ func TestValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 			d := validData()
-			tt.mutate(d["release"].(map[string]any)["x"].(map[string]any))
+			rels, _ := d["release"].(map[string]any)
+			x, _ := rels["x"].(map[string]any)
+			tt.mutate(x)
 			if got := finding.Lines(Validate(d)); !strings.Contains(got, tt.want) {
 				t.Errorf("Validate() = %q, want it to contain %q", got, tt.want)
 			}

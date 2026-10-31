@@ -136,12 +136,10 @@ func (p *Prompter) Confirm(question string, def bool) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	switch {
-	case a == "":
+	if a == "" {
 		return def, nil
-	default:
-		return strings.EqualFold(a[:1], "y"), nil
 	}
+	return strings.EqualFold(a[:1], "y"), nil
 }
 
 // Pick returns the chosen item, or "" when the user picked nothing valid.
@@ -165,9 +163,8 @@ func (p *Prompter) Pick(ctx context.Context, label string, items []string) (stri
 	if err != nil {
 		return "", err
 	}
-	n, convErr := strconv.Atoi(a)
-	if convErr != nil || n < 1 || n > len(items) {
-		return "", nil
+	if n, convErr := strconv.Atoi(a); convErr == nil && n >= 1 && n <= len(items) {
+		return items[n-1], nil
 	}
-	return items[n-1], nil
+	return "", nil
 }
