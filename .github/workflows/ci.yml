@@ -19,31 +19,59 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # The edit commands on Windows: Git Bash, Windows PowerShell 5.1 and pwsh.
-  windows:
-    runs-on: windows-latest
+  # The chezmoi-dots plugin (tools/dots): lint and tests on every OS it ships for. The
+  # end-to-end tests drive a real chezmoi, so it is installed first.
+  dots:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: tools/dots
     steps:
       - uses: actions/checkout@v7
-      - name: Install chezmoi
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/dots/go.mod
+      - if: runner.os != 'Windows'
+        run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - if: runner.os == 'Windows'
         shell: pwsh
         run: |
           iex "&{$(irm 'https://get.chezmoi.io/ps1')} -b '$env:USERPROFILE\bin' -t v2.70.0"
           "$env:USERPROFILE\bin" >> $env:GITHUB_PATH
-      # The aliases entry checks with make lint-aliases (shellcheck inside).
-      - run: choco install -y --no-progress make shellcheck
-      - run: sh scripts/dots-edit-test.sh
-        shell: bash
+      - if: runner.os != 'Windows'
+        run: make check
+      # Windows runners have no make: the same two steps by hand.
+      - if: runner.os == 'Windows'
+        run: go test -race -shuffle=on ./...
 
-  # Required status check: aggregates gitleaks and the Windows tests, runs make check.
+  dots-vuln:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/dots/go.mod
+      - run: make -C tools/dots vuln
+
+  # Required status check: aggregates the jobs above, runs make check.
   check:
-    needs: [gitleaks, windows]
+    needs: [gitleaks, dots, dots-vuln]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Require upstream jobs
-        if: needs.gitleaks.result != 'success' || needs.windows.result != 'success'
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
         run: exit 1
       - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/dots/go.mod
       - run: sudo apt-get install -y --no-install-recommends zsh
       # make lint renders the script templates with chezmoi.
       - run: |
@@ -51,4 +79,4 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make check
         env:
-          GH_TOKEN: ${{ github.token }}  # lint-plugins reads giocaizzi/harness plugins/
+          GH_TOKEN: ${{ github.token }}  # the plugins check reads giocaizzi/harness plugins/

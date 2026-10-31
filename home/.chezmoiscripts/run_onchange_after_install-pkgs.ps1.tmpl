@@ -1,0 +1,112 @@
+{{- /* Runs on Windows only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- $pkgs := dict -}}
+{{- range list "winget" "uv" "npm" "az" "python" "ompFont" "psmodule" "script" -}}
+{{-   $_ := set $pkgs . (includeTemplate "packages" (dict "manager" . "ctx" $) | fromJson) -}}
+{{- end -}}
+#Requires -Version 5.1
+# Installs this machine's packages from the package registry (.chezmoidata/packages.toml,
+# docs/OS.md#packages): winget (user scope unless the registry says machine), each tool's
+# own installer step, uv's Python, uv tools, npm tools, Azure CLI extensions, Nerd Fonts
+# (per user, by oh-my-posh) and PowerShell modules. Release binaries are chezmoi
+# externals, not this script. Runs after files and externals are in place, and again
+# whenever the rendered lists below change. Idempotent; upgrades: chezmoi dots upgrade.
+$ErrorActionPreference = 'Stop'
+
+function Write-Step([string]$msg) { Write-Host "==> $msg" -ForegroundColor Blue }
+function Test-Command([string]$cmd) { [bool](Get-Command -Name $cmd -ErrorAction SilentlyContinue) }
+# winget's PATH edits reach only new sessions: reload so freshly installed tools are found.
+function Update-Path {
+    $env:Path = [Environment]::GetEnvironmentVariable('Path', 'User') + ';' +
+        [Environment]::GetEnvironmentVariable('Path', 'Machine')
+}
+
+if (-not (Test-Command 'winget')) {
+    throw "winget is required: install 'App Installer' from the Microsoft Store."
+}
+
+Write-Step 'winget'
+$winget = @(
+{{- range $pkgs.winget }}
+    @{ Name = '{{ .name }}'; Id = '{{ .id }}'; Cmd = '{{ get .entry "cmd" | default .name }}'; Scope = '{{ get .entry "scope" | default "user" }}' }
+{{- end }}
+)
+foreach ($p in $winget) {
+    if (Test-Command $p.Cmd) { continue }
+    Write-Host "  installing $($p.Name) ($($p.Id))"
+    winget install --id $p.Id --exact --silent --scope $p.Scope `
+        --accept-package-agreements --accept-source-agreements --source winget | Out-Null
+    if ($LASTEXITCODE -ne 0) { Write-Warning "winget install failed: $($p.Name) ($($p.Id))" }
+}
+Update-Path
+{{- range $pkgs.script }}
+{{-   if eq .name "uv" }}
+
+if (-not (Test-Command 'uv')) {
+    Write-Step 'uv (official installer)'
+    # Into ~\.local\bin, user only (winget's user scope misplaces portable packages on
+    # managed PCs). UV_NO_MODIFY_PATH: profile.ps1 already puts ~\.local\bin on PATH.
+    $env:UV_NO_MODIFY_PATH = '1'
+    Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
+}
+{{-   else }}
+{{-     fail (printf "packages.toml: %s has script = [\"windows\"] but run_onchange_after_install-pkgs.ps1.tmpl has no step for it" .name) }}
+{{-   end }}
+{{- end }}
+{{- if or $pkgs.python $pkgs.uv }}
+
+$uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
+if (-not $uv) { $uv = Join-Path $HOME '.local\bin\uv.exe' }
+{{- end }}
+{{- range $pkgs.python }}
+
+Write-Step 'Python {{ .id }} (uv)'
+# --no-bin: uv's python.exe launchers in ~\.local\bin are blocked on managed PCs;
+# profile.ps1 puts the interpreter folder on PATH instead.
+& $uv python install '{{ .id }}' --no-bin
+{{- end }}
+{{- if $pkgs.uv }}
+
+Write-Step 'uv tools'
+{{-   range $pkgs.uv }}
+& $uv tool install '{{ .id }}'
+{{-   end }}
+{{- end }}
+{{- if $pkgs.npm }}
+
+Write-Step 'npm tools'
+if (Test-Command 'npm') {
+    npm install -g{{ range $pkgs.npm }} '{{ .id }}'{{ end }}
+} else {
+    Write-Warning 'npm not found: open a new shell and run chezmoi apply again'
+}
+{{- end }}
+{{- if $pkgs.az }}
+
+Write-Step 'Azure CLI extensions'
+{{-   range $pkgs.az }}
+az extension show --name '{{ .id }}' *> $null
+if ($LASTEXITCODE -ne 0) { az extension add --name '{{ .id }}' }
+{{-   end }}
+{{- end }}
+{{- if $pkgs.ompFont }}
+
+Write-Step 'Nerd Fonts (oh-my-posh, per user)'
+{{-   range $pkgs.ompFont }}
+if (-not ((Test-Path "$env:LOCALAPPDATA\Microsoft\Windows\Fonts\{{ .entry.fontFile }}") -or
+          (Test-Path "$env:WINDIR\Fonts\{{ .entry.fontFile }}"))) {
+    oh-my-posh font install '{{ .id }}'
+    if ($LASTEXITCODE -ne 0) { Write-Warning 'Font install failed: {{ .id }}' }
+}
+{{-   end }}
+{{- end }}
+{{- if $pkgs.psmodule }}
+
+Write-Step 'PowerShell modules'
+{{-   range $pkgs.psmodule }}
+if (-not (Get-Module -ListAvailable -Name '{{ .name }}' | Where-Object { $_.Version -ge [version]'{{ .id }}' })) {
+    Install-Module -Name '{{ .name }}' -MinimumVersion '{{ .id }}' -Scope CurrentUser -Force -AllowClobber
+}
+{{-   end }}
+{{- end }}
+{{ end -}}

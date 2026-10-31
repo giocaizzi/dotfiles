@@ -1,0 +1,22 @@
+{{- /* Package registry selector (.chezmoidata/packages.toml). Called as
+  includeTemplate "packages" (dict "manager" "<field>" "ctx" .) | fromJson
+  Returns this machine's packages that set <field> (brew, cask, apt, winget, uv, npm,
+  az, psmodule, python, ompFont, script), by role, sorted by name, as
+  [{"name": …, "id": …, "entry": {…}}]; id is the field's value, or the name where the
+  value is true. For script, id is unset and the entry is returned when its list has
+  this OS. */ -}}
+{{- $ctx := .ctx -}}
+{{- $manager := .manager -}}
+{{- $role := includeTemplate "role" $ctx -}}
+{{- $out := list -}}
+{{- range $name, $p := get $ctx "package" | default dict -}}
+{{-   if has $role (get $p "roles" | default (list "personal" "work")) -}}
+{{-     $v := get $p $manager -}}
+{{-     if eq $manager "script" -}}
+{{-       if has $ctx.chezmoi.os ($v | default list) }}{{ $out = append $out (dict "name" $name "entry" $p) }}{{ end -}}
+{{-     else if $v -}}
+{{-       $out = append $out (dict "name" $name "id" (ternary $name (toString $v) (kindIs "bool" $v)) "entry" $p) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- $out | toJson -}}

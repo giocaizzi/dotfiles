@@ -1,0 +1,124 @@
+{{- /* Runs on Unix only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if ne .chezmoi.os "windows" -}}
+{{- $pkgs := dict -}}
+{{- range list "brew" "cask" "apt" "uv" "npm" "az" "python" "script" -}}
+{{-   $_ := set $pkgs . (includeTemplate "packages" (dict "manager" . "ctx" $) | fromJson) -}}
+{{- end -}}
+#!/usr/bin/env bash
+# Installs this machine's packages from the package registry (.chezmoidata/packages.toml,
+# docs/OS.md#packages): Homebrew on macOS, apt on Linux, then each tool's own installer
+# step, uv's Python, uv tools, npm tools and Azure CLI extensions. Release binaries are
+# chezmoi externals, not this script. Runs after files and externals are in place, and
+# again whenever the rendered lists below change. Idempotent; upgrades: chezmoi dots upgrade.
+set -euo pipefail
+
+step() { printf '\033[34m==>\033[0m %s\n' "$*"; }
+mkdir -p "$HOME/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+{{- if eq .chezmoi.os "darwin" }}
+
+step "Homebrew"
+if ! command -v brew >/dev/null 2>&1; then
+	echo "Homebrew is required: https://brew.sh" >&2
+	exit 1
+fi
+brew bundle --no-upgrade --file=/dev/stdin <<'BREWFILE'
+{{- range $pkgs.brew }}
+brew {{ .id | quote }}
+{{- end }}
+{{- range $pkgs.cask }}
+cask {{ .id | quote }}
+{{- end }}
+BREWFILE
+{{- end }}
+{{- if eq .chezmoi.os "linux" }}
+{{-   $scripted := list }}{{ range $pkgs.script }}{{ $scripted = append $scripted .name }}{{ end }}
+{{-   if has "gh" $scripted }}
+
+if [ ! -f /etc/apt/sources.list.d/github-cli.list ]; then
+	step "GitHub CLI apt repository"
+	sudo mkdir -p -m 755 /etc/apt/keyrings
+	curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg |
+		sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg >/dev/null
+	sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+	echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" |
+		sudo tee /etc/apt/sources.list.d/github-cli.list >/dev/null
+fi
+{{-   end }}
+
+step "apt"
+sudo apt-get update
+sudo apt-get install -y{{ range $pkgs.apt }} {{ .id | quote }}{{ end }}
+# Debian names fd fdfind
+if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+	ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
+fi
+{{-   range $pkgs.script }}
+{{-     if eq .name "uv" }}
+
+command -v uv >/dev/null 2>&1 || {
+	step "uv (official installer)"
+	# UV_NO_MODIFY_PATH: ~/.profile already puts ~/.local/bin on PATH.
+	curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh
+}
+{{-     else if eq .name "oh-my-posh" }}
+
+command -v oh-my-posh >/dev/null 2>&1 || {
+	step "oh-my-posh (official installer)"
+	curl -fsSL https://ohmyposh.dev/install.sh | bash -s -- -d "$HOME/.local/bin"
+}
+{{-     else if eq .name "node" }}
+
+command -v node >/dev/null 2>&1 || {
+	step "Node.js LTS (NodeSource)"
+	curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+	sudo apt-get install -y nodejs
+}
+{{-     else if eq .name "az" }}
+
+command -v az >/dev/null 2>&1 || {
+	step "Azure CLI (Microsoft apt repository)"
+	curl -fsSL https://aka.ms/InstallAzureCLIDeb | sudo bash
+}
+{{-     else if eq .name "gopls" }}
+
+command -v gopls >/dev/null 2>&1 || {
+	step "gopls (go install)"
+	GOBIN="$HOME/.local/bin" go install golang.org/x/tools/gopls@latest
+}
+{{-     else if ne .name "gh" }}
+{{-       fail (printf "packages.toml: %s has script = [\"linux\"] but run_onchange_after_install-pkgs.sh.tmpl has no step for it" .name) }}
+{{-     end }}
+{{-   end }}
+{{- end }}
+{{- range $pkgs.python }}
+
+step "Python {{ .id }} (uv)"
+# --default is a uv preview feature; opting in explicitly silences its warning.
+uv python install {{ .id | quote }} --default --preview-features python-install-default
+{{- end }}
+{{- if $pkgs.uv }}
+
+step "uv tools"
+{{-   range $pkgs.uv }}
+uv tool install {{ .id | quote }}
+{{-   end }}
+{{- end }}
+{{- if $pkgs.npm }}
+
+step "npm tools"
+{{-   if eq .chezmoi.os "linux" }}
+# NodeSource's global prefix is /usr: keep npm -g in ~/.local, without sudo.
+npm install -g --prefix "$HOME/.local"{{ range $pkgs.npm }} {{ .id | quote }}{{ end }}
+{{-   else }}
+npm install -g{{ range $pkgs.npm }} {{ .id | quote }}{{ end }}
+{{-   end }}
+{{- end }}
+{{- if $pkgs.az }}
+
+step "Azure CLI extensions"
+{{-   range $pkgs.az }}
+az extension show --name {{ .id | quote }} >/dev/null 2>&1 || az extension add --name {{ .id | quote }}
+{{-   end }}
+{{- end }}
+{{ end -}}

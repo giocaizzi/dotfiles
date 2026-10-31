@@ -1,0 +1,43 @@
+name: bump-releases
+
+# Weekly: pin newer versions of the release binaries in .chezmoidata/packages.toml
+# (`chezmoi dots bump`) and open a PR. Set the BUMP_TOKEN secret (a token that may open
+# PRs) so CI runs on that PR; without it the PR is opened with GITHUB_TOKEN and its
+# checks must be started by hand.
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/dots/go.mod
+      - run: make -C tools/dots build
+      - name: Bump
+        env:
+          CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
+        run: tools/dots/bin/chezmoi-dots bump
+      - name: Open the PR
+        env:
+          GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
+        run: |
+          set -eu
+          git diff --quiet && { echo "Everything is up to date."; exit 0; }
+          branch=chore/bump-releases
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "chore(deps): bump pinned release binaries"
+          git push --force origin "$branch"
+          gh pr create --base main --head "$branch" --title "chore(deps): bump pinned release binaries" \
+            --body "Versions and checksums from \`chezmoi dots bump\`. See docs/OS.md#packages." \
+            || gh pr edit "$branch" --body "Versions and checksums from \`chezmoi dots bump\`. See docs/OS.md#packages."

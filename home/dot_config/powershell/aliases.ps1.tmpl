@@ -1,0 +1,21 @@
+{{- $r := includeTemplate "aliases" (dict "shell" "powershell" "ctx" .) | fromJson -}}
+# ============================================================================
+# POWERSHELL ALIASES & FUNCTIONS
+# ============================================================================
+# Rendered by chezmoi from .chezmoidata/aliases.toml — DO NOT EDIT directly.
+# Dot-sourced by $PROFILE.
+# ============================================================================
+
+# --- Registry aliases ---
+# Each alias is a function so it can take arguments. Built-in aliases outrank
+# functions (gc = Get-Content, gp = Get-ItemProperty, gl = Get-Location), so a
+# same-named built-in is removed first: the registry always wins. Only an existing one:
+# Remove-Item 'Alias:..' would resolve to the whole Alias: drive and prompt.
+{{ range $name, $command := $r.aliases -}}
+if (Get-Alias -Name '{{ $name }}' -ErrorAction SilentlyContinue) { Remove-Item 'Alias:{{ $name }}' -Force }
+function {{ $name }} { {{ $command }} @args }
+{{ end }}
+# --- Refused commands (a function wins over a reinstalled exe) ---
+{{ range $name, $block := $r.blocks -}}
+function {{ $name }} { Write-Error '{{ replace "'" "''" $block.message }}' }
+{{ end -}}

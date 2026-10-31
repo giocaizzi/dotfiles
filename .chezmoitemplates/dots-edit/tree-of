@@ -1,2 +1,0 @@
-{{- /* dots-edit: the composition tree (dots-edit/tree) of .dotsEdit.file. */ -}}
-{{- includeTemplate "dots-edit/tree" (dict "file" .dotsEdit.file "depth" 0 "seen" list "ctx" .) -}}

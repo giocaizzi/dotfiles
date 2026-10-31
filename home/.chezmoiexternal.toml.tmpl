@@ -1,0 +1,91 @@
+# ============================================================================
+# .chezmoiexternal.toml.tmpl — declarative external sources
+# ============================================================================
+# Drop-in-place upstream sources (vim/zsh plugins, themes) fetched by chezmoi
+# on `apply`, refreshed per `refreshPeriod`. Prefer this over a `git clone` in
+# .chezmoiscripts/ when the upstream is "just put this repo at this path" —
+# no build, no PATH wiring, no OS registration.
+#
+# Use install scripts for: tools needing a build step, PATH/registry setup, or
+# package-manager registration. Use symlinks for: canonical per-OS configs.
+#
+# Reference: https://chezmoi.io/reference/special-files-and-directories/chezmoiexternal-format/
+#
+# `chezmoi dots` renders the source for previews with dotsRender set: no externals then,
+# so a preview of another OS or role never downloads its binaries (chezmoi fetches every
+# external while reading the source state, even for a dump that excludes them).
+# ============================================================================
+{{ if not (get . "dotsRender") -}}
+
+# Catppuccin colorscheme for Vim — native vim8+ pack plugin.
+# `:colorscheme catppuccin_mocha` in dot_config/vim/vimrc activates it.
+{{- if eq .chezmoi.os "windows" }}
+["vimfiles/pack/catppuccin/start/catppuccin"]
+{{- else }}
+[".config/vim/pack/catppuccin/start/catppuccin"]
+{{- end }}
+    type = "git-repo"
+    url = "https://github.com/catppuccin/vim.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+
+# JetBrainsMono Nerd Font — Linux only (macOS: Homebrew cask, Windows: oh-my-posh user-scope install,
+# both in the install scripts). ~/.local/share/fonts is the XDG user font dir
+# fontconfig scans natively.
+# Not on light machines: .chezmoiignore doesn't stop an external's download.
+{{- if and (eq .chezmoi.os "linux") (ne (includeTemplate "role" .) "light") }}
+[".local/share/fonts/JetBrainsMonoNerdFont"]
+    type = "archive"
+    url = "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
+    exact = true
+    refreshPeriod = "168h"
+{{- end }}
+
+# Release binaries: [release] in .chezmoidata/packages.toml, pinned and checksummed,
+# for this machine's OS, arch and role (bws on full machines; on Linux the tools
+# with no current apt package). Into ~/.local/bin without sudo. Their URL holds the
+# version, so chezmoi downloads again only on a bump.
+{{- range $name, $r := includeTemplate "releases" . | fromJson }}
+[{{ $r.dest | quote }}]
+    type = {{ $r.type | quote }}
+    url = {{ $r.url | quote }}
+{{-   if eq $r.type "archive-file" }}
+    path = {{ $r.path | quote }}
+{{-   end }}
+{{-   if eq $r.type "archive" }}
+    exact = true
+    stripComponents = {{ $r.stripComponents }}
+{{-   else }}
+    executable = true
+{{-   end }}
+{{-   if $r.sha256 }}
+    checksum.sha256 = {{ $r.sha256 | quote }}
+{{-   end }}
+{{- end }}
+
+# giocaizzi/harness checkout for the harnesses that install it from a clone (opencode,
+# pi, Codex agents): .chezmoiscripts/run_onchange_after_install-harness.* runs its installer.
+# Machines with any of the three selected (data.harnesses; light machines select none).
+{{- $harnesses := includeTemplate "harnesses" . | splitList " " }}
+{{- if or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses) }}
+[".local/share/giocaizzi-harness"]
+    type = "git-repo"
+    url = "https://github.com/giocaizzi/harness.git"
+    refreshPeriod = "24h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}
+
+# Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
+# Windows uses PowerShell — both ignored in .chezmoiignore).
+# dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.
+{{- if eq .chezmoi.os "darwin" }}
+[".oh-my-zsh"]
+    type = "git-repo"
+    url = "https://github.com/ohmyzsh/ohmyzsh.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+{{- end }}
+{{- end }}

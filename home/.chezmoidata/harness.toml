@@ -1,0 +1,40 @@
+# ----------------------------------------------------------------------------
+# Plugins of github.com/giocaizzi/harness: one key per plugins/<name> directory
+# there (`chezmoi dots lint plugins` checks), listing the harnesses whose config here
+# enables it. Claude Code and Copilot CLI enable them in their settings
+# (.chezmoitemplates/{claude,copilot}-settings.json), Codex in
+# run_onchange_after_install-harness.*; opencode and pi take the whole checkout.
+# Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
+# ----------------------------------------------------------------------------
+
+# Plugins for personal work only: work machines get them disabled.
+harnessPersonalPlugins = ["factory", "go"]
+
+[harnessPlugins]
+api = ["claude", "copilot", "codex"]
+dev-tools = ["claude", "copilot", "codex"]
+factory = ["claude", "copilot", "codex"]
+go = ["claude", "copilot", "codex"]
+guard = ["claude", "copilot", "codex"]
+hud = ["claude", "copilot"]
+javascript = ["claude", "copilot", "codex"]
+python = ["claude", "copilot", "codex"]
+sounds = ["claude", "codex"]
+
+# Targets each harness owns: .chezmoiignore skips them where the harness is not selected
+# (light machines select none). Shared targets stay explicit there: ~/.copilot (also
+# VS Code's instructions) and ops/.mcp.json (claude or copilot).
+[harnessTargets]
+claude = [".claude"]
+codex = [".codex", "ops/.codex"]
+opencode = [".config/opencode", "ops/opencode.json"]
+pi = [".pi", "ops/.pi"]
+vscode = [
+    ".config/Code",
+    ".config/Code - Insiders",
+    "Library/Application Support/Code",
+    "Library/Application Support/Code - Insiders",
+    "AppData/Roaming/Code",
+    "AppData/Roaming/Code - Insiders",
+    "ops/.vscode",
+]

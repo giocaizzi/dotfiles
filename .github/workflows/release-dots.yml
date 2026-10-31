@@ -1,0 +1,48 @@
+name: release-dots
+
+# Publishes the chezmoi-dots plugin: push a tag `dots-vX.Y.Z` (see docs/OS.md#releasing-the-plugin).
+# Plain static binaries, one per platform, plus checksums: chezmoi installs them as
+# `file` externals pinned in .chezmoidata/packages.toml.
+on:
+  push:
+    tags: ["dots-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write        # create the release
+      id-token: write        # attestations (Sigstore OIDC)
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/dots/go.mod
+      - name: Build
+        working-directory: tools/dots
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -eu
+          v=${VERSION#dots-v}
+          mkdir -p ../../dist
+          for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}; arch=${target#*/}
+            ext=; [ "$os" = windows ] && ext=.exe
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.buildVersion=${v}" \
+              -o "../../dist/chezmoi-dots_${v}_${os}_${arch}${ext}" ./cmd/chezmoi-dots
+          done
+          cd ../../dist && sha256sum chezmoi-dots_* > checksums.txt
+      - uses: actions/attest@v4
+        with:
+          subject-checksums: dist/checksums.txt
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --title "chezmoi-dots ${TAG#dots-v}" --generate-notes --verify-tag

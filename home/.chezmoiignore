@@ -1,0 +1,127 @@
+# ============================================================================
+# .chezmoiignore — paths to EXCLUDE from chezmoi management
+# ============================================================================
+# Logic is INVERTED: list entries to ignore. Template-aware.
+# Reference: https://chezmoi.io/docs/reference/chezmoiignore/
+# ============================================================================
+
+# Repo meta (README, docs, scripts, tools, …) sits outside the source state:
+# .chezmoiroot makes home/ the root, so nothing here needs ignoring.
+# Git Bash crash dumps left in the source dir (also git-ignored globally)
+*.stackdump
+
+# Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
+# bws project ID (token in the OS keyring) and bws is installed (the first apply
+# fetches bws, the next one renders); otherwise hand-edited and untracked (stub by
+# run_once_init-untracked-env.*).
+{{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (ternary "bws.exe" "bws" (eq .chezmoi.os "windows")) }}
+{{ if not (and (get . "bwsProjectId") (stat $bws)) }}
+.config/shell/secrets.sh
+.config/powershell/secrets.ps1
+{{ end }}
+
+# Symlink-only sources: files that exist in the source tree purely as targets
+# for symlinks on the OS that uses them, and should never be deployed as
+# regular files anywhere.
+.config/windows-terminal
+.config/powershell/profile.ps1
+
+# Sourcetree and other GUIs rewrite ~/.gitconfig directly. We manage git via
+# the XDG location (~/.config/git/config). Both are read by git.
+.gitconfig
+
+# ============================================================================
+# OS-conditional sections
+# Pattern: paths live under the OS's native location and are ignored elsewhere.
+#
+#   macOS    →  Library/Application Support/...
+#   Linux    →  .config/...
+#   Windows  →  AppData/... (+ PowerShell profile linked by a script)
+# ============================================================================
+
+# --- not macOS ---
+{{ if ne .chezmoi.os "darwin" }}
+Library
+.zshrc
+.zprofile
+{{ end }}
+
+# --- not Linux ---
+# VS Code (Code, Code - Insiders) and Ghostty live under ~/.config on Linux.
+# On macOS they live under Library; on Windows under AppData.
+{{ if ne .chezmoi.os "linux" }}
+.config/ghostty
+.config/Code
+.config/Code - Insiders
+{{ end }}
+
+# --- not Windows ---
+# Scripts are not listed in this file: each one renders empty (and is skipped) where
+# it does not apply (.chezmoiscripts/).
+{{ if ne .chezmoi.os "windows" }}
+AppData
+.config/powershell
+vimfiles
+{{ end }}
+
+# --- Light machines (data.light, asked once by `chezmoi init`) ---
+# Shell, git, vim and the prompt only: no editors, terminals or AI agents. Harness
+# targets need no entry here: light machines select no harness (next block).
+# (The font external is skipped in .chezmoiexternal.toml.tmpl.)
+# `get` tolerates configs created before the light key existed.
+{{ if get . "light" }}
+ops
+.config/ghostty
+# Outbound-only SSH config; skipping it (the only encrypted file) means light
+# machines never need the age key, which decrypts every secret in this repo.
+.ssh
+{{ end }}
+
+# --- AI harnesses (data.harnesses, chosen by `chezmoi init`; none on light machines) ---
+# Each harness's targets ([harnessTargets] in .chezmoidata/harness.toml) are skipped
+# where it is not selected.
+{{ $harnesses := includeTemplate "harnesses" . | splitList " " }}
+{{ range $harness, $targets := .harnessTargets }}
+{{   if not (has $harness $harnesses) }}
+{{     $targets | join "\n" }}
+{{   end }}
+{{ end }}
+{{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
+ops/.mcp.json
+{{ end }}
+{{ if not (has "copilot" $harnesses) }}
+{{   if has "vscode" $harnesses }}
+# VS Code reads the global instructions from ~/.copilot/copilot-instructions.md
+.copilot/*
+!.copilot/copilot-instructions.md
+{{   else }}
+.copilot
+{{   end }}
+{{ end }}
+# ~/ops holds personal servers: personal machines only (work PCs get no
+# personal account, like the personal vault and telemetry).
+{{ if get . "work" }}
+ops
+{{ end }}
+
+# Links to the Go toolchain release ([release.go] in .chezmoidata/packages.toml):
+# only where that release is installed (Linux personal machines).
+{{ if not (hasKey (includeTemplate "releases" . | fromJson) "go") }}
+.local/bin/go
+.local/bin/gofmt
+{{ end }}
+
+# Personal-email override only where personal remotes are configured (work machines)
+{{ if not (or (get . "githubUser") (get . "personalGitRemote")) }}
+.config/git/personal
+{{ end }}
+
+# --- Windows only ---
+# Vim on Windows reads ~/vimfiles/vimrc (symlink → dot_config/vim/vimrc), not
+# the XDG path. The .config/shell snippets and POSIX rc files (.profile, .bashrc,
+# .bash_profile) ARE kept so Git Bash and WSL users get the same aliases/PATH as
+# native Unix.
+{{ if eq .chezmoi.os "windows" }}
+.config/vim
+.config/tmux
+{{ end }}

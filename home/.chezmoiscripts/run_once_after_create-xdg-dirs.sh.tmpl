@@ -1,0 +1,11 @@
+{{- /* Runs on Unix only: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- if ne .chezmoi.os "windows" -}}
+#!/bin/sh
+# Creates the XDG state/cache dirs that shells and vim write into but never
+# create themselves (zsh/bash history, viminfo, zsh completion dump).
+
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}"
+
+mkdir -p "$STATE/zsh" "$STATE/bash" "$STATE/vim" "$CACHE/zsh"
+{{ end -}}

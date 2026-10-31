@@ -1,0 +1,5 @@
+{{- /* The giocaizzi/harness external's checked-out commit, empty before its first clone.
+       The harness install scripts print it in a comment, so they re-run (run_onchange_)
+       exactly when the external moves. */ -}}
+{{- $repo := joinPath .chezmoi.homeDir ".local" "share" "giocaizzi-harness" -}}
+{{- if and (stat (joinPath $repo ".git")) (lookPath "git") }}{{ output "git" "-C" $repo "rev-parse" "HEAD" | trim }}{{ end -}}

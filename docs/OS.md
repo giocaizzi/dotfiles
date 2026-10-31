@@ -1,6 +1,6 @@
 # OS-Specific Configuration
 
-How each managed file maps to its destination per OS. Canonical sources live under `dot_config/` in the repo; OS-specific destinations symlink to them via `{{ .chezmoi.sourceDir }}/...`.
+How each managed file maps to its destination per OS. Canonical sources live under `dot_config/` in the source state (`home/`, [Source layout](#source-layout-chezmoiroot)); OS-specific destinations symlink to them via `{{ .chezmoi.sourceDir }}/...`.
 
 ## Destination matrix
 
@@ -32,16 +32,17 @@ How each managed file maps to its destination per OS. Canonical sources live und
 
 ## Bootstrap scripts (`.chezmoiscripts/`)
 
-| Script                                       | macOS | Linux | Windows |
-| -------------------------------------------- | :---: | :---: | :-----: |
-| `run_once_init-untracked-env.sh` → `~/.config/shell/secrets.sh`             |  ✓    |  ✓    |   —     |
-| `run_once_init-untracked-env.ps1` → `~/.config/powershell/secrets.ps1`      |  —    |  —    |   ✓     |
-| `run_once_after_create-xdg-dirs.sh` → creates `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` |  ✓    |  ✓    |   —     |
-| `run_onchange_install-pkgs.sh.tmpl`          |  ✓    |  ✓    |   —     |
-| `run_after_link-pwsh-profile.ps1` → resolves the real Documents folder (OneDrive/locale) and links the profile |  —    |  —    |   ✓     |
-| `run_onchange_install-pkgs.ps1.tmpl`         |  —    |  —    |   ✓     |
+| Script | macOS | Linux | Windows |
+| --- | :---: | :---: | :---: |
+| `run_once_init-untracked-env.sh.tmpl` → `~/.config/shell/secrets.sh` | ✓ | ✓ | — |
+| `run_once_init-untracked-env.ps1.tmpl` → `~/.config/powershell/secrets.ps1` | — | — | ✓ |
+| `run_once_after_create-xdg-dirs.sh.tmpl` → `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` | ✓ | ✓ | — |
+| `run_onchange_after_install-pkgs.sh.tmpl` → the packages of [Packages](#packages) | ✓ | ✓ | — |
+| `run_onchange_after_install-pkgs.ps1.tmpl` → the same, with winget | — | — | ✓ |
+| `run_onchange_after_install-harness.*`, `run_onchange_after_claude-mcp-user.*`, `run_onchange_after_sync-vscode-extensions.*` | per [AI harnesses](#ai-harnesses) | | |
+| `run_after_link-pwsh-profile.ps1.tmpl` → resolves the real Documents folder (OneDrive/locale) and links the profile | — | — | ✓ |
 
-The install scripts use the platform-native package manager (brew on macOS, apt or official release binaries in `~/.local/bin` on Linux, winget on Windows). Full machines get the core CLIs (`fzf jq git vim fd gh tmux shellcheck shfmt`), uv + Python, oh-my-posh, Node, the language servers and the linters `gitleaks`, `actionlint`, `hadolint`. Personal full machines (not `work`) also get the Go release tools `goreleaser` and `syft` (brew; release tarballs in `~/.local/bin` on Linux; winget `goreleaser.goreleaser` and `Anchore.Syft`); on macOS and Linux also Go (brew `go`; official tarball in `~/.local/go` on Linux, since apt's lags) and `gopls` (brew; `go install` into `~/.local/bin` on Linux); Windows does not bootstrap either. [Machine roles](#machine-roles) lists what `light` and `work` change.
+Each script states where it runs: its body is wrapped in a condition (OS; harness for the harness scripts), and elsewhere it renders empty, which chezmoi skips. No script is listed in `.chezmoiignore`. The `run_onchange_` scripts re-run when their rendered text changes, so each embeds what it depends on (the package lists, the harness checkout's commit, the extension list).
 
 ## Externals (`.chezmoiexternal.toml.tmpl`)
 
@@ -53,6 +54,8 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓ (not light) |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
+
+Release binaries (`bws`, `gitleaks`, `actionlint`, `hadolint`, the Go toolchain, `goreleaser`, `syft`, `glab`, the `chezmoi-dots` plugin) are externals too, generated from the `[release.*]` tables of the [package registry](#packages) for this OS, architecture and role, each pinned and checksum-verified. `dotsRender` (an override-data flag set by `chezmoi dots` for previews) makes the file render empty, so previewing another OS or role never downloads its binaries.
 
 **When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), official installer scripts (uv), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
 
@@ -86,18 +89,18 @@ Re-running `chezmoi init`:
 
 ### AI harnesses
 
-Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none. A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads.
+Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none (even with the key set). A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads. Each harness's targets are listed once, in `[harnessTargets]` (`.chezmoidata/harness.toml`): `.chezmoiignore` skips the targets of every harness not selected.
 
 | Harness | Managed only when selected |
 |---|---|
 | `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md`); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
 | `copilot` | `~/.copilot` (`settings.json` and `mcp-config.json` merge, `copilot-instructions.md`) |
 | `vscode` | VS Code and VS Code Insiders user settings, keybindings and `mcp.json` (`~/.config/Code*` on Linux, `~/Library/Application Support/Code*` on macOS, `%APPDATA%\Code*` on Windows). The whole files, not only the Copilot keys. Subagent nesting is on (`chat.subagents.allowInvocationsFromSubagents`), so a driver agent can spawn its own workers. Also `~/.copilot/copilot-instructions.md` (the global instructions, which VS Code reads from there), even without the `copilot` harness. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
-| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_after_install-harness.*` |
-| `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_after_install-harness.*` |
-| `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_after_install-harness.*` |
+| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_onchange_after_install-harness.*` |
+| `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers); opencode wiring in `run_onchange_after_install-harness.*` |
+| `pi` | `~/.pi/agent/AGENTS.md`, `mcp.json` (merge: user MCP servers); pi wiring in `run_onchange_after_install-harness.*` |
 
-Shared: the `giocaizzi-harness` external and the `run_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
+Shared: the `giocaizzi-harness` external and the `run_onchange_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi` is.
 
 Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
 
@@ -138,7 +141,7 @@ Two Bitwarden CLIs, used per machine role:
 
 - **Env secrets** (`~/.config/shell/secrets.sh`, `~/.config/powershell/secrets.ps1`) are rendered by chezmoi from the machine's project (`bws secret list <project> --output json`, via `.chezmoitemplates/bws-secrets.json`): each secret's name becomes the variable name. Edit secrets in Bitwarden, then `chezmoi apply`. Names that aren't valid variable names are skipped.
 - **One token per machine**, created as a Bitwarden machine account with read access to the machine's project (the personal Mac's token can also read `rp5-homeserver`, for the home-server functions below), stored only in that machine's OS keyring (Windows Credential Manager, macOS Keychain, Linux Secret Service), never in `chezmoi.toml`: `chezmoi secret keyring set --service=bws --user=access-token`. `chezmoi.toml` keeps only the project ID, which switches the feature on. Give the token an expiry date, and revoke a single machine's token in Bitwarden if it's lost. The token never goes on a command line (chezmoi echoes failed commands, which would print it): the template runs `bws` through `powershell -Command` / `sh -c`, which reads it with `chezmoi secret keyring get` and passes it as `BWS_ACCESS_TOKEN`. A project ID without a stored token fails with `secret not found in keyring`; headless Linux without a Secret Service keyring can't use this, so leave the project ID blank and edit the secrets file by hand.
-- **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (version pinned in `.chezmoidata/bws.toml`; bump to update). The first apply on a new machine fetches it; the next apply renders the secrets.
+- **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (`[release.bws]` in `.chezmoidata/packages.toml`, pinned and checksummed; `chezmoi dots bump` updates it). The first apply on a new machine fetches it; the next apply renders the secrets.
 - **Home-server functions (personal Mac):** `rp5-secrets <stack>` (Swarm secrets, `create_secrets.sh`) and `rp5-sync-infra` (infra deploy with its file secrets, `sync_infra.sh`; needs `DOMAIN`) read that token from the keyring when they run and pass it only to the script, so it never sits in the shell environment. They are why `BWS_ACCESS_TOKEN` is empty in an interactive shell even though the machine can read the project.
 - **Online needed:** on machines with a project ID, every `chezmoi status`/`diff`/`apply` calls `bws` once and fails offline.
 - No Bitwarden MCP server: it has no read-only mode and would give an AI agent full vault access.
@@ -149,7 +152,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `dots` opens the part you mean and shows what the edit changes on every machine type. Full machines only, in bash/zsh (also Git Bash), pwsh 7 and Windows PowerShell 5.1 (`dots help` prints the full usage). On a terminal the output is coloured with the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `chezmoi dots` opens the part you mean and shows what the edit changes on every machine type. `dots` is an alias for `chezmoi dots` on full machines; `chezmoi dots help` prints the full usage. It is [a chezmoi plugin](#the-chezmoi-dots-plugin) (Go, `tools/dots`), the same on macOS, Linux and Windows. On a terminal the output uses the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
 
 ### Edit
 
@@ -163,9 +166,9 @@ Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a parti
 
 Every source edit, in order:
 
-1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel.
-2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (`umask 077`; on Windows the per-user temp folder), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux (Linux and macOS, also from PowerShell) or, from PowerShell on Windows, Windows Terminal, a side pane re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor (`.chezmoitemplates/dots-edit/live.sh`, `live.ps1`).
-3. **Check:** the entry's check, when it has one (`make lint-aliases`, `ssh -G`, `make lint-plugins`, `make lint-edit`).
+1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel. The configurations come from the real `.chezmoi.toml.tmpl`, rendered per role with seeded answers, so there is no second copy of the init prompts to keep in step.
+2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (owner-only), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux or, on Windows, Windows Terminal, a side pane (`chezmoi dots live`) re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor.
+3. **Check:** the entry's check, when it has one (`chezmoi dots lint aliases templates`, `ssh -G`, ...).
 4. **Render after** and report the changed targets per configuration: a list, `same as <configuration>` for an identical list, or `nothing`. A configuration that no longer renders fails the edit; one that already failed before is only reported.
 5. **This machine only:** `chezmoi diff` of its changed targets (one diff when the entry says they render the same text), `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date), the entry's note (e.g. open a new shell after an alias change), and `git status` of the source as a reminder to ship a PR (e.g. `/ship`). A changed script is listed: it runs on the next full `chezmoi apply`.
 
@@ -182,32 +185,88 @@ A failed check or render applies nothing; the source keeps the edit, so run the 
 
 The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever role takes it; `--matrix` shows which configuration takes which.
 
-Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. `modify_` targets (Claude, Copilot settings) merge into this machine's live file. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
+Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. `modify_` targets (Claude, Copilot settings) merge into this machine's live file. Previews render with `dotsRender` set, so no external is downloaded for them. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
 
-Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`); edit through `dots`, not `chezmoi edit`. Tests: `scripts/dots-edit-test.sh` ([CI.md](./CI.md)).
+Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`); edit through `dots`, not `chezmoi edit`.
 
 ### Edit registry
 
-`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `dots list`) and a `source` (source-relative) or a `local` folder (home-relative, unmanaged files edited in place), optionally a `check` (POSIX command run in the source dir with the edited file as `$1`; non-zero applies nothing), `powershell` (the same check for PowerShell, file as `$args[0]`; default `check`), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry. The shell code is a thin layer over helper templates in `.chezmoitemplates/dots-edit/` (registry, composition tree, configuration matrix, live pane, usage), shared by both shells.
+`.chezmoidata/edit.toml` names the components: each `[edit."<name>"]` has a `desc` (shown by the picker and `dots list`) and a `source` (source-relative) or a `local` folder (home-relative, unmanaged files edited in place), optionally a `check` (a command as a list, run without a shell in the repo root, chezmoi's working tree, with `{file}` replaced by the edited file; non-zero applies nothing; the same on every OS), `note` (printed after an apply) and `diff = "first"`. Any other source file or target is editable without an entry.
 
 **Add an editable component**
 
-**When:** a new file under `.chezmoidata/` or a new encrypted file (`make lint-edit` fails without an entry), or any component worth a name or a check.
+**When:** a new file under `.chezmoidata/` or a new encrypted file (`chezmoi dots lint registry` fails without an entry), or any component worth a name or a check.
 
 1. `dots registry` and add the entry (or, for a folder of unmanaged files, `local = "<home-relative folder>"` instead of `source`):
    ```toml
    [edit."<name>"]
    desc = "<what it is>"
    source = "<source-relative path>"
-   check = "<optional check>"
+   check = ["<command>", "{file}"]   # optional
    ```
 2. Apply when asked; ship the PR.
 
-**Verify:** `make lint-edit` passes; `dots list` lists the entry; `dots view <name>` shows the targets it reaches.
+**Verify:** `chezmoi dots lint registry` passes; `dots list` lists the entry; `dots view <name>` shows the targets it reaches.
 
 **Rollback:** delete the entry (`dots registry`).
 
-**Last verified:** 2026-10-18 by `scripts/dots-edit-test.sh` (bash, zsh; pwsh on Linux).
+## Packages
+
+Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`; the install scripts and the release externals render from it, so there is no second list. The file header documents the schema.
+
+- `[package.<name>]`: installed by the install scripts with the platform's native manager (brew on macOS, apt on Linux, winget on Windows), plus uv, npm, an Azure CLI extension or a PowerShell module, per role (`light`, `work`, `personal`). `agents = true` also names the tool to AI agents in the environment layer of the [agent instructions](#agent-instructions).
+- `[release.<name>]`: a binary from a release page, pinned by version and checksum and installed by chezmoi as an external into `~/.local/bin` (no sudo, no package manager).
+
+`chezmoi dots lint packages` (part of `make check`) validates both tables, including that every release target has a 64-hex sha256.
+
+**Update everything on this machine**
+
+**When:** whenever, e.g. weekly.
+
+1. `chezmoi dots upgrade`: updates the dotfiles (`chezmoi update --refresh-externals`), then the system packages (brew on macOS, apt on Linux, winget on Windows), uv tools, global npm tools and, on Windows, PowerShell modules. A step whose tool is missing is skipped; a failing step does not stop the others. `--dry-run` prints the plan, and naming steps (`chezmoi dots upgrade brew npm`) runs only those.
+2. Pinned release binaries do not move with it: they change when the pin changes (below), then `chezmoi apply` fetches the new version.
+
+**Verify:** `chezmoi dots outdated` lists nothing; `chezmoi status` prints nothing.
+
+**Bump the pinned release binaries**
+
+**When:** `chezmoi dots outdated` lists a newer version (the weekly `bump-releases` workflow opens a PR for this too).
+
+1. `chezmoi dots bump` (or `chezmoi dots bump <release>...`; `--dry-run` previews): finds the newest tag of each release (git tags on GitHub/GitLab, go.dev for Go), downloads the assets for every target, and rewrites the version and sha256 lines in `packages.toml`, leaving comments and order alone.
+2. Review the diff, `make check`, ship the PR; `chezmoi apply` installs the new versions.
+
+**Rollback:** revert the PR; the old pin and checksums come back together.
+
+## The chezmoi-dots plugin
+
+`chezmoi dots` is a [chezmoi plugin](https://www.chezmoi.io/user-guide/command-overview/#plugins): chezmoi runs the `chezmoi-dots` executable found on `PATH` for `chezmoi dots ...`, with the chezmoi environment set (`CHEZMOI_SOURCE_DIR`, `CHEZMOI_EXECUTABLE`, ...). The code is the Go module `tools/dots`: pure packages for the registries, the configuration matrix, the composition tree and the package updates, behind small ports; adapters for chezmoi (`chezmoi data`, `dump`, `managed`, `cat`, ... as the stable interface), the editor, git and the terminal; tests use hand-written fakes plus an end-to-end test against a real chezmoi. [tools/dots/DESIGN.md](../tools/dots/DESIGN.md) has the architecture.
+
+| Command | Does |
+|---|---|
+| `chezmoi dots [edit] [<what>]`, `view`, `list`, `live` | [Editing your dotfiles](#editing-your-dotfiles) |
+| `chezmoi dots lint [check]...` | `registry`, `aliases` (the encrypted registry too where the age key exists), `packages`, `plugins` (against `giocaizzi/harness`; `--harness-dir` for a checkout), `matrix`, `templates` (every script, alias file and settings template, rendered per configuration and shellchecked, zsh-checked or pwsh-parsed where those tools are installed) |
+| `chezmoi dots audit aliases` | lists aliases live in this machine's zsh and bash that the registry does not account for |
+| `chezmoi dots outdated`, `bump`, `upgrade` | [Packages](#packages) |
+
+**Install it**
+
+**When:** a new machine, or while no release is pinned yet.
+
+1. With a release pinned (`[release.chezmoi-dots]` in `packages.toml`), `chezmoi apply` installs it into `~/.local/bin`; nothing else to do.
+2. Before the first release, or to run a local build: `make -C tools/dots install` (builds and copies it to `~/.local/bin`).
+
+**Verify:** `chezmoi dots version`.
+
+**Release it**
+
+**When:** the plugin changed in a way worth shipping.
+
+1. Tag the merge commit on `main`: `git tag dots-vX.Y.Z && git push origin dots-vX.Y.Z`. The `release-dots` workflow builds static binaries for the six platforms, writes `checksums.txt`, attests them and creates the GitHub release.
+2. First release only: add `[release.chezmoi-dots]` to `packages.toml` (`type = "file"`, `url` of the asset, one `target` and `sha256` per platform, `dest` under `.local/bin`), copying the shape of another `[release.*]`; later releases are picked up by `chezmoi dots bump`.
+
+**Verify:** the release lists six binaries and `checksums.txt`; `chezmoi dots outdated` is clean after the bump.
+
+**Rollback:** delete the release and tag, and revert the pin.
 
 ## Encrypted files (age)
 
@@ -301,7 +360,7 @@ Light machines (the Raspberry Pi) render none of it, nor any harness config: age
 
 ## Agent plugins (`giocaizzi-harness`)
 
-Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Codex, opencode and pi have no settings that do this, so `run_after_install-harness.{sh,ps1}.tmpl` (full machines with any of them selected, see [AI harnesses](#ai-harnesses); every apply, idempotent) wires them from a checkout kept by the `.local/share/giocaizzi-harness` external: Codex adds the marketplace and plugins (`codex plugin add`) and gets the agents from `scripts/install.mjs codex`; opencode gets skills, agents and the guard plugin stub from `scripts/install.mjs opencode`; pi installs the checkout as a package, so the external's daily pull updates it. chezmoi does not install the three CLIs: the script wires up only those already on PATH. Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version. Runbook: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
+Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Codex, opencode and pi have no settings that do this, so `run_onchange_after_install-harness.{sh,ps1}.tmpl` (full machines with any of them selected, see [AI harnesses](#ai-harnesses); every apply, idempotent) wires them from a checkout kept by the `.local/share/giocaizzi-harness` external: Codex adds the marketplace and plugins (`codex plugin add`) and gets the agents from `scripts/install.mjs codex`; opencode gets skills, agents and the guard plugin stub from `scripts/install.mjs opencode`; pi installs the checkout as a package, so the external's daily pull updates it. chezmoi does not install the three CLIs: the script wires up only those already on PATH. Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version. Runbook: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
 
 ```sh
 claude plugin marketplace add giocaizzi/harness
@@ -310,7 +369,7 @@ copilot plugin marketplace add giocaizzi/harness
 copilot plugin install guard@giocaizzi-harness  # likewise hud, python, api, javascript, dev-tools
 ```
 
-Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode and pi take the whole checkout, so they still get them. `make lint-plugins` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
+Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode and pi take the whole checkout, so they still get them. `chezmoi dots lint plugins` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
 
 - **New plugin upstream:** add `<name> = ["claude", ...]` to `.chezmoidata/harness.toml`, `chezmoi apply`.
 - **Plugin removed upstream:** delete its key, `chezmoi apply`; disable or uninstall it by hand where the harness keeps it.
@@ -323,30 +382,18 @@ Managed settings per harness:
 - Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
-## Working copies (git worktrees)
+## Source layout (`.chezmoiroot`)
 
-chezmoi reads every `.chezmoidata/` under the source dir, nested ones included, and `.chezmoiignore` does not stop it. A git worktree of this repo inside `~/.local/share/chezmoi` (e.g. `.claude/worktrees/<slug>`) therefore merges its unfinished data into this machine's config. Worktrees of this repo live in `~/.local/share/chezmoi-worktrees/<slug>`, and a pre-apply hook (`[hooks.apply.pre]` in `.chezmoi.toml.tmpl`, sh or Windows PowerShell) refuses `chezmoi apply` while any worktree sits inside the source dir. `chezmoi diff`, `status` and `dots view` don't run the hook: they still show the merged data.
+`.chezmoiroot` makes `home/` the source state: every source path in these docs (`dot_config/…`, `.chezmoidata/…`) is relative to it, and `chezmoi source-path` prints `~/.local/share/chezmoi/home`. The repo root holds what is never deployed (docs, `scripts/`, `tools/`, `Makefile`, agent config), so `.chezmoiignore` has no repo-meta block, and a git worktree anywhere in the repo (e.g. `.claude/worktrees/<slug>`) sits outside the source state: chezmoi never reads its `.chezmoidata`.
 
-**When:** starting a task in this repo, or `chezmoi apply` fails with `chezmoi apply refused: … worktree`.
-
-1. New task: `git -C ~/.local/share/chezmoi worktree add ~/.local/share/chezmoi-worktrees/<slug> -b <branch> origin/main`.
-2. A worktree already inside: `git -C ~/.local/share/chezmoi worktree move <path> ~/.local/share/chezmoi-worktrees/<slug>` (or `git worktree remove <path>` once its PR merged).
-3. Retry `chezmoi apply`.
-
-**Verify:** `git -C ~/.local/share/chezmoi worktree list` shows no path under `~/.local/share/chezmoi/`; `chezmoi apply` runs.
-
-**Hook not active yet:** the hook lives in the config, which chezmoi renders from `.chezmoi.toml.tmpl` at `chezmoi init`. After pulling this change run `chezmoi init` once (it asks nothing new and keeps every answer); `chezmoi cat-config | grep -A2 hooks.apply.pre` shows it.
-
-**First apply after `chezmoi init` on Windows:** run one `chezmoi apply` right away. If it fails with a PowerShell error instead of `chezmoi apply refused`, the hook itself is broken: delete the `[hooks.apply.pre]` block with `chezmoi edit-config`, apply, and report it.
-
-**Rollback:** delete the `[hooks.apply.pre]` block from `.chezmoi.toml.tmpl`, then `chezmoi init` (or, on one machine only, from its config with `chezmoi edit-config`).
+**After pulling the move:** run `chezmoi init` once (it asks nothing new): it drops the old `[hooks.apply.pre]` worktree guard from this machine's config.
 
 ## Testing the ignore matrix
 
 ```sh
 chezmoi execute-template \
   --override-data '{"light":false,"work":false,"harnesses":["claude"],"chezmoi":{"os":"darwin"}}' \
-  < .chezmoiignore   # vary os (darwin/linux/windows), light, work, harnesses
+  < home/.chezmoiignore   # vary os (darwin/linux/windows), light, work, harnesses
 ```
 
 For the live OS, `chezmoi managed` and `chezmoi ignored` show the actual split.

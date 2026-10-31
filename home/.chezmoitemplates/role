@@ -1,0 +1,4 @@
+{{- /* This machine's role: light, work or personal (data.light / data.work, asked at
+       chezmoi init; a config without them is personal). Every role-gated list
+       (aliases, packages, releases) names roles with these words. */ -}}
+{{- if get . "light" }}light{{ else if get . "work" }}work{{ else }}personal{{ end -}}

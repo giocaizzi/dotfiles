@@ -8,7 +8,7 @@ This is the user's [chezmoi](https://chezmoi.io/) dotfiles configuration, managi
 
 ## Architecture (single sources → per-OS destinations)
 
-Canonical configs live under `dot_config/<xdg-path>/`. On Linux they deploy directly; on macOS/Windows they are symlink targets referenced via `{{ .chezmoi.sourceDir }}/...` from `Library/` or `AppData/` paths.
+The source state is `home/` (`.chezmoiroot`); paths below are relative to it. The repo root holds only what is never deployed (docs, `scripts/`, `tools/`, `Makefile`). Canonical configs live under `dot_config/<xdg-path>/`. On Linux they deploy directly; on macOS/Windows they are symlink targets referenced via `{{ .chezmoi.sourceDir }}/...` from `Library/` or `AppData/` paths.
 
 ```bash
 dot_config/Code/User/{settings,keybindings}.json
@@ -50,18 +50,19 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 
 ## Working in this repo
 
-- `.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
-- Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
-- Editing goes through `dots`: a new editable component is an entry in `.chezmoidata/edit.toml` (name, source or local folder, optional check), never a new edit function or shortcut; `make lint-edit` requires one for every `.chezmoidata` file and encrypted file. Logic shared by both shells lives in `.chezmoitemplates/dots-edit/`; shell-side changes need the PowerShell twin and cases in `scripts/dots-edit-test.sh`. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` also goes in `.chezmoitemplates/dots-edit/matrix`. See docs/OS.md → Editing your dotfiles.
+- `home/.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
+- Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` (`chezmoi dots audit aliases`) lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
+- Editing goes through `chezmoi dots` (alias `dots`; a Go plugin in `tools/dots`, own `AGENTS.md`): a new editable component is an entry in `.chezmoidata/edit.toml` (name, source or local folder, optional `check` as an argv list with `{file}`), never new edit code or a shortcut; `chezmoi dots lint registry` requires one for every `.chezmoidata` file and encrypted file. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` needs no second list: the configuration matrix is built from that template. See docs/OS.md → Editing your dotfiles.
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
-- Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1` for Windows; ignored on the other platform via `.chezmoiignore`. `make lint` renders each `.sh.tmpl` script per OS, role and harness selection (`lint-tmpl`, needs chezmoi) and shellchecks the output.
+- Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1.tmpl` for Windows; every script wraps its body in its own condition (OS, harness) and renders empty, so chezmoi skips it, where it does not apply. Scripts never appear in `.chezmoiignore`. `make lint` renders each script per OS, role and harness selection (`chezmoi dots lint templates`, needs chezmoi) and shellchecks the output.
 - Per-machine behaviour comes from two `chezmoi init` flags, `light` and `work`, read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
-- AI harness configs are gated on `data.harnesses` (chosen at `chezmoi init`). Read it only through `includeTemplate "harnesses" . | splitList " "`, which defaults a missing key to none. A new harness file needs its ignore entry in `.chezmoiignore`. See docs/OS.md → AI harnesses.
-- `giocaizzi/harness` plugins are enabled from one list, `.chezmoidata/harness.toml` (plugin → harnesses; `harnessPersonalPlugins` stay off work machines); never hand-write them in a settings file or install script. `make lint-plugins` checks it against the harness repo. See docs/OS.md → Agent plugins.
+- AI harness configs are gated on `data.harnesses` (chosen at `chezmoi init`). Read it only through `includeTemplate "harnesses" . | splitList " "`, which defaults a missing key to none. It is empty on light machines. A new harness target goes in `[harnessTargets]` (`.chezmoidata/harness.toml`), which `.chezmoiignore` ranges over. See docs/OS.md → AI harnesses.
+- `giocaizzi/harness` plugins are enabled from one list, `.chezmoidata/harness.toml` (plugin → harnesses; `harnessPersonalPlugins` stay off work machines); never hand-write them in a settings file or install script. `chezmoi dots lint plugins` checks it against the harness repo. See docs/OS.md → Agent plugins.
+- Every tool a machine installs is a row of `.chezmoidata/packages.toml` (`[package.*]` via the install scripts, `[release.*]` as pinned, checksummed externals); never hand-list one in a script. Update with `chezmoi dots outdated|bump|upgrade`. See docs/OS.md → Packages.
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
-- Worktrees of this repo live outside the source dir (`~/.local/share/chezmoi-worktrees/<slug>`), not in `.claude/worktrees/`: chezmoi reads every nested `.chezmoidata/` (`.chezmoiignore` does not stop it), so a worktree inside the source merges its data into the live config. A pre-apply hook in `.chezmoi.toml.tmpl` refuses `chezmoi apply` while one exists.
+- Worktrees can live anywhere, `.claude/worktrees/` included: they sit outside `home/`, so chezmoi never reads their `.chezmoidata`. See docs/OS.md → Source layout.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 
@@ -97,7 +98,8 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 
 ## Docs
 
-- [README.md](./README.md) — new-machine setup and everyday chezmoi commands.
+- [README.md](./README.md) — what this is, quickstart, everyday commands.
+- [docs/SETUP.md](./docs/SETUP.md) — set up a new machine, secrets.
 - [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values.
 - [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, alias registry, tools, secrets.
 - [docs/CI.md](./docs/CI.md) — `make check` targets and the CI workflow; run `make check` before pushing.

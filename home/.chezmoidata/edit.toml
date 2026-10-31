@@ -1,0 +1,126 @@
+# ----------------------------------------------------------------------------
+# Edit registry: the components `dots` names (docs/OS.md#editing-your-dotfiles).
+# Any other source file or managed target is editable without an entry; an entry adds
+# a name, a description for the picker and the checks. `chezmoi dots lint registry` validates it
+# and requires an entry for every .chezmoidata file and every encrypted file.
+#
+# [edit."<name>"]
+# desc       = shown by the picker and `dots list` (required)
+# source     = the file to edit, relative to the source dir (required, unless local)
+# local      = instead of source: a folder of unmanaged files, relative to the home dir;
+#              `dots <home>/<local>/<name>` edits one in place (a new name creates it)
+# check      = command as a list, run without a shell in the repo root (chezmoi's working
+#              tree) with {file} replaced by the edited file, before anything is applied;
+#              non-zero = nothing applied (local: edit again or quit). The same on every OS.
+# note       = printed after an apply
+# diff       = "first": every target renders the same text, show one diff
+# ----------------------------------------------------------------------------
+
+# --- Agent instructions (docs/OS.md#agent-instructions) ---
+[edit."agents/core"]
+desc = "Agent instructions, core layer (public, every machine)"
+source = ".chezmoitemplates/agents/core.md"
+diff = "first"
+
+[edit."agents/env"]
+desc = "Agent instructions, CLI environment layer (public, per role and OS)"
+source = ".chezmoitemplates/agents/env.md"
+diff = "first"
+
+[edit."agents/personal"]
+desc = "Agent instructions, personal layer (encrypted, personal machines)"
+source = ".chezmoitemplates/agents/personal.md.age"
+diff = "first"
+
+[edit."agents/work"]
+desc = "Agent instructions, work layer (encrypted, work machines)"
+source = ".chezmoitemplates/agents/work.md.age"
+diff = "first"
+
+# --- Shell (docs/SHELL.md#alias-registry) ---
+[edit."aliases/public"]
+desc = "Alias registry, public"
+source = ".chezmoidata/aliases.toml"
+check = ["chezmoi", "dots", "lint", "aliases", "templates"]
+note = "Aliases applied: open a new shell, or source ~/.config/shell/aliases.sh (PowerShell: ~/.config/powershell/aliases.ps1)"
+
+[edit."aliases/private"]
+desc = "Alias registry, personal (encrypted)"
+source = ".aliases.private.toml.age"
+check = ["chezmoi", "dots", "lint", "aliases", "templates"]
+note = "Aliases applied: open a new shell, or source ~/.config/shell/aliases.sh (PowerShell: ~/.config/powershell/aliases.ps1)"
+
+[edit."ssh/config"]
+desc = "~/.ssh/config, hosts every full machine uses (encrypted)"
+source = "private_dot_ssh/encrypted_private_config.age"
+check = ["ssh", "-G", "-F", "{file}", "localhost"]
+
+[edit."ssh/local"]
+desc = "~/.ssh/config.d/<name>, this machine's hosts (not managed: dots ~/.ssh/config.d/<new name> creates one)"
+local = ".ssh/config.d"
+check = ["ssh", "-G", "-F", "{file}", "localhost"]
+
+# --- AI harnesses (docs/OS.md#ai-harnesses) ---
+[edit.mcp]
+desc = "MCP servers by layer: user, personal, ops workspace"
+source = ".chezmoidata/mcp.toml"
+
+[edit.plugins]
+desc = "giocaizzi/harness plugins per harness"
+source = ".chezmoidata/harness.toml"
+check = ["chezmoi", "dots", "lint", "plugins"]
+
+[edit."claude/settings"]
+desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
+source = ".chezmoitemplates/claude-settings.json"
+
+[edit."copilot/settings"]
+desc = "Copilot CLI managed settings (merged into ~/.copilot/settings.json)"
+source = ".chezmoitemplates/copilot-settings.json"
+
+# --- Apps ---
+[edit."vscode/settings"]
+desc = "VS Code and Insiders settings.json (symlinked on macOS and Windows)"
+source = "dot_config/Code/User/settings.json"
+
+[edit."vscode/keybindings"]
+desc = "VS Code and Insiders keybindings.json"
+source = "dot_config/Code/User/keybindings.json"
+
+[edit."vscode/extensions"]
+desc = "VS Code extensions to install"
+source = ".chezmoitemplates/vscode-extensions"
+
+[edit.ghostty]
+desc = "Ghostty config"
+source = "dot_config/ghostty/config"
+
+[edit."windows-terminal"]
+desc = "Windows Terminal settings.json"
+source = "dot_config/windows-terminal/settings.json"
+
+[edit.git]
+desc = "Git config (identity per role, personal remotes)"
+source = "dot_config/git/config.tmpl"
+
+[edit.prompt]
+desc = "oh-my-posh prompt theme"
+source = "dot_config/oh-my-posh/theme.omp.json"
+
+[edit.tmux]
+desc = "tmux config"
+source = "dot_config/tmux/tmux.conf"
+
+[edit.vim]
+desc = "vimrc"
+source = "dot_config/vim/vimrc"
+
+# --- Packages and secrets ---
+[edit.packages]
+desc = "Package registry: tools per OS and role, pinned release binaries"
+source = ".chezmoidata/packages.toml"
+
+[edit.registry]
+desc = "This edit registry"
+source = ".chezmoidata/edit.toml"
+check = ["chezmoi", "dots", "lint", "registry", "matrix"]

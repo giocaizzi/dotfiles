@@ -1,0 +1,331 @@
+# ----------------------------------------------------------------------------
+# Package registry: every tool each machine installs, per OS and role, in one place.
+# docs/OS.md#packages
+#
+# [package.<name>]  installed by the install scripts, which re-run when this file
+#                   changes (.chezmoiscripts/run_onchange_after_install-pkgs.*)
+#   roles    = machine roles that get it: "personal", "work", "light"
+#              (default: ["personal", "work"], i.e. full machines)
+#   brew     = Homebrew formula (true: <name>)      cask   = Homebrew cask
+#   apt      = apt package (true: <name>)           winget = winget id
+#   scope    = "machine" for a winget package with no user-scope installer
+#   cmd      = command whose presence skips the winget install (default: <name>)
+#   uv       = uv tool (true: <name>)                npm    = npm -g package (true: <name>)
+#   az       = Azure CLI extension (true: <name>)    psmodule = PowerShell module, minimum version
+#   python   = Python version installed by uv as the global python
+#   ompFont  = Nerd Font archive installed per user by oh-my-posh (Windows), with
+#              fontFile, the file that marks it installed
+#   agents   = true: named to AI agents as available (agent instructions, env layer)
+#   script   = OSes where the install script has its own step for it (an official
+#              installer or a repo to add); the step is named after <name>
+#
+# [release.<name>]  a binary from a release page, installed by chezmoi itself as an
+#                   external (.chezmoiexternal.toml.tmpl) and verified by checksum
+#   version  = pinned version          url = download URL, {version} and {target} expanded
+#   target   = "<os>/<arch>" → the release's name for that platform; only these get it
+#   sha256   = "<os>/<arch>" → checksum of the download (chezmoi verifies it)
+#   type     = external type (default "archive-file"; "file" for a bare binary,
+#              "archive" for a tree)
+#   path     = the binary inside an archive-file (default: <name>)
+#   dest     = target, home-relative (default: .local/bin/<name>)
+#   exe      = true: ".exe" is appended to path and dest on Windows
+#   stripComponents = archive path components to drop
+#   roles    = as above
+#
+# Update: `chezmoi dots outdated` lists newer releases, `chezmoi dots bump` rewrites
+# versions and checksums here (docs/OS.md#packages).
+# ----------------------------------------------------------------------------
+
+# --- Core: every machine ---
+[package.fzf]
+agents = true
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "junegunn.fzf"
+
+[package.git]
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "Git.Git"
+
+[package.vim]
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "vim.vim"
+
+[package.fd]
+agents = true
+roles = ["personal", "work", "light"]
+brew = true
+apt = "fd-find" # linked to ~/.local/bin/fd by the install script
+winget = "sharkdp.fd"
+
+[package.tmux]
+agents = true
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+
+[package.jq]
+agents = true
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "jqlang.jq"
+
+[package.shellcheck]
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "koalaman.shellcheck"
+
+[package.shfmt]
+roles = ["personal", "work", "light"]
+brew = true
+apt = true
+winget = "mvdan.shfmt"
+
+[package.oh-my-posh]
+roles = ["personal", "work", "light"]
+brew = true
+script = ["linux"] # official installer into ~/.local/bin
+winget = "JanDeDobbeleer.OhMyPosh"
+
+[package.curl]
+roles = ["personal", "work", "light"]
+apt = true
+
+[package.make]
+agents = true
+roles = ["personal", "work", "light"]
+apt = true # macOS gets it from the Xcode CLT that Homebrew needs
+winget = "ezwinports.make"
+
+[package.python3-pip]
+roles = ["personal", "work", "light"]
+apt = true
+
+[package.pwsh]
+agents = true
+roles = ["personal", "work", "light"]
+winget = "Microsoft.PowerShell"
+
+[package.coreutils]
+roles = ["personal", "work", "light"]
+winget = "uutils.coreutils"
+cmd = "ls.exe" # the exe, not PowerShell's ls alias
+
+[package.PSReadLine]
+roles = ["personal", "work", "light"]
+psmodule = "2.2.0"
+
+[package.PSFzf]
+roles = ["personal", "work", "light"]
+psmodule = "2.5.0"
+
+# --- Full machines ---
+[package.gh]
+agents = true
+brew = true
+apt = true
+script = ["linux"] # adds GitHub's apt repository first
+winget = "GitHub.cli"
+
+[package.zsh-autosuggestions]
+brew = true
+
+[package.bash-completion]
+apt = true
+
+[package.ripgrep]
+agents = true
+winget = "BurntSushi.ripgrep.MSVC"
+cmd = "rg"
+
+[package.jetbrains-mono-nerd-font]
+cask = "font-jetbrains-mono-nerd-font" # Linux: the font external
+ompFont = "JetBrainsMono"
+fontFile = "JetBrainsMonoNerdFont-Regular.ttf"
+
+[package.uv]
+agents = true
+brew = true
+script = ["linux", "windows"] # official installer into ~/.local/bin
+
+[package.python]
+python = "3.13"
+
+[package.node]
+brew = true
+script = ["linux"] # NodeSource LTS: apt's nodejs is too old for the language servers
+winget = "OpenJS.NodeJS.LTS"
+
+[package.gitleaks]
+agents = true
+brew = true
+winget = "Gitleaks.Gitleaks"
+
+[package.actionlint]
+agents = true
+brew = true
+winget = "rhysd.actionlint"
+
+[package.hadolint]
+agents = true
+brew = true
+winget = "hadolint.hadolint"
+
+[package.pyright]
+uv = true
+
+[package.typescript]
+npm = "typescript@5" # typescript-language-server needs tsserver, which TS 7 dropped
+
+[package.typescript-language-server]
+npm = true
+
+[package.PSScriptAnalyzer]
+psmodule = "1.22.0"
+
+# --- Personal machines ---
+[package.bitwarden-cli]
+roles = ["personal"]
+brew = true
+
+[package.go]
+roles = ["personal"]
+brew = true
+
+[package.gopls]
+roles = ["personal"]
+brew = true
+script = ["linux"] # go install, with the Go release below
+
+[package.goreleaser]
+roles = ["personal"]
+brew = true
+winget = "goreleaser.goreleaser"
+
+[package.syft]
+roles = ["personal"]
+brew = true
+winget = "Anchore.Syft"
+
+# --- Work machines ---
+[package.glab]
+agents = true
+roles = ["work"]
+brew = true
+winget = "GLab.GLab"
+
+[package.az]
+agents = true
+roles = ["work"]
+brew = "azure-cli"
+script = ["linux"] # Microsoft's apt repository setup
+winget = "Microsoft.AzureCLI"
+scope = "machine"
+
+[package.azure-devops]
+roles = ["work"]
+az = true
+
+# --- Release binaries (chezmoi externals) ---
+[release.bws]
+# Bitwarden Secrets Manager CLI. Pinned: the sdk-sm repo's "latest" release is the
+# Python SDK, not bws.
+version = "2.1.0"
+url = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v{version}/bws-{target}-{version}.zip"
+exe = true
+
+[release.bws.target]
+"darwin/amd64" = "x86_64-apple-darwin"
+"darwin/arm64" = "aarch64-apple-darwin"
+"linux/amd64" = "x86_64-unknown-linux-gnu"
+"linux/arm64" = "aarch64-unknown-linux-gnu"
+"windows/amd64" = "x86_64-pc-windows-msvc"
+"windows/arm64" = "aarch64-pc-windows-msvc"
+
+[release.bws.sha256]
+"darwin/amd64" = "6f626b3971368902af1b9847c02791a1b4666969d7561e2047681cded7997537"
+"darwin/arm64" = "9cb1c1c6e6164d83b2e339883ba02b4cbb37188ce9a484b1ce8249443163e066"
+"linux/amd64" = "ba8233c3a4aee5d43e3c73bbd04d99e9bc5aba13bbbfd06d89b073abe732b860"
+"linux/arm64" = "18253757286e119d450133a87eb463bf8c1ce418ce24c834f4f250d60cba6f9e"
+"windows/amd64" = "8d6f2b51beb6f992b5b1de8b85a98bdf18de74096b724d17fa06219fc23f2bd5"
+"windows/arm64" = "ba18adeb5d123481211c47c4e4d0ad6d81a6b0139150704785542fdee542e583"
+
+[release.gitleaks]
+version = "8.30.1"
+url = "https://github.com/gitleaks/gitleaks/releases/download/v{version}/gitleaks_{version}_linux_{target}.tar.gz"
+target = { "linux/amd64" = "x64", "linux/arm64" = "arm64" }
+
+[release.gitleaks.sha256]
+"linux/amd64" = "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+"linux/arm64" = "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080"
+
+[release.actionlint]
+version = "1.7.12"
+url = "https://github.com/rhysd/actionlint/releases/download/v{version}/actionlint_{version}_linux_{target}.tar.gz"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.actionlint.sha256]
+"linux/amd64" = "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+"linux/arm64" = "325e971b6ba9bfa504672e29be93c24981eeb1c07576d730e9f7c8805afff0c6"
+
+[release.hadolint]
+version = "2.15.1"
+url = "https://github.com/hadolint/hadolint/releases/download/v{version}/hadolint-linux-{target}"
+type = "file"
+target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
+
+[release.hadolint.sha256]
+"linux/amd64" = "c7187db94eeeeca956519a6af171adc31453941a1e777961f6e680f697c8c507"
+"linux/arm64" = "f6198ef8090f404dbb771abfee086eb8c48ac177f30da7fd3510aca35b344b5d"
+
+[release.go]
+# Official toolchain (apt's golang-go lags), per user.
+roles = ["personal"]
+version = "1.27.3"
+url = "https://go.dev/dl/go{version}.linux-{target}.tar.gz"
+type = "archive"
+dest = ".local/go"
+stripComponents = 1
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.go.sha256]
+"linux/amd64" = "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
+"linux/arm64" = "a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49"
+
+[release.goreleaser]
+roles = ["personal"]
+version = "2.19.0"
+url = "https://github.com/goreleaser/goreleaser/releases/download/v{version}/goreleaser_Linux_{target}.tar.gz"
+target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
+
+[release.goreleaser.sha256]
+"linux/amd64" = "ebc3194ad1d1b1787614405285a0039665cd4c5bd3305215a1b201600f90630b"
+"linux/arm64" = "ef33741b684c9f62d6a21e7a3c8b051f139ea7b1d301693b67cc819c46226d53"
+
+[release.syft]
+roles = ["personal"]
+version = "1.55.0"
+url = "https://github.com/anchore/syft/releases/download/v{version}/syft_{version}_linux_{target}.tar.gz"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.syft.sha256]
+"linux/amd64" = "bb65249542db5fedeeb4d3f9b018b75e7264dbfbbb10486f044581a92f90490d"
+"linux/arm64" = "929bd163db2d7cd2255d3bcb8967208079813d7b46b0c952f7b794d8e2c7d304"
+
+[release.glab]
+roles = ["work"]
+version = "1.126.0"
+url = "https://gitlab.com/gitlab-org/cli/-/releases/v{version}/downloads/glab_{version}_linux_{target}.tar.gz"
+path = "bin/glab"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.glab.sha256]
+"linux/amd64" = "f386519ba83e9482979992ee7f60eeebee4d95b950f95f4fe7289e0a1b1ea74c"
+"linux/arm64" = "de5e92c9c8b306eeebb19daa854d48101b78328850e7b9cd677ecd6f98cd4391"
