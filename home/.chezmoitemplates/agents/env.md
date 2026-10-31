@@ -2,14 +2,24 @@
        Runbook: docs/OS.md#agent-instructions. */ -}}
 {{- $os := .chezmoi.os -}}
 {{- $work := get . "work" -}}
-{{- $pm := dict "darwin" "`brew`" "linux" "`apt` (or release binaries in `~/.local/bin`)" "windows" "`winget`" | dig $os "`brew`" -}}
+{{- $pm := dict "darwin" "`brew`" "linux" "`apt` (or pinned release binaries in `~/.local/bin`, chezmoi externals)" "windows" "`winget`" | dig $os "`brew`" -}}
 {{- $install := dict "darwin" "brew install" "linux" "apt install" "windows" "winget install" | dig $os "brew install" -}}
-{{- $tools := list "jq" "fd" "fzf" "gh" "uv" "gitleaks" "actionlint" "hadolint" -}}
-{{- if ne $os "windows" }}{{ $tools = append $tools "tmux" }}{{ else }}{{ $tools = concat $tools (list "rg" "make" "pwsh") }}{{ end -}}
-{{- if $work }}{{ $tools = concat $tools (list "glab" "az") }}{{ end -}}
+{{- /* The tools marked agents = true in the package registry that this machine's OS
+       and role install (.chezmoidata/packages.toml), by command name. */ -}}
+{{- $role := includeTemplate "role" . -}}
+{{- $manager := dict "darwin" "brew" "linux" "apt" "windows" "winget" | dig $os "brew" -}}
+{{- $releases := includeTemplate "releases" . | fromJson -}}
+{{- $tools := list -}}
+{{- range $name, $p := .package -}}
+{{-   if and (get $p "agents") (has $role (get $p "roles" | default (list "personal" "work"))) -}}
+{{-     if or (get $p $manager) (has $os (get $p "script" | default list)) (hasKey $releases $name) -}}
+{{-       $tools = append $tools (get $p "cmd" | default $name) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
 # Environment
 
-- `chezmoi` governs the CLI environment: configs and the tool install list (`.chezmoiscripts/run_onchange_install-pkgs.*`). The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
+- `chezmoi` governs the CLI environment: configs and the tool install list (the package registry, `.chezmoidata/packages.toml` in its source state `home/`). The source is `~/.local/share/chezmoi`; machine roles (`light`, `work`), per-OS layout and Bitwarden are documented in its `docs/OS.md`.
 - Tools: packages come from {{ $pm }}, through that list only; never an ad-hoc `{{ $install }}`. One-off tools run without installing (`uvx`, `npx`, `docker run`). Propose, never add on your own, a tool for the list once it was needed in two separate sessions or a repo's standard requires it.
 - Assume {{ range $i, $t := $tools }}{{ if $i }}, {{ end }}`{{ $t }}`{{ end }} are available; prefer them (e.g. `jq` for JSON) over hand-rolled parsing.
 {{- if not $work }}

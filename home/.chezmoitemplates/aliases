@@ -7,8 +7,7 @@
   on a name clash. */ -}}
 {{- $ctx := .ctx -}}
 {{- $shell := .shell -}}
-{{- $machine := "personal" -}}
-{{- if get $ctx "light" }}{{ $machine = "light" }}{{ else if get $ctx "work" }}{{ $machine = "work" }}{{ end -}}
+{{- $machine := includeTemplate "role" $ctx -}}
 {{- $aliases := deepCopy (get $ctx "alias" | default dict) -}}
 {{- $blocks := deepCopy (get $ctx "aliasBlock" | default dict) -}}
 {{- $identity := $ctx.chezmoi.config.age.identity -}}

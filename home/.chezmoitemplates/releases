@@ -1,0 +1,24 @@
+{{- /* Release selector (.chezmoidata/packages.toml [release]). Called as
+  includeTemplate "releases" . | fromJson
+  Returns the releases for this machine's OS, arch and role, resolved:
+  {"<name>": {"url", "sha256", "type", "path", "dest", "stripComponents"}}
+  (sha256 empty when unpinned). Read by .chezmoiexternal.toml.tmpl and .chezmoiignore. */ -}}
+{{- $role := includeTemplate "role" . -}}
+{{- $platform := printf "%s/%s" .chezmoi.os .chezmoi.arch -}}
+{{- $exe := ternary ".exe" "" (eq .chezmoi.os "windows") -}}
+{{- $out := dict -}}
+{{- range $name, $r := get . "release" | default dict -}}
+{{-   $target := get ($r.target | default dict) $platform -}}
+{{-   if and $target (has $role (get $r "roles" | default (list "personal" "work"))) -}}
+{{-     $suffix := ternary $exe "" (get $r "exe" | default false) -}}
+{{-     $url := $r.url | replace "{version}" $r.version | replace "{target}" $target -}}
+{{-     $_ := set $out $name (dict
+          "url" $url
+          "sha256" (get (get $r "sha256" | default dict) $platform | default "")
+          "type" (get $r "type" | default "archive-file")
+          "path" (print (get $r "path" | default $name) $suffix)
+          "dest" (print (get $r "dest" | default (print ".local/bin/" $name)) $suffix)
+          "stripComponents" (get $r "stripComponents" | default 0)) -}}
+{{-   end -}}
+{{- end -}}
+{{- $out | toJson -}}

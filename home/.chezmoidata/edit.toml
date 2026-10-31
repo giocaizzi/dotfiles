@@ -118,17 +118,9 @@ desc = "vimrc"
 source = "dot_config/vim/vimrc"
 
 # --- Packages and secrets ---
-[edit."packages/unix"]
-desc = "Packages for macOS and Linux (brew, apt, tools)"
-source = ".chezmoiscripts/run_onchange_install-pkgs.sh.tmpl"
-
-[edit."packages/windows"]
-desc = "Packages for Windows (winget)"
-source = ".chezmoiscripts/run_onchange_install-pkgs.ps1.tmpl"
-
-[edit.bws]
-desc = "Bitwarden Secrets Manager CLI version"
-source = ".chezmoidata/bws.toml"
+[edit.packages]
+desc = "Package registry: tools per OS and role, pinned release binaries"
+source = ".chezmoidata/packages.toml"
 
 [edit.registry]
 desc = "This edit registry"

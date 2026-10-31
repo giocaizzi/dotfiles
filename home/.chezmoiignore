@@ -104,6 +104,13 @@ ops/.mcp.json
 ops
 {{ end }}
 
+# Links to the Go toolchain release ([release.go] in .chezmoidata/packages.toml):
+# only where that release is installed (Linux personal machines).
+{{ if not (hasKey (includeTemplate "releases" . | fromJson) "go") }}
+.local/bin/go
+.local/bin/gofmt
+{{ end }}
+
 # Personal-email override only where personal remotes are configured (work machines)
 {{ if not (or (get . "githubUser") (get . "personalGitRemote")) }}
 .config/git/personal
