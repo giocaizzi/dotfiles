@@ -209,7 +209,8 @@ A failed check or render applies nothing; the source keeps the edit, so run the 
 | `dots view <target>` | the composition tree (each node with its registry entry, encrypted nodes marked) and the rendered content on this machine |
 | `dots view <entry>` | the entry's tree and the targets it reaches on this machine |
 | `... --as <os>[,<role>]` | the same for one configuration: os `darwin`, `linux` or `windows`; role `personal` (default), `work` or `light`. A preview, never applied |
-| `... --matrix` | every configuration: a target's identical renders grouped, the others as diffs against the first, the configurations that don't manage it listed; an entry's reached targets per configuration |
+| `... --matrix` | every configuration: 3×3 Catppuccin matrix grid (`darwin`, `linux`, `windows` × `personal`, `work`, `light`) showing reachability and distinct variant paths/renders, followed by a color-coded legend |
+| `dots view [--matrix] [--all]` | whole-setup matrix overview across all registry entries and configurations, with a compact visual combo strip |
 
 The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever role takes it; `--matrix` shows which configuration takes which.
 

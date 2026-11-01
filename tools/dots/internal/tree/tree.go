@@ -139,18 +139,24 @@ func mapsKeys(m map[string][]string) func(func(string) bool) {
 	}
 }
 
+// Invert builds a reverse index from each source-tree dependency to the sorted,
+// unique targets that depend on it. managed maps each target to its source path.
+func (t *Tree) Invert(managed map[string]string) map[string][]string {
+	inv := make(map[string][]string)
+	for target, source := range managed {
+		for _, n := range t.Of(source) {
+			inv[n.Path] = append(inv[n.Path], target)
+		}
+	}
+	for p, targets := range inv {
+		slices.Sort(targets)
+		inv[p] = slices.Compact(targets)
+	}
+	return inv
+}
+
 // Feeds lists, sorted, the targets whose tree holds file; managed maps each target
 // to its source path.
 func (t *Tree) Feeds(managed map[string]string, file string) []string {
-	var out []string
-	for target, source := range managed {
-		for _, n := range t.Of(source) {
-			if n.Path == file {
-				out = append(out, target)
-				break
-			}
-		}
-	}
-	slices.Sort(out)
-	return out
+	return t.Invert(managed)[file]
 }

@@ -116,7 +116,7 @@ func usage(s term.Style) string {
 
 	p("%sUSAGE%s\n", b, o)
 	p("  %schezmoi dots%s %s[edit]%s %s[<what>]%s\n", m, o, y, o, d, o)
-	p("  %schezmoi dots%s %sview%s %s<what>%s %s[--as <os>[,<role>] | --matrix]%s\n", m, o, m, o, y, o, d, o)
+	p("  %schezmoi dots%s %sview%s %s[--matrix] [--all]%s %s[<what>]%s %s[--as <os>[,<role>]]%s\n", m, o, m, o, d, o, y, o, d, o)
 	p("  %schezmoi dots%s %spolicy%s %srender|check%s %s[--harness <name>] [--part <part>] [--os <os>]%s\n", m, o, m, o, y, o, d, o)
 	p("  %schezmoi dots%s %slist%s\n", m, o, m, o)
 	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|plugins|matrix|templates|policy]...%s\n", m, o, m, o, d, o)
@@ -141,7 +141,8 @@ func usage(s term.Style) string {
 
 	p("%sFLAGS%s\n", b, o)
 	p("  %s--as%s %s<os>[,<role>]%s    Render single matrix target (os: darwin|linux|windows; role: personal|work|light)\n", y, o, d, o)
-	p("  %s--matrix%s              Render all matrix configurations as comparative unified diffs\n", y, o)
+	p("  %s--matrix%s              Render matrix grid preview or overview across all configurations\n", y, o)
+	p("  %s--all%s                 Overview across all registry entries\n", y, o)
 	p("  %s--harness%s %s<name>%s      Target AI harness (claude, antigravity, copilot, codex)\n", y, o, d, o)
 	p("  %s--part%s %s<part>%s         Output granularity (permissions, settings, all)\n", y, o, d, o)
 	p("  %s--os%s %s<os>%s             Target operating system (darwin, linux, windows)\n", y, o, d, o)
@@ -150,6 +151,7 @@ func usage(s term.Style) string {
 
 	p("%sEXAMPLES%s\n", b, o)
 	p("  %sdots%s                             Interactive picker for editable components\n", m, o)
+	p("  %sdots view --matrix%s               Overview of all registry entries across OS and role configurations\n", m, o)
 	p("  %sdots agents/work%s                 Edit an entry in private temp copy with live pane diff\n", m, o)
 	p("  %sdots view ~/.claude/CLAUDE.md%s    Display composition tree and target content\n", m, o)
 	p("  %sdots view dot_config/git/config.tmpl --matrix%s\n                                Render and diff all 9 matrix configurations\n", m, o)

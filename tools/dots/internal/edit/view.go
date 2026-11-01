@@ -11,6 +11,7 @@ import (
 
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/matrix"
+	"github.com/giocaizzi/dotfiles/tools/dots/internal/term"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/udiff"
 )
 
@@ -96,18 +97,86 @@ func (s *Service) viewEntry(ctx context.Context, name, source, desc string, runs
 		})
 	}
 	_ = g.Wait()
-	fmt.Fprintf(s.Out, "%s▸ reaches%s\n", st.B, st.O)
-	for i, r := range runs {
+	if len(runs) == 1 {
+		fmt.Fprintf(s.Out, "%s▸ reaches%s\n", st.B, st.O)
 		switch {
-		case fail[i] != nil:
-			fmt.Fprintf(s.Out, "  %s%-17s%s %s✗ render failed%s\n", st.M, r.label, st.O, st.R, st.O)
-		case reach[i] == "":
-			fmt.Fprintf(s.Out, "  %s%-17s%s %snothing%s\n", st.M, r.label, st.O, st.D, st.O)
+		case fail[0] != nil:
+			fmt.Fprintf(s.Out, "  %s%-17s%s %s✗ render failed%s\n", st.M, runs[0].label, st.O, st.R, st.O)
+		case reach[0] == "":
+			fmt.Fprintf(s.Out, "  %s%-17s%s %snothing%s\n", st.M, runs[0].label, st.O, st.D, st.O)
 		default:
-			fmt.Fprintf(s.Out, "  %s%-17s%s %s\n", st.M, r.label, st.O, reach[i])
+			fmt.Fprintf(s.Out, "  %s%-17s%s %s\n", st.M, runs[0].label, st.O, reach[0])
+		}
+		return nil
+	}
+
+	s.renderMatrixReaches(runs, reach, fail)
+	return nil
+}
+
+func (s *Service) renderMatrixReaches(runs []run, reach []string, fail []error) {
+	st := s.Style
+	palette := st.Palette()
+	uniquePaths := []string{}
+	pathColors := map[string]string{}
+	runIndex := map[string]int{}
+	for i, r := range runs {
+		runIndex[r.label] = i
+		if fail[i] == nil && reach[i] != "" {
+			if _, exists := pathColors[reach[i]]; !exists {
+				color := palette[len(uniquePaths)%len(palette)]
+				pathColors[reach[i]] = color
+				uniquePaths = append(uniquePaths, reach[i])
+			}
 		}
 	}
-	return nil
+
+	fmt.Fprintf(s.Out, "%s▸ reaches%s\n", st.B, st.O)
+	st.MatrixGrid(s.Out, func(osName, role string) (glyph, color string) {
+		idx, ok := runIndex[osName+"/"+role]
+		if !ok {
+			return term.SymSquareEmpty, st.D
+		}
+		switch {
+		case fail[idx] != nil:
+			return term.SymCross, st.R
+		case reach[idx] == "":
+			return term.SymSquareEmpty, st.D
+		default:
+			return term.SymSquareFilled, pathColors[reach[idx]]
+		}
+	})
+
+	s.renderMatrixLegend(uniquePaths, pathColors, runs, reach, fail)
+}
+
+func (s *Service) renderMatrixLegend(uniquePaths []string, pathColors map[string]string, runs []run, reach []string, fail []error) {
+	st := s.Style
+	fmt.Fprintf(s.Out, "\n")
+	for _, p := range uniquePaths {
+		var matched []string
+		for i, r := range runs {
+			if reach[i] == p && fail[i] == nil {
+				matched = append(matched, r.label)
+			}
+		}
+		fmt.Fprintf(s.Out, "  %s%s%s %s (%s)\n", pathColors[p], term.SymSquareFilled, st.O, p, strings.Join(matched, ", "))
+	}
+	var unmanaged []string
+	var failed []string
+	for i, r := range runs {
+		if fail[i] != nil {
+			failed = append(failed, r.label)
+		} else if reach[i] == "" {
+			unmanaged = append(unmanaged, r.label)
+		}
+	}
+	if len(unmanaged) > 0 {
+		fmt.Fprintf(s.Out, "  %s%s%s unmanaged (%s)\n", st.D, term.SymSquareEmpty, st.O, strings.Join(unmanaged, ", "))
+	}
+	if len(failed) > 0 {
+		fmt.Fprintf(s.Out, "  %s%s%s failed (%s)\n", st.R, term.SymCross, st.O, strings.Join(failed, ", "))
+	}
 }
 
 // reaches lists, comma-separated, the targets one configuration builds from source.
@@ -189,6 +258,9 @@ func (s *Service) viewTarget(ctx context.Context, target string, mode ViewMode, 
 	}
 	_ = g.Wait()
 	groups, missing := groupRenders(runs, rendered)
+	if mode == ViewMatrix {
+		s.renderTargetMatrix(groups, missing)
+	}
 	for i, g := range groups {
 		if i == 0 {
 			fmt.Fprintf(s.Out, "%s▸ rendered on %s%s\n%s", st.B, strings.Join(g.labels, ", "), st.O, g.text)
@@ -201,4 +273,31 @@ func (s *Service) viewTarget(ctx context.Context, target string, mode ViewMode, 
 		fmt.Fprintf(s.Out, "%s▸ not managed on: %s%s\n", st.D, strings.Join(missing, ", "), st.O)
 	}
 	return nil
+}
+
+func (s *Service) renderTargetMatrix(groups []*renderGroup, missing []string) {
+	st := s.Style
+	palette := st.Palette()
+	fmt.Fprintf(s.Out, "%s▸ matrix%s\n", st.B, st.O)
+	labelGroup := map[string]int{}
+	for gIdx, g := range groups {
+		for _, lbl := range g.labels {
+			labelGroup[lbl] = gIdx
+		}
+	}
+	st.MatrixGrid(s.Out, func(osName, role string) (glyph, color string) {
+		lbl := osName + "/" + role
+		if gIdx, ok := labelGroup[lbl]; ok {
+			return term.SymSquareFilled, palette[gIdx%len(palette)]
+		}
+		return term.SymSquareEmpty, st.D
+	})
+	fmt.Fprintf(s.Out, "\n")
+	for gIdx, g := range groups {
+		fmt.Fprintf(s.Out, "  %s%s%s variant %d (%s)\n", palette[gIdx%len(palette)], term.SymSquareFilled, st.O, gIdx+1, strings.Join(g.labels, ", "))
+	}
+	if len(missing) > 0 {
+		fmt.Fprintf(s.Out, "  %s%s%s unmanaged (%s)\n", st.D, term.SymSquareEmpty, st.O, strings.Join(missing, ", "))
+	}
+	fmt.Fprintf(s.Out, "\n")
 }

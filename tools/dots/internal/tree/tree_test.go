@@ -62,6 +62,35 @@ func TestFeeds(t *testing.T) {
 	}
 }
 
+func TestInvert(t *testing.T) {
+	t.Parallel()
+	managed := map[string]string{
+		"/h/.zshrc": "dot_zshrc.tmpl",
+		"/h/.other": "docs/x.md",
+		"/h/.conf":  "dot_config/app/symlink_conf.tmpl",
+	}
+	inv := New(fixture()).Invert(managed)
+
+	wantDocs := []string{"/h/.other", "/h/.zshrc"}
+	if diff := cmp.Diff(wantDocs, inv["docs/x.md"]); diff != "" {
+		t.Errorf("Invert()[docs/x.md] (-want +got):\n%s", diff)
+	}
+
+	wantConf := []string{"/h/.conf"}
+	if diff := cmp.Diff(wantConf, inv["dot_config/app/conf"]); diff != "" {
+		t.Errorf("Invert()[dot_config/app/conf] (-want +got):\n%s", diff)
+	}
+
+	wantZshrc := []string{"/h/.zshrc"}
+	if diff := cmp.Diff(wantZshrc, inv[".chezmoitemplates/role"]); diff != "" {
+		t.Errorf("Invert()[.chezmoitemplates/role] (-want +got):\n%s", diff)
+	}
+
+	if _, ok := inv["missing"]; ok {
+		t.Errorf("Invert() contains missing entry")
+	}
+}
+
 func TestTopKeys(t *testing.T) {
 	t.Parallel()
 	got := topKeys("a = 1\n[b.c]\nd = 2\n[[e]]\nf = 3\n")

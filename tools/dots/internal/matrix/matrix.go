@@ -29,11 +29,12 @@ type Config struct {
 func OSes() []string { return []string{"darwin", "linux", "windows"} }
 
 // Roles are the machine roles.
-func Roles() []string { return []string{"personal", roleWork, roleLight} }
+func Roles() []string { return []string{rolePersonal, roleWork, roleLight} }
 
 const (
-	roleWork  = "work"
-	roleLight = "light"
+	rolePersonal = "personal"
+	roleWork     = "work"
+	roleLight    = "light"
 )
 
 // All returns every configuration, OS-major.
@@ -50,11 +51,32 @@ func All() []Config {
 // Label is "<os>/<role>".
 func (c Config) Label() string { return c.OS + "/" + c.Role }
 
+// Order returns configurations in OS-major order:
+// darwin (personal, work, light), linux (personal, work, light), windows (personal, work, light).
+func Order() []Config {
+	return All()
+}
+
+// RoleAbbr returns a single-character abbreviation for the role:
+// "P" for personal, "W" for work, and "L" for light.
+func (c Config) RoleAbbr() string {
+	switch c.Role {
+	case rolePersonal:
+		return "P"
+	case roleWork:
+		return "W"
+	case roleLight:
+		return "L"
+	default:
+		return ""
+	}
+}
+
 // Parse reads "<os>", "<os>,<role>" or "<os>/<role>"; the role defaults to personal.
 func Parse(s string) (Config, error) {
 	os, role, _ := strings.Cut(strings.NewReplacer(",", "/").Replace(s), "/")
 	if role == "" {
-		role = "personal"
+		role = rolePersonal
 	}
 	if !slices.Contains(OSes(), os) || !slices.Contains(Roles(), role) {
 		return Config{}, fmt.Errorf("unknown configuration %q (os %s; role %s)", s, strings.Join(OSes(), "|"), strings.Join(Roles(), "|"))

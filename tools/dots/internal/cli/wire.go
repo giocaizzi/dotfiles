@@ -105,30 +105,43 @@ func (d Deps) list(ctx context.Context, args []string) error {
 func (d Deps) view(ctx context.Context, args []string) error {
 	fs := newFlags("view")
 	as := fs.String("as", "", "render one configuration")
-	all := fs.Bool("matrix", false, "render every configuration")
+	matrixFlag := fs.Bool("matrix", false, "render every configuration")
+	all := fs.Bool("all", false, "overview across all registry entries")
 	pos, err := parse(fs, args)
 	if err != nil {
 		return err
 	}
-	if len(pos) != 1 || (*as != "" && *all) {
+	if *as != "" && (*matrixFlag || *all) {
 		return ErrUsage
 	}
-	mode, cfg := edit.ViewHere, matrix.Config{}
-	switch {
-	case *all:
-		mode = edit.ViewMatrix
-	case *as != "":
-		if cfg, err = matrix.Parse(*as); err != nil {
-			return fmt.Errorf("%w: %w", ErrUsage, err)
-		}
-		mode = edit.ViewAs
-	}
+
 	s, err := d.service(ctx, term.NewStyle(d.Stdout, d.Getenv))
 	if err != nil {
 		return err
 	}
 	s.Err = d.Stderr
-	return s.View(ctx, pos[0], mode, cfg)
+
+	switch len(pos) {
+	case 0:
+		if *matrixFlag || *all {
+			return s.ViewOverview(ctx)
+		}
+		return ErrUsage
+	case 1:
+		mode, cfg := edit.ViewHere, matrix.Config{}
+		switch {
+		case *matrixFlag || *all:
+			mode = edit.ViewMatrix
+		case *as != "":
+			if cfg, err = matrix.Parse(*as); err != nil {
+				return fmt.Errorf("%w: %w", ErrUsage, err)
+			}
+			mode = edit.ViewAs
+		}
+		return s.View(ctx, pos[0], mode, cfg)
+	default:
+		return ErrUsage
+	}
 }
 
 func joinLines(fs []finding.Finding) string {
