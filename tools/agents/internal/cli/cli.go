@@ -20,21 +20,23 @@ var ErrUsage = errors.New("usage error")
 
 // Deps encapsulates external dependencies for testability.
 type Deps struct {
-	Stdin  io.Reader
-	Stdout io.Writer
-	Stderr io.Writer
-	Getenv func(string) string
-	GOOS   string
+	Stdin   io.Reader
+	Stdout  io.Writer
+	Stderr  io.Writer
+	Getenv  func(string) string
+	GOOS    string
+	Version string
 }
 
 // Run dispatches subcommands.
-func Run(ctx context.Context, args []string) int {
+func Run(ctx context.Context, args []string, version string) int {
 	d := Deps{
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Getenv: os.Getenv,
-		GOOS:   runtime.GOOS,
+		Stdin:   os.Stdin,
+		Stdout:  os.Stdout,
+		Stderr:  os.Stderr,
+		Getenv:  os.Getenv,
+		GOOS:    runtime.GOOS,
+		Version: version,
 	}
 	return d.Run(ctx, args)
 }
@@ -53,6 +55,9 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runRender(ctx, args[1:])
 	case "prompt":
 		return d.runPrompt(ctx, args[1:])
+	case "version", "-v", "--version":
+		fmt.Fprintf(d.Stdout, "chezmoi-agents %s\n", d.Version)
+		return 0
 	case "help", "-h", "--help":
 		d.usage()
 		return 0
@@ -66,10 +71,11 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 func (d Deps) usage() {
 	fmt.Fprintln(d.Stdout, "Usage: chezmoi-agents <command> [flags]")
 	fmt.Fprintln(d.Stdout, "\nCommands:")
-	fmt.Fprintln(d.Stdout, "  check   Validate harness policy and configuration parity")
-	fmt.Fprintln(d.Stdout, "  render  Render client-native configuration (JSON/TOML)")
-	fmt.Fprintln(d.Stdout, "  prompt  Compose or validate layered system prompt")
-	fmt.Fprintln(d.Stdout, "  help    Show this help message")
+	fmt.Fprintln(d.Stdout, "  check    Validate harness policy and configuration parity")
+	fmt.Fprintln(d.Stdout, "  render   Render client-native configuration (JSON/TOML)")
+	fmt.Fprintln(d.Stdout, "  prompt   Compose or validate layered system prompt")
+	fmt.Fprintln(d.Stdout, "  version  Show version information")
+	fmt.Fprintln(d.Stdout, "  help     Show this help message")
 }
 
 func (d Deps) loadPolicy(explicitPath string) (*policy.Policy, string, error) {
