@@ -17,10 +17,10 @@ import (
 )
 
 // Style holds the colour escapes for one output stream: blue headings (B), mauve
-// labels (M), red (R), green (G), yellow (Y), dim (D) and reset (O). All are empty
+// labels (M), red (R), green (G), yellow (Y), cyan (C), dim (D) and reset (O). All are empty
 // when the stream is no terminal, NO_COLOR is set or TERM is dumb. They are the
 // basic ANSI colours, which the terminal's Catppuccin theme maps.
-type Style struct{ B, M, R, G, Y, D, O string }
+type Style struct{ B, M, R, G, Y, C, D, O string }
 
 // NewStyle decides the colours for w.
 func NewStyle(w io.Writer, getenv func(string) string) Style {
@@ -32,7 +32,7 @@ func NewStyle(w io.Writer, getenv func(string) string) Style {
 		return Style{}
 	}
 	const esc = "\x1b["
-	return Style{B: esc + "1;34m", M: esc + "35m", R: esc + "31m", G: esc + "32m", Y: esc + "33m", D: esc + "2m", O: esc + "0m"}
+	return Style{B: esc + "1;34m", M: esc + "35m", R: esc + "31m", G: esc + "32m", Y: esc + "33m", C: esc + "36m", D: esc + "2m", O: esc + "0m"}
 }
 
 // Tree prints nodes with ├─/└─ connectors, naming each node's registry entry

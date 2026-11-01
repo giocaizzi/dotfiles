@@ -158,6 +158,24 @@ func TestViewRendersAConfiguration(t *testing.T) {
 	}
 }
 
+func TestViewMatrixOverview(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	out, _, err := e.run(t, "", "view", "--matrix")
+	if err != nil || !strings.Contains(strings.ToLower(out), "matrix overview") || !strings.Contains(out, "note") {
+		t.Errorf("view --matrix overview = %q, %v, want matrix overview and note entry", out, err)
+	}
+}
+
+func TestViewEntryMatrix(t *testing.T) {
+	t.Parallel()
+	e := newEnv(t)
+	out, _, err := e.run(t, "", "view", "note", "--matrix")
+	if err != nil || !strings.Contains(out, "darwin") || !strings.Contains(out, "linux") || !strings.Contains(out, "windows") {
+		t.Errorf("view note --matrix = %q, %v, want grid rows (darwin, linux, windows)", out, err)
+	}
+}
+
 func TestEditAppliesWhenConfirmed(t *testing.T) {
 	t.Parallel()
 	e := newEnv(t)

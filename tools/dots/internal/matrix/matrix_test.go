@@ -85,3 +85,41 @@ func TestTOML(t *testing.T) {
 		t.Errorf("TOML() = %q, want %q", got, want)
 	}
 }
+
+func TestOrder(t *testing.T) {
+	t.Parallel()
+	order := Order()
+	wantLabels := []string{
+		"darwin/personal", "darwin/work", "darwin/light",
+		"linux/personal", "linux/work", "linux/light",
+		"windows/personal", "windows/work", "windows/light",
+	}
+	gotLabels := make([]string, 0, len(order))
+	for _, c := range order {
+		gotLabels = append(gotLabels, c.Label())
+	}
+	if diff := cmp.Diff(wantLabels, gotLabels); diff != "" {
+		t.Errorf("Order() (-want +got):\n%s", diff)
+	}
+}
+
+func TestRoleAbbr(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		config Config
+		want   string
+	}{
+		{Config{OS: "darwin", Role: "personal"}, "P"},
+		{Config{OS: "linux", Role: "work"}, "W"},
+		{Config{OS: "windows", Role: "light"}, "L"},
+		{Config{OS: "darwin", Role: "unknown"}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.config.Label(), func(t *testing.T) {
+			t.Parallel()
+			if got := tt.config.RoleAbbr(); got != tt.want {
+				t.Errorf("%v.RoleAbbr() = %q, want %q", tt.config, got, tt.want)
+			}
+		})
+	}
+}
