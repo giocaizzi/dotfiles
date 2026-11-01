@@ -78,6 +78,10 @@ source = ".chezmoitemplates/claude-settings.json"
 desc = "Copilot CLI managed settings (merged into ~/.copilot/settings.json)"
 source = ".chezmoitemplates/copilot-settings.json"
 
+[edit."antigravity/settings"]
+desc = "Antigravity CLI managed settings (merged into ~/.gemini/antigravity-cli/settings.json)"
+source = ".chezmoitemplates/antigravity-settings.json"
+
 # --- Apps ---
 [edit."vscode/settings"]
 desc = "VS Code and Insiders settings.json (symlinked on macOS and Windows)"

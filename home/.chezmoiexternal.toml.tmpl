@@ -65,10 +65,10 @@
 {{- end }}
 
 # giocaizzi/harness checkout for the harnesses that install it from a clone (opencode,
-# pi, Codex agents): .chezmoiscripts/run_onchange_after_install-harness.* runs its installer.
-# Machines with any of the three selected (data.harnesses; light machines select none).
+# pi, Codex agents, Antigravity): .chezmoiscripts/run_onchange_after_install-harness.* runs its installer.
+# Machines with any of the four selected (data.harnesses; light machines select none).
 {{- $harnesses := includeTemplate "harnesses" . | splitList " " }}
-{{- if or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses) }}
+{{- if or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses) (has "antigravity" $harnesses) }}
 [".local/share/giocaizzi-harness"]
     type = "git-repo"
     url = "https://github.com/giocaizzi/harness.git"
