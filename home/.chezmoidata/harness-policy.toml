@@ -1,0 +1,116 @@
+# Common preferences, translated by native harness adapters. Existing shared
+# plugin/MCP/instruction registries remain separate; see docs/OS.md#shared-harness-policy.
+[harnessPolicy.notifications]
+terminalBell = true
+
+[harnessPolicy.permissions]
+denyRead = [
+    "**/.env",
+    "**/.env.local",
+    "**/.env.*.local",
+    "**/.env.development",
+    "**/.env.production",
+    "**/.env.staging",
+    "**/.env.test",
+    "**/secrets/**",
+    "~/.config/shell/secrets.sh",
+    "~/.config/powershell/secrets.ps1",
+    "**/*.pem",
+    "**/*.key",
+    "**/*.p12",
+    "**/*.pfx",
+    "**/id_rsa*",
+    "**/id_ed25519*",
+    "**/.aws/credentials",
+    "**/.aws/config",
+    "**/.ssh/**",
+    "**/.netrc",
+    "**/.npmrc",
+    "**/.pypirc",
+    "**/credentials.json",
+    "**/service-account*.json",
+    "**/gcp-key*.json",
+    "**/*.kubeconfig",
+    "**/kubeconfig"
+]
+denyWrite = [
+    "**/.env",
+    "**/.env.local",
+    "**/.env.*.local",
+    "**/.env.development",
+    "**/.env.production",
+    "**/.env.staging",
+    "**/.env.test",
+    "**/secrets/**",
+    "~/.config/shell/secrets.sh",
+    "~/.config/powershell/secrets.ps1",
+    "**/.aws/credentials",
+    "**/.ssh/**"
+]
+denyCommandPatterns = [
+    "gh pr merge * --admin*"
+]
+denyCommandExact = [
+    "env"
+]
+denyCommandPrefixes = [
+    "printenv",
+    "pipx",
+    "pip",
+    "pip3",
+    "python -m pip",
+    "python3 -m pip"
+]
+askCommandPrefixes = [
+    "bw"
+]
+
+# Native settings preserve each client's execution semantics; these modes are not
+# equivalent and are intentionally not represented by a universal "auto" flag.
+[harnessPolicy.native.claude]
+defaultMode = "auto"
+skipAutoPermissionPrompt = true
+
+[harnessPolicy.native.antigravity]
+agentMode = "auto"
+toolPermission = "always-proceed"
+enableTerminalSandbox = false
+allowNonWorkspaceAccess = true
+
+# Optional Codex preferences. Absent keys leave the current local values untouched;
+# project, launch and session overrides may take precedence over this user config.
+[harnessPolicy.native.codex]
+# model = "example-model"
+# model_reasoning_effort = "medium"
+# approval_policy = "on-request"
+# sandbox_mode = "workspace-write"
+
+# Copilot currently supports these native per-agent model/effort bindings.
+# Other harnesses retain their installed agent definitions and local model choices.
+[harnessPolicy.native.copilot.agents."dev-tools:scout"]
+model = "gpt-6-luna"
+effortLevel = "low"
+
+[harnessPolicy.native.copilot.agents."api:api-reviewer"]
+model = "gpt-6.1-sol"
+effortLevel = "medium"
+
+[harnessPolicy.native.copilot.agents."dev-tools:escalate"]
+model = "gpt-6-astra"
+effortLevel = "medium"
+
+[harnessPolicy.native.copilot.agents."dev-tools:driver"]
+model = "gpt-6.1-sol"
+effortLevel = "medium"
+
+[harnessPolicy.native.copilot.agents."dev-tools:reviewer"]
+model = "gpt-6-luna"
+effortLevel = "medium"
+
+[harnessPolicy.native.copilot.agents."dev-tools:worker"]
+model = "gpt-6-luna"
+effortLevel = "medium"
+
+[harnessPolicy.native.copilot.agents."factory:verifier"]
+model = "gpt-6.1-sol"
+effortLevel = "medium"

@@ -7,7 +7,7 @@
 
 ## Rules
 
-- Layering: pure packages (`finding`, `registry`, `aliasreg`, `harnessreg`, `pkgreg`, `matrix`, `tree`, `udiff`) know nothing of processes or the terminal; `chez` is the only code that runs chezmoi (through the `Runner` port); `edit`, `upgrade`, `lint`, `release` hold use cases behind small consumer-defined ports; `cli` and `cmd/chezmoi-dots` wire adapters and print. No package-level state; `main` calls `run(ctx, args, getenv, stdin, stdout, stderr)`.
+- Layering: pure packages (`finding`, `registry`, `aliasreg`, `harnessreg`, `pkgreg`, `policy`, `matrix`, `tree`, `udiff`) know nothing of processes or the terminal; `chez` is the only code that runs chezmoi (through the `Runner` port); `edit`, `upgrade`, `lint`, `release` hold use cases behind small consumer-defined ports; `cli` and `cmd/chezmoi-dots` wire adapters and print. No package-level state; `main` calls `run(ctx, args, getenv, stdin, stdout, stderr)`.
 - Tests: standard `testing` plus `go-cmp`, hand-written fakes (no mock libraries), `t.Parallel()`, `t.TempDir()`, `-race -shuffle=on`. The end-to-end test drives a real chezmoi and skips when it is absent. A bug gets a failing test first.
 - chezmoi's Go packages are internal, so the stable surface is its command line (`data`, `dump`, `managed`, `cat`, `source-path`, `execute-template`): extend `chez.Client`, never shell out elsewhere. Read-only renders set `dotsRender` so previews download no externals.
 - A new registry key, lint check or subcommand also needs: usage text in `internal/cli`, a case in the tests, and the docs in `docs/OS.md` / `docs/CI.md`.

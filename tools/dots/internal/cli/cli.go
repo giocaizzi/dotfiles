@@ -13,6 +13,7 @@ import (
 
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/edit"
+	"github.com/giocaizzi/dotfiles/tools/dots/internal/term"
 )
 
 // Deps is everything the commands touch outside the process: tests replace it.
@@ -43,7 +44,7 @@ func Run(ctx context.Context, d Deps, args []string) error {
 	cmd, rest := cmdEdit, args
 	if len(args) > 0 {
 		switch args[0] {
-		case cmdEdit, "view", "list", "lint", "audit", "outdated", "bump", "upgrade", "live", "version", "help":
+		case cmdEdit, "view", "list", "policy", "lint", "audit", "outdated", "bump", "upgrade", "live", "version", "help":
 			cmd, rest = args[0], args[1:]
 		case "-h", "--help":
 			cmd = "help"
@@ -56,6 +57,8 @@ func Run(ctx context.Context, d Deps, args []string) error {
 		return d.view(ctx, rest)
 	case "list":
 		return d.list(ctx, rest)
+	case "policy":
+		return d.policy(ctx, rest)
 	case "lint":
 		return d.lint(ctx, rest)
 	case "audit":
@@ -72,7 +75,8 @@ func Run(ctx context.Context, d Deps, args []string) error {
 		fmt.Fprintln(d.Stdout, "chezmoi-dots", d.Version)
 		return nil
 	default:
-		fmt.Fprint(d.Stdout, usage())
+		s := term.NewStyle(d.Stdout, d.Getenv)
+		fmt.Fprint(d.Stdout, usage(s))
 		return nil
 	}
 }
@@ -96,62 +100,65 @@ func parse(fs *flag.FlagSet, args []string) ([]string, error) {
 	}
 }
 
-func usage() string {
-	return strings.TrimLeft(`
-usage: chezmoi dots [edit] [<what>]
-       chezmoi dots view <what> [--as <os>[,<role>] | --matrix]
-       chezmoi dots list
-       chezmoi dots lint [registry|aliases|packages|plugins|matrix|templates]... [--harness-dir <dir>]
-       chezmoi dots audit aliases
-       chezmoi dots outdated
-       chezmoi dots bump [--dry-run] [<release>]...
-       chezmoi dots upgrade [--dry-run] [<step>]...
-       chezmoi dots version | help
+func usage(s term.Style) string {
+	b := s.B // bold blue
+	m := s.M // mauve
+	y := s.Y // yellow
+	d := s.D // dim overlay0
+	o := s.O // reset
 
-Edit any part of the dotfiles in the chezmoi source, then see what it changes.
+	var sb strings.Builder
+	p := func(format string, a ...any) {
+		fmt.Fprintf(&sb, format, a...)
+	}
 
-<what> is, in this order: a registry entry (.chezmoidata/edit.toml, dots list), a file
-of a local entry's folder, a source file (source-relative) or a managed target.
+	p("%schezmoi dots%s %s— Manage, verify and render dotfiles across 9 OS/role matrix configurations%s\n\n", b, o, d, o)
 
-  dots                           pick a registry entry
-  dots agents/work               edit an entry
-  dots ~/.claude/CLAUDE.md       edit what a target is made of: pick a node of its
-                                 composition tree (layers, partials, data files)
-  dots dot_config/git/config.tmpl
-                                 edit a source file by its source-relative path
-  dots ~/.ssh/config.d/<name>    edit a local file in place (a new name creates it)
+	p("%sUSAGE%s\n", b, o)
+	p("  %schezmoi dots%s %s[edit]%s %s[<what>]%s\n", m, o, y, o, d, o)
+	p("  %schezmoi dots%s %sview%s %s<what>%s %s[--as <os>[,<role>] | --matrix]%s\n", m, o, m, o, y, o, d, o)
+	p("  %schezmoi dots%s %spolicy%s %srender|check%s %s[--harness <name>] [--part <part>] [--os <os>]%s\n", m, o, m, o, y, o, d, o)
+	p("  %schezmoi dots%s %slist%s\n", m, o, m, o)
+	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|plugins|matrix|templates|policy]...%s\n", m, o, m, o, d, o)
+	p("  %schezmoi dots%s %saudit%s %saliases%s\n", m, o, m, o, y, o)
+	p("  %schezmoi dots%s %soutdated%s\n", m, o, m, o)
+	p("  %schezmoi dots%s %sbump%s %s[--dry-run]%s %s[<release>]...%s\n", m, o, m, o, d, o, d, o)
+	p("  %schezmoi dots%s %supgrade%s %s[--dry-run]%s %s[<step>]...%s\n", m, o, m, o, d, o, d, o)
+	p("  %schezmoi dots%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
-Every source edit renders the target state of this machine and of 9 configurations
-(darwin, linux, windows x personal, work, light; every harness selected), opens
-$EDITOR (inside tmux, or Windows Terminal, a side pane shows this machine's changes
-on every save), runs the entry's check, renders again and lists the changed targets
-per configuration. A configuration that stops rendering fails the edit: nothing is
-applied. Then, for this machine only: chezmoi diff of the changed targets, "apply
-now? [y/N]", and a reminder to ship a PR. Encrypted files are edited in a private
-temp copy and re-encrypted only when changed. A local file is edited in a private temp
-copy that replaces it once the entry's check passes.
+	p("%sCOMMANDS%s\n", b, o)
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "edit", o, d, "[<what>]", o, "Edit dotfiles source and verify across 9 matrix configs")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "view", o, y, "<what>", o, "Preview rendered target or composition tree")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "policy", o, y, "render|check", o, "Translate or validate cross-harness security policies")
+	p("  %s%-9s%s %-27s %s\n", m, "list", o, "", "List configured editable registry components")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "lint", o, d, "[<check>...]", o, "Check registries, config templates, and rendered scripts")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "audit", o, y, "aliases", o, "Detect unmanaged live shell aliases")
+	p("  %s%-9s%s %-27s %s\n", m, "outdated", o, "", "Check for newer releases of pinned tools")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "bump", o, d, "[--dry-run] [<release>...]", o, "Update pinned checksums and tool versions")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "upgrade", o, d, "[--dry-run] [<step>...]", o, "Execute sequential system/dotfile upgrade steps")
+	p("  %s%-9s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-dots version information")
+	p("  %s%-9s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
 
-  view <what>                    its composition tree and its rendered content
-                                 (an entry: the targets it reaches)
-  --as <os>[,<role>]             render one configuration instead of this machine:
-                                 os darwin|linux|windows, role personal (default),
-                                 work or light; a preview only, never applied
-  --matrix                       every configuration: identical renders grouped,
-                                 the others as diffs against the first
-  list                           the registry entries
+	p("%sFLAGS%s\n", b, o)
+	p("  %s--as%s %s<os>[,<role>]%s    Render single matrix target (os: darwin|linux|windows; role: personal|work|light)\n", y, o, d, o)
+	p("  %s--matrix%s              Render all matrix configurations as comparative unified diffs\n", y, o)
+	p("  %s--harness%s %s<name>%s      Target AI harness (claude, antigravity, copilot, codex)\n", y, o, d, o)
+	p("  %s--part%s %s<part>%s         Output granularity (permissions, settings, all)\n", y, o, d, o)
+	p("  %s--os%s %s<os>%s             Target operating system (darwin, linux, windows)\n", y, o, d, o)
+	p("  %s--file%s %s<path>%s         Explicit path to harness-policy.toml\n", y, o, d, o)
+	p("  %s--dry-run%s             Simulate modifications without writing to disk\n\n", y, o)
 
-  lint                           check the registries, the config template and every
-                                 rendered script and alias template (all checks, or
-                                 the ones named)
-  audit aliases                  list the aliases live in this machine's zsh and bash
-                                 that the registry does not account for (exit 1 if any)
-  outdated                       the pinned release binaries with a newer version
-  bump                           pin the newer versions and their checksums in
-                                 .chezmoidata/packages.toml (all, or the ones named)
-  upgrade                        update the dotfiles, system packages and language
-                                 tools (steps: dotfiles, brew|apt|winget, uv, npm,
-                                 psmodules)
+	p("%sEXAMPLES%s\n", b, o)
+	p("  %sdots%s                             Interactive picker for editable components\n", m, o)
+	p("  %sdots agents/work%s                 Edit an entry in private temp copy with live pane diff\n", m, o)
+	p("  %sdots view ~/.claude/CLAUDE.md%s    Display composition tree and target content\n", m, o)
+	p("  %sdots view dot_config/git/config.tmpl --matrix%s\n                                Render and diff all 9 matrix configurations\n", m, o)
+	p("  %sdots policy render --harness claude --os windows%s\n                                Render native permissions for Claude Code on Windows\n", m, o)
+	p("  %sdots policy check%s                Validate cross-harness policy invariants\n", m, o)
+	p("  %sdots lint%s                        Validate all dotfiles registries and rendered templates\n\n", m, o)
 
-Docs: docs/OS.md#editing-your-dotfiles, docs/OS.md#packages
-`, "\n")
+	p("%sDOCUMENTATION%s\n", b, o)
+	p("  %sdocs/OS.md#editing-your-dotfiles%s %s·%s %sdocs/OS.md#packages%s %s·%s %sdocs/OS.md#shared-harness-policy%s\n", d, o, d, o, d, o, d, o, d, o)
+
+	return sb.String()
 }

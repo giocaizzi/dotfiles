@@ -5,10 +5,12 @@
        when the keys are already set. Ring the terminal bell when a turn ends
        or an approval waits (Ghostty marks the tab: 🔔, border, Dock). */ -}}
 {{- $current := dict -}}
-{{- if .chezmoi.stdin }}{{ $current = fromToml .chezmoi.stdin }}{{ end -}}
+{{- if get .chezmoi "stdin" }}{{ $current = fromToml (get .chezmoi "stdin") }}{{ end -}}
 {{- /* User-scope MCP servers come from .chezmoidata/mcp.toml (.chezmoitemplates/mcp-user.json); the
        ~/ops workspace (ops/dot_codex/config.toml) is trusted so Codex loads it
        (personal machines only, like ops/). */ -}}
+{{- $bell := .harnessPolicy.notifications.terminalBell -}}
+{{- $native := .harnessPolicy.native.codex -}}
 {{- $tui := get $current "tui" | default dict -}}
 {{- $users := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson -}}
 {{- $mcp := get $current "mcp_servers" | default dict -}}
@@ -23,16 +25,18 @@
 {{- range $k, $path := dict "exporter" "logs" "trace_exporter" "traces" "metrics_exporter" "metrics" }}{{ $_ := set $otel $k (dict "otlp-http" (dict "endpoint" (printf "%s/v1/%s" (trimSuffix "/" $.otelEndpoint) $path) "protocol" "binary")) }}{{ end -}}
 {{- $_ := set $otel "environment" "production" -}}
 {{- end -}}
-{{- $ok := and (eq (toString (get $tui "notifications")) "true") (eq (toString (get $tui "notification_method")) "bel") -}}
+{{- $ok := and (eq (toString (get $tui "notifications")) (toString $bell)) (eq (toString (get $tui "notification_method")) "bel") -}}
+{{- range $k := list "model" "model_reasoning_effort" "approval_policy" "sandbox_mode" }}{{ if and (hasKey $native $k) (ne (get $current $k) (get $native $k)) }}{{ $ok = false }}{{ end }}{{ end -}}
 {{- range $n, $u := $users }}{{ if ne (toString (get (get $mcp $n | default dict) "url")) $u }}{{ $ok = false }}{{ end }}{{ end -}}
 {{- if and $trustOps (ne (toString (get (get $projects $ops | default dict) "trust_level")) "trusted") }}{{ $ok = false }}{{ end -}}
 {{- if and $otel (ne (toJson (get $current "otel" | default dict)) (toJson $otel)) }}{{ $ok = false }}{{ end -}}
 {{- if $ok -}}
-{{ .chezmoi.stdin }}
+{{ get .chezmoi "stdin" }}
 {{- else -}}
 {{- range $n, $u := $users }}{{ $e := get $mcp $n | default dict }}{{ $_ := set $e "url" $u }}{{ $_ := set $mcp $n $e }}{{ end -}}
 {{- $_ := set $current "mcp_servers" $mcp -}}
 {{- if $otel }}{{ $_ := set $current "otel" $otel }}{{ end -}}
 {{- if $trustOps }}{{ $e := get $projects $ops | default dict }}{{ $_ := set $e "trust_level" "trusted" }}{{ $_ := set $projects $ops $e }}{{ $_ := set $current "projects" $projects }}{{ end -}}
-{{ $current | setValueAtPath "tui.notifications" true | setValueAtPath "tui.notification_method" "bel" | toToml }}
+{{- range $k := list "model" "model_reasoning_effort" "approval_policy" "sandbox_mode" }}{{ if hasKey $native $k }}{{ $_ := set $current $k (get $native $k) }}{{ end }}{{ end -}}
+{{ $current | setValueAtPath "tui.notifications" $bell | setValueAtPath "tui.notification_method" "bel" | toToml }}
 {{- end -}}
