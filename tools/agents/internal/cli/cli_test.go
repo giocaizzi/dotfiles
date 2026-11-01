@@ -48,7 +48,7 @@ func TestCLIRun_CheckAndRender(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected check exit 0, got %d, stderr: %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "✓ policy") {
+	if !strings.Contains(stdout.String(), "✓ policy & harness parity") {
 		t.Errorf("expected check success output, got %s", stdout.String())
 	}
 
