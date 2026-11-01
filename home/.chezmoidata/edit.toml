@@ -61,6 +61,11 @@ local = ".ssh/config.d"
 check = ["ssh", "-G", "-F", "{file}", "localhost"]
 
 # --- AI harnesses (docs/OS.md#ai-harnesses) ---
+[edit."agents/policy"]
+desc = "Shared harness policy and native execution/model overrides"
+source = ".chezmoidata/harness-policy.toml"
+check = ["chezmoi", "dots", "lint", "templates"]
+
 [edit.mcp]
 desc = "MCP servers by layer: user, personal, ops workspace"
 source = ".chezmoidata/mcp.toml"

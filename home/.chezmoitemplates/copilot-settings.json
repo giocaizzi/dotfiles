@@ -12,17 +12,7 @@
     "type": "command",
     "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"
   },
-  "subagents": {
-    "agents": {
-      "dev-tools:scout": { "model": "gpt-6-luna", "effortLevel": "low" },
-      "api:api-reviewer": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
-      "dev-tools:escalate": { "model": "gpt-6-astra", "effortLevel": "medium" },
-      "dev-tools:driver": { "model": "gpt-6.1-sol", "effortLevel": "medium" },
-      "dev-tools:reviewer": { "model": "gpt-6-luna", "effortLevel": "medium" },
-      "dev-tools:worker": { "model": "gpt-6-luna", "effortLevel": "medium" },
-      "factory:verifier": { "model": "gpt-6.1-sol", "effortLevel": "medium" }
-    }
-  },
+  "subagents": { "agents": {{ .harnessPolicy.native.copilot.agents | toJson }} },
   "inlineImages": false,
   "showReasoning": false,
   "footer": {
@@ -46,7 +36,7 @@
     "https://docs.github.com",
     "https://learn.microsoft.com"
   ],
-  "beep": true,
+  "beep": {{ .harnessPolicy.notifications.terminalBell | toJson }},
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false

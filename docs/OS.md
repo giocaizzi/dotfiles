@@ -117,6 +117,32 @@ chezmoi execute-template --init \
 
 `execute-template` keeps the answer already in your config for a key it finds there (and, unlike `chezmoi init`, re-asks a stored `harnesses` list); point `--config` at an empty `.toml` file to simulate a new machine.
 
+### Shared harness policy
+
+`.chezmoidata/harness-policy.toml` holds common protected read/write paths, restricted command prefixes, terminal-bell preferences and native execution/model overrides. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`). Telemetry already shares the machine's `otelEndpoint` and work-role exclusion; exporter formats and other client-specific settings stay in their adapters.
+
+| Harness | Shared policy adapter | Native settings and limits |
+|---|---|---|
+| Claude Code | Protected paths and commands → `Read`/`Edit`/`Bash` rules; Windows adds its existing `PowerShell` restrictions; bell → `preferredNotifChannel` | `native.claude` keeps `defaultMode` and `skipAutoPermissionPrompt`; broad allows remain native. |
+| Copilot CLI | Bell → `beep` | `native.copilot.agents` keeps per-agent model/effort bindings. Shared permission rules and execution mode are not managed here. |
+| VS Code Copilot | Existing shared instructions and MCP registry | No shared permission, notification or execution mapping. Editor settings remain native. |
+| Codex | Bell → `[tui] notifications` and `notification_method` | Optional `native.codex` keys: `model`, `model_reasoning_effort`, `approval_policy`, `sandbox_mode`. Empty by default, preserving local values. Shared path/command permission rules are not mapped. Installed agents retain their definitions. |
+| opencode | Existing shared instructions, MCP and plugin wiring | Permission, execution and model settings remain unmanaged. Notifications come from the `sounds` plugin. |
+| pi | Existing shared instructions, MCP and plugin wiring | Permission, execution and model settings remain unmanaged. Notifications come from the `sounds` plugin. |
+| Antigravity | Protected paths and commands → `read_file`/`write_file`/`command` rules | `native.antigravity` keeps `agentMode`, `toolPermission`, `enableTerminalSandbox`, `allowNonWorkspaceAccess`; broad allows remain native. No shared bell mapping. |
+
+These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
+
+To change the shared setup:
+
+1. Run `dots agents/policy` and edit the common preference or the named native override. Use the existing `dots mcp`, `dots plugins` and `dots agents/<layer>` entries for those registries.
+2. The editor's `lint templates` check renders the policy adapters across OSes and roles before applying. Review the configuration diffs; unsupported mappings in the table above require a native setting, not an assumed translation.
+3. Start a new client session and inspect its effective settings. An existing session can retain launch/session overrides. Do not use a successful file render as evidence that every native permission is enforced.
+
+Verify a source change with `make check`: policy regression tests preserve the pre-refactor native settings, exercise shared preference changes, optional Codex overrides and runtime-state merges. The template matrix validates the containing settings templates, which include the permission partials. PowerShell execution remains a Windows CI check.
+
+Rollback: restore the previous policy file through git and run `dots agents/policy` to review and apply it. Removing an optional Codex override stops managing that key; it does not delete a value already written to the live config. Restore that local preference explicitly if needed.
+
 ### Adding personal remotes
 
 On a work machine, add another personal org or host by editing the local config (never the repo): in `~/.config/chezmoi/chezmoi.toml` under `[data]`, append to `personalGitRemote` (comma-separated) a github.com org name, which expands to its four URL forms, or a URL glob for any other host, then `chezmoi apply`:

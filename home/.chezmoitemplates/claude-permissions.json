@@ -1,0 +1,13 @@
+{{- $p := .harnessPolicy.permissions -}}
+{{- $deny := list -}}
+{{- range $p.denyCommandPatterns }}{{ $deny = append $deny (printf "Bash(%s)" .) }}{{ end -}}
+{{- range $p.denyRead }}{{ $deny = append $deny (printf "Read(%s)" .) }}{{ end -}}
+{{- range $p.denyWrite }}{{ $deny = append $deny (printf "Edit(%s)" .) }}{{ end -}}
+{{- range $p.denyCommandExact }}{{ $deny = append $deny (printf "Bash(%s)" .) }}{{ end -}}
+{{- range $p.denyCommandPrefixes }}{{ $deny = append $deny (printf "Bash(%s:*)" .) }}{{ end -}}
+{{- if eq .chezmoi.os "windows" -}}
+{{- range $p.denyCommandPrefixes }}{{ if ne . "printenv" }}{{ $deny = append $deny (printf "PowerShell(%s *)" .) }}{{ end }}{{ end -}}
+{{- end -}}
+{{- $ask := list -}}
+{{- range $p.askCommandPrefixes }}{{ $ask = append $ask (printf "Bash(%s)" .) }}{{ $ask = append $ask (printf "Bash(%s *)" .) }}{{ end -}}
+{{- dict "allow" (list "WebSearch" "WebFetch" "Bash" "Bash(gh pr merge * --auto*)") "deny" $deny "ask" $ask "defaultMode" .harnessPolicy.native.claude.defaultMode | toJson -}}
