@@ -1,0 +1,7 @@
+{{- $native := .harnessPolicy.native.pi -}}
+{
+  "defaultProvider": {{ $native.defaultProvider | toJson }},
+  "defaultModel": {{ $native.defaultModel | toJson }},
+  "defaultThinkingLevel": {{ $native.defaultThinkingLevel | toJson }},
+  "packages": {{ $native.packages | toJson }}
+}
