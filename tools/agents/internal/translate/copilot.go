@@ -15,7 +15,7 @@ func CopilotSettings(p *policy.Policy) map[string]any {
 	}
 
 	return map[string]any{
-		"beep": p.Notifications.TerminalBell,
+		"beep": p.UI.TerminalBell || p.Notifications.TerminalBell,
 		"subagents": map[string]any{
 			"agents": agents,
 		},

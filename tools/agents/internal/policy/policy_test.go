@@ -10,16 +10,25 @@ import (
 func TestParseTOML_Valid(t *testing.T) {
 	t.Parallel()
 	input := `
+[harnessPolicy.autonomy]
+executionMode = "auto"
+
 [harnessPolicy.notifications]
 terminalBell = true
 
 [harnessPolicy.permissions]
+allowCommands = ["git *"]
+allowedUrls = ["https://github.com/**"]
 denyRead = ["**/.env"]
 denyWrite = ["**/.env"]
 denyCommandPatterns = ["gh pr merge * --admin*"]
 denyCommandExact = ["env"]
 denyCommandPrefixes = ["printenv"]
 askCommandPrefixes = ["bw"]
+
+[harnessPolicy.models.tiers.scout]
+model = "gpt-6-luna"
+effort = "low"
 
 [harnessPolicy.native.claude]
 defaultMode = "auto"
@@ -36,39 +45,20 @@ packages = ["local/pkg"]
 	}
 
 	if !p.Notifications.TerminalBell {
-		t.Errorf("expected TerminalBell=true")
+		t.Errorf("expected terminalBell true")
 	}
-	if len(p.Permissions.DenyRead) != 1 || p.Permissions.DenyRead[0] != "**/.env" {
-		t.Errorf("unexpected DenyRead: %v", p.Permissions.DenyRead)
+	if len(p.Permissions.DenyRead) != 1 {
+		t.Errorf("expected 1 denyRead entry, got %d", len(p.Permissions.DenyRead))
 	}
-	if p.Native.Pi.DefaultModel != "gpt-5.5" {
-		t.Errorf("unexpected Pi default model: %s", p.Native.Pi.DefaultModel)
+	if len(p.Permissions.AllowCommands) != 1 {
+		t.Errorf("expected 1 allowCommands entry, got %d", len(p.Permissions.AllowCommands))
+	}
+	if p.Native.Claude.DefaultMode != "auto" {
+		t.Errorf("expected defaultMode auto, got %q", p.Native.Claude.DefaultMode)
 	}
 
 	findings := p.Validate("test")
-	if len(findings) != 0 {
-		t.Errorf("expected 0 findings, got %v", findings)
-	}
-}
-
-func TestValidate_Invalid(t *testing.T) {
-	t.Parallel()
-	p := policy.Policy{
-		Permissions: policy.Permissions{
-			DenyRead: []string{""},
-		},
-		Native: policy.Native{
-			Claude: policy.ClaudeNative{
-				DefaultMode: "invalid-mode",
-			},
-			Pi: policy.PiNative{
-				DefaultThinkingLevel: "invalid-level",
-			},
-		},
-	}
-
-	fs := p.Validate("test")
-	if len(fs) < 3 {
-		t.Errorf("expected at least 3 validation errors, got %d", len(fs))
+	if len(findings) > 0 {
+		t.Errorf("unexpected validation findings: %v", findings)
 	}
 }

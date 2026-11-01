@@ -32,11 +32,8 @@
     "showPullRequest": true,
     "showCustom": true
   },
-  "allowedUrls": [
-    "https://docs.github.com",
-    "https://learn.microsoft.com"
-  ],
-  "beep": {{ .harnessPolicy.notifications.terminalBell | toJson }},
+  "allowedUrls": {{ .harnessPolicy.permissions.allowedUrls | toJson }},
+  "beep": {{ (or .harnessPolicy.ui.terminalBell .harnessPolicy.notifications.terminalBell) | toJson }},
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false

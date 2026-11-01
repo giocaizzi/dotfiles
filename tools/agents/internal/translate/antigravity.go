@@ -87,7 +87,7 @@ func AntigravityPermissions(p *policy.Policy) AntigravityPermissionsOutput {
 func AntigravitySettings(p *policy.Policy) map[string]any {
 	agentMode := p.Native.Antigravity.AgentMode
 	if agentMode == "" {
-		agentMode = "auto"
+		agentMode = defaultAuto
 	}
 	toolPerm := p.Native.Antigravity.ToolPermission
 	if toolPerm == "" {

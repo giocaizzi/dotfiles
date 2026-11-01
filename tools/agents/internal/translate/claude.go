@@ -7,6 +7,8 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/policy"
 )
 
+const defaultAuto = "auto"
+
 // ClaudePermissionsOutput is the structure for Claude Code permissions.
 type ClaudePermissionsOutput struct {
 	Allow       []string `json:"allow"`
@@ -84,7 +86,7 @@ func ClaudePermissions(p *policy.Policy, goos string) ClaudePermissionsOutput {
 
 	mode := p.Native.Claude.DefaultMode
 	if mode == "" {
-		mode = "auto"
+		mode = defaultAuto
 	}
 
 	return ClaudePermissionsOutput{
@@ -98,7 +100,7 @@ func ClaudePermissions(p *policy.Policy, goos string) ClaudePermissionsOutput {
 // ClaudeSettings returns the managed subset of Claude Code settings.
 func ClaudeSettings(p *policy.Policy, goos string) map[string]any {
 	notif := "notifications_disabled"
-	if p.Notifications.TerminalBell {
+	if p.UI.TerminalBell || p.Notifications.TerminalBell {
 		notif = "terminal_bell"
 	}
 

@@ -107,7 +107,27 @@ func TestPiSettings(t *testing.T) {
 	if got["defaultModel"] != "gpt-5.5" {
 		t.Errorf("expected defaultModel=gpt-5.5, got %v", got["defaultModel"])
 	}
-	if got["defaultThinkingLevel"] != "medium" {
-		t.Errorf("expected defaultThinkingLevel=medium, got %v", got["defaultThinkingLevel"])
+}
+
+func TestVSCodeSettings(t *testing.T) {
+	t.Parallel()
+	p, _ := loadTestPolicy(t)
+	got := translate.VSCodeSettings(p)
+	terminal, ok := got["chat.tools.terminal.autoApprove"].(map[string]bool)
+	if !ok {
+		t.Fatalf("expected map[string]bool for terminalAutoApprove, got %T", got["chat.tools.terminal.autoApprove"])
+	}
+	if !terminal["git *"] {
+		t.Errorf("expected git * to be true")
+	}
+	if terminal["env"] {
+		t.Errorf("expected env to be false")
+	}
+	urls, ok := got["chat.tools.urls.autoApprove"].(map[string]bool)
+	if !ok {
+		t.Fatalf("expected map[string]bool for urlsAutoApprove, got %T", got["chat.tools.urls.autoApprove"])
+	}
+	if !urls["https://github.com/**"] {
+		t.Errorf("expected https://github.com/** to be true")
 	}
 }

@@ -1,0 +1,23 @@
+{{- /* Reusable OTel / Guard bridge telemetry environment template */ -}}
+{{- $harness := "agent" -}}
+{{- if kindIs "map" . -}}
+  {{- if hasKey . "harness" }}{{ $harness = .harness }}{{ end -}}
+{{- end -}}
+{{- $env := dict -}}
+{{- if and (not (get . "work")) (get . "otelEndpoint") .harnessPolicy.telemetry.enabled -}}
+  {{- $endpoint := get . "otelEndpoint" -}}
+  {{- $service := index .harnessPolicy.telemetry.services $harness | default (printf "%s-harness" $harness) -}}
+  {{- $_ := set $env "OTEL_METRICS_EXPORTER" "otlp" -}}
+  {{- $_ := set $env "OTEL_LOGS_EXPORTER" "otlp" -}}
+  {{- $_ := set $env "OTEL_TRACES_EXPORTER" "otlp" -}}
+  {{- $_ := set $env "OTEL_EXPORTER_OTLP_PROTOCOL" .harnessPolicy.telemetry.protocol -}}
+  {{- $_ := set $env "OTEL_EXPORTER_OTLP_ENDPOINT" $endpoint -}}
+  {{- $_ := set $env "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE" .harnessPolicy.telemetry.temporality -}}
+  {{- $_ := set $env "OTEL_LOG_TOOL_DETAILS" (ternary "1" "0" .harnessPolicy.telemetry.logToolDetails) -}}
+  {{- $_ := set $env "OTEL_LOG_TOOL_CONTENT" (ternary "1" "0" .harnessPolicy.telemetry.logToolContent) -}}
+  {{- $_ := set $env "OTEL_RESOURCE_ATTRIBUTES" (printf "service.name=%s,service.namespace=%s,host.name=%s,host.arch=%s,deployment.environment.name=production" $service .harnessPolicy.telemetry.serviceNamespace .chezmoi.hostname .chezmoi.arch) -}}
+  {{- $_ := set $env "GUARD_OTEL_ENABLED" "1" -}}
+  {{- $_ := set $env "GUARD_OTEL_ENDPOINT" $endpoint -}}
+  {{- $_ := set $env "GUARD_OTEL_SERVICE_NAME" $service -}}
+{{- end -}}
+{{- $env | toJson -}}

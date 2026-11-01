@@ -7,7 +7,7 @@ import (
 // OpenCodeSettings returns the managed subset of opencode settings.
 func OpenCodeSettings(p *policy.Policy) map[string]any {
 	cfg := map[string]any{
-		"bell": p.Notifications.TerminalBell,
+		"bell": p.UI.TerminalBell || p.Notifications.TerminalBell,
 	}
 	if p.Native.OpenCode.DefaultModel != "" {
 		cfg["model"] = p.Native.OpenCode.DefaultModel

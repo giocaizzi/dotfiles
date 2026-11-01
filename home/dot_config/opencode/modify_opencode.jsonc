@@ -10,7 +10,7 @@
 {{- $lsp := get $current "lsp" -}}
 {{- if not (kindIs "map" $lsp) }}{{ $_ := set $current "lsp" true }}{{ end -}}
 {{- $experimental := get $current "experimental" | default dict -}}
-{{- $_ := set $experimental "subagent_depth" 2 -}}
+{{- $_ := set $experimental "subagent_depth" (get .harnessPolicy.autonomy "subagentDepth" | default 2) -}}
 {{- $_ := set $current "experimental" $experimental -}}
 {{- $policy := .harnessPolicy.permissions -}}
 {{- $managedPermissions := list -}}
