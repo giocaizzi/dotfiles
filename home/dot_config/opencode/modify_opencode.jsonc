@@ -1,10 +1,32 @@
 {{- /* chezmoi:modify-template */ -}}
-{{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) merged into
-       opencode's config; other keys stay. The live file is read as JSON, so
-       keep it free of comments. */ -}}
+{{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) and
+        shared OpenCode v2 settings merged into opencode's config; other keys stay.
+        The live file is read as JSON, so keep it free of comments. */ -}}
 {{- $current := dict "$schema" "https://opencode.ai/config.json" -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $servers := get $current "mcp" | default dict -}}
 {{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $servers $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end -}}
 {{- $_ := set $current "mcp" $servers -}}
+{{- $lsp := get $current "lsp" -}}
+{{- if not (kindIs "map" $lsp) }}{{ $_ := set $current "lsp" true }}{{ end -}}
+{{- $experimental := get $current "experimental" | default dict -}}
+{{- $_ := set $experimental "subagent_depth" 2 -}}
+{{- $_ := set $current "experimental" $experimental -}}
+{{- $policy := .harnessPolicy.permissions -}}
+{{- $managedPermissions := list -}}
+{{- $managedPolicies := list -}}
+{{- range $policy.denyRead }}{{ $managedPermissions = append $managedPermissions (dict "action" "read" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "read:%s" .) "effect" "deny") }}{{ end -}}
+{{- range $policy.denyWrite }}{{ $managedPermissions = append $managedPermissions (dict "action" "edit" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "edit:%s" .) "effect" "deny") }}{{ end -}}
+{{- range $policy.denyCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "deny") }}{{ end -}}
+{{- range $policy.denyCommandExact }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "deny") }}{{ end -}}
+{{- range $policy.denyCommandPrefixes }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "deny") }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" (printf "%s *" .) "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s *" .) "effect" "deny") }}{{ end -}}
+{{- range $policy.askCommandPrefixes }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "ask") }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" (printf "%s *" .) "effect" "ask") }}{{ end -}}
+{{- $permissions := list -}}
+{{- range (get $current "permissions" | default list) }}{{ $existing := . }}{{ $managed := false }}{{ range $managedPermissions }}{{ if deepEqual $existing . }}{{ $managed = true }}{{ end }}{{ end }}{{ if not $managed }}{{ $permissions = append $permissions $existing }}{{ end }}{{ end -}}
+{{- range $policy.askCommandPrefixes }}{{ $permissions = append $permissions (dict "action" "shell" "resource" . "effect" "ask") }}{{ $permissions = append $permissions (dict "action" "shell" "resource" (printf "%s *" .) "effect" "ask") }}{{ end -}}
+{{- $_ := set $current "permissions" $permissions -}}
+{{- $policies := list -}}
+{{- range (get $current "policies" | default list) }}{{ $existing := . }}{{ $managed := false }}{{ range $managedPolicies }}{{ if deepEqual $existing . }}{{ $managed = true }}{{ end }}{{ end }}{{ if not $managed }}{{ $policies = append $policies $existing }}{{ end }}{{ end -}}
+{{- range $managedPolicies }}{{ $policies = append $policies . }}{{ end -}}
+{{- $_ := set $current "policies" $policies -}}
 {{- $current | toPrettyJson }}
