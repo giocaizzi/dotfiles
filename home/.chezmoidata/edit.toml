@@ -64,7 +64,7 @@ check = ["ssh", "-G", "-F", "{file}", "localhost"]
 [edit."agents/policy"]
 desc = "Shared harness policy and native execution/model overrides"
 source = ".chezmoidata/harness-policy.toml"
-check = ["chezmoi", "dots", "lint", "templates"]
+check = ["chezmoi-agents", "check", "-file", "{file}"]
 
 [edit.mcp]
 desc = "MCP servers by layer: user, personal, ops workspace"

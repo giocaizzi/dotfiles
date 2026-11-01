@@ -44,7 +44,7 @@ func Run(ctx context.Context, d Deps, args []string) error {
 	cmd, rest := cmdEdit, args
 	if len(args) > 0 {
 		switch args[0] {
-		case cmdEdit, "view", "list", "policy", "lint", "audit", "outdated", "bump", "upgrade", "live", "version", "help":
+		case cmdEdit, "view", "list", "lint", "audit", "outdated", "bump", "upgrade", "live", "version", "help":
 			cmd, rest = args[0], args[1:]
 		case "-h", "--help":
 			cmd = "help"
@@ -57,8 +57,6 @@ func Run(ctx context.Context, d Deps, args []string) error {
 		return d.view(ctx, rest)
 	case "list":
 		return d.list(ctx, rest)
-	case "policy":
-		return d.policy(ctx, rest)
 	case "lint":
 		return d.lint(ctx, rest)
 	case "audit":
@@ -117,9 +115,8 @@ func usage(s term.Style) string {
 	p("%sUSAGE%s\n", b, o)
 	p("  %schezmoi dots%s %s[edit]%s %s[<what>]%s\n", m, o, y, o, d, o)
 	p("  %schezmoi dots%s %sview%s %s[--matrix] [--all]%s %s[<what>]%s %s[--as <os>[,<role>]]%s\n", m, o, m, o, d, o, y, o, d, o)
-	p("  %schezmoi dots%s %spolicy%s %srender|check%s %s[--harness <name>] [--part <part>] [--os <os>]%s\n", m, o, m, o, y, o, d, o)
 	p("  %schezmoi dots%s %slist%s\n", m, o, m, o)
-	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|plugins|matrix|templates|policy]...%s\n", m, o, m, o, d, o)
+	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|plugins|matrix|templates]...%s\n", m, o, m, o, d, o)
 	p("  %schezmoi dots%s %saudit%s %saliases%s\n", m, o, m, o, y, o)
 	p("  %schezmoi dots%s %soutdated%s\n", m, o, m, o)
 	p("  %schezmoi dots%s %sbump%s %s[--dry-run]%s %s[<release>]...%s\n", m, o, m, o, d, o, d, o)
@@ -129,7 +126,6 @@ func usage(s term.Style) string {
 	p("%sCOMMANDS%s\n", b, o)
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "edit", o, d, "[<what>]", o, "Edit dotfiles source and verify across 9 matrix configs")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "view", o, y, "<what>", o, "Preview rendered target or composition tree")
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "policy", o, y, "render|check", o, "Translate or validate cross-harness security policies")
 	p("  %s%-9s%s %-27s %s\n", m, "list", o, "", "List configured editable registry components")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "lint", o, d, "[<check>...]", o, "Check registries, config templates, and rendered scripts")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "audit", o, y, "aliases", o, "Detect unmanaged live shell aliases")
@@ -143,10 +139,6 @@ func usage(s term.Style) string {
 	p("  %s--as%s %s<os>[,<role>]%s    Render single matrix target (os: darwin|linux|windows; role: personal|work|light)\n", y, o, d, o)
 	p("  %s--matrix%s              Render matrix grid preview or overview across all configurations\n", y, o)
 	p("  %s--all%s                 Overview across all registry entries\n", y, o)
-	p("  %s--harness%s %s<name>%s      Target AI harness (claude, antigravity, copilot, codex)\n", y, o, d, o)
-	p("  %s--part%s %s<part>%s         Output granularity (permissions, settings, all)\n", y, o, d, o)
-	p("  %s--os%s %s<os>%s             Target operating system (darwin, linux, windows)\n", y, o, d, o)
-	p("  %s--file%s %s<path>%s         Explicit path to harness-policy.toml\n", y, o, d, o)
 	p("  %s--dry-run%s             Simulate modifications without writing to disk\n\n", y, o)
 
 	p("%sEXAMPLES%s\n", b, o)
@@ -155,8 +147,6 @@ func usage(s term.Style) string {
 	p("  %sdots agents/work%s                 Edit an entry in private temp copy with live pane diff\n", m, o)
 	p("  %sdots view ~/.claude/CLAUDE.md%s    Display composition tree and target content\n", m, o)
 	p("  %sdots view dot_config/git/config.tmpl --matrix%s\n                                Render and diff all 9 matrix configurations\n", m, o)
-	p("  %sdots policy render --harness claude --os windows%s\n                                Render native permissions for Claude Code on Windows\n", m, o)
-	p("  %sdots policy check%s                Validate cross-harness policy invariants\n", m, o)
 	p("  %sdots lint%s                        Validate all dotfiles registries and rendered templates\n\n", m, o)
 
 	p("%sDOCUMENTATION%s\n", b, o)
