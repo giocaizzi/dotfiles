@@ -21,13 +21,12 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/harnessreg"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/matrix"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/pkgreg"
-	"github.com/giocaizzi/dotfiles/tools/dots/internal/policy"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/registry"
 )
 
 // Checks lists the check names, in the order `lint` runs them.
 func Checks() []string {
-	return []string{"registry", "aliases", "packages", "plugins", "policy", "matrix", "templates"}
+	return []string{"registry", "aliases", "packages", "plugins", "matrix", "templates"}
 }
 
 // Linter runs the checks against one source dir.
@@ -53,8 +52,6 @@ func (l Linter) Run(ctx context.Context, name string) ([]finding.Finding, error)
 		return l.packages(ctx)
 	case "plugins":
 		return l.plugins(ctx)
-	case "policy":
-		return l.policy(ctx)
 	case "matrix":
 		return l.matrix(ctx)
 	case "templates":
@@ -184,25 +181,6 @@ func (l Linter) upstreamPlugins(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("list harness plugins (set --harness-dir to a checkout, or sign in with gh): %w", err)
 	}
 	return strings.Fields(string(out)), nil
-}
-
-func (l Linter) policy(_ context.Context) ([]finding.Finding, error) {
-	path := filepath.Clean(filepath.Join(l.Src, ".chezmoidata", "harness-policy.toml"))
-	f, err := os.Open(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, fmt.Errorf("open harness-policy.toml: %w", err)
-	}
-	defer f.Close()
-
-	p, err := policy.ParseTOML(f)
-	if err != nil {
-		return []finding.Finding{finding.New(".chezmoidata/harness-policy.toml", "parse: %v", err)}, nil
-	}
-
-	return p.Validate(".chezmoidata/harness-policy.toml"), nil
 }
 
 // matrix checks the config template against what the matrix seeds and the harness
