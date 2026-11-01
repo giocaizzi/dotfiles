@@ -21,7 +21,7 @@ ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help dots lint test test-syntax check check-fast aliases-audit
+.PHONY: help dots agents lint test test-syntax check check-fast aliases-audit
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -29,17 +29,22 @@ help: ## List targets
 dots: ## Build the chezmoi-dots plugin into tools/dots/bin/
 	@$(MAKE) --no-print-directory -C tools/dots build
 
-lint: dots ## shellcheck, validate JSON, lint the registries and every rendered template, lint the plugin
+agents: ## Build chezmoi-agents into tools/agents/bin/
+	@$(MAKE) --no-print-directory -C tools/agents build
+
+lint: dots agents ## shellcheck, validate JSON, lint the registries and every rendered template, lint the plugins
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
 	$(MAKE) -C tools/dots lint
+	$(MAKE) -C tools/agents lint
 
 aliases-audit: dots ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
 
-test: test-syntax ## Syntax-check bash and zsh files, test the plugin
+test: test-syntax ## Syntax-check bash and zsh files, test the plugins
 	$(MAKE) -C tools/dots test
+	$(MAKE) -C tools/agents test
 
 test-syntax: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
