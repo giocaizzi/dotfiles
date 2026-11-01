@@ -1,0 +1,8 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Managed keys (.chezmoitemplates/pi-settings.json) win; keys Pi writes itself
+       (deviceId, lastChangelogVersion) stay local. packages list is unioned. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $managed := includeTemplate "pi-settings.json" . | fromJson -}}
+{{- $pkgs := concat (get $current "packages" | default list) $managed.packages | uniq -}}
+{{- mergeOverwrite $current $managed | setValueAtPath "packages" $pkgs | toPrettyJson }}

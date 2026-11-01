@@ -114,3 +114,12 @@ effortLevel = "medium"
 [harnessPolicy.native.copilot.agents."factory:verifier"]
 model = "gpt-6.1-sol"
 effortLevel = "medium"
+
+# Native Pi agent settings.
+[harnessPolicy.native.pi]
+defaultProvider = "openai"
+defaultModel = "gpt-5.5"
+defaultThinkingLevel = "medium"
+packages = [
+    "../../.local/share/giocaizzi-harness"
+]

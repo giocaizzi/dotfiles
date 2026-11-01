@@ -61,4 +61,14 @@ func TestCLIRun_CheckAndRender(t *testing.T) {
 	if !strings.Contains(stdout.String(), "defaultProvider") {
 		t.Errorf("expected pi output, got %s", stdout.String())
 	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = d.Run(context.Background(), []string{"prompt", "-profile", "personal", "-check"})
+	if code != 0 {
+		t.Fatalf("expected prompt check exit 0, got %d, stderr: %s", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "✓ prompt") {
+		t.Errorf("expected prompt check success output, got %s", stdout.String())
+	}
 }

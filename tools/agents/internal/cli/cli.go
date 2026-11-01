@@ -51,6 +51,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runCheck(ctx, args[1:])
 	case "render":
 		return d.runRender(ctx, args[1:])
+	case "prompt":
+		return d.runPrompt(ctx, args[1:])
 	case "help", "-h", "--help":
 		d.usage()
 		return 0
@@ -66,6 +68,7 @@ func (d Deps) usage() {
 	fmt.Fprintln(d.Stdout, "\nCommands:")
 	fmt.Fprintln(d.Stdout, "  check   Validate harness policy and configuration parity")
 	fmt.Fprintln(d.Stdout, "  render  Render client-native configuration (JSON/TOML)")
+	fmt.Fprintln(d.Stdout, "  prompt  Compose or validate layered system prompt")
 	fmt.Fprintln(d.Stdout, "  help    Show this help message")
 }
 
