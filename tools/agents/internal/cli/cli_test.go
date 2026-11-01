@@ -24,7 +24,7 @@ func TestCLIRun_Help(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected code 0, got %d", code)
 	}
-	if !strings.Contains(stdout.String(), "Usage: chezmoi-agents") {
+	if !strings.Contains(stdout.String(), "chezmoi agents") || !strings.Contains(stdout.String(), "USAGE") {
 		t.Errorf("expected usage output, got %q", stdout.String())
 	}
 }

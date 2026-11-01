@@ -10,9 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/policy"
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/term"
 )
 
 // ErrUsage indicates incorrect command invocation.
@@ -69,13 +71,55 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 }
 
 func (d Deps) usage() {
-	fmt.Fprintln(d.Stdout, "Usage: chezmoi-agents <command> [flags]")
-	fmt.Fprintln(d.Stdout, "\nCommands:")
-	fmt.Fprintln(d.Stdout, "  check    Validate harness policy and configuration parity")
-	fmt.Fprintln(d.Stdout, "  render   Render client-native configuration (JSON/TOML)")
-	fmt.Fprintln(d.Stdout, "  prompt   Compose or validate layered system prompt")
-	fmt.Fprintln(d.Stdout, "  version  Show version information")
-	fmt.Fprintln(d.Stdout, "  help     Show this help message")
+	s := term.NewStyle(d.Stdout, d.Getenv)
+	fmt.Fprint(d.Stdout, usage(s))
+}
+
+func usage(s term.Style) string {
+	b := s.B // bold blue
+	m := s.M // mauve
+	y := s.Y // yellow
+	d := s.D // dim overlay0
+	o := s.O // reset
+
+	var sb strings.Builder
+	p := func(format string, a ...any) {
+		fmt.Fprintf(&sb, format, a...)
+	}
+
+	p("%schezmoi agents%s %s— AI harness configuration, policy validation and parity engine%s\n\n", b, o, d, o)
+
+	p("%sUSAGE%s\n", b, o)
+	p("  %schezmoi agents%s %scheck%s %s[-file <path>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %srender%s %s[-file <path>]%s %s-harness <name>%s %s[-target <file>]%s\n", m, o, m, o, d, o, y, o, d, o)
+	p("  %schezmoi agents%s %sprompt%s %s[-profile <personal|work|light>]%s %s[-check]%s\n", m, o, m, o, d, o, d, o)
+	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
+
+	p("%sCOMMANDS%s\n", b, o)
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "check", o, d, "[-file <path>]", o, "Validate harness policy and 6-way client parity")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "render", o, y, "-harness <name>", o, "Render client-native configuration (JSON/TOML)")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "prompt", o, d, "[-profile <profile>]", o, "Compose or validate layered system prompt")
+	p("  %s%-9s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
+	p("  %s%-9s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
+
+	p("%sFLAGS%s\n", b, o)
+	p("  %s-file%s %s<path>%s         Path to harness-policy.toml (defaults to .chezmoidata)\n", y, o, d, o)
+	p("  %s-harness%s %s<name>%s      Target harness (claude|antigravity|copilot|codex|pi|opencode)\n", y, o, d, o)
+	p("  %s-profile%s %s<profile>%s   System prompt profile (personal|work|light)\n", y, o, d, o)
+	p("  %s-check%s               Validate layer presence without printing output\n", y, o)
+	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n\n", y, o, d, o)
+
+	p("%sEXAMPLES%s\n", b, o)
+	p("  %schezmoi-agents check%s                           Validate policy and parity across all 6 harnesses\n", m, o)
+	p("  %schezmoi-agents render -harness pi%s              Render Pi native agent configuration\n", m, o)
+	p("  %schezmoi-agents render -harness antigravity%s     Render Antigravity CLI native permissions\n", m, o)
+	p("  %schezmoi-agents prompt -profile personal -check%s Verify personal prompt layer assembly\n", m, o)
+	p("  %schezmoi-agents prompt -profile work%s            Display composed instructions for work profile\n\n", m, o)
+
+	p("%sDOCUMENTATION%s\n", b, o)
+	p("  %sdocs/OS.md#shared-harness-policy%s %s·%s %sdocs/OS.md#agent-instructions%s\n", d, o, d, o, d, o)
+
+	return sb.String()
 }
 
 func (d Deps) loadPolicy(explicitPath string) (*policy.Policy, string, error) {
