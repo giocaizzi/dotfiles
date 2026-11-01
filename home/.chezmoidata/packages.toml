@@ -333,7 +333,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.chezmoi-dots]
 # The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
 # on a dots-vX.Y.Z tag. A bare binary per platform.
-version = "0.3.0"
+version = "0.4.0"
 url = "https://github.com/giocaizzi/dotfiles/releases/download/dots-v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
 exe = true
@@ -347,17 +347,17 @@ exe = true
 "windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "39b88ab1cd9310cbed5340b880ea1b33eea736dd73cf3dab358f5b572b35da24"
-"darwin/arm64" = "a5d5a6db1231b69564d00765d2851b00efcb95f7470187d990c32b71d48d02a8"
-"linux/amd64" = "b6e0b8c5d11983da04ac72073135ebe7998d8819e446b333cff342cfe8726d83"
-"linux/arm64" = "e57f23cb3eea376986d85e43988d4267d798819e97d4fe90ff572d7a981ca807"
-"windows/amd64" = "513351eb44e45be57919e1897195e942c23e241dc9514ac9a4f38e326967d30e"
-"windows/arm64" = "579dc44e9ca5a8a10b6d52d0a9980a71a93f804c7cee23618f9847f063b4b14f"
+"darwin/amd64" = "0bf68ad0e4e1e05c0b69443f7a4868a0e2e9c59a5eafa4bcb712640bfa00757f"
+"darwin/arm64" = "a4516315b28a085adc40f41f766120c3562b481fb37784b194ef4888cbc586d6"
+"linux/amd64" = "6b91b96a8f01a46e8ac6342f86e2b0b5ac4ac1c39bf9df1fd9ac2592b90dda31"
+"linux/arm64" = "ab40ba9b4c63ac2bc62d0bd90daac8e514ac1c7926710dff65786b377f4d2b94"
+"windows/amd64" = "2f80c4ddeee0051ed4965d1d73dcdd8ce2263feea1a21d6e46d4f0938389c93b"
+"windows/arm64" = "3e9b5ed68a829b80d7b87f94c3fb766089ff44f20a66319ebab3ec37a16bf7b9"
 
 [release.chezmoi-agents]
 # The `chezmoi-agents` policy and parity engine (tools/agents), released by .github/workflows/release-agents.yml
 # on an agents-vX.Y.Z tag. A bare binary per platform.
-version = "0.1.1"
+version = "0.2.0"
 url = "https://github.com/giocaizzi/dotfiles/releases/download/agents-v{version}/chezmoi-agents_{version}_{target}"
 type = "file"
 exe = true
@@ -371,9 +371,9 @@ exe = true
 "windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-agents.sha256]
-"darwin/amd64" = "d65ba0bd92f97fdbdfbf61690d43340f6ca3b2378df67d145d3ac68691044009"
-"darwin/arm64" = "57b4003bedf939bb4f386eadb26dcfd9a47f3b0c71d0cf9fd06a688849074ebd"
-"linux/amd64" = "9a2fe41a93601459b2a6317261f586b1b8529b31075a1beabe3429af324d1883"
-"linux/arm64" = "341399608d77c7ed4e150f4c545310000835028d4e204cf0d94dd2d0ecbbbd75"
-"windows/amd64" = "185f631823cf9405325b6710446f2f766ff76591c5f6ed473399090ce7fa8f32"
-"windows/arm64" = "b2925d82cc64d3481b4451896b1a0615aa941b8d9d198500907a8fb546099518"
+"darwin/amd64" = "0d4bd335a85b1a1bf979a63d4455cb2e94b30b4c8d5c75927eb8a6d4096c4ecb"
+"darwin/arm64" = "52f62e1945812a39166b2912906d4b917ef7b7db837b5e32362145390eacfba1"
+"linux/amd64" = "12100a997d0c696a1b356dd34effd95ef07bcdc2b2b772f9f902d4082ffd971b"
+"linux/arm64" = "588711f376cad9825a27b7618ac9462158d4312827b480c7759c1ff0e9890de7"
+"windows/amd64" = "f8fd03d0a5a70d1ac40102b7f8e16fc440af2043b2bf76521aae8b793d059c54"
+"windows/arm64" = "91824464ee92939bb16012aec9c77b41dd06712f3957fdfdd3b2802d09eef58b"
