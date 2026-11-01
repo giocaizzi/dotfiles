@@ -6,9 +6,10 @@ import (
 
 // CodexConfig returns the managed subset of Codex configuration as a map.
 func CodexConfig(p *policy.Policy) map[string]any {
+	bell := p.UI.TerminalBell || p.Notifications.TerminalBell
 	cfg := map[string]any{
 		"tui": map[string]any{
-			"notifications":       p.Notifications.TerminalBell,
+			"notifications":       bell,
 			"notification_method": "bel",
 		},
 	}

@@ -1,9 +1,47 @@
-# Common preferences, translated by native harness adapters. Existing shared
-# plugin/MCP/instruction registries remain separate; see docs/OS.md#shared-harness-policy.
-[harnessPolicy.notifications]
-terminalBell = true
+# ==============================================================================
+# CANONICAL AI HARNESS POLICY & RUNTIME CONFIGURATION
+# Standardized across Claude Code, Copilot CLI, VS Code, Codex, OpenCode, Pi, Antigravity
+# Reference: docs/OS.md#shared-harness-policy
+# ==============================================================================
 
+# --- D1: Runtime & Autonomy ---
+[harnessPolicy.autonomy]
+executionMode = "auto"             # "auto" | "on-request" | "prompt"
+sandboxMode = "unrestricted"       # "workspace-write" | "unrestricted"
+allowNonWorkspaceAccess = true
+subagentDepth = 2
+allowSubagentInvocations = true
+askTimeout = "60s"
+mode = "auto"
+
+# --- D2: Permissions & Security (Universal ACL) ---
 [harnessPolicy.permissions]
+allowCommands = [
+    "git *",
+    "gh *",
+    "make *",
+    "uv *",
+    "jq *",
+    "npm *",
+    "cargo *",
+    "go *",
+    "chezmoi *"
+]
+
+allowedUrls = [
+    "https://github.com/**",
+    "https://api.github.com/**",
+    "https://docs.github.com/**",
+    "https://learn.microsoft.com/**",
+    "https://*.chezmoi.io/**",
+    "https://*.claude.ai/**",
+    "https://*.claude.com/**",
+    "https://docs.anthropic.com/**",
+    "https://*.openai.com/**",
+    "https://*.google.com/**",
+    "https://unifiedharnessprotocol.org/**"
+]
+
 denyRead = [
     "**/.env",
     "**/.env.local",
@@ -33,6 +71,7 @@ denyRead = [
     "**/*.kubeconfig",
     "**/kubeconfig"
 ]
+
 denyWrite = [
     "**/.env",
     "**/.env.local",
@@ -47,12 +86,15 @@ denyWrite = [
     "**/.aws/credentials",
     "**/.ssh/**"
 ]
+
 denyCommandPatterns = [
     "gh pr merge * --admin*"
 ]
+
 denyCommandExact = [
     "env"
 ]
+
 denyCommandPrefixes = [
     "printenv",
     "pipx",
@@ -61,32 +103,83 @@ denyCommandPrefixes = [
     "python -m pip",
     "python3 -m pip"
 ]
+
 askCommandPrefixes = [
     "bw"
 ]
 
-# Native settings preserve each client's execution semantics; these modes are not
-# equivalent and are intentionally not represented by a universal "auto" flag.
+# --- D3: Models & Reasoning Tiers ---
+[harnessPolicy.models]
+defaultEffortLevel = "medium"      # "low" | "medium" | "high"
+showThinkingSummaries = true
+
+[harnessPolicy.models.tiers.scout]
+model = "gpt-6-luna"
+effort = "low"
+
+[harnessPolicy.models.tiers.worker]
+model = "gpt-6-luna"
+effort = "medium"
+
+[harnessPolicy.models.tiers.driver]
+model = "gpt-6.1-sol"
+effort = "medium"
+
+[harnessPolicy.models.tiers.escalate]
+model = "gpt-6-astra"
+effort = "medium"
+
+# --- D4: Context & Compaction ---
+[harnessPolicy.context]
+autoCompact = true
+autoCompactWindow = 500000
+promptCacheTtl = "1h"
+subagentPromptCacheTtl = "1h"
+maxTurnTokens = 32000
+maxTokens = 200000
+
+# --- D5: UI, TUI & Notifications ---
+[harnessPolicy.ui]
+terminalBell = true
+theme = "Catppuccin Mocha"
+tuiMode = "fullscreen"
+viewMode = "focus"
+outputStyle = "Concise"
+showTurnDuration = true
+progressBar = true
+timeFormat = "24h"
+
+[harnessPolicy.notifications]
+terminalBell = true
+
+# --- D6: Telemetry & Observability (Dual-Tier Everywhere) ---
+[harnessPolicy.telemetry]
+enabled = true
+dualTier = true
+protocol = "http/protobuf"
+temporality = "cumulative"
+logToolDetails = true
+logToolContent = false
+serviceNamespace = "agent-harness"
+attributes = { "deployment.environment.name" = "production", "service.namespace" = "agent-harness" }
+services = { claude = "claude-code", copilot = "copilot-cli", vscode = "vscode-copilot", codex = "codex-cli", opencode = "opencode", pi = "pi-agent", antigravity = "antigravity-cli" }
+hooksBridge = true
+
+# --- D7: Language Server Protocol (LSP) ---
+[harnessPolicy.lsp]
+enabled = true
+python = "pyright"
+typescript = "typescript-language-server"
+go = "gopls"
+servers = ["gopls", "ruff", "pyright", "ts_ls"]
+
+# --- D8: Native Overrides & Escapes ---
 [harnessPolicy.native.claude]
 defaultMode = "auto"
 skipAutoPermissionPrompt = true
+cleanupPeriodDays = 365
+disableClaudeAiConnectors = true
 
-[harnessPolicy.native.antigravity]
-agentMode = "auto"
-toolPermission = "always-proceed"
-enableTerminalSandbox = false
-allowNonWorkspaceAccess = true
-
-# Optional Codex preferences. Absent keys leave the current local values untouched;
-# project, launch and session overrides may take precedence over this user config.
-[harnessPolicy.native.codex]
-# model = "example-model"
-# model_reasoning_effort = "medium"
-# approval_policy = "on-request"
-# sandbox_mode = "workspace-write"
-
-# Copilot currently supports these native per-agent model/effort bindings.
-# Other harnesses retain their installed agent definitions and local model choices.
 [harnessPolicy.native.copilot.agents."dev-tools:scout"]
 model = "gpt-6-luna"
 effortLevel = "low"
@@ -115,7 +208,16 @@ effortLevel = "medium"
 model = "gpt-6.1-sol"
 effortLevel = "medium"
 
-# Native Pi agent settings.
+[harnessPolicy.native.antigravity]
+agentMode = "auto"
+toolPermission = "always-proceed"
+enableTerminalSandbox = false
+allowNonWorkspaceAccess = true
+
+[harnessPolicy.native.codex]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+
 [harnessPolicy.native.pi]
 defaultProvider = "openai"
 defaultModel = "gpt-5.5"
@@ -123,3 +225,7 @@ defaultThinkingLevel = "medium"
 packages = [
     "../../.local/share/giocaizzi-harness"
 ]
+
+[harnessPolicy.native.opencode]
+defaultModel = "gpt-5.5"
+sandbox = false

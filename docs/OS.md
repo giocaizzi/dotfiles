@@ -119,17 +119,17 @@ chezmoi execute-template --init \
 
 ### Shared harness policy
 
-`.chezmoidata/harness-policy.toml` holds common protected read/write paths, restricted command prefixes, terminal-bell preferences and native execution/model overrides. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`). Telemetry already shares the machine's `otelEndpoint` and work-role exclusion; exporter formats and other client-specific settings stay in their adapters.
+`.chezmoidata/harness-policy.toml` holds declarative cross-harness configurations across 8 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
 
 | Harness | Shared policy adapter | Native settings and limits |
 |---|---|---|
-| Claude Code | Protected paths and commands → `Read`/`Edit`/`Bash` rules; Windows adds its existing `PowerShell` restrictions; bell → `preferredNotifChannel` | `native.claude` keeps `defaultMode` and `skipAutoPermissionPrompt`; broad allows remain native. |
-| Copilot CLI | Bell → `beep` | `native.copilot.agents` keeps per-agent model/effort bindings. Shared permission rules and execution mode are not managed here. |
-| VS Code Copilot | Existing shared instructions and MCP registry | No shared permission, notification or execution mapping. Editor settings remain native. |
-| Codex | Bell → `[tui] notifications` and `notification_method` | Optional `native.codex` keys: `model`, `model_reasoning_effort`, `approval_policy`, `sandbox_mode`. Empty by default, preserving local values. Shared path/command permission rules are not mapped. Installed agents retain their definitions. |
-| opencode | Existing shared instructions, MCP and plugin wiring; protected paths and denied commands → hard `tool.use` policies, sensitive command prefixes → ordered `shell` permission asks | LSP is enabled (existing object configuration is retained) and `experimental.subagent_depth` is 2. Execution and model settings remain unmanaged. Notifications come from the `sounds` plugin. |
-| pi | Existing shared instructions, MCP and plugin wiring | Permission, execution and model settings remain unmanaged. Notifications come from the `sounds` plugin. |
-| Antigravity | Protected paths and commands → `read_file`/`write_file`/`command` rules | `native.antigravity` keeps `agentMode`, `toolPermission`, `enableTerminalSandbox`, `allowNonWorkspaceAccess`; broad allows remain native. No shared bell mapping. |
+| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
+| Copilot CLI | Bell → `beep`; telemetry env injected | `native.copilot.agents` keeps per-agent model/effort bindings. |
+| VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme | Editor settings in `home/dot_config/Code/User/settings.json` checked via `chezmoi-agents check`. |
+| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
+| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env | LSP enabled, `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
+| pi | Shared instructions, MCP and plugin wiring; telemetry env | Bell via `sounds` plugin, native model and extension settings. |
+| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission | Managed via `antigravity-settings.json`. |
 
 These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
 

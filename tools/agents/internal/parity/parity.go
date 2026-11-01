@@ -10,12 +10,13 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/translate"
 )
 
-// SupportedHarnesses returns all 6 managed AI harnesses.
+// SupportedHarnesses returns all 7 managed AI harnesses.
 func SupportedHarnesses() []string {
 	return []string{
 		"claude",
 		"antigravity",
 		"copilot",
+		"vscode",
 		"codex",
 		"pi",
 		"opencode",
@@ -26,9 +27,11 @@ func SupportedHarnesses() []string {
 func CheckParity(p *policy.Policy) []finding.Finding {
 	var fs []finding.Finding
 
+	bell := p.UI.TerminalBell || p.Notifications.TerminalBell
+
 	// Check Claude
 	claude := translate.ClaudeSettings(p, "linux")
-	if p.Notifications.TerminalBell && claude["preferredNotifChannel"] != "terminal_bell" {
+	if bell && claude["preferredNotifChannel"] != "terminal_bell" {
 		fs = append(fs, finding.New("claude", "expected preferredNotifChannel=terminal_bell"))
 	}
 
@@ -40,13 +43,22 @@ func CheckParity(p *policy.Policy) []finding.Finding {
 
 	// Check Copilot
 	copilot := translate.CopilotSettings(p)
-	if p.Notifications.TerminalBell && copilot["beep"] != true {
+	if bell && copilot["beep"] != true {
 		fs = append(fs, finding.New("copilot", "expected beep=true"))
+	}
+
+	// Check VS Code Copilot
+	vscode := translate.VSCodeSettings(p)
+	if _, ok := vscode["chat.tools.terminal.autoApprove"]; !ok {
+		fs = append(fs, finding.New("vscode", "missing chat.tools.terminal.autoApprove"))
+	}
+	if _, ok := vscode["chat.tools.urls.autoApprove"]; !ok {
+		fs = append(fs, finding.New("vscode", "missing chat.tools.urls.autoApprove"))
 	}
 
 	// Check Codex
 	codex := translate.CodexConfig(p)
-	if tui, ok := codex["tui"].(map[string]any); !ok || (p.Notifications.TerminalBell && tui["notifications"] != true) {
+	if tui, ok := codex["tui"].(map[string]any); !ok || (bell && tui["notifications"] != true) {
 		fs = append(fs, finding.New("codex", "expected tui.notifications=true"))
 	}
 
@@ -58,7 +70,7 @@ func CheckParity(p *policy.Policy) []finding.Finding {
 
 	// Check opencode
 	opencode := translate.OpenCodeSettings(p)
-	if p.Notifications.TerminalBell && opencode["bell"] != true {
+	if bell && opencode["bell"] != true {
 		fs = append(fs, finding.New("opencode", "expected bell=true"))
 	}
 
