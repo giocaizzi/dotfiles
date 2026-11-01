@@ -116,7 +116,7 @@ func usage(s term.Style) string {
 	p("  %schezmoi dots%s %s[edit]%s %s[<what>]%s\n", m, o, y, o, d, o)
 	p("  %schezmoi dots%s %sview%s %s[--matrix] [--all]%s %s[<what>]%s %s[--as <os>[,<role>]]%s\n", m, o, m, o, d, o, y, o, d, o)
 	p("  %schezmoi dots%s %slist%s\n", m, o, m, o)
-	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|plugins|matrix|templates]...%s\n", m, o, m, o, d, o)
+	p("  %schezmoi dots%s %slint%s %s[registry|aliases|packages|matrix|templates]...%s\n", m, o, m, o, d, o)
 	p("  %schezmoi dots%s %saudit%s %saliases%s\n", m, o, m, o, y, o)
 	p("  %schezmoi dots%s %soutdated%s\n", m, o, m, o)
 	p("  %schezmoi dots%s %sbump%s %s[--dry-run]%s %s[<release>]...%s\n", m, o, m, o, d, o, d, o)
@@ -150,7 +150,7 @@ func usage(s term.Style) string {
 	p("  %sdots lint%s                        Validate all dotfiles registries and rendered templates\n\n", m, o)
 
 	p("%sDOCUMENTATION%s\n", b, o)
-	p("  %sdocs/OS.md#editing-your-dotfiles%s %s·%s %sdocs/OS.md#packages%s %s·%s %sdocs/OS.md#shared-harness-policy%s\n", d, o, d, o, d, o, d, o, d, o)
+	p("  %sdocs/OS.md#editing-your-dotfiles%s %s·%s %sdocs/OS.md#packages%s\n", d, o, d, o, d, o)
 
 	return sb.String()
 }

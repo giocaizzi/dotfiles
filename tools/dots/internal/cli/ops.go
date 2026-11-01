@@ -20,7 +20,6 @@ import (
 
 func (d Deps) lint(ctx context.Context, args []string) error {
 	fs := newFlags("lint")
-	harnessDir := fs.String("harness-dir", d.Getenv("HARNESS_DIR"), "a checkout of giocaizzi/harness (default: ask GitHub through gh)")
 	checks, err := parse(fs, args)
 	if err != nil {
 		return err
@@ -44,7 +43,7 @@ func (d Deps) lint(ctx context.Context, args []string) error {
 	}
 	l := lint.Linter{
 		Src: src, Iso: cz.With("--config", empty), Real: cz, Runner: d.Runner, LookPath: d.LookPath,
-		HarnessDir: *harnessDir, Scratch: scratch, Errw: d.Stderr,
+		Scratch: scratch, Errw: d.Stderr,
 	}
 	st := term.NewStyle(d.Stderr, d.Getenv)
 	failed := false

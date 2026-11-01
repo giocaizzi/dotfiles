@@ -1,6 +1,6 @@
 # ----------------------------------------------------------------------------
 # Plugins of github.com/giocaizzi/harness: one key per plugins/<name> directory
-# there (`chezmoi dots lint plugins` checks), listing the harnesses whose config here
+# there (`chezmoi-agents check` checks), listing the harnesses whose config here
 # enables it. Claude Code and Copilot CLI enable them in their settings
 # (.chezmoitemplates/{claude,copilot}-settings.json), Codex in
 # run_onchange_after_install-harness.*; opencode and pi take the whole checkout.

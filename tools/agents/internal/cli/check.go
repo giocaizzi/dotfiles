@@ -3,31 +3,94 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/parity"
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/pluginreg"
 )
 
-func (d Deps) runCheck(_ context.Context, args []string) int {
+func (d Deps) runCheck(ctx context.Context, args []string) int {
 	fs := newFlags("check")
-	fileFlag := fs.String("file", "", "path to harness-policy.toml")
+	fileFlag := fs.String("file", "", "path to harness-policy.toml or harness.toml")
+	harnessDirFlag := fs.String("harness-dir", d.Getenv("HARNESS_DIR"), "a checkout of giocaizzi/harness")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(d.Stderr, "flag parse error: %v\n", err)
 		return 2
 	}
 
-	p, path, err := d.loadPolicy(*fileFlag)
+	findings, msgs, err := d.checkTarget(ctx, *fileFlag, *harnessDirFlag)
 	if err != nil {
-		fmt.Fprintf(d.Stderr, "error loading policy: %v\n", err)
+		fmt.Fprintf(d.Stderr, "check error: %v\n", err)
 		return 1
 	}
-
-	findings := p.Validate(path)
-	findings = append(findings, parity.CheckParity(p)...)
 	if len(findings) > 0 {
 		fmt.Fprintln(d.Stderr, formatFindings(findings))
 		return 1
 	}
-
-	fmt.Fprintf(d.Stdout, "✓ policy & harness parity (%s)\n", path)
+	for _, m := range msgs {
+		fmt.Fprintln(d.Stdout, m)
+	}
 	return 0
+}
+
+func (d Deps) checkTarget(ctx context.Context, file, harnessDir string) ([]finding.Finding, []string, error) {
+	if file != "" {
+		if isHarnessToml(file) {
+			findings, err := pluginreg.ValidateFile(ctx, file, harnessDir)
+			if err != nil {
+				return nil, nil, fmt.Errorf("validate plugins: %w", err)
+			}
+			return findings, []string{fmt.Sprintf("✓ harness plugins (%s)", file)}, nil
+		}
+
+		p, path, err := d.loadPolicy(file)
+		if err != nil {
+			return nil, nil, err
+		}
+		findings := p.Validate(path)
+		findings = append(findings, parity.CheckParity(p)...)
+		return findings, []string{fmt.Sprintf("✓ policy & harness parity (%s)", path)}, nil
+	}
+
+	return d.checkAll(ctx, harnessDir)
+}
+
+func (d Deps) checkAll(ctx context.Context, harnessDir string) ([]finding.Finding, []string, error) {
+	var allFindings []finding.Finding
+	var msgs []string
+
+	p, polPath, err := d.loadPolicy("")
+	if err != nil {
+		return nil, nil, fmt.Errorf("load policy: %w", err)
+	}
+	findings := p.Validate(polPath)
+	findings = append(findings, parity.CheckParity(p)...)
+	allFindings = append(allFindings, findings...)
+	msgs = append(msgs, fmt.Sprintf("✓ policy & harness parity (%s)", polPath))
+
+	harnessTomlPath, err := d.findHarnessToml("")
+	if err == nil {
+		pFindings, pErr := pluginreg.ValidateFile(ctx, harnessTomlPath, harnessDir)
+		if pErr != nil {
+			return nil, nil, fmt.Errorf("validate plugins: %w", pErr)
+		}
+		allFindings = append(allFindings, pFindings...)
+		msgs = append(msgs, fmt.Sprintf("✓ harness plugins (%s)", harnessTomlPath))
+	}
+
+	return allFindings, msgs, nil
+}
+
+func isHarnessToml(path string) bool {
+	if strings.HasSuffix(path, "harness.toml") {
+		return true
+	}
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return false
+	}
+	return strings.Contains(string(data), "harnessPlugins")
 }

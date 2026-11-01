@@ -32,10 +32,11 @@ dots: ## Build the chezmoi-dots plugin into tools/dots/bin/
 agents: ## Build chezmoi-agents into tools/agents/bin/
 	@$(MAKE) --no-print-directory -C tools/agents build
 
-lint: dots agents ## shellcheck, validate JSON, lint the registries and every rendered template, lint the plugins
+lint: dots agents ## shellcheck, validate JSON, lint registries, templates, policy, and plugins
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
+	tools/agents/bin/chezmoi-agents check
 	$(MAKE) -C tools/dots lint
 	$(MAKE) -C tools/agents lint
 

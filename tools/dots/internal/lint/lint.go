@@ -18,7 +18,6 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/aliasreg"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/finding"
-	"github.com/giocaizzi/dotfiles/tools/dots/internal/harnessreg"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/matrix"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/pkgreg"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/registry"
@@ -26,19 +25,18 @@ import (
 
 // Checks lists the check names, in the order `lint` runs them.
 func Checks() []string {
-	return []string{"registry", "aliases", "packages", "plugins", "matrix", "templates"}
+	return []string{"registry", "aliases", "packages", "matrix", "templates"}
 }
 
 // Linter runs the checks against one source dir.
 type Linter struct {
-	Src        string       // the source dir
-	Iso        *chez.Client // chezmoi with an empty config, so no machine answers leak in
-	Real       *chez.Client // chezmoi with this machine's config
-	Runner     chez.Runner
-	LookPath   func(string) (string, error)
-	HarnessDir string // a checkout of giocaizzi/harness; empty asks GitHub through gh
-	Scratch    string
-	Errw       io.Writer
+	Src      string       // the source dir
+	Iso      *chez.Client // chezmoi with an empty config, so no machine answers leak in
+	Real     *chez.Client // chezmoi with this machine's config
+	Runner   chez.Runner
+	LookPath func(string) (string, error)
+	Scratch  string
+	Errw     io.Writer
 }
 
 // Run runs the named check.
@@ -50,8 +48,6 @@ func (l Linter) Run(ctx context.Context, name string) ([]finding.Finding, error)
 		return l.aliases(ctx)
 	case "packages":
 		return l.packages(ctx)
-	case "plugins":
-		return l.plugins(ctx)
 	case "matrix":
 		return l.matrix(ctx)
 	case "templates":
@@ -124,63 +120,6 @@ func (l Linter) packages(ctx context.Context) ([]finding.Finding, error) {
 		return nil, err
 	}
 	return pkgreg.Validate(data), nil
-}
-
-func (l Linter) plugins(ctx context.Context) ([]finding.Finding, error) {
-	data, err := l.Iso.Data(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	plugins := map[string][]string{}
-	raw, _ := data["harnessPlugins"].(map[string]any)
-	for p, v := range raw {
-		list, _ := v.([]any)
-		for _, h := range list {
-			s, _ := h.(string)
-			plugins[p] = append(plugins[p], s)
-		}
-	}
-	var personal []string
-	list, _ := data["harnessPersonalPlugins"].([]any)
-	for _, p := range list {
-		s, _ := p.(string)
-		personal = append(personal, s)
-	}
-	tmpl, err := os.ReadFile(filepath.Join(l.Src, ".chezmoi.toml.tmpl"))
-	if err != nil {
-		return nil, fmt.Errorf("read config template: %w", err)
-	}
-	choices, err := matrix.Harnesses(tmpl)
-	if err != nil {
-		return nil, err
-	}
-	upstream, err := l.upstreamPlugins(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return harnessreg.Check(plugins, personal, choices, upstream), nil
-}
-
-// upstreamPlugins lists the plugin directories of giocaizzi/harness.
-func (l Linter) upstreamPlugins(ctx context.Context) ([]string, error) {
-	if l.HarnessDir != "" {
-		ents, err := os.ReadDir(filepath.Join(l.HarnessDir, "plugins"))
-		if err != nil {
-			return nil, fmt.Errorf("read harness plugins: %w", err)
-		}
-		var out []string
-		for _, e := range ents {
-			if e.IsDir() {
-				out = append(out, e.Name())
-			}
-		}
-		return out, nil
-	}
-	out, err := chez.Output(ctx, l.Runner, chez.Cmd{Args: []string{"gh", "api", "repos/giocaizzi/harness/contents/plugins", "--jq", `.[] | select(.type == "dir") | .name`}})
-	if err != nil {
-		return nil, fmt.Errorf("list harness plugins (set --harness-dir to a checkout, or sign in with gh): %w", err)
-	}
-	return strings.Fields(string(out)), nil
 }
 
 // matrix checks the config template against what the matrix seeds and the harness
