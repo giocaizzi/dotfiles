@@ -29,6 +29,25 @@ func TestCLIRun_Help(t *testing.T) {
 	}
 }
 
+func TestCLIRun_Version(t *testing.T) {
+	t.Parallel()
+	var stdout, stderr bytes.Buffer
+	d := cli.Deps{
+		Stdin:   strings.NewReader(""),
+		Stdout:  &stdout,
+		Stderr:  &stderr,
+		Version: "0.1.0",
+	}
+
+	code := d.Run(context.Background(), []string{"version"})
+	if code != 0 {
+		t.Fatalf("expected code 0, got %d", code)
+	}
+	if !strings.Contains(stdout.String(), "chezmoi-agents 0.1.0") {
+		t.Errorf("expected version output, got %q", stdout.String())
+	}
+}
+
 func TestCLIRun_CheckAndRender(t *testing.T) {
 	t.Parallel()
 	policyPath := filepath.Join("..", "..", "..", "..", "home", ".chezmoidata", "harness-policy.toml")
