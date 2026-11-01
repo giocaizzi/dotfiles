@@ -3,6 +3,8 @@ package cli
 import (
 	"context"
 	"fmt"
+
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/parity"
 )
 
 func (d Deps) runCheck(_ context.Context, args []string) int {
@@ -20,11 +22,12 @@ func (d Deps) runCheck(_ context.Context, args []string) int {
 	}
 
 	findings := p.Validate(path)
+	findings = append(findings, parity.CheckParity(p)...)
 	if len(findings) > 0 {
 		fmt.Fprintln(d.Stderr, formatFindings(findings))
 		return 1
 	}
 
-	fmt.Fprintf(d.Stdout, "✓ policy (%s)\n", path)
+	fmt.Fprintf(d.Stdout, "✓ policy & harness parity (%s)\n", path)
 	return 0
 }

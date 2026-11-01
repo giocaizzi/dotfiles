@@ -87,6 +87,10 @@ source = ".chezmoitemplates/copilot-settings.json"
 desc = "Antigravity CLI managed settings (merged into ~/.gemini/antigravity-cli/settings.json)"
 source = ".chezmoitemplates/antigravity-settings.json"
 
+[edit."antigravity/mcp"]
+desc = "Antigravity CLI MCP servers (~/.gemini/config/mcp_config.json)"
+source = "dot_gemini/config/modify_private_mcp_config.json"
+
 [edit."pi/settings"]
 desc = "Pi agent managed settings (merged into ~/.pi/agent/settings.json)"
 source = ".chezmoitemplates/pi-settings.json"

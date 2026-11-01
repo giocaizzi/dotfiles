@@ -1,0 +1,8 @@
+{{- /* ~/ops workspace servers (.chezmoidata/mcp.toml [mcp.ops]) for Antigravity. */ -}}
+{{- $s := includeTemplate "mcp-servers.json" .mcp.ops | fromJson -}}
+{{- $out := dict -}}
+{{- range $n, $v := $s -}}
+{{- if kindIs "string" $v }}{{ $_ := set $out $n (dict "url" $v) }}
+{{- else }}{{ $_ := set $out $n (dict "url" $v.url) }}{{ end -}}
+{{- end -}}
+{{- dict "mcpServers" $out | toPrettyJson }}
