@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
@@ -12,10 +13,24 @@ func (d Deps) runPrompt(_ context.Context, args []string) int {
 	fs := newFlags("prompt")
 	profileFlag := fs.String("profile", "personal", "target profile (personal, work, light)")
 	checkOnly := fs.Bool("check", false, "only check that prompt layers exist and assemble cleanly")
+	fileFlag := fs.String("file", "", "optional path to edited prompt layer file")
 
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(d.Stderr, "flag parse error: %v\n", err)
 		return 2
+	}
+
+	if *fileFlag != "" {
+		cleaned := filepath.Clean(*fileFlag)
+		data, err := os.ReadFile(cleaned)
+		if err != nil {
+			fmt.Fprintf(d.Stderr, "error reading layer file %s: %v\n", *fileFlag, err)
+			return 1
+		}
+		if len(bytes.TrimSpace(data)) == 0 {
+			fmt.Fprintf(d.Stderr, "layer file %s is empty\n", *fileFlag)
+			return 1
+		}
 	}
 
 	profile := strings.ToLower(*profileFlag)

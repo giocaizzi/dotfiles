@@ -20,21 +20,25 @@
 [edit."agents/core"]
 desc = "Agent instructions, core layer (public, every machine)"
 source = ".chezmoitemplates/agents/core.md"
+check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/env"]
 desc = "Agent instructions, CLI environment layer (public, per role and OS)"
 source = ".chezmoitemplates/agents/env.md"
+check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/personal"]
 desc = "Agent instructions, personal layer (encrypted, personal machines)"
 source = ".chezmoitemplates/agents/personal.md.age"
+check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/work"]
 desc = "Agent instructions, work layer (encrypted, work machines)"
 source = ".chezmoitemplates/agents/work.md.age"
+check = ["chezmoi-agents", "prompt", "-profile", "work", "-check", "-file", "{file}"]
 diff = "first"
 
 # --- Shell (docs/SHELL.md#alias-registry) ---
@@ -73,7 +77,7 @@ source = ".chezmoidata/mcp.toml"
 [edit.plugins]
 desc = "giocaizzi/harness plugins per harness"
 source = ".chezmoidata/harness.toml"
-check = ["chezmoi", "dots", "lint", "plugins"]
+check = ["chezmoi-agents", "check", "-file", "{file}"]
 
 [edit."claude/settings"]
 desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"

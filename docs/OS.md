@@ -273,7 +273,7 @@ Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`;
 | Command | Does |
 |---|---|
 | `chezmoi dots [edit] [<what>]`, `view`, `list`, `live` | [Editing your dotfiles](#editing-your-dotfiles) |
-| `chezmoi dots lint [check]...` | `registry`, `aliases` (the encrypted registry too where the age key exists), `packages`, `plugins` (against `giocaizzi/harness`; `--harness-dir` for a checkout), `matrix`, `templates` (every script, alias file and settings template, rendered per configuration and shellchecked, zsh-checked or pwsh-parsed where those tools are installed) |
+| `chezmoi dots lint [check]...` | `registry`, `aliases` (the encrypted registry too where the age key exists), `packages`, `matrix`, `templates` (every script, alias file and settings template, rendered per configuration and shellchecked, zsh-checked or pwsh-parsed where those tools are installed) |
 | `chezmoi dots audit aliases` | lists aliases live in this machine's zsh and bash that the registry does not account for |
 | `chezmoi dots outdated`, `bump`, `upgrade` | [Packages](#packages) |
 
@@ -381,7 +381,7 @@ Core holds how to work on any machine, in any harness: it names no harness-only 
 
 Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
 
-- **Edit a layer:** `dots agents/<core|env|personal|work>` (or `dots ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role.
+- **Edit a layer:** `dots agents/<core|env|personal|work>` (or `dots ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file and is validated via `chezmoi-agents prompt -profile <profile> -check -file {file}` before saving. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role; `chezmoi-agents prompt -profile <personal|work>` outputs the full composed instructions for a profile directly.
 - **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
 - **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
 - **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.
@@ -398,7 +398,7 @@ copilot plugin marketplace add giocaizzi/harness
 copilot plugin install guard@giocaizzi-harness  # likewise hud, python, api, javascript, dev-tools
 ```
 
-Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode and pi take the whole checkout, so they still get them. `chezmoi dots lint plugins` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
+Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode and pi take the whole checkout, so they still get them. `chezmoi-agents check` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
 
 - **New plugin upstream:** add `<name> = ["claude", ...]` to `.chezmoidata/harness.toml`, `chezmoi apply`.
 - **Plugin removed upstream:** delete its key, `chezmoi apply`; disable or uninstall it by hand where the harness keeps it.
