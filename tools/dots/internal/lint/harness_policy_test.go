@@ -38,17 +38,22 @@ func TestHarnessPolicyPreservesNativeSettings(t *testing.T) {
 					if !ok {
 						t.Fatalf("missing golden for %s", harness)
 					}
-					for key, value := range want {
-						if harness == "claude" && key == "permissions" && config.OS == "windows" {
-							value = golden["windowsClaudePermissions"]
-						}
-						if diff := cmp.Diff(value, got[key]); diff != "" {
-							t.Errorf("%s %s %v (-want +got):\n%s", harness, key, selection, diff)
-						}
-					}
+					assertGoldenMatch(t, got, want, golden["windowsClaudePermissions"], harness, config.OS, selection)
 				}
 			}
 		})
+	}
+}
+
+func assertGoldenMatch(t *testing.T, got, want map[string]any, winClaude any, harness, goos string, sel []string) {
+	t.Helper()
+	for key, value := range want {
+		if harness == "claude" && key == "permissions" && goos == "windows" {
+			value = winClaude
+		}
+		if diff := cmp.Diff(value, got[key]); diff != "" {
+			t.Errorf("%s %s %v (-want +got):\n%s", harness, key, sel, diff)
+		}
 	}
 }
 
@@ -73,23 +78,7 @@ func TestHarnessPolicyChangesReachNativeAdapters(t *testing.T) {
 			t.Errorf("%s notification = %v, want %v", tt.harness, got[tt.channel], tt.wantChannel)
 		}
 		if tt.prefix != "" {
-			permissions, ok := got["permissions"].(map[string]any)
-			if !ok {
-				t.Fatalf("%s permissions missing", tt.harness)
-			}
-			deny, ok := permissions["deny"].([]any)
-			if !ok {
-				t.Fatalf("%s deny rules missing", tt.harness)
-			}
-			found := false
-			for _, rule := range deny {
-				if rule == tt.prefix+"(**/example-private/**)" {
-					found = true
-				}
-			}
-			if !found {
-				t.Errorf("%s does not protect the shared denyRead path", tt.harness)
-			}
+			assertPathDenied(t, got, tt.harness, tt.prefix, "**/example-private/**")
 		}
 	}
 	got := renderPolicyTOML(t, cz, src, o)
@@ -97,6 +86,25 @@ func TestHarnessPolicyChangesReachNativeAdapters(t *testing.T) {
 	if !ok || tui["notifications"] != false {
 		t.Errorf("Codex tui = %v, want notifications=false", got["tui"])
 	}
+}
+
+func assertPathDenied(t *testing.T, got map[string]any, harness, prefix, path string) {
+	t.Helper()
+	permissions, ok := got["permissions"].(map[string]any)
+	if !ok {
+		t.Fatalf("%s permissions missing", harness)
+	}
+	deny, ok := permissions["deny"].([]any)
+	if !ok {
+		t.Fatalf("%s deny rules missing", harness)
+	}
+	target := prefix + "(" + path + ")"
+	for _, rule := range deny {
+		if rule == target {
+			return
+		}
+	}
+	t.Errorf("%s does not protect %s", harness, target)
 }
 
 func TestHarnessPolicyMergesPreserveRuntimeState(t *testing.T) {
