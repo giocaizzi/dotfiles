@@ -37,8 +37,11 @@ fi
 {{- end }}
 {{- if has "antigravity" $harnesses }}
 
-# Antigravity: skills, agents and guard hooks from the checkout.
-command -v agy >/dev/null 2>&1 && node "$HARNESS/scripts/install.mjs" antigravity
+# Antigravity: plugins from marketplace / checkout, agents and guard hooks.
+if command -v agy >/dev/null 2>&1; then
+	agy plugin import claude >/dev/null 2>&1 || true
+	node "$HARNESS/scripts/install.mjs" antigravity
+fi
 {{- end }}
 exit 0
 {{ end -}}
