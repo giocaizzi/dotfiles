@@ -11,15 +11,15 @@
 harnessPersonalPlugins = ["factory", "go"]
 
 [harnessPlugins]
-api = ["claude", "copilot", "codex"]
-dev-tools = ["claude", "copilot", "codex"]
-factory = ["claude", "copilot", "codex"]
-go = ["claude", "copilot", "codex"]
-guard = ["claude", "copilot", "codex"]
-hud = ["claude", "copilot"]
-javascript = ["claude", "copilot", "codex"]
-python = ["claude", "copilot", "codex"]
-sounds = ["claude", "codex"]
+api = ["claude", "copilot", "codex", "antigravity", "pi"]
+dev-tools = ["claude", "copilot", "codex", "antigravity", "pi"]
+factory = ["claude", "copilot", "codex", "antigravity", "pi"]
+go = ["claude", "copilot", "codex", "antigravity", "pi"]
+guard = ["claude", "copilot", "codex", "antigravity", "pi"]
+hud = ["claude", "copilot", "antigravity", "pi"]
+javascript = ["claude", "copilot", "codex", "antigravity", "pi"]
+python = ["claude", "copilot", "codex", "antigravity", "pi"]
+sounds = ["claude", "codex", "antigravity", "pi"]
 
 # Targets each harness owns: .chezmoiignore skips them where the harness is not selected
 # (light machines select none). Shared targets stay explicit there: ~/.copilot (also

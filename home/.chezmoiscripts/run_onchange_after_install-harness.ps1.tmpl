@@ -36,8 +36,11 @@ if ((& $has 'pi') -and -not ((pi list 2>$null) -match [regex]::Escape($Harness))
 {{- end }}
 {{- if has "antigravity" $harnesses }}
 
-# Antigravity: skills, agents and guard hooks from the checkout.
-if (& $has 'agy') { node $Install antigravity }
+# Antigravity: plugins from marketplace / checkout, agents and guard hooks.
+if (& $has 'agy') {
+	try { & agy plugin import claude *>$null } catch {}
+	node $Install antigravity
+}
 {{- end }}
 exit 0
 {{ end -}}
