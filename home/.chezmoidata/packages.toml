@@ -357,7 +357,7 @@ exe = true
 [release.chezmoi-agents]
 # The `chezmoi-agents` policy and parity engine (tools/agents), released by .github/workflows/release-agents.yml
 # on an agents-vX.Y.Z tag. A bare binary per platform.
-version = "0.2.0"
+version = "0.4.0"
 url = "https://github.com/giocaizzi/dotfiles/releases/download/agents-v{version}/chezmoi-agents_{version}_{target}"
 type = "file"
 exe = true
@@ -371,9 +371,9 @@ exe = true
 "windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-agents.sha256]
-"darwin/amd64" = "0d4bd335a85b1a1bf979a63d4455cb2e94b30b4c8d5c75927eb8a6d4096c4ecb"
-"darwin/arm64" = "52f62e1945812a39166b2912906d4b917ef7b7db837b5e32362145390eacfba1"
-"linux/amd64" = "12100a997d0c696a1b356dd34effd95ef07bcdc2b2b772f9f902d4082ffd971b"
-"linux/arm64" = "588711f376cad9825a27b7618ac9462158d4312827b480c7759c1ff0e9890de7"
-"windows/amd64" = "f8fd03d0a5a70d1ac40102b7f8e16fc440af2043b2bf76521aae8b793d059c54"
-"windows/arm64" = "91824464ee92939bb16012aec9c77b41dd06712f3957fdfdd3b2802d09eef58b"
+"darwin/amd64" = "f153e7639d18330e6ac9321e5cee6434db9f26e03b891dd97b619d869ba6e557"
+"darwin/arm64" = "855c2b79ff60661dbd3dd941e81ad2bffffa083c91b218f086c3d946b103d34f"
+"linux/amd64" = "fce6f4a0007ab70a913ec1214637a090c1dbcd06e5f2926ab3f923625a29aa59"
+"linux/arm64" = "60fa4c939d099f8b4b651d61b7155b103820a2d38918ba552ccfb8f2f5c0489f"
+"windows/amd64" = "2adf2c154c6d73504b42f0ea2694dd65fb27892c5c7154819f994d967701bc23"
+"windows/arm64" = "0e10e2af06f6b7dfa3bb2e8f20925bdc45fad5b7155f15b276f23ca5c1853adb"
