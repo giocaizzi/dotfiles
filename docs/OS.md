@@ -411,6 +411,15 @@ Managed settings per harness:
 - Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
+### Workspace MCP management (`chezmoi-agents mcp`)
+
+Workspace MCP servers are canonically configured in `.mcp.json` at the root of a project. `chezmoi-agents mcp` generates deterministic downstream configuration files for Codex (`.codex/config.toml`), Pi (`.pi/mcp.json`), and Antigravity (`mcp_config.json`):
+
+- **Sync downstream harnesses:** `chezmoi-agents mcp sync [path] [-check] [-account <id>]`
+- **Add or update an MCP server:** `chezmoi-agents mcp add [-type stdio|http] [-env KEY=val] [-header "H: V"] [-dir <path>] [-no-sync] <name> <commandOrUrl> [args...]`
+- Auto-detects transport (`http` when `<commandOrUrl>` starts with `http://` or `https://`, otherwise `stdio`), rejects namespace collisions, ensures symlink safety, and writes with mode `0600`.
+
+
 ## Source layout (`.chezmoiroot`)
 
 `.chezmoiroot` makes `home/` the source state: every source path in these docs (`dot_config/…`, `.chezmoidata/…`) is relative to it, and `chezmoi source-path` prints `~/.local/share/chezmoi/home`. The repo root holds what is never deployed (docs, `scripts/`, `tools/`, `Makefile`, agent config), so `.chezmoiignore` has no repo-meta block, and a git worktree anywhere in the repo (e.g. `.claude/worktrees/<slug>`) sits outside the source state: chezmoi never reads its `.chezmoidata`.
