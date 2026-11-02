@@ -74,6 +74,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runRender(ctx, rest)
 	case "prompt":
 		return d.runPrompt(ctx, rest)
+	case "mcp":
+		return d.runMCP(ctx, rest)
 	case "version", "--version", "-v":
 		v := d.Version
 		if v == "" {
@@ -111,12 +113,16 @@ func usage(s term.Style) string {
 	p("  %schezmoi agents%s %scheck%s %s[-file <path>] [-harness-dir <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %srender%s %s[-file <path>]%s %s-harness <name>%s %s[-target <file>]%s\n", m, o, m, o, d, o, y, o, d, o)
 	p("  %schezmoi agents%s %sprompt%s %s[-profile <personal|work|light>]%s %s[-check]%s %s[-file <path>]%s\n", m, o, m, o, d, o, d, o, d, o)
+	p("  %schezmoi agents%s %smcp sync%s %s[path] [-check] [-account <id>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %smcp add%s %s[flags] <name> <commandOrUrl> [args...]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
 	p("%sCOMMANDS%s\n", b, o)
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "check", o, d, "[-file <path>]", o, "Validate harness policy, 6-way client parity, and plugins")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "render", o, y, "-harness <name>", o, "Render client-native configuration (JSON/TOML)")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "prompt", o, d, "[-profile <profile>]", o, "Compose or validate layered system prompt")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp sync", o, d, "[path]", o, "Sync workspace .mcp.json to native Codex, pi and Antigravity configs")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp add", o, d, "<name> <cmd|url> [args]", o, "Add or update server in workspace .mcp.json and sync configs")
 	p("  %s%-9s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
 	p("  %s%-9s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
 

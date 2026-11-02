@@ -7,7 +7,7 @@
 
 ## Rules
 
-- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `finding`, `term`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
+- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `mcpsync`, `finding`, `term`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
 - Tests: standard `testing` plus `go-cmp`, `t.Parallel()`, `t.TempDir()`, `-race -shuffle=on`. A bug gets a failing test first.
 - Harnesses supported: Claude Code, GitHub Copilot CLI, Codex CLI, Antigravity CLI, OpenCode, Pi.
 - System prompt profiles: `personal`, `work`, `light`.
