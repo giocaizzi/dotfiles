@@ -413,7 +413,7 @@ Managed settings per harness:
 
 ### Workspace MCP management (`chezmoi-agents mcp`)
 
-Workspace MCP servers are canonically configured in `.mcp.json` at the root of a project. `chezmoi-agents mcp` generates deterministic downstream configuration files for Codex (`.codex/config.toml`), Pi (`.pi/mcp.json`), and Antigravity (`mcp_config.json`):
+Workspace MCP servers are canonically configured in `.mcp.json` at the root of a project. `chezmoi-agents mcp` generates deterministic downstream configuration files for Codex (`.codex/config.toml`), Pi (`.pi/mcp.json`), and Antigravity (`.agents/mcp_config.json`):
 
 - **Sync downstream harnesses:** `chezmoi-agents mcp sync [path] [-check] [-account <id>]`
 - **Add or update an MCP server:** `chezmoi-agents mcp add [-type stdio|http] [-env KEY=val] [-header "H: V"] [-dir <path>] [-no-sync] <name> <commandOrUrl> [args...]`
