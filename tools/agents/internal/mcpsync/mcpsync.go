@@ -23,7 +23,7 @@ const (
 	SourceFilename     = ".mcp.json"
 	CodexTargetRelPath = ".codex/config.toml"
 	PiTargetRelPath    = ".pi/mcp.json"
-	AntigravityRelPath = "mcp_config.json"
+	AntigravityRelPath = ".agents/mcp_config.json"
 
 	TransportHTTP  = "http"
 	TransportStdio = "stdio"
