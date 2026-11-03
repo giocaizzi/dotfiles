@@ -104,8 +104,14 @@ func TestPiSettings(t *testing.T) {
 	if got["defaultProvider"] != "openai" {
 		t.Errorf("expected defaultProvider=openai, got %v", got["defaultProvider"])
 	}
-	if got["defaultModel"] != "gpt-5.5" {
-		t.Errorf("expected defaultModel=gpt-5.5, got %v", got["defaultModel"])
+	if got["defaultModel"] != "gpt-5.6-terra" {
+		t.Errorf("expected defaultModel=gpt-5.6-terra, got %v", got["defaultModel"])
+	}
+
+	p.Native.Pi.DefaultModel = ""
+	got = translate.PiSettings(p)
+	if got["defaultModel"] != "gpt-5.6-terra" {
+		t.Errorf("expected defaultModel fallback=gpt-5.6-terra, got %v", got["defaultModel"])
 	}
 }
 
