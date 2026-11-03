@@ -12,7 +12,7 @@ func PiSettings(p *policy.Policy) map[string]any {
 	}
 	model := p.Native.Pi.DefaultModel
 	if model == "" {
-		model = "gpt-5.5"
+		model = "gpt-5.6-terra"
 	}
 	thinking := p.Native.Pi.DefaultThinkingLevel
 	if thinking == "" {
