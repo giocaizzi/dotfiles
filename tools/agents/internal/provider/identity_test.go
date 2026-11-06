@@ -154,15 +154,10 @@ func TestOpenAIClaimFallbacks(t *testing.T) {
 			wantKey:   "openai:arg:u",
 		},
 		{
-			name:    "sub claim identifies the user",
-			access:  map[string]any{"sub": "s1", openaiAuthClaim: map[string]any{"chatgpt_account_id": "a"}},
-			wantKey: "openai:a:s1",
-		},
-		{
 			name:      "email from the access token",
-			access:    map[string]any{"email": "acc@example.com", "sub": "s2"},
+			access:    map[string]any{"email": "acc@example.com", openaiAuthClaim: map[string]any{"user_id": "u2"}},
 			accountID: "arg",
-			wantKey:   "openai:arg:s2",
+			wantKey:   "openai:arg:u2",
 			wantLabel: "acc@example.com",
 		},
 	}
@@ -182,6 +177,16 @@ func TestOpenAIClaimFallbacks(t *testing.T) {
 		a := openaiOAuth("codex", access, "", "")
 		if a.IdentityKnown || a.ID != "codex" || a.Key != fingerprint(OpenAI, access) {
 			t.Errorf("got key %q id %q known %v", a.Key, a.ID, a.IdentityKnown)
+		}
+	})
+
+	t.Run("a sub claim never identifies the user", func(t *testing.T) {
+		t.Parallel()
+		// pi salts sub per client, so it is no account identity.
+		access := jwt(t, map[string]any{"exp": exp.Unix(), "sub": "s1", "email": "acc@example.com", openaiAuthClaim: map[string]any{"chatgpt_account_id": "a"}})
+		a := openaiOAuth("codex", access, "", "")
+		if a.IdentityKnown || a.Key != fingerprint(OpenAI, access) || a.Label != "acc@example.com" {
+			t.Errorf("got key %q label %q known %v", a.Key, a.Label, a.IdentityKnown)
 		}
 	})
 

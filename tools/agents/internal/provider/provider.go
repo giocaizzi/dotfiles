@@ -90,6 +90,12 @@ func (c Credential) AccountID() string {
 	return c.s.accountID
 }
 
+// Fingerprint identifies the credential for providerID without revealing it
+// (see fingerprint); empty when no token is held. Never displayed.
+func (c Credential) Fingerprint(providerID string) string {
+	return fingerprint(providerID, c.Token())
+}
+
 // Empty reports whether no token is held.
 func (c Credential) Empty() bool { return c.Token() == "" }
 
@@ -141,6 +147,14 @@ type Account struct {
 	// Inactive is true when the credential is not the active one of its
 	// harness store; never displayed directly.
 	Inactive bool
+	// TokenSharing is true for a "Sign in with ChatGPT" login made for the API
+	// (scope chatgpt.tokens.use.direct): its token is never sent to
+	// chatgpt.com, never merged, never displayed directly. Cred stays empty.
+	TokenSharing bool
+	// LookupFailed is true when a live identity lookup sent the credential and
+	// did not prove the identity; a cached identity is never re-attached to
+	// it. Never displayed, never cached.
+	LookupFailed bool
 }
 
 // Store is everything Discover reads from the machine. The real one lives in

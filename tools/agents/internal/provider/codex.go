@@ -57,7 +57,6 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 	userID := cmp.Or(
 		claimString(accessAuth, "chatgpt_user_id"), claimString(accessAuth, "user_id"),
 		claimString(idAuth, "chatgpt_user_id"), claimString(idAuth, "user_id"),
-		claimString(accessClaims, "sub"), claimString(idClaims, "sub"),
 	)
 	a.Label = cmp.Or(
 		claimString(idClaims, "email"), claimString(openaiProfile(idClaims), "email"),
@@ -75,6 +74,9 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 	}
 	a.Expires = claimExp(accessClaims)
 	a.Cred = NewCredential(access, accountID)
+	if tokenSharing(accessClaims) {
+		markTokenSharing(&a)
+	}
 	return a
 }
 

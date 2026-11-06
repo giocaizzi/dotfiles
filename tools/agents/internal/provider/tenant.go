@@ -35,6 +35,9 @@ type tenantEntry struct {
 	inactive  bool
 	source    string
 	host      string // GitHub Enterprise URL or domain the login was made on, raw
+	// tokenSharing marks a store entry known to be a token-sharing login by
+	// its key (pi's "openai"), whatever its token claims say.
+	tokenSharing bool
 }
 
 // account maps the entry to an Account.
@@ -69,7 +72,11 @@ func (e tenantEntry) account(now time.Time) Account {
 		switch e.provider {
 		case OpenAI:
 			o := openaiOAuth(e.harness, e.access, "", e.accountID)
+			if e.tokenSharing && !o.TokenSharing {
+				markTokenSharing(&o)
+			}
 			a.Key, a.Plan, a.Expires, a.Cred = o.Key, o.Plan, o.Expires, o.Cred
+			a.TokenSharing, a.Status, a.Note = o.TokenSharing, o.Status, o.Note
 			a.IdentityKnown, a.Fingerprints = o.IdentityKnown, o.Fingerprints
 			if o.Label != "" {
 				a.Label = o.Label

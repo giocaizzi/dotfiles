@@ -26,6 +26,10 @@ type piEntry struct {
 // Source: https://github.com/earendil-works/pi/blob/HEAD/packages/ai/src/providers/openai-codex.ts
 const piCodexKey = "openai-codex"
 
+// piOpenAIKey is the store key of pi's "Sign in with ChatGPT" login for the
+// API, a token-sharing login.
+const piOpenAIKey = "openai"
+
 func sortedKeys[V any](m map[string]V) []string {
 	return slices.SortedFunc(maps.Keys(m), cmp.Compare[string])
 }
@@ -52,18 +56,21 @@ func readPiProfile(st Store, p profile) []Account {
 		if id == piCodexKey {
 			prov = OpenAI
 		}
+		typ := normalizeTenantType(e.Type)
 		out = append(out, tenantEntry{
 			harness:   p.label(),
 			provider:  prov,
 			storeKey:  id,
 			accountID: e.AccountID,
-			typ:       normalizeTenantType(e.Type),
+			typ:       typ,
 			access:    e.Access,
 			refresh:   e.Refresh,
 			key:       e.Key,
 			expires:   msTime(e.Expires),
 			host:      cmp.Or(e.EnterpriseURL, e.EnterpriseDomain),
 			source:    srcFile,
+
+			tokenSharing: id == piOpenAIKey && typ == tenantOAuth,
 		}.account(st.Now()))
 	}
 	return out
