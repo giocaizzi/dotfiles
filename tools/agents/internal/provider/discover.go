@@ -61,7 +61,8 @@ func newer(a, b Account) bool {
 
 // merge combines two accounts of the same (provider, key). The newer one
 // provides the credential, expiry, plan and status; harnesses are united, and
-// a non-empty label or login is kept.
+// a non-empty label or login is kept. The result is inactive only when both
+// are; otherwise the inactive note is dropped from the winner's note.
 func merge(a, b Account) Account {
 	win, lose := a, b
 	if newer(a, b) {
@@ -80,5 +81,9 @@ func merge(a, b Account) Account {
 	}
 	win.IdentityKnown = a.IdentityKnown || b.IdentityKnown
 	win.Fingerprints = unionFingerprints(a.Fingerprints, b.Fingerprints)
+	win.Inactive = a.Inactive && b.Inactive
+	if !win.Inactive {
+		win.Note = strings.TrimSpace(strings.TrimSuffix(win.Note, inactiveNote))
+	}
 	return win
 }

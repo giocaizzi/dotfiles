@@ -138,6 +138,9 @@ type Account struct {
 	// Fingerprints identify the OAuth credentials behind the account without
 	// revealing them (see fingerprint); never displayed.
 	Fingerprints []string
+	// Inactive is true when the credential is not the active one of its
+	// harness store; never displayed directly.
+	Inactive bool
 }
 
 // Store is everything Discover reads from the machine. The real one lives in
