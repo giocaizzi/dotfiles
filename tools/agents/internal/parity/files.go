@@ -3,9 +3,13 @@ package parity
 import (
 	"bytes"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+
+	toml "github.com/pelletier/go-toml/v2"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/policy"
@@ -14,14 +18,46 @@ import (
 const (
 	vscodeSettingsRel = "dot_config/Code/User/settings.json"
 	claudeTemplateRel = ".chezmoitemplates/claude-settings.json"
+	packagesRel       = ".chezmoidata/packages.toml"
 )
 
-// CheckSourceFiles compares the native voice settings in the chezmoi source
-// directory with the policy: the static VS Code settings file must hold the
-// policy values, and the Claude template must read them from the policy.
+// CheckSourceFiles compares the chezmoi source directory with the policy: the
+// static VS Code settings file must hold the native voice values, the Claude
+// template must read them from the policy, and every LSP server must name a
+// package row in packages.toml.
 func CheckSourceFiles(p *policy.Policy, sourceDir string) []finding.Finding {
 	fs := checkVSCodeFile(p, filepath.Join(sourceDir, filepath.FromSlash(vscodeSettingsRel)))
-	return append(fs, checkClaudeTemplate(filepath.Join(sourceDir, filepath.FromSlash(claudeTemplateRel)))...)
+	fs = append(fs, checkClaudeTemplate(filepath.Join(sourceDir, filepath.FromSlash(claudeTemplateRel)))...)
+	return append(fs, checkLSPPackages(p, filepath.Join(sourceDir, filepath.FromSlash(packagesRel)))...)
+}
+
+func checkLSPPackages(p *policy.Policy, path string) []finding.Finding {
+	const where = "lsp"
+	if len(p.LSP.Server) == 0 {
+		return nil
+	}
+	data, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return []finding.Finding{finding.New(where, "cannot read %s: %v", path, err)}
+	}
+	var reg struct {
+		Package map[string]any `toml:"package"`
+	}
+	if err := toml.Unmarshal(data, &reg); err != nil {
+		return []finding.Finding{finding.New(where, "cannot parse %s: %v", path, err)}
+	}
+
+	var fs []finding.Finding
+	for _, name := range slices.Sorted(maps.Keys(p.LSP.Server)) {
+		pkg := p.LSP.Server[name].Package
+		if pkg == "" {
+			continue // reported by policy validation
+		}
+		if _, ok := reg.Package[pkg]; !ok {
+			fs = append(fs, finding.New(where, "lsp.server.%s.package %q is not in packages.toml", name, pkg))
+		}
+	}
+	return fs
 }
 
 func checkVSCodeFile(p *policy.Policy, path string) []finding.Finding {

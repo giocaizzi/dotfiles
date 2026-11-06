@@ -2,7 +2,9 @@ package policy
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
@@ -21,6 +23,32 @@ func (p Policy) Validate(where string) []finding.Finding {
 	fs = append(fs, p.validateModels(where)...)
 	fs = append(fs, p.validateNative(where)...)
 	fs = append(fs, p.validateVoice(where)...)
+	fs = append(fs, p.validateLSP(where)...)
+	return fs
+}
+
+func (p Policy) validateLSP(where string) []finding.Finding {
+	var fs []finding.Finding
+	for _, name := range slices.Sorted(maps.Keys(p.LSP.Server)) {
+		srv := p.LSP.Server[name]
+		if strings.TrimSpace(srv.Package) == "" {
+			fs = append(fs, finding.New(where, "lsp.server.%s.package is empty", name))
+		}
+		if len(srv.Command) == 0 || strings.TrimSpace(srv.Command[0]) == "" {
+			fs = append(fs, finding.New(where, "lsp.server.%s.command is empty", name))
+		}
+		if len(srv.Extensions) == 0 {
+			fs = append(fs, finding.New(where, "lsp.server.%s.extensions is empty", name))
+		}
+		for _, ext := range slices.Sorted(maps.Keys(srv.Extensions)) {
+			if !strings.HasPrefix(ext, ".") {
+				fs = append(fs, finding.New(where, "lsp.server.%s.extensions key %q must start with \".\"", name, ext))
+			}
+			if strings.TrimSpace(srv.Extensions[ext]) == "" {
+				fs = append(fs, finding.New(where, "lsp.server.%s.extensions[%q] has an empty language id", name, ext))
+			}
+		}
+	}
 	return fs
 }
 
