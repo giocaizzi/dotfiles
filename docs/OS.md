@@ -495,23 +495,36 @@ Accounts are found from the credentials the harnesses already store. On macOS, a
 
 | Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
 |---|---|---|
-| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` (the current user's item; another account's only when that one does not exist) / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
+| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` (suffixed `-<sha256 of the config dir>[:8]` for a non-default `CLAUDE_CONFIG_DIR`; the current user's item first, another account's only when that one does not exist), else `<config dir>/.credentials.json` / `<config dir>/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
 | Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); on macOS also the Keychain item of this `CODEX_HOME` (service `Codex Auth`, account `cli|<hash of the canonical CODEX_HOME>`) when Codex stores it there (keyring mode on Linux and Windows is not read) |
 | Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
 | Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
 | opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
 | pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`); its ChatGPT login (`openai-codex`) counts as `openai` |
 
+Every stored login is found, not only the one the current shell points at. A harness keeps one login per profile directory; each directory below is a profile:
+
+| Harness | Profile directories | Holds a login when it has | Source of the pattern |
+|---|---|---|---|
+| Claude Code | `$CLAUDE_CONFIG_DIR`, `~/.claude`, `~/.claude-*` | `.credentials.json` or `.claude.json` | Documented: Claude Code's "Log in with multiple accounts" uses `CLAUDE_CONFIG_DIR=~/.claude-work` |
+| Codex | `$CODEX_HOME`, `~/.codex`, `~/.codex-*` | `auth.json` or `config.toml` | `CODEX_HOME` is documented; `~/.codex-*` is a convention |
+| pi | `$PI_CODING_AGENT_DIR`, `~/.pi/agent`, `~/.pi/agent-*` | `auth.json` | `PI_CODING_AGENT_DIR` is documented; `~/.pi/agent-*` is a convention |
+
+- **Globs are guesses:** a matched directory counts only when it holds those files (nothing else in it is read), at most 8 per harness, deduplicated by real path. A match without them, or with credentials that cannot be read, is skipped silently; the env and default directories still show "credentials unreadable".
+- **Names:** a profile is named from its directory without the dot and the harness prefix (`~/.claude-work` is `claude:work`); the default is plain `claude`. Names show only when a harness has more than one profile with a login.
+- **Env modes** (Bedrock, Vertex, Foundry, gateway, API-key variables) belong to the active profile only: `$CLAUDE_CONFIG_DIR` when set, else the default. Other profiles use their own `settings.json`.
+- opencode (every row of its credential table) and Copilot CLI (every login in `config.json`) already hold several logins in one place.
+
 Account identity is resolved per credential, whichever harness holds it, so one account seen through several harnesses is one row, and a login held by a single harness (only pi, say) gets its plan and limits on its own:
 
 | Provider | Identity | From |
 |---|---|---|
-| `openai` | ChatGPT account id + user id, email | The login's own token claims (decoded locally, also when expired); every harness's login is queried like Codex's |
+| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id`, `user_id` or `sub`), email; a workspace id alone is not an identity | The login's own token claims (decoded locally, also when expired); every harness's login is queried like Codex's |
 | `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, `-live` asks `api.github.com/user` with that token (`github.com` logins only) |
 | `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise `-live` asks `api.anthropic.com/api/oauth/profile` with that token |
 
-- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only row). Rows never merge on a guess.
-- **Offline:** a credential identified by an earlier `-live` keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). A new or refreshed credential waits for the next `-live`.
+- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only subscription row). Rows never merge on a guess.
+- **Offline:** a credential identified by an earlier `-live` keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows "no data yet" until the next `-live`.
 - A Copilot plan with no premium allowance shows `none included`, not a full bar.
 
 Plans and billing: every account is one generic model, so new plans need no code change.
