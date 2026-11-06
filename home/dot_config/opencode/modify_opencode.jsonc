@@ -5,8 +5,9 @@
         .chezmoitemplates/lsp-servers) go into `lsp`: an object keeps the built-in servers on, and
         an entry named like a built-in (typescript, pyright, gopls) overrides it. For each
         policy-named server selected here the live entry is kept (disabled, env, ...) and command
-        and extensions are set; a policy-named server not selected here is deleted; entries of
-        other names stay. harnessPolicy.lsp.enabled = false sets `lsp` to false (all LSP off).
+        and extensions are set; for a policy-named server not selected here only command and
+        extensions are removed (a user's {"disabled": true} stays) and the entry is dropped
+        when nothing is left; entries of other names stay. harnessPolicy.lsp.enabled = false sets `lsp` to false (all LSP off).
         The live file is read as JSON, so keep it free of comments. */ -}}
 {{- $current := dict "$schema" "https://opencode.ai/config.json" -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
@@ -26,7 +27,12 @@
 {{-       $_ := set $entry "extensions" (keys $s.extensions | sortAlpha) -}}
 {{-       $_ := set $lsp $name $entry -}}
 {{-     else -}}
-{{-       $_ := unset $lsp $name -}}
+{{-       $entry := get $lsp $name -}}
+{{-       if kindIs "map" $entry -}}
+{{-         $_ := unset $entry "command" -}}
+{{-         $_ := unset $entry "extensions" -}}
+{{-       end -}}
+{{-       if and (kindIs "map" $entry) $entry }}{{ $_ := set $lsp $name $entry }}{{ else }}{{ $_ := unset $lsp $name }}{{ end -}}
 {{-     end -}}
 {{-   end -}}
 {{-   $_ := set $current "lsp" $lsp -}}
