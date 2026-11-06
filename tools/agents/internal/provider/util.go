@@ -132,15 +132,17 @@ func openaiProfile(m map[string]any) map[string]any {
 const sharingScope = "chatgpt.tokens.use.direct"
 
 // tokenSharing reports access-token claims that carry the token-sharing scope:
-// scp as a list of strings or a space-separated string, or scope as a
-// space-separated string.
+// scp or scope, each as a list of strings or a space-separated string.
 func tokenSharing(claims map[string]any) bool {
-	has := func(s string) bool { return slices.Contains(strings.Fields(s), sharingScope) }
-	switch v := claims["scp"].(type) {
+	return scopeHas(claims["scp"]) || scopeHas(claims["scope"])
+}
+
+// scopeHas reports whether a scope claim, a space-separated string or a list
+// of strings, holds the token-sharing scope.
+func scopeHas(claim any) bool {
+	switch v := claim.(type) {
 	case string:
-		if has(v) {
-			return true
-		}
+		return slices.Contains(strings.Fields(v), sharingScope)
 	case []any:
 		for _, e := range v {
 			if s, ok := e.(string); ok && s == sharingScope {
@@ -148,8 +150,7 @@ func tokenSharing(claims map[string]any) bool {
 			}
 		}
 	}
-	s, _ := claims["scope"].(string)
-	return has(s)
+	return false
 }
 
 // markTokenSharing turns a into the account of a token-sharing login: no

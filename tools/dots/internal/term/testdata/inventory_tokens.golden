@@ -1,0 +1,39 @@
+<b>chezmoi dots outdated — every tool on this machine</>   <d>darwin · personal · online</>
+
+<b>Pinned releases</> <d>(4)</>
+  <d>TOOL                  INSTALLED  PINNED  LATEST  STATE</>
+  <m>age</>             1.2.1      1.2.1   1.2.1   <g>✓ up to date</>
+  <m>chezmoi-agents</>  0.7.0      0.7.1   0.7.1   <c>≠ drifted</>
+  <m>gitleaks</>        8.28.0     8.28.0  8.30.0  <y>↑ outdated</>
+  <m>shfmt</>           <d>—</>    3.12.0  3.12.0  <r>✗ not installed</>
+
+<b>Homebrew</> <d>(2)</>
+  <d>TOOL                      INSTALLED  LATEST  STATE</>
+  <m>fd</> <d>(fd-find)</>  10.2.0     10.3.0  <y>↑ outdated</>
+  <m>jq</>                  1.8.1      1.8.1   <g>✓ up to date</>
+  <d>latest versions come from brew outdated</>
+
+<b>uv tools</> <d>(1)</>
+  <d>TOOL        INSTALLED  LATEST         STATE</>
+  <m>ruff</>  0.14.0     <d>unknown</>  <d>? unknown</>
+  <d>offline: latest versions not looked up</>
+
+<b>npm tools</> <d>(2)</>
+  <d>TOOL              INSTALLED  PINNED   LATEST  STATE</>
+  <m>typescript</>  6.0.1      5        5.9.2   <c>≠ drifted</>
+  <m>prettier</>    3.6.0      <d>—</>  3.6.0   <g>✓ up to date</>
+
+<b>Official installers</> <d>(1)</>
+  <d>TOOL       INSTALLED  LATEST         STATE</>
+  <m>bun</>  <d>—</>    <d>unknown</>  <r>✗ not installed</>
+
+<b>source</>  <m>main</> <d>·</> <y>2 behind upstream</> <d>·</> <y>3 local changes</> <d>·</> <d>fetched 3h ago</>
+<b>summary</> 10 tools <d>·</> <g>3 up to date</> <d>·</> <y>2 outdated</> <d>·</> <c>2 drifted</> <d>·</> <r>2 not installed</> <d>·</> <d>1 unknown</>
+
+<b>next</>
+  <m>chezmoi dots upgrade dotfiles</>  <d>pull 2 commits from origin/main, then re-run</>
+  <m>chezmoi dots bump gitleaks</>  <d>pin the newer release</>
+  <m>chezmoi apply</>            <d>install the pinned chezmoi-agents, shfmt</>
+  <m>chezmoi dots upgrade brew</>  <d>upgrade 1 brew package</>
+  <m>npm install -g typescript@5</>  <d>back to the registry pin</>
+  <d>not installed: bun (the install script runs when packages.toml changes; docs/OS.md#packages)</>

@@ -42,7 +42,8 @@ chezmoi init --apply giocaizzi/dotfiles
 | `chezmoi update` | pull this repo and apply it |
 | `chezmoi dots [<what>]` | edit a component, a source file or what a target is made of, with a before/after report per OS and role |
 | `chezmoi dots upgrade` | update the dotfiles, system packages and language tools |
-| `chezmoi dots outdated` / `bump` | list / pin newer release binaries |
+| `chezmoi dots outdated` | every tool with installed, pinned and latest versions |
+| `chezmoi dots bump` | pin newer release binaries |
 | `chezmoi status` / `chezmoi diff` | what an apply would change |
 | `chezmoi add <file>` | start managing a file (`--encrypt` for secrets) |
 
