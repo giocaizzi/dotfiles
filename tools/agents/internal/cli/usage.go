@@ -172,6 +172,13 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 			continue
 		}
 		seen[key] = true
+		if a.TokenSharing {
+			// Never from the cache: an old snapshot may hold a 401 row.
+			snap := f.base(a)
+			snap.Status, snap.Note = a.Status, a.Note
+			out = append(out, snap)
+			continue
+		}
 		if s, ok := have.find(refs[i]); ok {
 			s.ID = a.ID
 			s.Harnesses = a.Harnesses

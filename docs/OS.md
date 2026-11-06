@@ -531,7 +531,7 @@ Accounts are found from the credentials the harnesses already store. On macOS, a
 | Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
 | Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
 | opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
-| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`); its ChatGPT logins (`openai-codex`, and `openai` from Sign in with ChatGPT) count as `openai` |
+| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`); its ChatGPT logins count as `openai`: `openai-codex` is a Codex login; `openai` from Sign in with ChatGPT is a token-sharing login, shown as `ChatGPT sign-in (token sharing)` |
 
 Every stored login is found, not only the one the current shell points at. A harness keeps one login per profile directory; each directory below is a profile:
 
@@ -552,13 +552,13 @@ Account identity is resolved per credential, whichever harness holds it, so one 
 
 | Provider | Identity | From |
 |---|---|---|
-| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id`, `user_id` or `sub`), email; a workspace id alone is not an identity | The login's own token claims (decoded locally, also when expired); otherwise `-live` reads `account_id` and `user_id` from the answer of `chatgpt.com/backend-api/wham/usage` for that token (the usage request itself, no other host), so the row merges with the Codex login of the same account or shows its own plan and limits. That answer has no email: a login proven only this way shows its plan without an address. Every harness's login is queried like Codex's |
+| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id` or `user_id`), email; a workspace id alone is not an identity, and neither is `sub` (pi salts it per client) | The login's own token claims (decoded locally, also when expired); otherwise `-live` reads `account_id` and `user_id` from the answer of `chatgpt.com/backend-api/wham/usage` for that token (the usage request itself, no other host), so the row merges with the Codex login of the same account or shows its own plan and limits. That answer has no email: a login proven only this way shows its plan without an address. Every harness's login is queried like Codex's, except a token-sharing login (Sign in with ChatGPT for the API, scope `chatgpt.tokens.use.direct`, e.g. pi's `openai`): chatgpt.com's usage API rejects it and its token names no account, so it is never sent there and never merged; it shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type` |
 | `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, `-live` asks `api.github.com/user` with that token (`github.com` logins only) |
 | `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise `-live` asks `api.anthropic.com/api/oauth/profile` with that token |
 
 - **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only subscription row). Rows never merge on a guess. An expired token is never sent, so it is proven only from claims or from the cache of an earlier `-live`; its row says which harness to open.
 - **Inactive:** an opencode credential that is not its integration's active one is noted `(inactive)`, only when every credential of the row is inactive.
-- **Offline and expired:** a credential identified by an earlier `-live` keeps its identity from the cache (also under `-live`, for a token that has expired since), matched by a fingerprint (a truncated hash, never the token). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows "no data yet" until the next `-live`.
+- **Offline and expired:** a credential identified by an earlier `-live` keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). Under `-live` the cached identity is re-attached only to credentials that were not sent (expired, not queryable), never to one whose lookup was just sent and failed (401, 403, 429, 5xx, unusable answer, timeout). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows "no data yet" until the next `-live`.
 - A Copilot plan with no premium allowance shows `none included`, not a full bar.
 
 Plans and billing: every account is one generic model, so new plans need no code change.
@@ -607,7 +607,7 @@ Runbook: an account shows "managed by org" or "not visible".
 Runbook: one account shows twice, or "same account? unknown".
 
 - **When:** two rows of one provider, one of them labelled `same account? unknown` or `identity unknown`.
-- **Steps:** run `chezmoi agents usage -live`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then `-live` again. A pi `openai` login (Sign in with ChatGPT) holds no identity in its token, so it is proven only by `-live` while the token is valid.
+- **Steps:** run `chezmoi agents usage -live`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then `-live` again. A pi `openai` login (Sign in with ChatGPT, token sharing) shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type`; it never merges, because its token carries no account or user identity (the user id is salted per client) and chatgpt.com's usage API rejects it, so it is never sent there. Its plan and limits are those of the ChatGPT account you see in Codex.
 - **Verify:** one row per account, with its email or login and every harness that holds it.
 - **Rollback:** none; delete the cache file to drop remembered identities.
 

@@ -137,7 +137,9 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 	}
 	perProvider := map[string]int{}
 	for _, s := range snaps {
-		if !isMetered(s.Plan.Kind) { // an API key is never the same account as a login
+		// An API key is never the same account as a login, and a token-sharing
+		// login is never an account of unproven identity.
+		if !isMetered(s.Plan.Kind) && s.Plan.Name != usg.NameTokenSharing {
 			perProvider[s.Provider]++
 		}
 	}

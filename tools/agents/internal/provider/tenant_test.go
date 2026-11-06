@@ -120,7 +120,7 @@ func TestPi(t *testing.T) {
 	access, _ := chatgptTokens(t, exp, "acct-1")
 	f := newFake("linux")
 	f.files[f.path(".pi", "agent", "auth.json")] = fmt.Sprintf(`{
-	  "openai":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d},
+	  "openai-codex":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d},
 	  "github-copilot":{"type":"oauth","access":"fake-a","refresh":"fake-gh-token","expires":%d},
 	  "openrouter":{"type":"api_key","key":"fake-key-1"},
 	  "deepseek":{"type":"api_key","key":"!op read secret"},

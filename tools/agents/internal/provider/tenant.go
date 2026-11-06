@@ -35,6 +35,26 @@ type tenantEntry struct {
 	inactive  bool
 	source    string
 	host      string // GitHub Enterprise URL or domain the login was made on, raw
+	// tokenSharing marks a store entry known to be a token-sharing login by
+	// its key (pi's "openai"), whatever its token claims say.
+	tokenSharing bool
+}
+
+// applyOpenAI sets the ChatGPT login facts of the entry on a.
+func (e tenantEntry) applyOpenAI(a *Account) {
+	o := openaiOAuth(e.harness, e.access, "", e.accountID)
+	if e.tokenSharing && !o.TokenSharing {
+		markTokenSharing(&o)
+	}
+	a.Key, a.Plan, a.Expires, a.Cred = o.Key, o.Plan, o.Expires, o.Cred
+	a.TokenSharing, a.Status, a.Note = o.TokenSharing, o.Status, o.Note
+	a.IdentityKnown, a.Fingerprints = o.IdentityKnown, o.Fingerprints
+	if o.Label != "" {
+		a.Label = o.Label
+	}
+	if o.IdentityKnown {
+		a.ID = o.ID
+	}
 }
 
 // account maps the entry to an Account.
@@ -68,15 +88,7 @@ func (e tenantEntry) account(now time.Time) Account {
 		a.Auth = AuthOAuth
 		switch e.provider {
 		case OpenAI:
-			o := openaiOAuth(e.harness, e.access, "", e.accountID)
-			a.Key, a.Plan, a.Expires, a.Cred = o.Key, o.Plan, o.Expires, o.Cred
-			a.IdentityKnown, a.Fingerprints = o.IdentityKnown, o.Fingerprints
-			if o.Label != "" {
-				a.Label = o.Label
-			}
-			if o.IdentityKnown {
-				a.ID = o.ID
-			}
+			e.applyOpenAI(&a)
 		case GitHubCopilot:
 			token := cmp.Or(e.refresh, e.access) // the GitHub OAuth token
 			unproven(&a, token)

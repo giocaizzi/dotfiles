@@ -2,6 +2,8 @@ package cli
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -12,7 +14,8 @@ import (
 // needsIdentity reports accounts whose identity can be proven, and whose
 // unproven state is therefore worth showing.
 func needsIdentity(a provider.Account) bool {
-	if a.Auth != provider.AuthOAuth {
+	// A token-sharing login has no identity to prove: it is never queried.
+	if a.Auth != provider.AuthOAuth || a.TokenSharing {
 		return false
 	}
 	switch a.Provider {
@@ -40,15 +43,21 @@ func (f usageFetcher) resolveIdentities(ctx context.Context, accounts []provider
 	out := slices.Clone(accounts)
 	var wg sync.WaitGroup
 	for i, acct := range out {
-		if acct.IdentityKnown || acct.Auth != provider.AuthOAuth || acct.Cred.Empty() ||
+		if acct.IdentityKnown || acct.TokenSharing || acct.Auth != provider.AuthOAuth || acct.Cred.Empty() ||
 			(acct.Status != "" && acct.Status != usg.StatusOK) {
 			continue
 		}
 		wg.Go(func() {
 			rctx, cancel := context.WithTimeout(ctx, liveTimeout)
 			defer cancel()
-			if id, ok := f.identify(rctx, acct); ok {
+			id, err := f.identify(rctx, acct)
+			switch {
+			case err == nil:
 				out[i] = provider.Identify(acct, id)
+			case !errors.Is(err, errNotSent):
+				// The credential was sent and did not prove who it is: the
+				// cache must not vouch for it.
+				out[i].LookupFailed = true
 			}
 		})
 	}
@@ -56,11 +65,20 @@ func (f usageFetcher) resolveIdentities(ctx context.Context, accounts []provider
 	return out
 }
 
-func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (provider.Identity, bool) {
+// errNotSent is identify's answer for a credential that was not sent anywhere
+// (an unsupported host). Any other error means a request went out.
+var errNotSent = errors.New("credential not sent")
+
+// errIdentityMismatch is a usage answer for another account than the one sent.
+var errIdentityMismatch = errors.New("account id differs from the one sent")
+
+// identify asks the provider who owns the credential. The error is errNotSent
+// when nothing was sent, and otherwise the reason the identity is unproven.
+func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (provider.Identity, error) {
 	switch acct.Provider {
 	case provider.GitHubCopilot:
 		if acct.Host != githubHost {
-			return provider.Identity{}, false
+			return provider.Identity{}, errNotSent
 		}
 		body, err := f.get(ctx, f.githubURL+"/user", map[string]string{
 			hdrAuth:                "token " + acct.Cred.Token(),
@@ -68,13 +86,13 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 			"X-GitHub-Api-Version": "2026-03-10",
 		})
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, err
 		}
 		p, err := usg.ParseGitHubUser(body)
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, fmt.Errorf("github identity: %w", err)
 		}
-		return provider.Identity{Key: provider.CopilotKey(acct.Host, p.Login), Label: p.Login, Login: p.Login}, true
+		return provider.Identity{Key: provider.CopilotKey(acct.Host, p.Login), Label: p.Login, Login: p.Login}, nil
 	case provider.Anthropic:
 		body, err := f.get(ctx, f.anthropicURL+"/api/oauth/profile", map[string]string{
 			hdrAuth:          "Bearer " + acct.Cred.Token(),
@@ -82,29 +100,28 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 			hdrAccept:        jsonType,
 		})
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, err
 		}
 		p, err := usg.ParseAnthropicProfile(body)
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, fmt.Errorf("anthropic identity: %w", err)
 		}
-		return provider.Identity{Key: provider.AnthropicKey(p.AccountID, p.OrgID), Label: p.Email, Plan: p.Plan}, true
+		return provider.Identity{Key: provider.AnthropicKey(p.AccountID, p.OrgID), Label: p.Email, Plan: p.Plan}, nil
 	case provider.OpenAI:
-		header := openaiHeader(acct)
-		body, err := f.get(ctx, f.chatgptURL+"/backend-api/wham/usage", header)
+		body, err := f.openaiUsage(ctx, acct)
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, err
 		}
 		p, err := usg.ParseOpenAIIdentity(body)
 		if err != nil {
-			return provider.Identity{}, false
+			return provider.Identity{}, fmt.Errorf("openai identity: %w", err)
 		}
-		if sent := header["ChatGPT-Account-Id"]; sent != "" && sent != p.AccountID {
-			return provider.Identity{}, false
+		if sent := acct.Cred.AccountID(); sent != "" && sent != p.AccountID {
+			return provider.Identity{}, errIdentityMismatch
 		}
-		return provider.Identity{Key: provider.OpenAIKey(p.AccountID, p.UserID), AccountID: p.AccountID, Plan: p.Plan}, true
+		return provider.Identity{Key: provider.OpenAIKey(p.AccountID, p.UserID), AccountID: p.AccountID, Plan: p.Plan}, nil
 	}
-	return provider.Identity{}, false
+	return provider.Identity{}, errNotSent
 }
 
 // bindCached gives an unproven account the identity of the cached snapshot
@@ -113,7 +130,9 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 func bindCached(accounts []provider.Account, cached []usg.Snapshot) []provider.Account {
 	out := slices.Clone(accounts)
 	for i, a := range out {
-		if a.IdentityKnown || len(a.Fingerprints) == 0 {
+		// A credential whose live lookup was sent and failed is never vouched
+		// for by the cache; a token-sharing login has no identity to bind.
+		if a.IdentityKnown || a.LookupFailed || a.TokenSharing || len(a.Fingerprints) == 0 {
 			continue
 		}
 		for _, s := range cached {

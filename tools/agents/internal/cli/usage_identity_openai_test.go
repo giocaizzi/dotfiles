@@ -29,21 +29,43 @@ type whamServer struct {
 	reqs     []whamRequest
 	answers  map[string]string // token -> JSON body
 	redirect map[string]string // token -> redirect target URL
+	fail     map[string]whamFail
+}
+
+// whamFail is a non-200 answer (or a 200 with an unusable body) for a token.
+type whamFail struct {
+	status int
+	body   string
+}
+
+// set changes the answer for a token between runs: body "" drops it (401).
+func (s *whamServer) set(token, body string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if body == "" {
+		delete(s.answers, token)
+		return
+	}
+	s.answers[token] = body
 }
 
 func newWhamServer(t *testing.T) *whamServer {
 	t.Helper()
-	s := &whamServer{answers: map[string]string{}, redirect: map[string]string{}}
+	s := &whamServer{answers: map[string]string{}, redirect: map[string]string{}, fail: map[string]whamFail{}}
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tok := bearerToken(r)
 		s.mu.Lock()
 		s.reqs = append(s.reqs, whamRequest{tok, r.Header.Get("Chatgpt-Account-Id")})
 		body, ok := s.answers[tok]
 		target := s.redirect[tok]
+		fail, failed := s.fail[tok]
 		s.mu.Unlock()
 		switch {
 		case r.URL.Path != "/backend-api/wham/usage":
 			w.WriteHeader(http.StatusNotFound)
+		case failed:
+			w.WriteHeader(fail.status)
+			_, _ = w.Write([]byte(fail.body))
 		case target != "":
 			http.Redirect(w, r, target, http.StatusFound)
 		case !ok:
@@ -87,7 +109,7 @@ func whamBody(accountID, userID string) string {
 		`"secondary_window":{"used_percent":12,"limit_window_seconds":604800,"reset_at":1793500000}}}`
 }
 
-// piBareOpenAI is a pi "openai" login whose token carries no identity claim.
+// piBareOpenAI is a pi "openai-codex" login whose token carries no identity claim.
 func piBareOpenAI(t *testing.T, exp time.Time) (entry, token string) {
 	t.Helper()
 	token = fakeJWT(t, map[string]any{
@@ -97,7 +119,7 @@ func piBareOpenAI(t *testing.T, exp time.Time) (entry, token string) {
 			"encrypted_auth_metadata": "fake-metadata", "per_user_salt": "fake-salt",
 		},
 	})
-	entry = fmt.Sprintf(`"openai":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d,"clientId":"fake-client","scopes":["openid"]}`,
+	entry = fmt.Sprintf(`"openai-codex":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d,"clientId":"fake-client","scopes":["openid"]}`,
 		token, exp.UnixMilli())
 	return entry, token
 }
@@ -166,18 +188,10 @@ func TestOpenAIIdentityPiOnly(t *testing.T) {
 		t.Errorf("output reads unknown:\n%s", out)
 	}
 	reqs := srv.requests()
-	if len(reqs) < 2 {
-		t.Fatalf("requests = %+v, want the identity request and the usage fetch", reqs)
-	}
-	// The identity request has no account to name; the usage fetch then
-	// carries the one the answer proved.
-	if want := (whamRequest{piTok, ""}); reqs[0] != want {
-		t.Errorf("identity request = %+v, want the pi token and no ChatGPT-Account-Id", reqs[0])
-	}
-	for _, r := range reqs[1:] {
-		if want := (whamRequest{piTok, "acct-1"}); r != want {
-			t.Errorf("usage request = %+v, want the pi token and acct-1", r)
-		}
+	// One request serves the identity and the usage: the identity request has
+	// no account to name.
+	if want := []whamRequest{{piTok, ""}}; !slices.Equal(reqs, want) {
+		t.Errorf("requests = %+v, want one with the pi token and no ChatGPT-Account-Id", reqs)
 	}
 	fl.noSecrets(out, piTok)
 }

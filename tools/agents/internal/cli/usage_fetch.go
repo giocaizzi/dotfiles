@@ -42,6 +42,40 @@ type usageFetcher struct {
 	agyPath      func() (string, error)
 	home         string
 	now          func() time.Time
+	// memo holds the ChatGPT usage answers of this run, so a credential is
+	// sent to the usage API at most once; nil (a test literal) memoizes nothing.
+	memo *usageMemo
+}
+
+// usageMemo remembers the outcome, failures included, of one request per
+// credential fingerprint. Concurrent callers with the same credential wait for
+// the one request.
+type usageMemo struct {
+	mu      sync.Mutex
+	entries map[string]*memoEntry
+}
+
+type memoEntry struct {
+	once sync.Once
+	body []byte
+	err  error
+}
+
+func newUsageMemo() *usageMemo { return &usageMemo{entries: map[string]*memoEntry{}} }
+
+func (m *usageMemo) do(key string, fn func() ([]byte, error)) ([]byte, error) {
+	if m == nil || key == "" {
+		return fn()
+	}
+	m.mu.Lock()
+	e, ok := m.entries[key]
+	if !ok {
+		e = &memoEntry{}
+		m.entries[key] = e
+	}
+	m.mu.Unlock()
+	e.once.Do(func() { e.body, e.err = fn() })
+	return e.body, e.err
 }
 
 func newFetcher(home string) usageFetcher {
@@ -58,6 +92,7 @@ func newFetcher(home string) usageFetcher {
 		agyPath:      func() (string, error) { return exec.LookPath("agy") },
 		home:         home,
 		now:          time.Now,
+		memo:         newUsageMemo(),
 	}
 }
 
@@ -207,14 +242,22 @@ func openaiHeader(acct provider.Account) map[string]string {
 	return header
 }
 
+// openaiUsage is GET chatgpt.com/backend-api/wham/usage for the credential,
+// sent at most once per run: the identity lookup and the usage fetch share the
+// answer, failures included.
+func (f usageFetcher) openaiUsage(ctx context.Context, acct provider.Account) ([]byte, error) {
+	return f.memo.do(acct.Cred.Fingerprint(provider.OpenAI), func() ([]byte, error) {
+		return f.get(ctx, f.chatgptURL+"/backend-api/wham/usage", openaiHeader(acct))
+	})
+}
+
 func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
-	header := openaiHeader(acct)
 	var (
 		plan   usg.Plan
 		limits []usg.Limit
 		note   string
 	)
-	body, err := f.get(ctx, f.chatgptURL+"/backend-api/wham/usage", header)
+	body, err := f.openaiUsage(ctx, acct)
 	if err != nil {
 		note = failNote(err)
 	} else if plan, limits, err = usg.ParseOpenAI(body); err != nil {

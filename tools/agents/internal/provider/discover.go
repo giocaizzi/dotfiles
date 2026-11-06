@@ -65,7 +65,13 @@ func newer(a, b Account) bool {
 // are; otherwise the inactive note is dropped from the winner's note.
 func merge(a, b Account) Account {
 	win, lose := a, b
-	if newer(a, b) {
+	switch {
+	case a.LookupFailed != b.LookupFailed:
+		// A credential whose live lookup failed never wins over one without.
+		if a.LookupFailed {
+			win, lose = b, a
+		}
+	case newer(a, b):
 		win, lose = b, a
 	}
 	win.ID = min(a.ID, b.ID)
@@ -82,6 +88,7 @@ func merge(a, b Account) Account {
 	win.IdentityKnown = a.IdentityKnown || b.IdentityKnown
 	win.Fingerprints = unionFingerprints(a.Fingerprints, b.Fingerprints)
 	win.Inactive = a.Inactive && b.Inactive
+	win.LookupFailed = a.LookupFailed && b.LookupFailed
 	if !win.Inactive {
 		win.Note = strings.TrimSpace(strings.TrimSuffix(win.Note, inactiveNote))
 	}
