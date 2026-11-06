@@ -79,7 +79,7 @@ func cleanAmount(a *usg.Amount) *usg.Amount {
 }
 
 // planText is the plan column: its name, or unknown (<raw>), then the account.
-// sibling is true when another snapshot of the same provider is shown, which an
+// sibling is true when another subscription snapshot of the same provider is shown, which an
 // account of unproven identity may be the same as.
 func planText(s usg.Snapshot, sibling bool) string {
 	var text string
@@ -137,7 +137,9 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 	}
 	perProvider := map[string]int{}
 	for _, s := range snaps {
-		perProvider[s.Provider]++
+		if !isMetered(s.Plan.Kind) { // an API key is never the same account as a login
+			perProvider[s.Provider]++
+		}
 	}
 	plan := func(s usg.Snapshot) string { return planText(s, perProvider[s.Provider] > 1) }
 	planWidth := 0
