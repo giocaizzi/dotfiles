@@ -104,9 +104,19 @@ func ClaudeSettings(p *policy.Policy, goos string) map[string]any {
 		notif = "terminal_bell"
 	}
 
+	voiceMode := p.Voice.Mode
+	if voiceMode == "" {
+		voiceMode = "hold"
+	}
+
 	return map[string]any{
 		"permissions":              ClaudePermissions(p, goos).ToMap(),
 		"preferredNotifChannel":    notif,
 		"skipAutoPermissionPrompt": p.Native.Claude.SkipAutoPermissionPrompt,
+		"voice": map[string]any{
+			"enabled":    p.Voice.Enabled,
+			"mode":       voiceMode,
+			"autoSubmit": p.Voice.AutoSubmit,
+		},
 	}
 }

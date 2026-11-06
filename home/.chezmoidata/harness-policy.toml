@@ -204,10 +204,6 @@ effortLevel = "medium"
 model = "gpt-6-luna"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."factory:verifier"]
-model = "gpt-6.1-sol"
-effortLevel = "medium"
-
 [harnessPolicy.native.antigravity]
 agentMode = "auto"
 toolPermission = "always-proceed"
@@ -229,3 +225,11 @@ packages = [
 [harnessPolicy.native.opencode]
 defaultModel = "gpt-5.5"
 sandbox = false
+
+# --- D9: Voice input (dictation) ---
+# Claude Code: rendered from this table. VS Code: settings.json is static, edit it to match (chezmoi-agents check fails on drift). Others: docs/OS.md#voice-input.
+[harnessPolicy.voice]
+enabled = true
+mode = "hold"        # "hold" (push-to-talk) | "tap" (toggle)
+autoSubmit = false   # send the prompt when recording stops
+language = ""   # BCP 47, VS Code only (agents.voice.language); "" = VS Code default "auto"

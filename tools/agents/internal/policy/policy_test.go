@@ -62,3 +62,31 @@ packages = ["local/pkg"]
 		t.Errorf("unexpected validation findings: %v", findings)
 	}
 }
+
+func TestValidate_Voice(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name  string
+		voice policy.Voice
+		want  int
+	}{
+		{"empty", policy.Voice{}, 0},
+		{"hold", policy.Voice{Enabled: true, Mode: "hold"}, 0},
+		{"tap", policy.Voice{Mode: "tap"}, 0},
+		{"bad mode", policy.Voice{Mode: "toggle"}, 1},
+		{"language short", policy.Voice{Language: "it"}, 0},
+		{"language region", policy.Voice{Language: "it-IT"}, 0},
+		{"bad language", policy.Voice{Language: "english"}, 1},
+		{"bad language underscore", policy.Voice{Language: "en_US"}, 1},
+		{"both bad", policy.Voice{Mode: "x", Language: "1"}, 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := policy.Policy{Voice: tt.voice}
+			if got := p.Validate("test"); len(got) != tt.want {
+				t.Errorf("Validate() = %v, want %d findings", got, tt.want)
+			}
+		})
+	}
+}
