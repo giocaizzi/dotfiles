@@ -30,11 +30,11 @@ type Harness struct {
 // Harnesses lists the harnesses whose credentials are discovered.
 func Harnesses() []Harness {
 	return []Harness{
-		{Name: "claude", Providers: []string{Anthropic}},
+		{Name: harnessClaude, Providers: []string{Anthropic}},
 		{Name: "codex", Providers: []string{OpenAI}},
 		{Name: "copilot", Providers: []string{GitHubCopilot}},
-		{Name: "antigravity", Providers: []string{Google}},
-		{Name: "opencode", MultiTenant: true},
+		{Name: harnessAntigravity, Providers: []string{Google}},
+		{Name: harnessOpencode, MultiTenant: true},
 		{Name: "pi", MultiTenant: true},
 	}
 }
@@ -132,7 +132,3 @@ type OpencodeRow struct {
 	Active        bool
 	Value         []byte // JSON {type, access, refresh, expires, key, metadata}
 }
-
-// Discover returns every account found, merged by (provider, key) with the
-// harnesses that use it, sorted by provider then label.
-func Discover(st Store) []Account { return nil }
