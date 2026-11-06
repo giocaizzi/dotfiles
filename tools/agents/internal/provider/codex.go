@@ -1,12 +1,21 @@
 package provider
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"path/filepath"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/usage"
 )
 
 const codexKeyringService = "Codex Auth"
+
+// codexStoreKey is the keyring account Codex uses for a CODEX_HOME: "cli|" and
+// the first 16 hex chars of the sha256 of the canonical path.
+func codexStoreKey(canonicalHome string) string {
+	sum := sha256.Sum256([]byte(canonicalHome))
+	return "cli|" + hex.EncodeToString(sum[:])[:16]
+}
 
 type codexAuth struct {
 	AuthMode string `json:"auth_mode"`
@@ -77,8 +86,10 @@ func readCodex(st Store) []Account {
 	case err == nil:
 		raw = b
 	case isNotExist(err):
-		if s, serr := st.Secret(codexKeyringService, ""); serr == nil && s != "" {
-			raw, source = []byte(s), srcKeychain
+		if st.GOOS() == "darwin" {
+			if s, serr := st.Secret(codexKeyringService, codexStoreKey(st.Canonical(dir))); serr == nil && s != "" {
+				raw, source = []byte(s), srcKeychain
+			}
 		}
 	default:
 		a := unreadable(OpenAI, "codex")

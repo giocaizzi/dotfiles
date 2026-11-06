@@ -496,7 +496,7 @@ Accounts are found from the credentials the harnesses already store. On macOS, a
 | Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
 |---|---|---|
 | Claude Code | `anthropic` | Keychain item `Claude Code-credentials` / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
-| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); on macOS also the Keychain service `Codex Auth` when Codex stores it there (keyring mode on Linux and Windows is not read) |
+| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); on macOS also the Keychain item of this `CODEX_HOME` (service `Codex Auth`, account `cli|<hash of the canonical CODEX_HOME>`) when Codex stores it there (keyring mode on Linux and Windows is not read) |
 | Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
 | Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
 | opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |

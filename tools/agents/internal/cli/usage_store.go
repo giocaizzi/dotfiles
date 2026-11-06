@@ -64,6 +64,21 @@ func (s osStore) Exists(path string) bool {
 	return err == nil
 }
 
+// Canonical resolves symlinks in the absolute path; when that fails it returns
+// the cleaned path as given.
+func (s osStore) Canonical(path string) string {
+	clean := filepath.Clean(path)
+	abs, err := filepath.Abs(clean)
+	if err != nil {
+		return clean
+	}
+	resolved, err := filepath.EvalSymlinks(abs)
+	if err != nil {
+		return clean
+	}
+	return resolved
+}
+
 func (s osStore) Getenv(key string) string { return s.getenv(key) }
 func (s osStore) Home() string             { return s.home }
 func (s osStore) GOOS() string             { return s.goos }
