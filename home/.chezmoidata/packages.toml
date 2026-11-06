@@ -186,9 +186,6 @@ winget = "hadolint.hadolint"
 uv = true
 
 [package.typescript]
-npm = "typescript@5" # typescript-language-server needs tsserver, which TS 7 dropped
-
-[package.typescript-language-server]
 npm = true
 
 [package.PSScriptAnalyzer]
