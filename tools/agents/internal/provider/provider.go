@@ -5,6 +5,7 @@
 package provider
 
 import (
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -53,26 +54,43 @@ const (
 	AuthNone    Auth = "none"    // harness present, not logged in
 )
 
-// Credential is a secret held in memory. Its String, GoString, MarshalJSON and
+// Credential is a secret held in memory. Its Format, String, GoString, MarshalJSON and
 // LogValue never reveal it.
 type Credential struct {
+	// The secret sits behind a pointer: fmt's %p on a non-pointer is a bad
+	// verb, which dumps the struct fields without calling Format, so a
+	// pointer keeps the token out of that dump (it shows an address).
+	s *secret
+}
+
+type secret struct {
 	token     string
 	accountID string // e.g. ChatGPT-Account-Id; not secret, but never displayed
 }
 
 // NewCredential wraps a token and an optional provider account id.
 func NewCredential(token, accountID string) Credential {
-	return Credential{token: token, accountID: accountID}
+	return Credential{s: &secret{token: token, accountID: accountID}}
 }
 
 // Token returns the secret for an Authorization header. Callers never print it.
-func (c Credential) Token() string { return c.token }
+func (c Credential) Token() string {
+	if c.s == nil {
+		return ""
+	}
+	return c.s.token
+}
 
 // AccountID returns the provider account id sent as a request header.
-func (c Credential) AccountID() string { return c.accountID }
+func (c Credential) AccountID() string {
+	if c.s == nil {
+		return ""
+	}
+	return c.s.accountID
+}
 
 // Empty reports whether no token is held.
-func (c Credential) Empty() bool { return c.token == "" }
+func (c Credential) Empty() bool { return c.Token() == "" }
 
 const redacted = "[redacted]"
 
@@ -84,6 +102,9 @@ func (c Credential) GoString() string { return redacted }
 
 // MarshalJSON redacts the credential.
 func (c Credential) MarshalJSON() ([]byte, error) { return []byte(`"` + redacted + `"`), nil }
+
+// Format redacts the credential for every verb and flag, %x and %d included.
+func (c Credential) Format(f fmt.State, _ rune) { _, _ = f.Write([]byte(redacted)) }
 
 // LogValue redacts the credential in slog.
 func (c Credential) LogValue() slog.Value { return slog.StringValue(redacted) }
@@ -101,8 +122,8 @@ type Account struct {
 	Note      string       // e.g. "usage lives in your cloud console"
 	Cred      Credential   // the secret, in memory only
 	Login     string       // GitHub login for Copilot billing; empty otherwise
+	Host      string       // GitHub host the Copilot token was issued for, e.g. "https://github.com"; empty for other providers
 	Source    string       // where it was read: "keychain", "file", "sqlite", "env"
-	Refreshed time.Time    // when the harness last wrote it; the newest wins on merge
 }
 
 // Store is everything Discover reads from the machine. The real one lives in

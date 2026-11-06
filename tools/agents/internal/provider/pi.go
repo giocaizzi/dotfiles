@@ -13,6 +13,11 @@ type piEntry struct {
 	Refresh string  `json:"refresh"`
 	Expires float64 `json:"expires"`
 	Key     string  `json:"key"`
+	// GitHub Copilot enterprise logins store the domain as enterpriseUrl.
+	// Source: https://github.com/earendil-works/pi/blob/HEAD/packages/ai/src/auth/oauth/github-copilot.ts
+	// (formerly badlogic/pi-mono). enterpriseDomain is read too, leniently.
+	EnterpriseURL    string `json:"enterpriseUrl"`
+	EnterpriseDomain string `json:"enterpriseDomain"`
 }
 
 func sortedKeys[V any](m map[string]V) []string {
@@ -45,6 +50,7 @@ func readPi(st Store) []Account {
 			refresh:  e.Refresh,
 			key:      e.Key,
 			expires:  msTime(e.Expires),
+			host:     cmp.Or(e.EnterpriseURL, e.EnterpriseDomain),
 			source:   srcFile,
 			hashKey:  true,
 		}.account(st.Now()))

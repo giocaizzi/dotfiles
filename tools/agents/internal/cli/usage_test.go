@@ -158,13 +158,11 @@ func TestReadUsageCacheMissingIsEmpty(t *testing.T) {
 
 func TestSnapKey(t *testing.T) {
 	t.Parallel()
-	a := snapKey("openai", "me@example.com", []string{"codex", "pi"})
-	if a == snapKey("openai", "me@example.com", []string{"codex"}) ||
-		a == snapKey("openai", "other@example.com", []string{"codex", "pi"}) ||
-		a == snapKey("anthropic", "me@example.com", []string{"codex", "pi"}) {
+	a := snapKey("openai", "me@example.com")
+	if a == snapKey("openai", "other@example.com") || a == snapKey("anthropic", "me@example.com") {
 		t.Error("snapKey collides across distinct accounts")
 	}
-	if a != snapKey("openai", "me@example.com", []string{"codex", "pi"}) {
+	if a != snapKey("openai", "me@example.com") {
 		t.Error("snapKey is not stable")
 	}
 }
@@ -217,6 +215,74 @@ func TestCachedViewListsMissingAccounts(t *testing.T) {
 		if s := byProvider[p]; s.Status != usg.StatusUnavailable || s.Note != noDataNote {
 			t.Errorf("%s row = %+v", p, s)
 		}
+	}
+}
+
+func TestCachedViewHarnessAddedKeepsOneRow(t *testing.T) {
+	t.Parallel()
+	f := testFetcher(t, nil)
+	cached := []usg.Snapshot{{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", Limits: []usg.Limit{{Name: "5h"}}}}
+	accts := []provider.Account{{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude", "pi"}, Auth: provider.AuthOAuth}}
+
+	got := cachedView(accts, cached, f)
+
+	if len(got) != 1 {
+		t.Fatalf("rows = %d, want 1: %+v", len(got), got)
+	}
+	if diff := cmp.Diff([]string{"claude", "pi"}, got[0].Harnesses); diff != "" {
+		t.Errorf("harnesses (-want +got):\n%s", diff)
+	}
+	if got[0].Status != usg.StatusOK || len(got[0].Limits) != 1 {
+		t.Errorf("cached data lost: %+v", got[0])
+	}
+}
+
+func TestCachedViewDropsLoggedOutAccount(t *testing.T) {
+	t.Parallel()
+	f := testFetcher(t, nil)
+	cached := []usg.Snapshot{
+		{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK},
+		{Provider: "github-copilot", Account: "octocat", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
+	}
+	accts := []provider.Account{{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}}
+
+	got := cachedView(accts, cached, f)
+
+	if len(got) != 1 || got[0].Provider != "anthropic" {
+		t.Errorf("rows = %+v, want only anthropic", got)
+	}
+}
+
+func TestCachedViewDuplicates(t *testing.T) {
+	t.Parallel()
+	f := testFetcher(t, nil)
+	snap := usg.Snapshot{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK}
+	acct := provider.Account{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}
+
+	if got := cachedView([]provider.Account{acct, acct}, []usg.Snapshot{snap, snap}, f); len(got) != 1 {
+		t.Errorf("cached duplicates: rows = %d, want 1", len(got))
+	}
+	gh := provider.Account{Provider: "github-copilot", Label: "octocat", Harnesses: []string{"copilot"}, Auth: provider.AuthOAuth}
+	if got := cachedView([]provider.Account{gh, gh}, nil, f); len(got) != 1 {
+		t.Errorf("duplicate accounts without cache: rows = %d, want 1", len(got))
+	}
+}
+
+func TestKeepStaleDropsUndiscoveredAndTakesHarnesses(t *testing.T) {
+	t.Parallel()
+	cached := []usg.Snapshot{
+		{Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api"},
+		{Provider: "github-copilot", Account: "gone", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
+	}
+	live := []usg.Snapshot{{Provider: "anthropic", Account: "a", Harnesses: []string{"claude", "pi"}, Status: usg.StatusUnavailable, Note: "HTTP 500"}}
+
+	got := keepStale(live, cached)
+
+	if len(got) != 1 || got[0].Status != usg.StatusStale {
+		t.Fatalf("rows = %+v, want the one live account, stale", got)
+	}
+	if diff := cmp.Diff([]string{"claude", "pi"}, got[0].Harnesses); diff != "" {
+		t.Errorf("harnesses (-want +got):\n%s", diff)
 	}
 }
 

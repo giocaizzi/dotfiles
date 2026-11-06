@@ -94,6 +94,28 @@ func TestCopilot(t *testing.T) {
 	})
 }
 
+func TestCopilotHost(t *testing.T) {
+	t.Parallel()
+	for name, tc := range map[string]struct{ cfg, want string }{
+		"default":         {`{"loggedInUsers":["octocat"]}`, "https://github.com"},
+		"object default":  {`{"loggedInUsers":[{"login":"octocat"}]}`, "https://github.com"},
+		"enterprise":      {`{"loggedInUsers":[{"login":"octocat","host":"https://acme.ghe.com"}]}`, "https://acme.ghe.com"},
+		"normalized":      {`{"loggedInUsers":[{"login":"octocat","host":"ACME.ghe.com/"}]}`, "https://acme.ghe.com"},
+		"last logged in":  {`{"loggedInUsers":[],"lastLoggedInUser":{"login":"octocat","host":"https://ghe.example.com"}}`, "https://ghe.example.com"},
+		"unparsable host": {`{"loggedInUsers":[{"login":"octocat","host":"weird host"}]}`, "https://weird host"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			f := newFake("linux")
+			f.files[f.path(".copilot", "config.json")] = tc.cfg
+			got := readCopilot(f)
+			if len(got) != 1 || got[0].Host != tc.want {
+				t.Errorf("got %+v, want host %q", views(got), tc.want)
+			}
+		})
+	}
+}
+
 func TestAntigravity(t *testing.T) {
 	t.Parallel()
 	f := newFake("linux")

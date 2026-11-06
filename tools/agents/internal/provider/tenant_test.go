@@ -128,12 +128,72 @@ func TestPi(t *testing.T) {
 	}`, access, exp.UnixMilli(), exp.UnixMilli(), testNow.Add(-time.Hour).UnixMilli())
 	e0 := time.UnixMilli(exp.UnixMilli())
 	assertViews(t, readPi(f), []view{
-		{Provider: "anthropic", Key: "claude-oauth", Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: "fake-claude", Expires: time.UnixMilli(testNow.Add(-time.Hour).UnixMilli()), Status: "expired", Note: "token expired, open pi to refresh", Source: "file"},
+		{Provider: "anthropic", Key: tokenKey("anthropic:", "fake-claude"), Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: "fake-claude", Expires: time.UnixMilli(testNow.Add(-time.Hour).UnixMilli()), Status: "expired", Note: "token expired, open pi to refresh", Source: "file"},
 		{Provider: "deepseek", Harnesses: []string{"pi"}, Auth: AuthCommand, Status: "skipped", Note: "key from a command, not run", Source: "file"},
 		{Provider: "github-copilot", Key: tokenKey("copilot:", "fake-gh-token"), Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: "fake-gh-token", Expires: e0, Source: "file"},
 		{Provider: "openai", Key: "acct-1", Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: e0, Source: "file"},
 		{Provider: "openrouter", Harnesses: []string{"pi"}, Auth: AuthAPIKey, Status: "no-api", Note: "no usage API for API keys", Source: "file"},
 	})
+}
+
+func TestTenantCopilotHost(t *testing.T) {
+	t.Parallel()
+	exp := testNow.Add(time.Hour)
+
+	f := newFake("linux")
+	f.rows[f.path(".local", "share", "opencode", "opencode.db")] = []OpencodeRow{
+		{ID: "c1", IntegrationID: "github-copilot", Active: true, Value: []byte(`{"type":"oauth","access":"fake-a","refresh":"fake-gh-1","metadata":{"enterpriseUrl":"acme.ghe.com"}}`)},
+		{ID: "c2", IntegrationID: "github-copilot", Active: true, Value: []byte(`{"type":"oauth","access":"fake-a","refresh":"fake-gh-2","metadata":{"enterpriseUrl":"https://ghe.example.com/"}}`)},
+		{ID: "c3", IntegrationID: "github-copilot", Active: true, Value: []byte(`{"type":"oauth","access":"fake-a","refresh":"fake-gh-3"}`)},
+	}
+	hosts := make([]string, 0, 3)
+	for _, a := range readOpencode(f) {
+		hosts = append(hosts, a.Host)
+	}
+	if want := []string{"https://acme.ghe.com", "https://ghe.example.com", "https://github.com"}; fmt.Sprint(hosts) != fmt.Sprint(want) {
+		t.Errorf("opencode hosts = %v, want %v", hosts, want)
+	}
+
+	legacy := newFake("linux")
+	legacy.files[legacy.path(".local", "share", "opencode", "auth.json")] = fmt.Sprintf(
+		`{"github-copilot":{"type":"oauth","access":"fake-a","refresh":"fake-gh","expires":%d,"enterpriseUrl":"acme.ghe.com"}}`, exp.UnixMilli())
+	if got := readOpencode(legacy); len(got) != 1 || got[0].Host != "https://acme.ghe.com" {
+		t.Errorf("legacy opencode: %+v", views(got))
+	}
+
+	for name, entry := range map[string]string{
+		"enterpriseUrl":    `{"type":"oauth","access":"fake-a","refresh":"fake-gh","enterpriseUrl":"acme.ghe.com"}`,
+		"enterpriseDomain": `{"type":"oauth","access":"fake-a","refresh":"fake-gh","enterpriseDomain":"https://acme.ghe.com"}`,
+	} {
+		p := newFake("linux")
+		p.files[p.path(".pi", "agent", "auth.json")] = `{"github-copilot":` + entry + `}`
+		if got := readPi(p); len(got) != 1 || got[0].Host != "https://acme.ghe.com" {
+			t.Errorf("pi %s: %+v", name, views(got))
+		}
+	}
+	p := newFake("linux")
+	p.files[p.path(".pi", "agent", "auth.json")] = `{"github-copilot":{"type":"oauth","access":"fake-a","refresh":"fake-gh"}}`
+	if got := readPi(p); len(got) != 1 || got[0].Host != "https://github.com" {
+		t.Errorf("pi default: %+v", views(got))
+	}
+}
+
+func TestAnthropicTenantDoesNotMergeWithClaude(t *testing.T) {
+	t.Parallel()
+	f := newFake("linux")
+	f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(testNow.Add(time.Hour))
+	f.rows[f.path(".local", "share", "opencode", "opencode.db")] = []OpencodeRow{
+		{ID: "c1", IntegrationID: "anthropic", Active: true, Value: ocValueJSON("oauth", "fake-oc-access", "fake-r", "", testNow.Add(time.Hour), "")},
+	}
+	var n int
+	for _, a := range Discover(f) {
+		if a.Provider == Anthropic {
+			n++
+		}
+	}
+	if n != 2 {
+		t.Errorf("got %d anthropic accounts, want 2", n)
+	}
 }
 
 func TestPiDir(t *testing.T) {

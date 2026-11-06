@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/term"
 	usg "github.com/giocaizzi/dotfiles/tools/agents/internal/usage"
@@ -17,6 +18,53 @@ const (
 	minNameCol  = 14
 	barWidth    = 20
 )
+
+// sanitize drops control characters (C0, DEL, C1, ESC and so tab and newline
+// too) from a string that came from a provider or the cache, so it cannot
+// drive the terminal.
+func sanitize(s string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, s)
+}
+
+// sanitized returns a copy of the snapshot with every printable string cleaned.
+func sanitized(s usg.Snapshot) usg.Snapshot {
+	s.Provider = sanitize(s.Provider)
+	s.Account = sanitize(s.Account)
+	s.Note = sanitize(s.Note)
+	s.Source = sanitize(s.Source)
+	s.Plan.Name = sanitize(s.Plan.Name)
+	s.Plan.Raw = sanitize(s.Plan.Raw)
+	s.Plan.Kind = usg.Kind(sanitize(string(s.Plan.Kind)))
+	s.Status = usg.Status(sanitize(string(s.Status)))
+	hs := make([]string, len(s.Harnesses))
+	for i, h := range s.Harnesses {
+		hs[i] = sanitize(h)
+	}
+	s.Harnesses = hs
+	limits := make([]usg.Limit, len(s.Limits))
+	for i, l := range s.Limits {
+		l.Name = sanitize(l.Name)
+		l.Note = sanitize(l.Note)
+		l.Used, l.Remaining, l.Cap = cleanAmount(l.Used), cleanAmount(l.Remaining), cleanAmount(l.Cap)
+		limits[i] = l
+	}
+	s.Limits = limits
+	return s
+}
+
+func cleanAmount(a *usg.Amount) *usg.Amount {
+	if a == nil {
+		return nil
+	}
+	c := *a
+	c.Unit = sanitize(c.Unit)
+	return &c
+}
 
 // planText is the plan column: its name, or unknown (<raw>), then the account.
 func planText(s usg.Snapshot) string {
@@ -57,7 +105,11 @@ func sortSnapshots(snaps []usg.Snapshot) []usg.Snapshot {
 func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, now time.Time) {
 	fmt.Fprintf(w, "%schezmoi agents usage — subscription usage per provider account%s   %s%s%s\n\n", st.B, st.O, st.D, meta, st.O)
 
-	snaps = sortSnapshots(snaps)
+	clean := make([]usg.Snapshot, len(snaps))
+	for i, s := range snaps {
+		clean[i] = sanitized(s)
+	}
+	snaps = sortSnapshots(clean)
 	nameW := minNameCol
 	for _, s := range snaps {
 		for _, l := range s.Limits {
@@ -116,6 +168,9 @@ func limitLine(st term.Style, l usg.Limit, nameW int, now time.Time) string {
 	dim := func(s string) string { return st.D + s + st.O }
 	switch {
 	case l.Hidden:
+		if l.Note != "" {
+			return head + dim(l.Note)
+		}
 		return head + dim("managed by org")
 	case l.Disabled:
 		return head + dim("not applied now")

@@ -61,11 +61,15 @@ func testFetcher(t *testing.T, srv *httptest.Server) usageFetcher {
 }
 
 func oauthAccount(prov string) provider.Account {
-	return provider.Account{
+	a := provider.Account{
 		Provider: prov, Label: "me@example.com", Harnesses: []string{"h1", "h2"},
 		Auth: provider.AuthOAuth, Plan: usg.Plan{Kind: usg.KindIndividual, Name: "Plus"},
 		Cred: provider.NewCredential(secret, "acct-42"),
 	}
+	if prov == provider.GitHubCopilot {
+		a.Host = githubHost // as provider.Discover sets it
+	}
+	return a
 }
 
 // assertNoSecret fails when the snapshot, as JSON or text, holds the token.
@@ -201,44 +205,36 @@ const (
 	copilotBillingJSON = `{"timePeriod":{"year":2026,"month":11},"usageItems":[{"product":"Copilot","sku":"Copilot Premium Request","unitType":"requests","grossQuantity":10,"netAmount":0.4}]}`
 )
 
-// copilotServer rejects "token" auth, answers the user endpoint on Bearer and
-// the billing endpoint with billingCode.
+// copilotServer answers the user endpoint and the billing endpoint with billingCode.
 func copilotServer(rec *recorder, billingCode int) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec.add(r)
-		switch {
-		case strings.HasPrefix(r.Header.Get("Authorization"), "token "):
-			w.WriteHeader(http.StatusUnauthorized)
-			_, _ = w.Write([]byte("bad credentials " + secret))
-		case strings.HasPrefix(r.URL.Path, "/users/"):
+		if strings.HasPrefix(r.URL.Path, "/users/") {
 			w.WriteHeader(billingCode)
 			if billingCode == http.StatusOK {
 				_, _ = w.Write([]byte(copilotBillingJSON))
 			}
-		default:
-			_, _ = w.Write([]byte(copilotUserJSON))
+			return
 		}
+		_, _ = w.Write([]byte(copilotUserJSON))
 	}))
 }
 
 func checkCopilotRequests(t *testing.T, reqs []seen) {
 	t.Helper()
-	if len(reqs) != 3 {
-		t.Fatalf("requests = %d, want the token request, the Bearer retry and billing", len(reqs))
+	if len(reqs) != 2 {
+		t.Fatalf("requests = %d, want the user request and billing", len(reqs))
 	}
 	if got := reqs[0].Header.Get("Authorization"); got != "token "+secret {
-		t.Errorf("first Authorization = %q", got)
-	}
-	if got := reqs[1].Header.Get("Authorization"); got != "Bearer "+secret {
-		t.Errorf("retry Authorization = %q", got)
+		t.Errorf("Authorization = %q", got)
 	}
 	if got := reqs[0].Header.Get("Accept"); got != "application/json" {
 		t.Errorf("Accept = %q", got)
 	}
-	bill := reqs[2]
+	bill := reqs[1]
 	if bill.URL.Path != "/users/octocat/settings/billing/premium_request/usage" ||
 		bill.Header.Get("X-Github-Api-Version") != "2026-03-10" ||
-		bill.Header.Get("Authorization") != "Bearer "+secret {
+		bill.Header.Get("Authorization") != "token "+secret {
 		t.Errorf("billing request = %s %v", bill.URL.Path, bill.Header)
 	}
 }
@@ -256,15 +252,15 @@ func TestFetchCopilot(t *testing.T) {
 				t.Errorf("billing limit = %+v", l)
 			}
 		}},
-		{"forbidden is managed by org", http.StatusForbidden, func(t *testing.T, snap usg.Snapshot) {
+		{"forbidden on an org plan is managed by org", http.StatusForbidden, func(t *testing.T, snap usg.Snapshot) {
 			t.Helper()
 			if l := limitByName(t, snap, "spend"); l.Kind != usg.LimitSpend || !l.Hidden || l.Note != "managed by org" {
 				t.Errorf("spend limit = %+v", l)
 			}
 		}},
-		{"not found is managed by org", http.StatusNotFound, func(t *testing.T, snap usg.Snapshot) {
+		{"not found on an org plan is managed by org", http.StatusNotFound, func(t *testing.T, snap usg.Snapshot) {
 			t.Helper()
-			if l := limitByName(t, snap, "spend"); !l.Hidden {
+			if l := limitByName(t, snap, "spend"); !l.Hidden || l.Note != "managed by org" {
 				t.Errorf("spend limit = %+v", l)
 			}
 		}},
@@ -445,6 +441,7 @@ func TestFetchAgyRunsUsageCommand(t *testing.T) {
 	dir := t.TempDir()
 	script := writeScript(t, dir, `echo "$@" > "`+dir+`/args"
 pwd > "`+dir+`/cwd"
+stat -c %a . > "`+dir+`/mode" 2>/dev/null || stat -f %Lp . > "`+dir+`/mode"
 cat <<'EOF'
 `+agyUsageJSON+`
 EOF
@@ -462,10 +459,15 @@ EOF
 		t.Errorf("agy args = %q, want %q", got, want)
 	}
 	cwd, _ := os.ReadFile(filepath.Join(dir, "cwd"))
-	wantCwd, _ := filepath.EvalSymlinks(os.TempDir()) //nolint:usetesting // asserts the production cwd
-	gotCwd, _ := filepath.EvalSymlinks(strings.TrimSpace(string(cwd)))
-	if gotCwd != wantCwd {
-		t.Errorf("agy cwd = %q, want %q", gotCwd, wantCwd)
+	gotCwd := strings.TrimSpace(string(cwd))
+	if base := filepath.Base(gotCwd); !strings.HasPrefix(base, "chezmoi-agents-agy-") {
+		t.Errorf("agy cwd = %q, want a chezmoi-agents-agy-* directory", gotCwd)
+	}
+	if _, err := os.Stat(gotCwd); !os.IsNotExist(err) {
+		t.Errorf("agy cwd %q still exists (err %v)", gotCwd, err)
+	}
+	if mode, _ := os.ReadFile(filepath.Join(dir, "mode")); strings.TrimSpace(string(mode)) != "700" {
+		t.Errorf("agy cwd mode = %q, want 700", mode)
 	}
 	if snap.Status != usg.StatusOK || snap.Source != "agy" || len(snap.Limits) != 4 {
 		t.Fatalf("status/source/limits = %s/%s/%d, want ok/agy/4", snap.Status, snap.Source, len(snap.Limits))

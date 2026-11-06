@@ -31,7 +31,8 @@ type tenantEntry struct {
 	label     string
 	inactive  bool
 	source    string
-	hashKey   bool // derive a GitHub Copilot key from the token (pi has no row id)
+	host      string // GitHub Enterprise URL or domain the login was made on, raw
+	hashKey   bool   // derive a GitHub Copilot key from the token (pi has no row id)
 }
 
 func tokenKey(prefix, token string) string {
@@ -83,8 +84,11 @@ func (e tenantEntry) account(now time.Time) Account {
 				a.Key = tokenKey("copilot:", token)
 			}
 			a.Cred = NewCredential(token, "")
+			a.Host = normalizeHost(e.host)
 		case Anthropic:
-			a.Key = "claude-oauth"
+			// Claude Code's credential holds no identity, so a login of
+			// another harness never merges with it unless proven the same.
+			a.Key = tokenKey("anthropic:", e.access)
 			a.Cred = NewCredential(e.access, "")
 		default:
 			a.Label = e.label

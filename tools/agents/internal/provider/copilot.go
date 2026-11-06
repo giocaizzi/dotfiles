@@ -3,6 +3,7 @@ package provider
 import (
 	"encoding/json"
 	"path/filepath"
+	"strings"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/usage"
 )
@@ -13,6 +14,22 @@ const (
 )
 
 type copilotUser struct{ login, host string }
+
+// normalizeHost returns a GitHub host as a lowercase https URL without a
+// trailing slash; a bare domain gets the https:// prefix. An empty value is
+// the default host. Nothing else is interpreted: an odd value stays odd, so
+// the caller does not treat it as github.com.
+func normalizeHost(h string) string {
+	h = strings.ToLower(strings.TrimSpace(h))
+	h = strings.TrimRight(h, "/")
+	if h == "" {
+		return defaultGitHubHost
+	}
+	if !strings.Contains(h, "://") {
+		h = "https://" + h
+	}
+	return h
+}
 
 // parseCopilotUser accepts a bare login string or a {login, host} object.
 func parseCopilotUser(raw json.RawMessage) (copilotUser, bool) {
@@ -97,6 +114,7 @@ func readCopilot(st Store) []Account {
 			Label:     u.login,
 			Key:       u.login,
 			Login:     u.login,
+			Host:      normalizeHost(u.host), // the keychain lookup keeps the host as written
 			Harnesses: []string{"copilot"},
 			Auth:      AuthOAuth,
 			Plan:      unknownPlan(),

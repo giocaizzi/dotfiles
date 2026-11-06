@@ -6,6 +6,9 @@ import (
 	"strings"
 )
 
+// GitHub Copilot enterprise logins: opencode stores the URL as
+// metadata.enterpriseUrl (the form prompts "company.ghe.com or https://...").
+// Source: https://github.com/anomalyco/opencode/blob/HEAD/packages/core/src/plugin/provider/github-copilot.ts
 type opencodeValue struct {
 	Type     string  `json:"type"` // oauth | key | external
 	Access   string  `json:"access"`
@@ -13,7 +16,8 @@ type opencodeValue struct {
 	Expires  float64 `json:"expires"`
 	Key      string  `json:"key"`
 	Metadata struct {
-		AccountID string `json:"accountId"`
+		AccountID     string `json:"accountId"`
+		EnterpriseURL string `json:"enterpriseUrl"`
 	} `json:"metadata"`
 }
 
@@ -25,6 +29,9 @@ type opencodeLegacy struct {
 	Expires   float64 `json:"expires"`
 	AccountID string  `json:"accountId"`
 	Key       string  `json:"key"`
+	// Enterprise URL of a GitHub Copilot login; the V1 store keeps it at the
+	// top level.
+	EnterpriseURL string `json:"enterpriseUrl"`
 }
 
 func normalizeTenantType(t string) string {
@@ -90,6 +97,7 @@ func readOpencode(st Store) []Account {
 			key:       l.Key,
 			expires:   msTime(l.Expires),
 			accountID: l.AccountID,
+			host:      l.EnterpriseURL,
 			source:    srcFile,
 		}.account(st.Now()))
 	}
@@ -118,6 +126,7 @@ func opencodeRowAccounts(st Store, rows []OpencodeRow) []Account {
 			key:       v.Key,
 			expires:   msTime(v.Expires),
 			accountID: v.Metadata.AccountID,
+			host:      v.Metadata.EnterpriseURL,
 			rowID:     r.ID,
 			label:     r.Label,
 			inactive:  !r.Active,

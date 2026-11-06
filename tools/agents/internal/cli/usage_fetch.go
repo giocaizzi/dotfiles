@@ -47,7 +47,12 @@ type usageFetcher struct {
 
 func newFetcher(home string, getenv func(string) string) usageFetcher {
 	return usageFetcher{
-		client:       &http.Client{Timeout: liveTimeout},
+		client: &http.Client{
+			Timeout: liveTimeout,
+			// No endpoint here redirects; following one could forward the token or
+			// ChatGPT-Account-Id to another scheme or host.
+			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+		},
 		anthropicURL: "https://api.anthropic.com",
 		chatgptURL:   "https://chatgpt.com",
 		githubURL:    "https://api.github.com",
@@ -211,21 +216,29 @@ func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, sn
 	return snap
 }
 
+// githubHost is the only host a Copilot token is sent to (githubURL).
+const githubHost = "https://github.com"
+
 func (f usageFetcher) fetchCopilot(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
-	token := acct.Cred.Token()
-	scheme := "token "
+	// The provider always sets Host for Copilot accounts; an empty or any
+	// other host is never sent a token.
+	host := acct.Host
+	if host != githubHost {
+		snap.Status = usg.StatusNotVisible
+		snap.Note = "unknown GitHub host: usage not queried"
+		if host != "" {
+			snap.Note = "GitHub Enterprise host " + stripScheme(host) + ": usage not queried"
+		}
+		return snap
+	}
+	// The Copilot clients authenticate copilot_internal calls with
+	// "Authorization: token <github token>", see
+	// https://github.com/microsoft/vscode-copilot-chat/blob/main/src/platform/authentication/node/copilotTokenManager.ts
+	auth := "token " + acct.Cred.Token()
 	body, err := f.get(ctx, f.githubURL+"/copilot_internal/user", map[string]string{
-		hdrAuth:   scheme + token,
+		hdrAuth:   auth,
 		hdrAccept: jsonType,
 	})
-	var se usageStatusError
-	if errors.As(err, &se) && se.code == http.StatusUnauthorized {
-		scheme = "Bearer "
-		body, err = f.get(ctx, f.githubURL+"/copilot_internal/user", map[string]string{
-			hdrAuth:   scheme + token,
-			hdrAccept: jsonType,
-		})
-	}
 	if err != nil {
 		return unavailable(snap, failNote(err))
 	}
@@ -241,22 +254,45 @@ func (f usageFetcher) fetchCopilot(ctx context.Context, acct provider.Account, s
 
 	if acct.Login != "" {
 		billing, err := f.get(ctx, f.githubURL+"/users/"+url.PathEscape(acct.Login)+"/settings/billing/premium_request/usage", map[string]string{
-			hdrAuth:                scheme + token,
+			hdrAuth:                auth,
 			hdrAccept:              "application/vnd.github+json",
 			"X-GitHub-Api-Version": "2026-03-10",
 		})
+		var se usageStatusError
 		switch {
 		case err == nil:
 			if l, perr := usg.ParseCopilotBilling(billing); perr == nil {
 				snap.Limits = append(snap.Limits, l)
 			}
 		case errors.As(err, &se) && (se.code == http.StatusForbidden || se.code == http.StatusNotFound):
-			snap.Limits = append(snap.Limits, usg.Limit{
-				Name: "spend", Kind: usg.LimitSpend, Hidden: true, Note: "managed by org",
-			})
+			snap.Limits = append(snap.Limits, hiddenSpend(snap, limits))
 		}
 	}
 	return snap
+}
+
+func stripScheme(host string) string {
+	if _, rest, ok := strings.Cut(host, "://"); ok {
+		return rest
+	}
+	return host
+}
+
+// hiddenSpend is the spend row for a billing 403/404. "Managed by org" only
+// when an organization pays or the premium limit is pooled; otherwise the
+// token most likely lacks billing access.
+func hiddenSpend(snap usg.Snapshot, limits []usg.Limit) usg.Limit {
+	org := snap.Plan.Payer == usg.PayerOrg
+	for _, l := range limits {
+		if l.Scope == usg.ScopePool {
+			org = true
+		}
+	}
+	note := "not visible (token lacks billing access)"
+	if org {
+		note = "managed by org"
+	}
+	return usg.Limit{Name: "spend", Kind: usg.LimitSpend, Hidden: true, Note: note}
 }
 
 func (f usageFetcher) fetchAgy(ctx context.Context, snap usg.Snapshot, timeout time.Duration) usg.Snapshot {
@@ -281,7 +317,13 @@ func (f usageFetcher) runAgy(ctx context.Context, timeout time.Duration) ([]byte
 	}
 	secs := max(int(timeout/time.Second), 1)
 	cmd := exec.CommandContext(ctx, path, "-p", "/usage", "--output-format", "json", "--print-timeout", strconv.Itoa(secs)+"s")
-	cmd.Dir = os.TempDir()
+	// A fresh private directory: a shared temp dir could hold planted workspace config.
+	dir, err := os.MkdirTemp("", "chezmoi-agents-agy-")
+	if err != nil {
+		return nil, errors.New("agy failed")
+	}
+	defer os.RemoveAll(dir)
+	cmd.Dir = dir
 	var out bytes.Buffer
 	cmd.Stdout = &limitWriter{w: &out, n: maxBody}
 	cmd.WaitDelay = 2 * time.Second

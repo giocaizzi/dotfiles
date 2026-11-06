@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -118,13 +119,34 @@ func decodeKeyringValue(v string) string {
 	return v
 }
 
+// sqliteDSN is the read-only file: URI of a database path. The path is
+// URI-escaped, so ?, # and % in it stay part of the file name. On Windows a
+// drive path gets the leading slash a file: URI needs.
+func sqliteDSN(path string) string {
+	q := url.Values{}
+	q.Set("mode", "ro")
+	q.Set("_pragma", "busy_timeout(2000)")
+	u := url.URL{Scheme: "file", Path: sqlitePath(path), RawQuery: q.Encode()}
+	return u.String()
+}
+
+// sqlitePath is the URL path of a file path: slashes, and a leading slash
+// before a Windows drive letter.
+func sqlitePath(path string) string {
+	p := filepath.ToSlash(path)
+	if len(p) >= 2 && p[1] == ':' {
+		p = "/" + p
+	}
+	return p
+}
+
 // OpencodeCredentials reads opencode's V2 credential table, read-only.
 func (s osStore) OpencodeCredentials(dbPath string) ([]provider.OpencodeRow, error) {
 	path := filepath.Clean(dbPath)
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("opencode database: %w", err)
 	}
-	db, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path)+"?mode=ro&_pragma=busy_timeout(2000)")
+	db, err := sql.Open("sqlite", sqliteDSN(path))
 	if err != nil {
 		return nil, fmt.Errorf("open opencode database: %w", err)
 	}

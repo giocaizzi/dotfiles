@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/cache"
@@ -77,9 +76,12 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 	return 0
 }
 
-// snapKey identifies the account of a snapshot.
-func snapKey(provider, account string, harnesses []string) string {
-	return provider + "\x00" + account + "\x00" + strings.Join(harnesses, ",")
+// snapKey identifies the account of a snapshot: provider and account label,
+// never the harness list, which changes when a harness logs in or out. A
+// snapshot carries no host, so two Copilot logins with one label on different
+// hosts share a key.
+func snapKey(provider, account string) string {
+	return provider + "\x00" + account
 }
 
 func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
@@ -92,17 +94,29 @@ func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
 	return out
 }
 
-// cachedView is the default view: the cached snapshots, plus one row per
-// discovered account the cache lacks. Offline sources fill openai and google;
-// an account that cannot be queried shows why; the rest show "no data yet".
+// cachedView is the default view: one row per discovered account, from its
+// cached snapshot (with the account's current harnesses) when there is one.
+// Cached snapshots of accounts no longer discovered are dropped. Without a
+// cached snapshot, offline sources fill openai and google; an account that
+// cannot be queried shows why; the rest show "no data yet".
 func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetcher) []usg.Snapshot {
-	have := make(map[string]bool, len(cached))
+	have := make(map[string]usg.Snapshot, len(cached))
 	for _, s := range cached {
-		have[snapKey(s.Provider, s.Account, s.Harnesses)] = true
+		if _, dup := have[snapKey(s.Provider, s.Account)]; !dup {
+			have[snapKey(s.Provider, s.Account)] = s
+		}
 	}
-	out := append([]usg.Snapshot(nil), cached...)
+	var out []usg.Snapshot
+	seen := make(map[string]bool, len(accounts))
 	for _, a := range accounts {
-		if have[snapKey(a.Provider, a.Label, a.Harnesses)] {
+		key := snapKey(a.Provider, a.Label)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		if s, ok := have[key]; ok {
+			s.Harnesses = a.Harnesses
+			out = append(out, s)
 			continue
 		}
 		var (
@@ -127,11 +141,12 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 }
 
 // keepStale replaces a failed live snapshot by the cached one for the same
-// account, marked stale with the failure as its note.
+// account, marked stale with the failure as its note. Only live accounts are
+// kept, so an account no longer discovered leaves the rewritten cache.
 func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 	old := make(map[string]usg.Snapshot, len(cached))
 	for _, s := range cached {
-		old[snapKey(s.Provider, s.Account, s.Harnesses)] = s
+		old[snapKey(s.Provider, s.Account)] = s
 	}
 	out := make([]usg.Snapshot, len(live))
 	for i, s := range live {
@@ -139,10 +154,11 @@ func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 		if s.Status != usg.StatusUnavailable {
 			continue
 		}
-		prev, ok := old[snapKey(s.Provider, s.Account, s.Harnesses)]
+		prev, ok := old[snapKey(s.Provider, s.Account)]
 		if !ok || (prev.Status != usg.StatusOK && prev.Status != usg.StatusStale) {
 			continue
 		}
+		prev.Harnesses = s.Harnesses
 		prev.Status = usg.StatusStale
 		prev.Note = s.Note
 		if prev.Source == "" {

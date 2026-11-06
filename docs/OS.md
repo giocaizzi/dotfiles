@@ -496,8 +496,8 @@ Accounts are found from the credentials the harnesses already store:
 | Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
 |---|---|---|
 | Claude Code | `anthropic` | Keychain item `Claude Code-credentials` / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
-| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`), or the OS keyring service `Codex Auth` when Codex stores it there |
-| Copilot CLI | `github-copilot` | OS keyring service `copilot-cli` (Keychain / Secret Service / Credential Manager); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN` |
+| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); on macOS also the Keychain service `Codex Auth` when Codex stores it there (keyring mode on Linux and Windows is not read) |
+| Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
 | Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
 | opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
 | pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`) |
@@ -528,6 +528,7 @@ Runbook: check capacity before fanning out agents.
 - **When:** before starting several parallel agents or a long run.
 - **Steps:** `make usage` (or `chezmoi agents usage -live`); read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
 - **Verify:** every account you use shows a bar and a reset time, with a fresh age.
+- **Troubleshooting:** every HTTP account shows "unavailable: timeout" while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) is blocking the freshly built `tools/agents/bin/chezmoi-agents`; allow it there (any version).
 - **Rollback:** nothing to undo; delete the cache file to forget old snapshots.
 
 Runbook: an account shows "token expired" or "unauthorized".

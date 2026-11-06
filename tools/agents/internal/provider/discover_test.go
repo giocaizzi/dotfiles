@@ -73,13 +73,13 @@ func TestDiscoverMergesOneChatGPTAccount(t *testing.T) {
 	}
 }
 
-func TestMergeRefreshedBeatsExpires(t *testing.T) {
+func TestMergeLaterExpiryWins(t *testing.T) {
 	t.Parallel()
-	a := Account{Provider: "openai", Key: "k", Harnesses: []string{"codex"}, Expires: testNow.Add(time.Hour), Refreshed: testNow, Cred: NewCredential("fake-token-1", "")}
-	b := Account{Provider: "openai", Key: "k", Harnesses: []string{"pi", "codex"}, Expires: testNow.Add(5 * time.Hour), Refreshed: testNow.Add(-time.Hour), Label: "me@example.com", Cred: NewCredential("fake-token-2", "")}
+	a := Account{Provider: "openai", Key: "k", Harnesses: []string{"codex"}, Expires: testNow.Add(time.Hour), Cred: NewCredential("fake-token-1", "")}
+	b := Account{Provider: "openai", Key: "k", Harnesses: []string{"pi", "codex"}, Expires: testNow.Add(5 * time.Hour), Label: "me@example.com", Cred: NewCredential("fake-token-2", "")}
 	got := merge(a, b)
-	if got.Cred.Token() != "fake-token-1" {
-		t.Errorf("the refreshed account should win")
+	if got.Cred.Token() != "fake-token-2" {
+		t.Errorf("the later-expiring account should win")
 	}
 	if got.Label != "me@example.com" {
 		t.Errorf("label not taken from the other account")
@@ -140,7 +140,7 @@ func TestRedaction(t *testing.T) {
 		"%v(Credential)":     fmt.Sprintf("%v", c),
 		"%+v(Credential)":    fmt.Sprintf("%+v", c),
 		"%#v(Credential)":    fmt.Sprintf("%#v", c),
-		"%s(Credential)":     fmt.Sprintf("%s", c), //nolint:staticcheck // exercising the %s verb
+		"%s(Credential)":     fmt.Sprintf("%s", c),
 		"json(Account)":      string(js),
 		"json(Credential)":   string(jc),
 		"slog":               logs.String(),

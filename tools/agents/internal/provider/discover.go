@@ -48,12 +48,8 @@ func Discover(st Store) []Account {
 	return out
 }
 
-// newer reports whether b is more recent than a: refreshed later, else
-// expiring later.
+// newer reports whether b is more recent than a: its token expires later.
 func newer(a, b Account) bool {
-	if !a.Refreshed.Equal(b.Refreshed) {
-		return b.Refreshed.After(a.Refreshed)
-	}
 	return b.Expires.After(a.Expires)
 }
 
