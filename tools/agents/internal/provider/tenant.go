@@ -15,6 +15,9 @@ const (
 	tenantExternal = "external"
 )
 
+// inactiveNote is the note of a credential that is not the active one.
+const inactiveNote = "(inactive)"
+
 // tenantEntry is one credential of a multi-tenant harness (opencode, pi),
 // before it becomes an Account.
 type tenantEntry struct {
@@ -98,8 +101,9 @@ func (e tenantEntry) account(now time.Time) Account {
 		}
 		expiredStatus(&a, now, e.harness)
 	}
+	a.Inactive = e.inactive
 	if e.inactive {
-		a.Note = strings.TrimSpace(a.Note + " (inactive)")
+		a.Note = strings.TrimSpace(a.Note + " " + inactiveNote)
 	}
 	return a
 }

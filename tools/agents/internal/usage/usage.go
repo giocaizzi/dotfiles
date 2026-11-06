@@ -134,7 +134,8 @@ type Snapshot struct {
 
 // Profile is the identity a provider reports for a token.
 type Profile struct {
-	AccountID string // Anthropic account uuid
+	AccountID string // Anthropic account uuid; ChatGPT account (workspace) id
+	UserID    string // ChatGPT user id; empty for other providers
 	OrgID     string // Anthropic organization uuid
 	Email     string // Anthropic account email
 	Login     string // GitHub login

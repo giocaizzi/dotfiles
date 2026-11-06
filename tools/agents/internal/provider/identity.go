@@ -12,10 +12,13 @@ import (
 // Identity is a proven, non-secret account identity: read from token claims
 // or a harness's local profile, or answered by the provider for the token.
 type Identity struct {
-	Key   string     // provider-scoped stable id; becomes Account.Key and Account.ID
-	Label string     // email or login for display
-	Login string     // GitHub login (Copilot); empty otherwise
-	Plan  usage.Plan // filled when the account's plan is unknown; Kind "" when not known
+	Key   string // provider-scoped stable id; becomes Account.Key and Account.ID
+	Label string // email or login for display
+	Login string // GitHub login (Copilot); empty otherwise
+	// AccountID is the provider account id the credential sends (the
+	// ChatGPT-Account-Id of an OpenAI login); empty when not known.
+	AccountID string
+	Plan      usage.Plan // filled when the account's plan is unknown; Kind "" when not known
 }
 
 // OpenAIKey is the identity of a ChatGPT login: the account (workspace) id
@@ -86,6 +89,9 @@ func Identify(a Account, id Identity) Account {
 	}
 	if id.Login != "" {
 		a.Login = id.Login
+	}
+	if id.AccountID != "" && a.Cred.AccountID() == "" && !a.Cred.Empty() {
+		a.Cred = NewCredential(a.Cred.Token(), id.AccountID)
 	}
 	if (a.Plan.Kind == "" || a.Plan.Kind == usage.KindUnknown) && id.Plan.Kind != "" {
 		a.Plan = id.Plan
