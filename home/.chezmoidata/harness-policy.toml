@@ -212,10 +212,6 @@ effortLevel = "medium"
 model = "gpt-6-luna"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."factory:verifier"]
-model = "gpt-6.1-sol"
-effortLevel = "medium"
-
 [harnessPolicy.native.antigravity]
 agentMode = "auto"
 toolPermission = "always-proceed"
