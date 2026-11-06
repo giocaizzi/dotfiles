@@ -2,8 +2,6 @@ package provider
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/hex"
 	"strings"
 	"time"
 
@@ -29,6 +27,7 @@ type tenantEntry struct {
 	expires   time.Time
 	accountID string
 	rowID     string // opencode credential row id
+	storeKey  string // raw key of a multi-tenant store entry (pi)
 	label     string
 	inactive  bool
 	source    string
@@ -36,16 +35,11 @@ type tenantEntry struct {
 	hashKey   bool   // derive a GitHub Copilot key from the token (pi has no row id)
 }
 
-func tokenKey(prefix, token string) string {
-	sum := sha256.Sum256([]byte(token))
-	return prefix + hex.EncodeToString(sum[:])[:12]
-}
-
 // account maps the entry to an Account.
 func (e tenantEntry) account(now time.Time) Account {
 	a := Account{
 		Provider:  e.provider,
-		ID:        e.harness + ":" + cmp.Or(e.rowID, e.provider),
+		ID:        e.harness + ":" + cmp.Or(e.rowID, e.storeKey, e.provider),
 		Harnesses: []string{e.harness},
 		Plan:      unknownPlan(),
 		Source:    e.source,
@@ -74,23 +68,26 @@ func (e tenantEntry) account(now time.Time) Account {
 		case OpenAI:
 			o := openaiOAuth(e.harness, e.access, "", e.accountID)
 			a.Key, a.Plan, a.Expires, a.Cred = o.Key, o.Plan, o.Expires, o.Cred
+			a.IdentityKnown, a.Fingerprints = o.IdentityKnown, o.Fingerprints
+			if o.Label != "" {
+				a.Label = o.Label
+			}
+			if o.IdentityKnown {
+				a.ID = o.ID
+			}
 		case GitHubCopilot:
-			token := e.refresh // the GitHub OAuth token
-			if token == "" {
-				token = e.access
-			}
-			switch {
-			case e.rowID != "" && !e.hashKey:
-				a.Key = "copilot:" + e.rowID
-			case token != "":
-				a.Key = tokenKey("copilot:", token)
-			}
+			token := cmp.Or(e.refresh, e.access) // the GitHub OAuth token
+			unproven(&a, token)
 			a.Cred = NewCredential(token, "")
 			a.Host = normalizeHost(e.host)
+			if e.refresh != "" {
+				// The stored expiry is the short-lived Copilot API token's.
+				e.expires = time.Time{}
+			}
 		case Anthropic:
 			// Claude Code's credential holds no identity, so a login of
 			// another harness never merges with it unless proven the same.
-			a.Key = tokenKey("anthropic:", e.access)
+			unproven(&a, e.access)
 			a.Cred = NewCredential(e.access, "")
 		default:
 			a.Label = e.label
