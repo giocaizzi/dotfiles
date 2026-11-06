@@ -8,12 +8,11 @@
 # ----------------------------------------------------------------------------
 
 # Plugins for personal work only: work machines get them disabled.
-harnessPersonalPlugins = ["factory", "go"]
+harnessPersonalPlugins = ["go"]
 
 [harnessPlugins]
 api = ["claude", "copilot", "codex", "antigravity", "pi"]
 dev-tools = ["claude", "copilot", "codex", "antigravity", "pi"]
-factory = ["claude", "copilot", "codex", "antigravity", "pi"]
 go = ["claude", "copilot", "codex", "antigravity", "pi"]
 guard = ["claude", "copilot", "codex", "antigravity", "pi"]
 hud = ["claude", "copilot", "antigravity", "pi"]
