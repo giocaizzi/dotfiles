@@ -224,6 +224,7 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 			t.Parallel()
 			s := testStore(t)
 			s.goos = "darwin"
+			s.timeout = time.Minute // loaded CI hosts spawn the stub slowly
 			s.user = func() string { return tt.user }
 			s.securityBin = stubSecurity(t, tt.wantAcct, tt.acctExit, tt.anyExit)
 			got, err := s.Secret("svc", "")
