@@ -10,17 +10,31 @@ const Schema = 1
 // ArenaBoard is the LMArena text board ranks come from.
 const ArenaBoard = "text_style_control"
 
+// Provider keys (models.dev) of the tracked providers.
+const (
+	ProviderAnthropic = "anthropic"
+	ProviderOpenAI    = "openai"
+	ProviderCopilot   = "github-copilot"
+)
+
+// Arena category keys of Model.Arena that appear in more than one place.
+const (
+	CatHardPrompts          = "hardPrompts"
+	CatInstructionFollowing = "instructionFollowing"
+	CatMultiTurn            = "multiTurn"
+)
+
 // Tiers are the manual tier names, in display order.
 func Tiers() []string { return []string{"lightweight", "versatile", "powerful", "extra"} }
 
 // Providers are the models.dev provider keys the catalog tracks.
-func Providers() []string { return []string{"anthropic", "openai", "github-copilot"} }
+func Providers() []string { return []string{ProviderAnthropic, ProviderOpenAI, ProviderCopilot} }
 
 // Categories are the arena rank keys of Model.Arena, in display order.
 func Categories() []string {
 	return []string{
 		"text", "coding", "agent", "webdev",
-		"hardPrompts", "math", "instructionFollowing", "multiTurn",
+		CatHardPrompts, "math", CatInstructionFollowing, CatMultiTurn,
 	}
 }
 

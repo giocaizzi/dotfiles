@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	providerCopilot = "github-copilot"
-
 	boardWebdev = "webdev"
 	boardAgent  = "agent"
 
@@ -31,10 +29,10 @@ func arenaKey(board, category string) (string, bool) {
 		k, ok := map[string]string{
 			catOverall:              "text",
 			catCoding:               catCoding,
-			"hard_prompts":          "hardPrompts",
+			"hard_prompts":          CatHardPrompts,
 			catMath:                 catMath,
-			"instruction_following": "instructionFollowing",
-			"multi_turn":            "multiTurn",
+			"instruction_following": CatInstructionFollowing,
+			"multi_turn":            CatMultiTurn,
 		}[category]
 		return k, ok
 	case boardWebdev:
@@ -120,10 +118,10 @@ func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map
 
 func keep(since string, offers []ProviderModel) bool {
 	for _, o := range offers {
-		if o.Provider == providerCopilot {
+		if o.Provider == ProviderCopilot {
 			return true
 		}
-		if (o.Provider == "anthropic" || o.Provider == "openai") &&
+		if (o.Provider == ProviderAnthropic || o.Provider == ProviderOpenAI) &&
 			o.ReleaseDate >= since && o.TextOutput && o.ToolCall {
 			return true
 		}
@@ -146,7 +144,7 @@ func buildModel(id string, offers []ProviderModel) Model {
 			if first == nil {
 				first = &offers[i]
 			}
-		case providerCopilot:
+		case ProviderCopilot:
 			if copilot == nil {
 				copilot = &offers[i]
 			}

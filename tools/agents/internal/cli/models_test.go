@@ -85,8 +85,16 @@ func newFakeServer(t *testing.T) *fakeServer {
 	mux.HandleFunc("/epoch.zip", func(w http.ResponseWriter, _ *http.Request) {
 		var buf bytes.Buffer
 		zw := zip.NewWriter(&buf)
-		f, _ := zw.Create("epoch_capabilities_index/eci_scores.csv")
-		_, _ = f.Write([]byte("Model,eci\nClaude Opus 5.5,155.5\n"))
+		for name, body := range map[string]string{
+			"epoch_capabilities_index/eci_scores.csv": "Model,eci\nClaude Opus 5.5,155.5\n",
+			"terminalbench_external.csv":              "Model version,Accuracy mean\nclaude-opus-5-5_max,0.61\n",
+			"swe_bench_verified.csv":                  "Model version,mean_score\nclaude-opus-5-5_max,0.8\n",
+			"metr_time_horizons_external.csv":         "Model version,Time horizon\nclaude-opus-5-5_max,240\n",
+			"osworld_2_external.csv":                  "Model version,Binary accuracy\nclaude-opus-5-5_max,0.7\n",
+		} {
+			f, _ := zw.Create(name)
+			_, _ = f.Write([]byte(body))
+		}
 		_ = zw.Close()
 		_, _ = w.Write(buf.Bytes())
 	})

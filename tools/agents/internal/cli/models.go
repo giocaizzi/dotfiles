@@ -274,9 +274,15 @@ func writeFilesAtomic(files []fileWrite) error {
 			return fmt.Errorf("stage %s: %w", f.path, err)
 		}
 		staged = append(staged, tmp.Name())
+		// Keep the target's mode; a new file gets the repo's usual 0644, not CreateTemp's 0600.
+		mode := os.FileMode(0o644)
+		if fi, err := os.Stat(f.path); err == nil {
+			mode = fi.Mode().Perm()
+		}
+		merr := tmp.Chmod(mode)
 		_, werr := tmp.Write(f.data)
 		cerr := tmp.Close()
-		if err := errors.Join(werr, cerr); err != nil {
+		if err := errors.Join(merr, werr, cerr); err != nil {
 			return fmt.Errorf("stage %s: %w", f.path, err)
 		}
 	}

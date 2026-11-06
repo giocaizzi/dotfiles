@@ -30,11 +30,11 @@ func rankTerm() []string {
 
 func categoryLabel(cat string) string {
 	switch cat {
-	case "hardPrompts":
+	case CatHardPrompts:
 		return "Hard prompts"
-	case "instructionFollowing":
+	case CatInstructionFollowing:
 		return "Instruction following"
-	case "multiTurn":
+	case CatMultiTurn:
 		return "Multi-turn"
 	case "webdev":
 		return "WebDev"
@@ -89,9 +89,9 @@ func offers(m Model) []offer {
 		o := m.Providers[p]
 		price := "$" + cost(o.In) + "/$" + cost(o.Out)
 		switch p {
-		case "anthropic", "openai":
+		case ProviderAnthropic, ProviderOpenAI:
 			api = append(api, offer{"API", price})
-		case "github-copilot":
+		case ProviderCopilot:
 			cop = append(cop, offer{"Copilot", price})
 		}
 	}
