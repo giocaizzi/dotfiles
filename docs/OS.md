@@ -481,7 +481,7 @@ Agent roles use tiers: scout and worker are lightweight, driver is powerful, esc
 
 **Refresh the data**
 
-**When:** whenever, e.g. monthly, or when a new model ships.
+**When:** weekly, automatically: the `models-sync` workflow (Mondays) runs `models sync` and opens or updates the PR `chore(agents): refresh the model catalog` when `models.json` or `docs/MODELS.md` changed; review and merge it like any PR (it needs the `BUMP_TOKEN` secret for CI to run, see [CI.md](./CI.md)). Run it on demand with `gh workflow run models-sync` (or Actions → models-sync → Run workflow), or locally:
 
 1. `make models-sync` (network).
 2. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`, including tier moves; ignore noise ids with `dots models`.
