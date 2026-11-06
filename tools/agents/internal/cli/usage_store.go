@@ -48,8 +48,10 @@ type osStore struct {
 // newOSStore builds the store from the CLI dependencies.
 func newOSStore(d Deps) osStore {
 	home, _ := os.UserHomeDir()
-	return osStore{getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security",
-		user: func() string { return currentUser(d.Getenv) }}
+	return osStore{
+		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security",
+		user: func() string { return currentUser(d.Getenv) },
+	}
 }
 
 var _ provider.Store = osStore{}
