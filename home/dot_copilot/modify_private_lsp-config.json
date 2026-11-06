@@ -1,0 +1,26 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Language servers from the policy ([harnessPolicy.lsp.server.*], selected per machine by
+       .chezmoitemplates/lsp-servers) merged into Copilot CLI's user LSP config. For each
+       policy-named server selected here, the live entry is kept (env, initializationOptions,
+       timeouts, ...) and command, args and fileExtensions are set; a policy-named server not
+       selected here is deleted. With harnessPolicy.lsp.enabled = false none is selected, so
+       every policy-named entry is deleted. Servers of other names stay. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $servers := get $current "lspServers" | default dict -}}
+{{- $selected := includeTemplate "lsp-servers" . | fromJson -}}
+{{- range $name, $_ := .harnessPolicy.lsp.server | default dict -}}
+{{-   if hasKey $selected $name -}}
+{{-     $s := get $selected $name -}}
+{{-     $entry := get $servers $name -}}
+{{-     if not (kindIs "map" $entry) }}{{ $entry = dict }}{{ end -}}
+{{-     $_ := set $entry "command" (first $s.command) -}}
+{{-     $_ := set $entry "args" (rest $s.command) -}}
+{{-     $_ := set $entry "fileExtensions" $s.extensions -}}
+{{-     $_ := set $servers $name $entry -}}
+{{-   else -}}
+{{-     $_ := unset $servers $name -}}
+{{-   end -}}
+{{- end -}}
+{{- $_ := set $current "lspServers" $servers -}}
+{{- $current | toPrettyJson }}

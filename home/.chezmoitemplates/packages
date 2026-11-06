@@ -10,7 +10,7 @@
 {{- $role := includeTemplate "role" $ctx -}}
 {{- $out := list -}}
 {{- range $name, $p := get $ctx "package" | default dict -}}
-{{-   if has $role (get $p "roles" | default (list "personal" "work")) -}}
+{{-   if and (has $role (get $p "roles" | default (list "personal" "work"))) (or (not (get $p "requires")) (get $ctx (get $p "requires"))) -}}
 {{-     $v := get $p $manager -}}
 {{-     if eq $manager "script" -}}
 {{-       if has $ctx.chezmoi.os ($v | default list) }}{{ $out = append $out (dict "name" $name "entry" $p) }}{{ end -}}

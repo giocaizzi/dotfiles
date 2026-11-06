@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/parity"
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/policy"
 )
 
 const goodClaude = `{"voice": {"enabled": {{ .harnessPolicy.voice.enabled | default false | toJson }}, "mode": {{ .harnessPolicy.voice.mode | quote }}, "autoSubmit": {{ .harnessPolicy.voice.autoSubmit | default false | toJson }}}}`
@@ -19,6 +20,8 @@ func writeSource(t *testing.T, vscode, claude string) string {
 	files := map[string]string{
 		"dot_config/Code/User/settings.json":     vscode,
 		".chezmoitemplates/claude-settings.json": claude,
+		".chezmoidata/packages.toml": "[package.pyright]\n[package.ruff]\n[package.typescript]\n[package.gopls]\n[package.bash-language-server]\n" +
+			"[package.yaml-language-server]\n[package.vscode-langservers-extracted]\n[package.terraform-ls]\n[package.tflint]\n",
 	}
 	for rel, content := range files {
 		path := filepath.Join(dir, filepath.FromSlash(rel))
@@ -95,8 +98,49 @@ func TestCheckSourceFiles(t *testing.T) {
 func TestCheckSourceFiles_MissingFiles(t *testing.T) {
 	t.Parallel()
 	got := parity.CheckSourceFiles(loadPolicy(t), t.TempDir())
-	if len(got) != 2 {
-		t.Errorf("findings = %v, want 2 (one per missing file)", got)
+	if len(got) != 3 {
+		t.Errorf("findings = %v, want 3 (one per missing file)", got)
+	}
+}
+
+func TestCheckSourceFiles_LSPPackages(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		packages string
+		want     []string // substrings, one per expected finding
+	}{
+		{name: "all present", packages: "[package.a]\n[package.b]\n"},
+		{name: "one missing", packages: "[package.a]\n", want: []string{`lsp.server.two.package "b" is not in packages.toml`}},
+		{name: "both missing", packages: "[release.a]\n", want: []string{`"a" is not in`, `"b" is not in`}},
+		{name: "invalid toml", packages: "[package", want: []string{"cannot parse"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := &policy.Policy{LSP: policy.LSP{Server: map[string]policy.LSPServer{
+				"one": {Package: "a"},
+				"two": {Package: "b"},
+			}}}
+			dir := writeSource(t, `{"dictation.enabled": false}`, goodClaude)
+			path := filepath.Join(dir, ".chezmoidata", "packages.toml")
+			if err := os.WriteFile(path, []byte(tt.packages), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			findings := parity.CheckSourceFiles(p, dir)
+			got := make([]string, 0, len(findings))
+			for _, f := range findings {
+				got = append(got, f.String())
+			}
+			if len(got) != len(tt.want) {
+				t.Fatalf("findings = %v, want %d matching %v", got, len(tt.want), tt.want)
+			}
+			for i, sub := range tt.want {
+				if !strings.Contains(got[i], sub) {
+					t.Errorf("finding %d = %q, want substring %q", i, got[i], sub)
+				}
+			}
+		})
 	}
 }
 

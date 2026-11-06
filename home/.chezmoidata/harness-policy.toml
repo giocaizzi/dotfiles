@@ -166,12 +166,71 @@ services = { claude = "claude-code", copilot = "copilot-cli", vscode = "vscode-c
 hooksBridge = true
 
 # --- D7: Language Server Protocol (LSP) ---
+# One [harnessPolicy.lsp.server.<name>] per language server, rendered into every
+# harness and editor that takes custom servers (.chezmoitemplates/lsp-servers):
+#   package    = its row in packages.toml; the server is configured only where that
+#                package installs (this machine's role, OS and answers)
+#   command    = argv that starts it on stdio
+#   extensions = file extension → LSP language ID
+#   filetypes  = Vim filetypes, where they differ from the language IDs
+#   format     = true: editors format on save with it
+# A name equal to an opencode built-in (pyright, typescript, gopls, bash, yaml-ls,
+# terraform) replaces that built-in. enabled = false turns LSP off in every consumer.
 [harnessPolicy.lsp]
 enabled = true
-python = "pyright"
-typescript = "typescript-language-server"
-go = "gopls"
-servers = ["gopls", "ruff", "pyright", "ts_ls"]
+
+[harnessPolicy.lsp.server.pyright]
+package = "pyright"
+command = ["pyright-langserver", "--stdio"]
+extensions = { ".py" = "python", ".pyi" = "python" }
+
+[harnessPolicy.lsp.server.ruff]
+package = "ruff"
+command = ["ruff", "server"]
+extensions = { ".py" = "python", ".pyi" = "python" }
+format = true
+
+# TypeScript 7's compiler is its own language server (tsc --lsp; TS 7 has no tsserver).
+[harnessPolicy.lsp.server.typescript]
+package = "typescript"
+command = ["tsc", "--lsp", "--stdio"]
+extensions = { ".ts" = "typescript", ".mts" = "typescript", ".cts" = "typescript", ".tsx" = "typescriptreact", ".js" = "javascript", ".mjs" = "javascript", ".cjs" = "javascript", ".jsx" = "javascriptreact" }
+format = true
+
+[harnessPolicy.lsp.server.gopls]
+package = "gopls"
+command = ["gopls"]
+extensions = { ".go" = "go" }
+format = true
+
+# Lints with shellcheck and formats with shfmt when they are on PATH.
+[harnessPolicy.lsp.server.bash]
+package = "bash-language-server"
+command = ["bash-language-server", "start"]
+extensions = { ".sh" = "shellscript", ".bash" = "shellscript" }
+filetypes = ["sh", "bash"]
+format = true
+
+[harnessPolicy.lsp.server.yaml-ls]
+package = "yaml-language-server"
+command = ["yaml-language-server", "--stdio"]
+extensions = { ".yaml" = "yaml", ".yml" = "yaml" }
+
+[harnessPolicy.lsp.server.json]
+package = "vscode-langservers-extracted"
+command = ["vscode-json-language-server", "--stdio"]
+extensions = { ".json" = "json", ".jsonc" = "jsonc" }
+
+[harnessPolicy.lsp.server.terraform]
+package = "terraform-ls"
+command = ["terraform-ls", "serve"]
+extensions = { ".tf" = "terraform", ".tfvars" = "terraform-vars" }
+format = true
+
+[harnessPolicy.lsp.server.tflint]
+package = "tflint"
+command = ["tflint", "--langserver"]
+extensions = { ".tf" = "terraform", ".tfvars" = "terraform-vars" }
 
 # --- D8: Native Overrides & Escapes ---
 [harnessPolicy.native.claude]

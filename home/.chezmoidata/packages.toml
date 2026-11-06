@@ -6,6 +6,8 @@
 #                   changes (.chezmoiscripts/run_onchange_after_install-pkgs.*)
 #   roles    = machine roles that get it: "personal", "work", "light"
 #              (default: ["personal", "work"], i.e. full machines)
+#   requires = name of a boolean [data] answer (.chezmoi.toml.tmpl, e.g. "terraform"):
+#              selected only when that answer is true (also for [release.*])
 #   brew     = Homebrew formula (true: <name>)      cask   = Homebrew cask
 #   apt      = apt package (true: <name>)           winget = winget id
 #   scope    = "machine" for a winget package with no user-scope installer
@@ -28,11 +30,11 @@
 #   sha256   = "<os>/<arch>" → checksum of the download (chezmoi verifies it)
 #   type     = external type (default "archive-file"; "file" for a bare binary,
 #              "archive" for a tree)
-#   path     = the binary inside an archive-file (default: <name>)
+#   path     = the binary inside an archive-file (default: <name>); {version} and {target} expanded
 #   dest     = target, home-relative (default: .local/bin/<name>)
 #   exe      = true: ".exe" is appended to path and dest on Windows
 #   stripComponents = archive path components to drop
-#   roles    = as above
+#   roles, requires = as above
 #   versionCmd = as above; {dest} expands to the installed path (default ["{dest}", "--version"])
 #
 # Update: `chezmoi dots outdated` shows every tool with its installed, pinned and latest
@@ -186,10 +188,37 @@ winget = "hadolint.hadolint"
 uv = true
 
 [package.typescript]
-npm = "typescript@5" # typescript-language-server needs tsserver, which TS 7 dropped
-
-[package.typescript-language-server]
 npm = true
+
+[package.ruff]
+uv = true
+
+[package.bash-language-server]
+npm = true
+
+[package.yaml-language-server]
+npm = true
+
+[package.vscode-langservers-extracted]
+npm = true # provides vscode-json-language-server
+
+# Terraform tooling, only where the `terraform` init answer is yes. Linux gets the
+# binaries from the releases below.
+[package.terraform]
+requires = "terraform"
+brew = "hashicorp/tap/terraform"
+winget = "Hashicorp.Terraform"
+
+[package.terraform-ls]
+requires = "terraform"
+versionCmd = ["terraform-ls", "version"]
+brew = true
+winget = "Hashicorp.TerraformLanguageServer"
+
+[package.tflint]
+requires = "terraform"
+cask = "terraform-linters/tap/tflint"
+winget = "TerraformLinters.tflint"
 
 [package.PSScriptAnalyzer]
 psmodule = "1.22.0"
@@ -200,6 +229,10 @@ roles = ["personal"]
 brew = true
 
 [package.go]
+roles = ["personal"]
+brew = true
+
+[package.golangci-lint]
 roles = ["personal"]
 brew = true
 
@@ -384,3 +417,45 @@ exe = true
 "linux/arm64" = "65aa4539a5cff35161c55a0ddb2216f32766a970c17cf9fe9984c95f15e49030"
 "windows/amd64" = "8fe40fa008ad94cd9b25422dcccfbde848a4a23036e143fac8da57749d13c8b1"
 "windows/arm64" = "2db549857233b5d14ba0fd3c6a49fdef5de370030dfa5264c23f5df7fc349bad"
+
+[release.golangci-lint]
+roles = ["personal"]
+version = "2.15.0"
+url = "https://github.com/golangci/golangci-lint/releases/download/v{version}/golangci-lint-{version}-linux-{target}.tar.gz"
+path = "golangci-lint-{version}-linux-{target}/golangci-lint"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.golangci-lint.sha256]
+"linux/amd64" = "9b7fe6a6bf6334b98decf8d86b11415ea7889afdabdd1959fdce23af2a9ebcea"
+"linux/arm64" = "b4d8f17068b35ee6060cc2f69a16fb48740d706fbba81661c318649c114a6998"
+
+[release.terraform]
+requires = "terraform"
+version = "1.17.1"
+url = "https://releases.hashicorp.com/terraform/{version}/terraform_{version}_linux_{target}.zip"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.terraform.sha256]
+"linux/amd64" = "4638628058e71a55212b1c563712eac03b902128f40740f3dc8174df12135061"
+"linux/arm64" = "988e950a1c23058093b0e66ab2d5fb53fc18345ecfbd5871acf51dbac9325edd"
+
+[release.terraform-ls]
+requires = "terraform"
+version = "0.39.1"
+versionCmd = ["{dest}", "version"]
+url = "https://releases.hashicorp.com/terraform-ls/{version}/terraform-ls_{version}_linux_{target}.zip"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.terraform-ls.sha256]
+"linux/amd64" = "fe2a158e4a1a8ec8047dae9e06c439b468412aa579929ba28b2e1258cedef9c0"
+"linux/arm64" = "a72a6d9f72580cfc30cc06d3c973fd5f55790f62e3ddb195998435070d9af36d"
+
+[release.tflint]
+requires = "terraform"
+version = "0.65.0"
+url = "https://github.com/terraform-linters/tflint/releases/download/v{version}/tflint_linux_{target}.zip"
+target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
+
+[release.tflint.sha256]
+"linux/amd64" = "d4c545ed2e29d6338604b586f34f544f380f70f243aa72f7b484713835eaec61"
+"linux/arm64" = "843017c47a98be1de4d88fa038daa293770fe25cd01656c4f08b2e30d1d3b3a0"

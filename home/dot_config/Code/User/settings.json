@@ -16,9 +16,23 @@
     "editor.autoIndent": "advanced",
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
+  // --- Go ---
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true
+  },
   // --- HTML ---
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // --- JavaScript ---
+  "[javascript]": {
+    "editor.defaultFormatter": "TypeScriptTeam.native-preview",
+    "editor.formatOnSave": true
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "TypeScriptTeam.native-preview",
+    "editor.formatOnSave": true
   },
   // --- JSON ---
   "[json]": {
@@ -30,7 +44,31 @@
   // --- Python ---
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
     "editor.codeActionsOnSave": { "source.organizeImports.ruff": "explicit" }
+  },
+  // --- Shell ---
+  "[shellscript]": {
+    "editor.defaultFormatter": "mads-hartmann.bash-ide-vscode",
+    "editor.formatOnSave": true
+  },
+  // --- Terraform ---
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true
+  },
+  "[terraform-vars]": {
+    "editor.defaultFormatter": "hashicorp.terraform",
+    "editor.formatOnSave": true
+  },
+  // --- TypeScript ---
+  "[typescript]": {
+    "editor.defaultFormatter": "TypeScriptTeam.native-preview",
+    "editor.formatOnSave": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "TypeScriptTeam.native-preview",
+    "editor.formatOnSave": true
   },
   // --- YAML ---
   "[yaml]": {
@@ -236,11 +274,17 @@
   // --- GitHub Pull Requests ---
   "githubPullRequests.createOnPublishBranch": "never",
   "githubPullRequests.pullBranch": "never",
+  // --- Go ---
+  "go.lintTool": "golangci-lint-v2",
+  // tools come from the package registry, not from the extension
+  "go.toolsManagement.autoUpdate": false,
+  "go.toolsManagement.checkForUpdates": "off",
   // --- Draw.io ---
   "hediet.vscode-drawio.appearance": "light",
   "hediet.vscode-drawio.resizeImages": null,
   "hediet.vscode-drawio.theme": "kennedy",
   // --- TypeScript ---
+  "js/ts.experimental.useTsgo": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   // --- Jupyter ---
   "jupyter.widgetScriptSources": ["jsdelivr.com", "unpkg.com"],
@@ -263,6 +307,9 @@
   "redhat.telemetry.enabled": true,
   // --- Remote ---
   "remote.autoForwardPortsSource": "hybrid",
+  // --- Terraform ---
+  // use the registry terraform-ls (resolved on PATH) instead of downloading one
+  "terraform.languageServer.path": "terraform-ls",
   // --- Terminal ---
   // Enable terminal command history
   "terminal.integrated.commandHistory.enabled": true,

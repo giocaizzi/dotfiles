@@ -42,6 +42,7 @@ func TestUpstream(t *testing.T) {
 		{"https://github.com/o/r/releases/download/v{version}/x_{target}.tgz", Upstream{"git", "https://github.com/o/r.git", "v"}, false},
 		{"https://github.com/o/r/releases/download/bws-v{version}/x.zip", Upstream{"git", "https://github.com/o/r.git", "bws-v"}, false},
 		{"https://gitlab.com/g/sub/cli/-/releases/v{version}/downloads/x.tgz", Upstream{"git", "https://gitlab.com/g/sub/cli.git", "v"}, false},
+		{"https://releases.hashicorp.com/terraform-ls/{version}/terraform-ls_{version}_linux_{target}.zip", Upstream{"git", "https://github.com/hashicorp/terraform-ls.git", "v"}, false},
 		{"https://go.dev/dl/go{version}.{target}.tar.gz", Upstream{Kind: "godev"}, false},
 		{"https://example.com/{version}", Upstream{}, true},
 	}
@@ -106,6 +107,8 @@ func TestValidate(t *testing.T) {
 			r["sha256"] = map[string]any{"linux/amd64": sum, "darwin/arm64": sum}
 		}, "sha256 darwin/arm64 has no target"},
 		{"missing sum", func(r map[string]any) { r["sha256"] = map[string]any{} }, "linux/amd64"},
+		{"empty requires", func(r map[string]any) { r["requires"] = "" }, "requires must name"},
+		{"non-string requires", func(r map[string]any) { r["requires"] = true }, "requires must name"},
 		{"bad platform", func(r map[string]any) { r["target"] = map[string]any{"plan9/386": "P"} }, "must be <os>/<arch>"},
 	}
 	for _, tt := range tests {

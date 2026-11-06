@@ -130,6 +130,7 @@ func Seed(role string, local map[string]any, harnesses []string) map[string]any 
 	seed := map[string]any{
 		"light":        role == roleLight,
 		"work":         role == roleWork,
+		"terraform":    role != roleLight,
 		"harnesses":    harnesses,
 		"bwsProjectId": "",
 	}

@@ -1,14 +1,38 @@
 {{- /* chezmoi:modify-template */ -}}
 {{- /* User-scope MCP servers (.chezmoidata/mcp.toml, .chezmoitemplates/mcp-user.json) and
         shared OpenCode v2 settings merged into opencode's config; other keys stay.
+        Language servers from the policy ([harnessPolicy.lsp.server.*], selected per machine by
+        .chezmoitemplates/lsp-servers) go into `lsp`: an object keeps the built-in servers on, and
+        an entry named like a built-in (typescript, pyright, gopls) overrides it. For each
+        policy-named server selected here the live entry is kept (disabled, env, ...) and command
+        and extensions are set; a policy-named server not selected here is deleted; entries of
+        other names stay. harnessPolicy.lsp.enabled = false sets `lsp` to false (all LSP off).
         The live file is read as JSON, so keep it free of comments. */ -}}
 {{- $current := dict "$schema" "https://opencode.ai/config.json" -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
 {{- $servers := get $current "mcp" | default dict -}}
 {{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $servers $n (dict "type" "remote" "url" $u "enabled" true) }}{{ end -}}
 {{- $_ := set $current "mcp" $servers -}}
-{{- $lsp := get $current "lsp" -}}
-{{- if not (kindIs "map" $lsp) }}{{ $_ := set $current "lsp" true }}{{ end -}}
+{{- if get .harnessPolicy.lsp "enabled" -}}
+{{-   $lsp := get $current "lsp" -}}
+{{-   if not (kindIs "map" $lsp) }}{{ $lsp = dict }}{{ end -}}
+{{-   $selected := includeTemplate "lsp-servers" . | fromJson -}}
+{{-   range $name, $_ := .harnessPolicy.lsp.server | default dict -}}
+{{-     if hasKey $selected $name -}}
+{{-       $s := get $selected $name -}}
+{{-       $entry := get $lsp $name -}}
+{{-       if not (kindIs "map" $entry) }}{{ $entry = dict }}{{ end -}}
+{{-       $_ := set $entry "command" $s.command -}}
+{{-       $_ := set $entry "extensions" (keys $s.extensions | sortAlpha) -}}
+{{-       $_ := set $lsp $name $entry -}}
+{{-     else -}}
+{{-       $_ := unset $lsp $name -}}
+{{-     end -}}
+{{-   end -}}
+{{-   $_ := set $current "lsp" $lsp -}}
+{{- else -}}
+{{-   $_ := set $current "lsp" false -}}
+{{- end -}}
 {{- $experimental := get $current "experimental" | default dict -}}
 {{- $_ := set $experimental "subagent_depth" (get .harnessPolicy.autonomy "subagentDepth" | default 2) -}}
 {{- $_ := set $current "experimental" $experimental -}}

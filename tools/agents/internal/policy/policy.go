@@ -93,13 +93,21 @@ type Telemetry struct {
 	HooksBridge      bool              `json:"hooksBridge,omitempty"      toml:"hooksBridge,omitempty"`
 }
 
-// LSP configures Language Server Protocol tool integrations.
+// LSP configures Language Server Protocol tool integrations: one server entry
+// per language server, rendered into every harness and editor that takes custom servers.
 type LSP struct {
-	Enabled    bool     `json:"enabled,omitempty"    toml:"enabled,omitempty"`
-	Python     string   `json:"python,omitempty"     toml:"python,omitempty"`
-	TypeScript string   `json:"typescript,omitempty" toml:"typescript,omitempty"`
-	Go         string   `json:"go,omitempty"         toml:"go,omitempty"`
-	Servers    []string `json:"servers,omitempty"    toml:"servers,omitempty"`
+	Enabled bool                 `json:"enabled,omitempty" toml:"enabled,omitempty"`
+	Server  map[string]LSPServer `json:"server,omitempty"  toml:"server,omitempty"`
+}
+
+// LSPServer describes one language server: its packages.toml row, the argv that
+// starts it on stdio, the file extensions it serves, the Vim filetypes it attaches to and whether editors format with it.
+type LSPServer struct {
+	Package    string            `json:"package,omitempty"    toml:"package,omitempty"`
+	Command    []string          `json:"command,omitempty"    toml:"command,omitempty"`
+	Extensions map[string]string `json:"extensions,omitempty" toml:"extensions,omitempty"`
+	Filetypes  []string          `json:"filetypes,omitempty"  toml:"filetypes,omitempty"`
+	Format     bool              `json:"format,omitempty"     toml:"format,omitempty"`
 }
 
 // Voice configures dictation (voice input) where a harness supports it natively.

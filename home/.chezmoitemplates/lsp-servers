@@ -1,0 +1,37 @@
+{{- /* Language servers for this machine ([harnessPolicy.lsp.server.*] in
+  .chezmoidata/harness-policy.toml). Called as
+    includeTemplate "lsp-servers" . | fromJson
+  Returns {"<name>": {"command": [...], "bin": "...", "extensions": {".ext": "languageId"},
+  "filetypes": [...], "format": bool}} for each server whose package
+  (.chezmoidata/packages.toml) installs here: selected for this machine's role and
+  `requires` answer, and installed on this OS (uv and npm everywhere, brew and cask on
+  macOS, apt on Linux, winget on Windows, script on the OSes it lists, or a [release]
+  with a target for this platform). Empty when harnessPolicy.lsp.enabled is false.
+    command   = argv to spawn; on Windows an npm package's command is a .cmd shim,
+                which a process spawn without a shell cannot start, so it runs
+                through cmd /c (Node docs: "Spawning .bat and .cmd files on Windows")
+    bin       = the server's executable name, for presence checks
+    filetypes = Vim filetypes: the policy's, else the language IDs */ -}}
+{{- $os := .chezmoi.os -}}
+{{- $role := includeTemplate "role" . -}}
+{{- $releases := includeTemplate "releases" . | fromJson -}}
+{{- $lsp := .harnessPolicy.lsp | default dict -}}
+{{- $out := dict -}}
+{{- if get $lsp "enabled" -}}
+{{-   range $name, $s := get $lsp "server" | default dict -}}
+{{-     $p := get ($.package | default dict) $s.package | default dict -}}
+{{-     $here := or (get $p "uv") (get $p "npm") (hasKey $releases $s.package) -}}
+{{-     if eq $os "darwin" }}{{ $here = or $here (get $p "brew") (get $p "cask") }}{{ end -}}
+{{-     if eq $os "linux" }}{{ $here = or $here (get $p "apt") }}{{ end -}}
+{{-     if eq $os "windows" }}{{ $here = or $here (get $p "winget") }}{{ end -}}
+{{-     $here = or $here (has $os (get $p "script" | default list)) -}}
+{{-     $required := or (not (get $p "requires")) (get $ (get $p "requires" | default "")) -}}
+{{-     if and $p $here $required (has $role (get $p "roles" | default (list "personal" "work"))) -}}
+{{-       $command := $s.command -}}
+{{-       if and (eq $os "windows") (get $p "npm") }}{{ $command = concat (list "cmd" "/c") $s.command }}{{ end -}}
+{{-       $filetypes := get $s "filetypes" | default (values $s.extensions | uniq | sortAlpha) -}}
+{{-       $_ := set $out $name (dict "command" $command "bin" (first $s.command) "extensions" $s.extensions "filetypes" $filetypes "format" (get $s "format" | default false)) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
+{{- $out | toJson -}}
