@@ -248,10 +248,10 @@ func TestOfflineRunsNoNetworkCommand(t *testing.T) {
 
 func TestBrew(t *testing.T) {
 	t.Parallel()
-	pkgs := []inventory.PackageSel{pkg("jq", "jq"), pkg("old", "old"), pkg("gone", "gone"), {Name: "app", ID: "app-cask", Cask: true}}
+	pkgs := []inventory.PackageSel{pkg("jq", "jq"), pkg("old", "old"), pkg("gone", "gone"), {Name: "app", ID: "app-cask", Cask: true}, {Name: "tap", ID: "o/t/tap"}, {Name: "tapcask", ID: "o/t/tapcask", Cask: true}}
 	ok := map[string]reply{
-		"brew list --formula --versions": {stdout: "jq 1.7.1\nold 1.0 1.1\n"},
-		"brew list --cask --versions":    {stdout: "app-cask 2.0\n"},
+		"brew list --formula --versions": {stdout: "jq 1.7.1\nold 1.0 1.1\ntap 3.0\n"},
+		"brew list --cask --versions":    {stdout: "app-cask 2.0\ntapcask 4.0\n"},
 		"brew outdated --json=v2":        {stdout: `{"formulae":[{"name":"old","current_version":"1.2"}],"casks":[]}`},
 	}
 	t.Run("ok", func(t *testing.T) {
@@ -264,6 +264,8 @@ func TestBrew(t *testing.T) {
 			{Name: "gone", Missing: true},
 			{Name: "jq", Installed: "1.7.1", Latest: "1.7.1"},
 			{Name: "old", Installed: "1.1", Latest: "1.2"},
+			{Name: "tap", ID: "o/t/tap", Installed: "3.0", Latest: "3.0"},
+			{Name: "tapcask", ID: "o/t/tapcask", Installed: "4.0", Latest: "4.0"},
 		})
 		want := []string{"HOMEBREW_NO_AUTO_UPDATE=1", "HOMEBREW_NO_ENV_HINTS=1"}
 		if diff := cmp.Diff(want, r.envs["brew outdated --json=v2"]); diff != "" {

@@ -21,11 +21,11 @@ func installKeys() []string {
 }
 
 func packageKeys() []string {
-	return append([]string{"roles", "scope", "cmd", "versionCmd", "agents", "fontFile"}, installKeys()...)
+	return append([]string{"roles", "requires", "scope", "cmd", "versionCmd", "agents", "fontFile"}, installKeys()...)
 }
 
 func releaseKeys() []string {
-	return []string{"roles", "version", "url", "type", "path", "dest", "stripComponents", "exe", "versionCmd", "target", "sha256"}
+	return []string{"roles", "requires", "version", "url", "type", "path", "dest", "stripComponents", "exe", "versionCmd", "target", "sha256"}
 }
 
 var (
@@ -60,20 +60,31 @@ func validatePackage(n string, p map[string]any) []finding.Finding {
 	if !slices.ContainsFunc(installKeys(), func(k string) bool { _, ok := p[k]; return ok }) && p["agents"] == nil {
 		bad("no install method (one of %s)", strings.Join(installKeys(), ", "))
 	}
-	if r, ok := p["roles"]; ok && !subset(r, roles()) {
-		bad("roles must be a subset of %v", roles())
-	}
+	out = append(out, validateCommon("package "+n, p)...)
 	if s, ok := p["script"]; ok && !subset(s, []string{"darwin", "linux", "windows"}) {
 		bad("script must list operating systems")
 	}
 	if s, ok := p["scope"]; ok && s != "machine" {
 		bad(`scope must be "machine"`)
 	}
-	if v, ok := p["versionCmd"]; ok && !argv(v) {
-		bad("versionCmd must be a non-empty argv list")
-	}
 	if _, ok := p["ompFont"]; ok && p["fontFile"] == nil {
 		bad("ompFont needs fontFile")
+	}
+	return out
+}
+
+// validateCommon checks the keys packages and releases share.
+func validateCommon(where string, t map[string]any) []finding.Finding {
+	var out []finding.Finding
+	bad := func(format string, args ...any) { out = append(out, finding.New(where, format, args...)) }
+	if r, ok := t["roles"]; ok && !subset(r, roles()) {
+		bad("roles must be a subset of %v", roles())
+	}
+	if r, ok := t["requires"]; ok && !nonEmptyString(r) {
+		bad("requires must name a [data] answer")
+	}
+	if v, ok := t["versionCmd"]; ok && !argv(v) {
+		bad("versionCmd must be a non-empty argv list")
 	}
 	return out
 }
@@ -95,12 +106,7 @@ func validateRelease(n string, r map[string]any) []finding.Finding {
 	if t, ok := r["type"]; ok && !slices.Contains([]string{"file", "archive", "archive-file"}, fmt.Sprint(t)) {
 		bad("type must be file, archive or archive-file")
 	}
-	if ro, ok := r["roles"]; ok && !subset(ro, roles()) {
-		bad("roles must be a subset of %v", roles())
-	}
-	if v, ok := r["versionCmd"]; ok && !argv(v) {
-		bad("versionCmd must be a non-empty argv list")
-	}
+	out = append(out, validateCommon("release "+n, r)...)
 	targets, _ := r["target"].(map[string]any)
 	if len(targets) == 0 {
 		bad("target is required")
@@ -163,6 +169,8 @@ func (r Release) AssetURL(version, platform string) string {
 	return strings.NewReplacer("{version}", version, "{target}", r.Targets[platform]).Replace(r.URL)
 }
 
+const kindGit = "git"
+
 // Upstream says where a release's versions are published.
 type Upstream struct {
 	Kind      string // "git" (tags of a repository) or "godev"
@@ -171,17 +179,21 @@ type Upstream struct {
 }
 
 var (
-	githubURL = regexp.MustCompile(`^https://github\.com/([^/]+/[^/]+)/releases/download/([^/{]*)\{version\}/`)
-	gitlabURL = regexp.MustCompile(`^https://gitlab\.com/(.+)/-/releases/([^/{]*)\{version\}/`)
+	githubURL    = regexp.MustCompile(`^https://github\.com/([^/]+/[^/]+)/releases/download/([^/{]*)\{version\}/`)
+	hashicorpURL = regexp.MustCompile(`^https://releases\.hashicorp\.com/([^/]+)/\{version\}/`)
+	gitlabURL    = regexp.MustCompile(`^https://gitlab\.com/(.+)/-/releases/([^/{]*)\{version\}/`)
 )
 
 // Upstream derives where to look for newer versions from the download URL.
 func (r Release) Upstream() (Upstream, error) {
 	if m := githubURL.FindStringSubmatch(r.URL); m != nil {
-		return Upstream{Kind: "git", Repo: "https://github.com/" + m[1] + ".git", TagPrefix: m[2]}, nil
+		return Upstream{Kind: kindGit, Repo: "https://github.com/" + m[1] + ".git", TagPrefix: m[2]}, nil
 	}
 	if m := gitlabURL.FindStringSubmatch(r.URL); m != nil {
-		return Upstream{Kind: "git", Repo: "https://gitlab.com/" + m[1] + ".git", TagPrefix: m[2]}, nil
+		return Upstream{Kind: kindGit, Repo: "https://gitlab.com/" + m[1] + ".git", TagPrefix: m[2]}, nil
+	}
+	if m := hashicorpURL.FindStringSubmatch(r.URL); m != nil {
+		return Upstream{Kind: kindGit, Repo: "https://github.com/hashicorp/" + m[1] + ".git", TagPrefix: "v"}, nil
 	}
 	if strings.HasPrefix(r.URL, "https://go.dev/dl/go{version}") {
 		return Upstream{Kind: "godev"}, nil
@@ -272,6 +284,11 @@ func argv(v any) bool {
 		}
 	}
 	return true
+}
+
+func nonEmptyString(v any) bool {
+	s, ok := v.(string)
+	return ok && s != ""
 }
 
 func subset(v any, allowed []string) bool {

@@ -68,12 +68,15 @@ func TestSeed(t *testing.T) {
 	local := map[string]any{"gitUser": "me", "gitEmail": "", "githubUser": "gh"}
 	got := Seed("work", local, []string{"claude"})
 	want := map[string]any{
-		"light": false, "work": true, "harnesses": []string{"claude"}, "bwsProjectId": "",
+		"light": false, "work": true, "terraform": true, "harnesses": []string{"claude"}, "bwsProjectId": "",
 		"gitUser": "me", "gitEmail": "<gitEmail>", "workEmail": "<workEmail>",
 		"githubUser": "gh", "personalGitRemote": "", "otelEndpoint": "",
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("Seed() (-want +got):\n%s", diff)
+	}
+	if Seed("light", local, nil)["terraform"] != false {
+		t.Error("Seed(light) turns terraform on, want off")
 	}
 }
 
