@@ -173,6 +173,8 @@
   // --- Containers ---
   "containers.containerClient": "com.microsoft.visualstudio.containers.docker",
   "containers.orchestratorClient": "com.microsoft.visualstudio.orchestrators.dockercompose",
+  // --- Dictation ---
+  "dictation.enabled": true,
   // --- Diff Editor ---
   "diffEditor.ignoreTrimWhitespace": false,
   // --- Docker ---

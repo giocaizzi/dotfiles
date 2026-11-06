@@ -64,7 +64,12 @@
         "defaultMode": "auto"
       },
       "skipAutoPermissionPrompt": true,
-      "preferredNotifChannel": "terminal_bell"
+      "preferredNotifChannel": "terminal_bell",
+      "voice": {
+        "enabled": true,
+        "mode": "hold",
+        "autoSubmit": false
+      }
     },
     "copilot": {
       "beep": true,

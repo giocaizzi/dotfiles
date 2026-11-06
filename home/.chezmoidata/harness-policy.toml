@@ -173,6 +173,14 @@ typescript = "typescript-language-server"
 go = "gopls"
 servers = ["gopls", "ruff", "pyright", "ts_ls"]
 
+# --- D9: Voice input (dictation) ---
+# Native only in Claude Code and VS Code; the rest: docs/OS.md#voice-input.
+[harnessPolicy.voice]
+enabled = true
+mode = "hold"        # "hold" (push-to-talk) | "tap" (toggle)
+autoSubmit = false   # send the prompt when recording stops
+language = ""        # BCP 47 code for VS Code; "" = harness default (English)
+
 # --- D8: Native Overrides & Escapes ---
 [harnessPolicy.native.claude]
 defaultMode = "auto"

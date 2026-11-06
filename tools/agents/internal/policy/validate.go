@@ -2,6 +2,7 @@ package policy
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
@@ -19,6 +20,22 @@ func (p Policy) Validate(where string) []finding.Finding {
 	fs = append(fs, p.validatePatterns(where)...)
 	fs = append(fs, p.validateModels(where)...)
 	fs = append(fs, p.validateNative(where)...)
+	fs = append(fs, p.validateVoice(where)...)
+	return fs
+}
+
+var bcp47 = regexp.MustCompile(`^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$`)
+
+func (p Policy) validateVoice(where string) []finding.Finding {
+	var fs []finding.Finding
+	switch p.Voice.Mode {
+	case "", "hold", "tap":
+	default:
+		fs = append(fs, finding.New(where, "voice.mode %q must be hold or tap", p.Voice.Mode))
+	}
+	if p.Voice.Language != "" && !bcp47.MatchString(p.Voice.Language) {
+		fs = append(fs, finding.New(where, "voice.language %q must be a BCP 47 tag such as en or it-IT", p.Voice.Language))
+	}
 	return fs
 }
 

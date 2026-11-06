@@ -42,3 +42,14 @@ func TestCheckParity_AllHarnesses(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckParity_VoiceTracksPolicy(t *testing.T) {
+	t.Parallel()
+	for _, enabled := range []bool{true, false} {
+		p := loadPolicy(t)
+		p.Voice.Enabled = enabled
+		if findings := parity.CheckParity(p); len(findings) > 0 {
+			t.Errorf("voice.enabled=%v: unexpected findings: %v", enabled, findings)
+		}
+	}
+}

@@ -34,6 +34,9 @@ func CheckParity(p *policy.Policy) []finding.Finding {
 	if bell && claude["preferredNotifChannel"] != "terminal_bell" {
 		fs = append(fs, finding.New("claude", "expected preferredNotifChannel=terminal_bell"))
 	}
+	if v, ok := claude["voice"].(map[string]any); !ok || v["enabled"] != p.Voice.Enabled {
+		fs = append(fs, finding.New("claude", "expected voice.enabled=%v", p.Voice.Enabled))
+	}
 
 	// Check Antigravity
 	agy := translate.AntigravitySettings(p)
@@ -54,6 +57,10 @@ func CheckParity(p *policy.Policy) []finding.Finding {
 	}
 	if _, ok := vscode["chat.tools.urls.autoApprove"]; !ok {
 		fs = append(fs, finding.New("vscode", "missing chat.tools.urls.autoApprove"))
+	}
+
+	if vscode["dictation.enabled"] != p.Voice.Enabled {
+		fs = append(fs, finding.New("vscode", "expected dictation.enabled=%v", p.Voice.Enabled))
 	}
 
 	// Check Codex
