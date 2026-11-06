@@ -252,7 +252,12 @@ func (s Survey) brew(ctx context.Context, pkgs []inventory.PackageSel) inventory
 		}
 		if !t.Missing && errO == nil && t.Installed != "" {
 			t.Latest = t.Installed
-			if v, ok := outdated[brewName(p.ID)]; ok {
+			// brew outdated names formulae by full name, casks by token.
+			v, ok := outdated[p.ID]
+			if !ok {
+				v, ok = outdated[brewName(p.ID)]
+			}
+			if ok {
 				t.Latest = v
 			}
 		}
