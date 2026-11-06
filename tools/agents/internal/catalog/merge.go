@@ -1,7 +1,329 @@
 package catalog
 
-// Apply merges freshly fetched sources into c, keeping its manual keys.
+import (
+	"cmp"
+	"maps"
+	"regexp"
+	"slices"
+	"strings"
+)
+
+const (
+	providerCopilot = "github-copilot"
+
+	boardWebdev = "webdev"
+	boardAgent  = "agent"
+
+	catOverall = "overall"
+	catCoding  = "coding"
+	catMath    = "math"
+
+	benchECI        = "eci"
+	colModelVersion = "Model version"
+)
+
+var variantGroup = regexp.MustCompile(`\s*\(([^()]*)\)\s*$`)
+
+// arenaKey maps (board, dataset category) to the Model.Arena key.
+func arenaKey(board, category string) (string, bool) {
+	switch board {
+	case ArenaBoard:
+		k, ok := map[string]string{
+			catOverall:              "text",
+			catCoding:               catCoding,
+			"hard_prompts":          "hardPrompts",
+			catMath:                 catMath,
+			"instruction_following": "instructionFollowing",
+			"multi_turn":            "multiTurn",
+		}[category]
+		return k, ok
+	case boardWebdev:
+		return boardWebdev, category == catOverall
+	case boardAgent:
+		return boardAgent, category == catOverall
+	}
+	return "", false
+}
+
+// Apply merges freshly fetched sources into c, keeping its manual keys. It
+// returns a new catalog and never mutates c's maps.
 func Apply(c Catalog, src Sources) (Catalog, Report) {
-	_ = src
-	return c, Report{} // TODO(unit 1)
+	var rep Report
+	out := c
+	tiered := map[string]bool{}
+	for _, ids := range c.Tiers {
+		for _, id := range ids {
+			tiered[id] = true
+		}
+	}
+
+	fresh := freshModels(c, src.ModelsDev, tiered)
+	models := maps.Clone(fresh)
+	for _, tier := range sortedKeys(c.Tiers) {
+		for _, id := range c.Tiers[tier] {
+			if _, ok := fresh[id]; ok {
+				continue
+			}
+			if old, ok := c.Models[id]; ok {
+				models[id] = old
+				rep.Stale = append(rep.Stale, id)
+			} else {
+				rep.Missing = append(rep.Missing, id)
+			}
+		}
+	}
+
+	idx := newIndex(models)
+	for id, m := range models {
+		m.Arena = nil
+		if src.Epoch != nil {
+			m.External = External{}
+		} else {
+			m.External = c.Models[id].External
+		}
+		models[id] = m
+	}
+
+	out.SyncedAt = src.Today
+	out.Schema = Schema
+	out.Sources.Arena = ArenaInfo{Board: ArenaBoard, PublishDate: arenaPublishDate(c, src.Arena)}
+	rep.Unmatched = append(rep.Unmatched, applyArena(c, idx, models, fresh, src.Arena)...)
+	if src.Epoch != nil {
+		rep.Unmatched = append(rep.Unmatched, applyEpoch(c, idx, models, fresh, src.Epoch)...)
+	}
+	out.Models = models
+
+	rep.Untiered = out.Untiered()
+	rep.Unmatched = sortedUnique(rep.Unmatched)
+	rep.Stale = sortedUnique(rep.Stale)
+	rep.Missing = sortedUnique(rep.Missing)
+	return out, rep
+}
+
+// freshModels builds the models of the kept canonical ids from models.dev.
+func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map[string]Model {
+	groups := map[string][]ProviderModel{}
+	for _, e := range entries {
+		groups[e.CanonicalID] = append(groups[e.CanonicalID], e)
+	}
+	fresh := map[string]Model{}
+	for id, offers := range groups {
+		if slices.Contains(c.Ignore, id) && !tiered[id] {
+			continue
+		}
+		if tiered[id] || keep(c.Since, offers) {
+			fresh[id] = buildModel(id, offers)
+		}
+	}
+	return fresh
+}
+
+func keep(since string, offers []ProviderModel) bool {
+	for _, o := range offers {
+		if o.Provider == providerCopilot {
+			return true
+		}
+		if (o.Provider == "anthropic" || o.Provider == "openai") &&
+			o.ReleaseDate >= since && o.TextOutput && o.ToolCall {
+			return true
+		}
+	}
+	return false
+}
+
+// buildModel takes name and release date from the first-party offer, else
+// from the Copilot one. The first offer (by id) of a provider wins.
+func buildModel(id string, offers []ProviderModel) Model {
+	m := Model{Providers: map[string]Offer{}}
+	org, _, _ := strings.Cut(id, "/")
+	var first, copilot *ProviderModel
+	for i, o := range offers {
+		if _, dup := m.Providers[o.Provider]; !dup {
+			m.Providers[o.Provider] = Offer{ID: o.ID, In: o.In, Out: o.Out}
+		}
+		switch o.Provider {
+		case org:
+			if first == nil {
+				first = &offers[i]
+			}
+		case providerCopilot:
+			if copilot == nil {
+				copilot = &offers[i]
+			}
+		}
+	}
+	src := first
+	if src == nil {
+		src = copilot
+	}
+	if src == nil {
+		src = &offers[0]
+	}
+	m.Name, m.ReleaseDate = src.Name, src.ReleaseDate
+	return m
+}
+
+// index maps a Key to the canonical ids of the models it identifies.
+type index map[string][]string
+
+func newIndex(models map[string]Model) index {
+	idx := index{}
+	add := func(key, id string) {
+		if key != "" && !slices.Contains(idx[key], id) {
+			idx[key] = append(idx[key], id)
+		}
+	}
+	for _, id := range sortedKeys(models) {
+		m := models[id]
+		_, part, _ := strings.Cut(id, "/")
+		add(Key(part), id)
+		add(Key(m.Name), id)
+		for _, o := range m.Providers {
+			add(Key(o.ID), id)
+		}
+	}
+	return idx
+}
+
+// match resolves a source name to canonical ids: the alias if there is one,
+// else Key matching.
+func (idx index) match(models map[string]Model, aliases map[string]string, name string) []string {
+	if target, ok := aliases[name]; ok {
+		if _, ok := models[target]; ok {
+			return []string{target}
+		}
+		return nil
+	}
+	return idx[Key(name)]
+}
+
+func arenaPublishDate(c Catalog, rows []ArenaRow) string {
+	date := ""
+	for _, r := range rows {
+		if r.Board == ArenaBoard {
+			date = max(date, r.PublishDate)
+		}
+	}
+	if date == "" {
+		return c.Sources.Arena.PublishDate
+	}
+	return date
+}
+
+func splitVariant(name string) (base, variant string) {
+	m := variantGroup.FindStringSubmatchIndex(name)
+	if m == nil {
+		return strings.TrimSpace(name), ""
+	}
+	return strings.TrimSpace(name[:m[0]]), strings.TrimSpace(name[m[2]:m[3]])
+}
+
+// better reports whether a beats b: lower rank, then higher rating, then name.
+func better(a, b ArenaRow) bool {
+	return cmp.Or(
+		cmp.Compare(a.Rank, b.Rank),
+		-cmp.Compare(a.Rating, b.Rating),
+		strings.Compare(a.ModelName, b.ModelName),
+	) < 0
+}
+
+// applyArena sets Model.Arena and returns the unmatched report lines.
+func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []ArenaRow) []string {
+	best := map[string]map[string]ArenaRow{}
+	orgs := orgSet(fresh)
+	var unmatched []string
+	for _, r := range rows {
+		key, ok := arenaKey(r.Board, r.Category)
+		if !ok {
+			continue
+		}
+		ids := idx.match(models, c.Aliases.Arena, r.ModelName)
+		if len(ids) == 0 {
+			if orgs[strings.ToLower(r.Org)] {
+				base, _ := splitVariant(r.ModelName)
+				unmatched = append(unmatched, "arena: "+base)
+			}
+			continue
+		}
+		for _, id := range ids {
+			if best[id] == nil {
+				best[id] = map[string]ArenaRow{}
+			}
+			if cur, ok := best[id][key]; !ok || better(r, cur) {
+				best[id][key] = r
+			}
+		}
+	}
+	for id, byKey := range best {
+		m := models[id]
+		m.Arena = map[string]Rank{}
+		for key, r := range byKey {
+			_, variant := splitVariant(r.ModelName)
+			m.Arena[key] = Rank{Rank: r.Rank, Rating: r.Rating, Votes: r.Votes, Variant: variant}
+		}
+		models[id] = m
+	}
+	return unmatched
+}
+
+// applyEpoch rebuilds Model.External and returns the unmatched report lines.
+func applyEpoch(c Catalog, idx index, models, fresh map[string]Model, rows []EpochRow) []string {
+	firsts := map[string]bool{}
+	for _, m := range fresh {
+		firsts[firstToken(Key(m.Name))] = true
+	}
+	var unmatched []string
+	for _, r := range rows {
+		ids := idx.match(models, c.Aliases.Epoch, r.Model)
+		if len(ids) == 0 {
+			if k := Key(r.Model); k != "" && firsts[firstToken(k)] {
+				unmatched = append(unmatched, "epoch: "+k)
+			}
+			continue
+		}
+		for _, id := range ids {
+			m := models[id]
+			setExternal(&m.External, r)
+			models[id] = m
+		}
+	}
+	return unmatched
+}
+
+func setExternal(e *External, r EpochRow) {
+	var field *float64
+	switch r.Benchmark {
+	case benchECI:
+		field = &e.ECI
+	case "terminalBench":
+		field = &e.TerminalBench
+	case "sweBenchVerified":
+		field = &e.SWEBenchVerified
+	case "metrHorizonMin":
+		field = &e.METRHorizonMin
+	case "osworld":
+		field = &e.OSWorld
+	default:
+		return
+	}
+	*field = max(*field, r.Score)
+}
+
+func firstToken(key string) string {
+	tok, _, _ := strings.Cut(key, "-")
+	return tok
+}
+
+func orgSet(models map[string]Model) map[string]bool {
+	orgs := map[string]bool{}
+	for id := range models {
+		org, _, _ := strings.Cut(id, "/")
+		orgs[org] = true
+	}
+	return orgs
+}
+
+func sortedUnique(s []string) []string {
+	slices.Sort(s)
+	return slices.Compact(s)
 }
