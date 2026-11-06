@@ -193,7 +193,9 @@ func (f usageFetcher) fetchAnthropic(ctx context.Context, acct provider.Account,
 	return snap
 }
 
-func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
+// openaiHeader is the header of a ChatGPT usage request: the bearer token and,
+// when the credential carries one, the account it belongs to.
+func openaiHeader(acct provider.Account) map[string]string {
 	header := map[string]string{
 		hdrAuth:      "Bearer " + acct.Cred.Token(),
 		"originator": "codex_cli_rs",
@@ -202,6 +204,11 @@ func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, sn
 	if id := acct.Cred.AccountID(); id != "" {
 		header["ChatGPT-Account-Id"] = id
 	}
+	return header
+}
+
+func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
+	header := openaiHeader(acct)
 	var (
 		plan   usg.Plan
 		limits []usg.Limit

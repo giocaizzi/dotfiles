@@ -50,7 +50,7 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 
 	accounts := provider.Discover(store)
 	if *live {
-		accounts = provider.Merge(f.resolveIdentities(ctx, accounts))
+		accounts = provider.Merge(bindCached(f.resolveIdentities(ctx, accounts), cached.Snapshots))
 	} else {
 		accounts = provider.Merge(bindCached(accounts, cached.Snapshots))
 	}

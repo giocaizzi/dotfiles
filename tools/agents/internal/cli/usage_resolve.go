@@ -34,7 +34,8 @@ func sharesFingerprint(fps, other []string) bool {
 // resolveIdentities asks the provider who owns each unproven OAuth token, so
 // accounts of different harnesses can merge. Every request is bounded by
 // liveTimeout; any failure leaves the account unproven. A token is only sent
-// to the endpoint the usage fetch would use.
+// to the endpoint the usage fetch uses (for OpenAI, the usage API itself,
+// whose answer names the account and user); an expired token is sent nowhere.
 func (f usageFetcher) resolveIdentities(ctx context.Context, accounts []provider.Account) []provider.Account {
 	out := slices.Clone(accounts)
 	var wg sync.WaitGroup
@@ -88,6 +89,20 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 			return provider.Identity{}, false
 		}
 		return provider.Identity{Key: provider.AnthropicKey(p.AccountID, p.OrgID), Label: p.Email, Plan: p.Plan}, true
+	case provider.OpenAI:
+		header := openaiHeader(acct)
+		body, err := f.get(ctx, f.chatgptURL+"/backend-api/wham/usage", header)
+		if err != nil {
+			return provider.Identity{}, false
+		}
+		p, err := usg.ParseOpenAIIdentity(body)
+		if err != nil {
+			return provider.Identity{}, false
+		}
+		if sent := header["ChatGPT-Account-Id"]; sent != "" && sent != p.AccountID {
+			return provider.Identity{}, false
+		}
+		return provider.Identity{Key: provider.OpenAIKey(p.AccountID, p.UserID), AccountID: p.AccountID, Plan: p.Plan}, true
 	}
 	return provider.Identity{}, false
 }
