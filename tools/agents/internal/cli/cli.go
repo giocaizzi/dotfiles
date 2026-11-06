@@ -76,6 +76,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runPrompt(ctx, rest)
 	case "mcp":
 		return d.runMCP(ctx, rest)
+	case "usage":
+		return d.runUsage(ctx, rest)
 	case "version", "--version", "-v":
 		v := d.Version
 		if v == "" {
@@ -115,6 +117,7 @@ func usage(s term.Style) string {
 	p("  %schezmoi agents%s %sprompt%s %s[-profile <personal|work|light>]%s %s[-check]%s %s[-file <path>]%s\n", m, o, m, o, d, o, d, o, d, o)
 	p("  %schezmoi agents%s %smcp sync%s %s[path] [-check] [-account <id>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %smcp add%s %s[flags] <name> <commandOrUrl> [args...]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %susage%s %s[-live] [-provider <id>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
 	p("%sCOMMANDS%s\n", b, o)
@@ -123,6 +126,7 @@ func usage(s term.Style) string {
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "prompt", o, d, "[-profile <profile>]", o, "Compose or validate layered system prompt")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp sync", o, d, "[path]", o, "Sync workspace .mcp.json to native Codex, pi and Antigravity configs")
 	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp add", o, d, "<name> <cmd|url> [args]", o, "Add or update server in workspace .mcp.json and sync configs")
+	p("  %s%-9s%s %s%-27s%s %s\n", m, "usage", o, d, "[-live] [-provider <id>]", o, "Show subscription usage per provider account (cached; -live refreshes)")
 	p("  %s%-9s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
 	p("  %s%-9s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
 
@@ -132,7 +136,9 @@ func usage(s term.Style) string {
 	p("  %s-harness-dir%s %s<path>%s  Checkout of giocaizzi/harness (defaults to HARNESS_DIR)\n", y, o, d, o)
 	p("  %s-profile%s %s<profile>%s   System prompt profile (personal|work|light)\n", y, o, d, o)
 	p("  %s-check%s               Validate layer presence without printing output\n", y, o)
-	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n\n", y, o, d, o)
+	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n", y, o, d, o)
+	p("  %s-live%s                Query every provider and rewrite the usage cache\n", y, o)
+	p("  %s-provider%s %s<id>%s       Limit usage output to one provider id\n\n", y, o, d, o)
 
 	p("%sEXAMPLES%s\n", b, o)
 	p("  %schezmoi-agents check%s                           Validate policy, client parity, and harness plugins\n", m, o)
