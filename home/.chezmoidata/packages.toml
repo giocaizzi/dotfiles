@@ -372,7 +372,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.chezmoi-dots]
 # The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
 # on a dots-vX.Y.Z tag. A bare binary per platform.
-version = "0.5.0"
+version = "0.6.0"
 versionCmd = ["{dest}", "version"]
 url = "https://github.com/giocaizzi/dotfiles/releases/download/dots-v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
@@ -387,17 +387,17 @@ exe = true
 "windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "08f448c6b90ee3276abfadcb7250baffb75db9215dc6b82e09941aa4ca81770c"
-"darwin/arm64" = "b1ad5a482432c849a3569bd5061a4439fcd44be01049e54b4340f6d9edd8e728"
-"linux/amd64" = "410ee076d3e5ec7f27cdfe9f52c393a0cdf003ce2bd972584e7f66fc76568de6"
-"linux/arm64" = "d07d5b800b8fa45094ad653ff9b72cfbde1993e4d353f1c673703664273fd0cd"
-"windows/amd64" = "aee66923469d87a8ea7c7ac80bc49435b713e306141d2e794631fc9c045fc3f3"
-"windows/arm64" = "6d41575d11a723d06d390320b75e3df6abb35bc68f7019dd202deaabd500f265"
+"darwin/amd64" = "9e8dbc691f5497881ce2847baae9d0fb240e2319f1861d51699eff22f8f6ffd7"
+"darwin/arm64" = "77782481d43d410790fe105b722600e10ec4a15fd43214604d7dd8d06fdd239a"
+"linux/amd64" = "33613d39b51a7d40abdc8e8970bc74b40ddaf3ad90e7e64ea2f165ba1534670e"
+"linux/arm64" = "6a195a7c887129a7319e038ebe6e0b30441bfaa27275b5a2128585a129597cd8"
+"windows/amd64" = "884290151fbf784c6b30bd681f73777f2f5c06f0659b5d7f0bd0b1b0f5935dc5"
+"windows/arm64" = "a8fe116fd8086ae332144d1c63bddcc94c5bd586ad2b8b584dbcee39cc81aafe"
 
 [release.chezmoi-agents]
 # The `chezmoi-agents` policy and parity engine (tools/agents), released by .github/workflows/release-agents.yml
 # on an agents-vX.Y.Z tag. A bare binary per platform.
-version = "0.8.0"
+version = "0.9.0"
 url = "https://github.com/giocaizzi/dotfiles/releases/download/agents-v{version}/chezmoi-agents_{version}_{target}"
 type = "file"
 exe = true
@@ -411,12 +411,12 @@ exe = true
 "windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-agents.sha256]
-"darwin/amd64" = "298dc10e708d2d3e5b6d496f149e7a7def6f91dcc4dffacb1efebb0d3d04f92b"
-"darwin/arm64" = "a488427a0f637fd2d2277e30486d6326a55f2cca1c1a4ace464fe2e29c9d4ff4"
-"linux/amd64" = "6f9b5eb586445ed30e353948721ee413e1a5341b6c59bd56f0d26c37d5d84bca"
-"linux/arm64" = "65aa4539a5cff35161c55a0ddb2216f32766a970c17cf9fe9984c95f15e49030"
-"windows/amd64" = "8fe40fa008ad94cd9b25422dcccfbde848a4a23036e143fac8da57749d13c8b1"
-"windows/arm64" = "2db549857233b5d14ba0fd3c6a49fdef5de370030dfa5264c23f5df7fc349bad"
+"darwin/amd64" = "98e17c2c99a1979309ee1e551216bfff7055da8513bd5cdaf54765340a6dcfb6"
+"darwin/arm64" = "9139b5cbb06dacbcae4e4f5ca4c5cbaee83fe1a0f85b3794e0b49c4dd8b8aaa3"
+"linux/amd64" = "6169b339e3032c55370283dfeda4202630c57fd408583194ac90d5258da2f7d9"
+"linux/arm64" = "955774cadade28a3119cc4594834477e601fa9a915aaf0870931b4c3e1e73c02"
+"windows/amd64" = "c0d914a3f690854da81ddeef22894b724f8cbff574a61766900e4d431f2b2e77"
+"windows/arm64" = "1f8be4b274e510a147aa1c0fe781d6c70a54d3230d5e767af315d05dee2ae82a"
 
 [release.golangci-lint]
 roles = ["personal"]
