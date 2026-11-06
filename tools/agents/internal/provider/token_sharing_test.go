@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -22,9 +23,7 @@ func sharingClaims(exp time.Time, extra map[string]any) map[string]any {
 			"encrypted_auth_metadata": "fake-meta", "per_user_salt": "fake-salt",
 		},
 	}
-	for k, v := range extra {
-		c[k] = v
-	}
+	maps.Copy(c, extra)
 	return c
 }
 
@@ -146,38 +145,35 @@ func TestTokenSharingNeverMergesWithCodex(t *testing.T) {
 	}
 }
 
-func TestMergeThreeWithOneInactive(t *testing.T) {
-	t.Parallel()
+// threeCredentials is three credentials of one account, in the given order,
+// with only the one at index inactive being inactive.
+func threeCredentials(inactive int, order [3]int) []Account {
 	base := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
-	mk := func(id, harness string, inactive bool, exp time.Time) Account {
-		a := Account{Provider: OpenAI, Key: "openai:acct:user", ID: id, Harnesses: []string{harness}, Expires: exp, Inactive: inactive, Note: "n"}
-		if inactive {
+	harnesses := []string{"codex", "opencode", "pi"}
+	in := make([]Account, 3)
+	for i, o := range order {
+		a := Account{
+			Provider: OpenAI, Key: "openai:acct:user", ID: harnesses[o], Harnesses: []string{harnesses[o]},
+			Expires: base.Add(time.Duration(o) * time.Hour), Note: "n", Inactive: o == inactive,
+		}
+		if a.Inactive {
 			a.Note = "n " + inactiveNote
 		}
-		return a
+		in[i] = a
 	}
-	all := []Account{
-		mk("a", "codex", false, base),
-		mk("b", "opencode", true, base.Add(time.Hour)),
-		mk("c", "pi", false, base.Add(2*time.Hour)),
-	}
-	for _, inactiveIdx := range []int{0, 1, 2} {
+	return in
+}
+
+func TestMergeThreeWithOneInactive(t *testing.T) {
+	t.Parallel()
+	for inactive := range 3 {
 		for _, order := range permutations3() {
-			in := make([]Account, 3)
-			for i, o := range order {
-				in[i] = all[o]
-				in[i].Inactive = o == inactiveIdx
-				in[i].Note = "n"
-				if in[i].Inactive {
-					in[i].Note = "n " + inactiveNote
-				}
-			}
-			got := Merge(in)
+			got := Merge(threeCredentials(inactive, order))
 			if len(got) != 1 {
 				t.Fatalf("rows = %d", len(got))
 			}
 			if got[0].Inactive || strings.Contains(got[0].Note, "(inactive)") {
-				t.Errorf("inactive %d order %v: inactive=%v note=%q", inactiveIdx, order, got[0].Inactive, got[0].Note)
+				t.Errorf("inactive %d order %v: inactive=%v note=%q", inactive, order, got[0].Inactive, got[0].Note)
 			}
 			if diff := cmp.Diff([]string{"codex", "opencode", "pi"}, got[0].Harnesses); diff != "" {
 				t.Errorf("harnesses (-want +got):\n%s", diff)

@@ -16,7 +16,7 @@ import (
 // piRevokedFixture is a pi "openai-codex" login whose token carries no user
 // id (the account id comes from the store) and outlives the Codex one, next to
 // a Codex login of the same account.
-func piRevokedFixture(t *testing.T) (store provider.Store, piTok, codexTok string) {
+func piRevokedFixture(t *testing.T) (store kcStore, piTok, codexTok string) {
 	t.Helper()
 	exp := usageNow.Add(time.Hour)
 	piExp := exp.Add(time.Hour)
@@ -109,19 +109,25 @@ func TestLiveLookupFailureStaysUnproven(t *testing.T) {
 			}
 			fl.noSecrets(out, piTok, codexTok)
 
-			// The same lookup, on its own, flags the credential.
-			f := testFetcher(t, srv.Server)
-			f.client = newFetcher(t.TempDir()).client
-			var failed []string
-			for _, a := range f.resolveIdentities(t.Context(), provider.Discover(store)) {
-				if a.LookupFailed {
-					failed = append(failed, strings.Join(a.Harnesses, ","))
-				}
-			}
-			if diff := cmp.Diff([]string{"pi"}, failed); diff != "" {
-				t.Errorf("LookupFailed accounts (-want +got):\n%s", diff)
-			}
+			assertLookupFailed(t, srv, store, []string{"pi"})
 		})
+	}
+}
+
+// assertLookupFailed checks that resolving the identities of the store's
+// accounts against srv flags exactly the accounts of want (harness lists).
+func assertLookupFailed(t *testing.T, srv *whamServer, store provider.Store, want []string) {
+	t.Helper()
+	f := testFetcher(t, srv.Server)
+	f.client = newFetcher(t.TempDir()).client
+	var failed []string
+	for _, a := range f.resolveIdentities(t.Context(), provider.Discover(store)) {
+		if a.LookupFailed {
+			failed = append(failed, strings.Join(a.Harnesses, ","))
+		}
+	}
+	if diff := cmp.Diff(want, failed); diff != "" {
+		t.Errorf("LookupFailed accounts (-want +got):\n%s", diff)
 	}
 }
 

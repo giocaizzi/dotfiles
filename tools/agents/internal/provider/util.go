@@ -128,14 +128,14 @@ func openaiProfile(m map[string]any) map[string]any {
 	return a
 }
 
-// tokenSharingScope is the scope of a ChatGPT login made for the API.
-const tokenSharingScope = "chatgpt.tokens.use.direct"
+// sharingScope is the scope of a ChatGPT login made for the API.
+const sharingScope = "chatgpt.tokens.use.direct"
 
 // tokenSharing reports access-token claims that carry the token-sharing scope:
 // scp as a list of strings or a space-separated string, or scope as a
 // space-separated string.
 func tokenSharing(claims map[string]any) bool {
-	has := func(s string) bool { return slices.Contains(strings.Fields(s), tokenSharingScope) }
+	has := func(s string) bool { return slices.Contains(strings.Fields(s), sharingScope) }
 	switch v := claims["scp"].(type) {
 	case string:
 		if has(v) {
@@ -143,7 +143,7 @@ func tokenSharing(claims map[string]any) bool {
 		}
 	case []any:
 		for _, e := range v {
-			if s, ok := e.(string); ok && s == tokenSharingScope {
+			if s, ok := e.(string); ok && s == sharingScope {
 				return true
 			}
 		}
@@ -163,7 +163,7 @@ func markTokenSharing(a *Account) {
 	a.IdentityKnown = false
 	a.Cred = Credential{}
 	a.Status = usage.StatusNotVisible
-	a.Note = usage.NoteTokenSharing
+	a.Note = usage.NoteSharingNotVisible
 }
 
 // expiredStatus marks an account whose access token has expired.

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"sync"
 
@@ -89,7 +90,7 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 		}
 		p, err := usg.ParseGitHubUser(body)
 		if err != nil {
-			return provider.Identity{}, err
+			return provider.Identity{}, fmt.Errorf("github identity: %w", err)
 		}
 		return provider.Identity{Key: provider.CopilotKey(acct.Host, p.Login), Label: p.Login, Login: p.Login}, nil
 	case provider.Anthropic:
@@ -103,7 +104,7 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 		}
 		p, err := usg.ParseAnthropicProfile(body)
 		if err != nil {
-			return provider.Identity{}, err
+			return provider.Identity{}, fmt.Errorf("anthropic identity: %w", err)
 		}
 		return provider.Identity{Key: provider.AnthropicKey(p.AccountID, p.OrgID), Label: p.Email, Plan: p.Plan}, nil
 	case provider.OpenAI:
@@ -113,7 +114,7 @@ func (f usageFetcher) identify(ctx context.Context, acct provider.Account) (prov
 		}
 		p, err := usg.ParseOpenAIIdentity(body)
 		if err != nil {
-			return provider.Identity{}, err
+			return provider.Identity{}, fmt.Errorf("openai identity: %w", err)
 		}
 		if sent := acct.Cred.AccountID(); sent != "" && sent != p.AccountID {
 			return provider.Identity{}, errIdentityMismatch

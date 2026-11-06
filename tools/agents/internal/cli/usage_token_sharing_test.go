@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -26,9 +27,7 @@ func sharingToken(t *testing.T, exp time.Time, scope map[string]any) string {
 			"encrypted_auth_metadata": "fake-metadata", "per_user_salt": "fake-salt",
 		},
 	}
-	for k, v := range scope {
-		claims[k] = v
-	}
+	maps.Copy(claims, scope)
 	return fakeJWT(t, claims)
 }
 
@@ -127,8 +126,12 @@ func TestTokenSharingNeverMergesWithCodex(t *testing.T) {
 		// codex returns the Codex files and its token.
 		codex func(t *testing.T) (map[string]string, string)
 	}{
-		{"proven codex login", func(t *testing.T) (map[string]string, string) { return codexFiles(t, exp) }},
+		{"proven codex login", func(t *testing.T) (map[string]string, string) {
+			t.Helper()
+			return codexFiles(t, exp)
+		}},
 		{"unproven codex login", func(t *testing.T) (map[string]string, string) {
+			t.Helper()
 			bare := fakeJWT(t, map[string]any{"exp": exp.Unix()})
 			return map[string]string{"/h/.codex/auth.json": fmt.Sprintf(`{"auth_mode":"chatgpt","tokens":{"access_token":%q}}`, bare)}, bare
 		}},
@@ -175,7 +178,7 @@ func TestRenderTokenSharingRow(t *testing.T) {
 	t.Parallel()
 	snaps := []usg.Snapshot{{
 		Provider: provider.OpenAI, Harnesses: []string{"pi"}, Plan: usg.TokenSharingPlan(),
-		Status: usg.StatusNotVisible, Note: usg.NoteTokenSharing,
+		Status: usg.StatusNotVisible, Note: usg.NoteSharingNotVisible,
 	}, {
 		Provider: provider.OpenAI, Harnesses: []string{"codex"}, IdentityUnknown: true,
 		Plan:   usg.Plan{Kind: usg.KindUnknown},

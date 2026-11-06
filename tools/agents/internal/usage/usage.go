@@ -54,10 +54,10 @@ type Plan struct {
 
 // NameTokenSharing is the plan name of a "Sign in with ChatGPT" login made for
 // the API (token sharing): ChatGPT's usage API does not answer for it.
-const NameTokenSharing = "ChatGPT sign-in (token sharing)"
+const NameTokenSharing = "ChatGPT sign-in (token sharing)" //nolint:gosec // a display name, not a credential
 
-// NoteTokenSharing is the note of a token-sharing login.
-const NoteTokenSharing = "usage not visible for this login type"
+// NoteSharingNotVisible is the note of a token-sharing login.
+const NoteSharingNotVisible = "usage not visible for this login type"
 
 // TokenSharingPlan is the plan of a token-sharing login: nothing is known of
 // the account behind it.
