@@ -129,6 +129,62 @@ func TestApplyStaleAndMissing(t *testing.T) {
 	}
 }
 
+func TestApplyKeepsSyncedAtWhenDataIsUnchanged(t *testing.T) {
+	t.Parallel()
+	c := baseCatalog()
+	src := Sources{Today: "2026-11-06", ModelsDev: []ProviderModel{
+		pm("anthropic", "claude-opus-5-5", "Claude Opus 5.5", "anthropic/claude-opus-5-5", "2026-09-22", 4, 20),
+	}}
+	first, _ := Apply(c, src)
+	if first.SyncedAt != "2026-11-06" {
+		t.Fatalf("first sync SyncedAt = %q, want today", first.SyncedAt)
+	}
+
+	src.Today = "2026-11-13"
+	same, _ := Apply(first, src)
+	if same.SyncedAt != "2026-11-06" {
+		t.Errorf("same data: SyncedAt = %q, want the old date", same.SyncedAt)
+	}
+
+	src.ModelsDev = []ProviderModel{
+		pm("anthropic", "claude-opus-5-5", "Claude Opus 5.5", "anthropic/claude-opus-5-5", "2026-09-22", 5, 25),
+	}
+	changed, _ := Apply(first, src)
+	if changed.SyncedAt != "2026-11-13" {
+		t.Errorf("changed price: SyncedAt = %q, want today", changed.SyncedAt)
+	}
+}
+
+func TestApplyAmbiguousKeyMatchesNoModel(t *testing.T) {
+	t.Parallel()
+	c := baseCatalog()
+	c.Providers = append(c.Providers, "xai")
+	c.Aliases.Arena = map[string]string{"Grok 4.20 (Aliased)": "xai/grok-4.20-0309-reasoning"}
+	src := arenaSrc(
+		ArenaRow{Board: ArenaBoard, Category: "overall", ModelName: "Grok 4.20 (Reasoning)", Org: "xai", Rank: 3, PublishDate: "d"},
+		ArenaRow{Board: ArenaBoard, Category: "overall", ModelName: "Grok 4.20 (Aliased)", Org: "xai", Rank: 4, PublishDate: "d"},
+	)
+	src.Epoch = []EpochRow{{Model: "Grok 4.20", Benchmark: "eci", Score: 150}}
+	src.ModelsDev = []ProviderModel{
+		pm("xai", "grok-4.20-0309-reasoning", "Grok 4.20 (Reasoning)", "xai/grok-4.20-0309-reasoning", "2026-03-09", 2, 6),
+		pm("xai", "grok-4.20-0309-non-reasoning", "Grok 4.20 (Non-Reasoning)", "xai/grok-4.20-0309-non-reasoning", "2026-03-09", 2, 6),
+	}
+	got, rep := Apply(c, src)
+
+	re := got.Models["xai/grok-4.20-0309-reasoning"]
+	non := got.Models["xai/grok-4.20-0309-non-reasoning"]
+	if re.Arena["text"].Rank != 4 {
+		t.Errorf("reasoning arena = %+v, want only the aliased row (rank 4)", re.Arena)
+	}
+	if len(non.Arena) != 0 || non.External.ECI != 0 || re.External.ECI != 0 {
+		t.Errorf("non-reasoning = %+v, reasoning ECI = %v: ambiguous key must match none", non, re.External.ECI)
+	}
+	want := []string{"arena: Grok 4.20 (ambiguous: xai/grok-4.20-0309-non-reasoning, xai/grok-4.20-0309-reasoning)"}
+	if diff := cmp.Diff(want, rep.Unmatched); diff != "" {
+		t.Errorf("unmatched (-want +got):\n%s", diff)
+	}
+}
+
 func arenaSrc(rows ...ArenaRow) Sources {
 	return Sources{
 		Today: "2026-11-06",

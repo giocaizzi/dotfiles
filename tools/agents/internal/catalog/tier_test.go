@@ -47,6 +47,30 @@ func TestComputeTiersBandEdges(t *testing.T) {
 	}
 }
 
+// TestBandEdgesDecimalPrices pins decimal prices whose blend lands exactly on a
+// limit: the band must not depend on the CPU's multiply-add fusion.
+func TestBandEdgesDecimalPrices(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		price Price
+		want  string
+	}{
+		{Price{In: 5.35, Out: 11.95}, "powerful"},
+		{Price{In: 2.8, Out: 1.6}, "versatile"},
+		{Price{In: 3.3, Out: 0.1}, "versatile"},
+		{Price{In: 6.1, Out: 9.7}, "powerful"},
+		{Price{In: 12.5, Out: 22.5}, "extra"},
+		{Price{In: 13.1, Out: 20.7}, "extra"},
+	}
+	for _, tt := range tests {
+		m := Model{API: &Price{In: tt.price.In, Out: tt.price.Out}, Arena: map[string]Rank{"text": {Rank: 1}}}
+		got := ComputeTiers(map[string]Model{"a/m": m}, nil)
+		if diff := cmp.Diff(map[string][]string{tt.want: {"a/m"}}, got); diff != "" {
+			t.Errorf("%+v (blend %v) (-want +got):\n%s", tt.price, BlendedPrice(tt.price), diff)
+		}
+	}
+}
+
 func eciModels(scores ...float64) map[string]Model {
 	models := map[string]Model{}
 	for i, s := range scores {

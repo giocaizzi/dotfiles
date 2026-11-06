@@ -21,8 +21,6 @@ Synced 2026-11-06 · arena board `text_style_control` published 2026-10-28. Tier
 | Grok 4.3 | xai | xai/grok-4.3 | $1.25 | $2.5 | $0.2 | 1M | #93 | #104 |  | #119 | #109 | #133 | #127 | #97 |  |  |  |  |  |
 | GPT-5.4 mini | openai | openai/gpt-5.4-mini | $0.75 | $4.5 | $0.075 | 400k | #86 | #90 |  | #103 | #85 | #99 | #91 | #72 | 149 |  |  |  |  |
 | GPT-5.4 nano | openai | openai/gpt-5.4-nano | $0.2 | $1.25 | $0.02 | 400k | #164 | #142 |  |  | #159 | #125 | #167 | #150 | 146 |  |  |  |  |
-| Grok 4.20 (Non-Reasoning) | xai | xai/grok-4.20-0309-non-reasoning | $1.25 | $2.5 | $0.2 | 1M |  |  |  |  |  |  |  |  | 152 | 57% |  |  |  |
-| Grok 4.20 (Reasoning) | xai | xai/grok-4.20-0309-reasoning | $1.25 | $2.5 | $0.2 | 1M |  |  |  |  |  |  |  |  | 152 | 57% |  |  |  |
 
 ## Versatile
 
@@ -30,6 +28,7 @@ Synced 2026-11-06 · arena board `text_style_control` published 2026-10-28. Tier
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | GPT-6.1 Terra | openai | openai/gpt-6.1-terra | $1 | $5 | $0.05 | 1.05M |  |  | #7 | #14 |  |  |  |  | 168 |  |  |  |  |
 | Kimi K3.1 Pro | moonshotai | moonshotai/kimi-k3.1-pro | $2 | $10 | $0.2 | 1.05M |  |  | #14 | #9 |  |  |  |  |  |  |  |  |  |
+| GPT-6 Sol | openai | openai/gpt-6-sol | $2 | $10 | $0.2 | 1.05M | #64 | #39 | #12 | #12 | #59 | #84 | #68 | #71 | 164 |  |  |  |  |
 | Grok 4.7 | xai | xai/grok-4.7 | $2 | $6 | $0.5 | 500k | #96 | #91 | #17 | #21 | #91 | #94 | #85 | #118 | 156 |  |  |  |  |
 | Grok 4.6 | xai | xai/grok-4.6 | $2 | $6 | $0.5 | 500k | #72 | #61 | #30 | #30 | #64 | #93 | #64 | #95 | 158 |  |  |  |  |
 | Kimi K3 | moonshotai | moonshotai/kimi-k3 | $3 | $15 | $0.3 | 1.05M | #19 | #13 | #25 | #18 | #12 | #21 | #16 | #11 | 159 |  |  |  |  |
@@ -50,7 +49,6 @@ Synced 2026-11-06 · arena board `text_style_control` published 2026-10-28. Tier
 | GPT-6.1 Sol | openai | openai/gpt-6.1-sol | $2 | $10 | $0.1 | 1.05M | #27 | #12 | #6 | #5 | #22 | #10 | #19 | #42 | 169 |  |  |  |  |
 | Claude Sonnet 5.5 | anthropic | anthropic/claude-sonnet-5-5 | $2 | $10 | $0.1 | 1M | #31 | #24 | #3 | #3 | #25 | #12 | #18 | #49 | 166 |  |  |  |  |
 | Claude Opus 5.5 | anthropic | anthropic/claude-opus-5-5 | $4 | $20 | $0.2 | 1M | #3 | #3 | #1 | #1 | #3 | #9 | #3 | #12 | 168 |  |  |  |  |
-| GPT-6 Sol | openai | openai/gpt-6-sol | $2 | $10 | $0.2 | 1.05M | #64 | #39 | #12 | #12 | #59 | #84 | #68 | #71 | 164 |  |  |  |  |
 | Claude Opus 5 | anthropic | anthropic/claude-opus-5 | $5 | $25 | $0.5 | 1M | #14 | #16 | #11 | #10 | #13 | #5 | #10 | #28 | 164 |  |  |  | 31% |
 | GPT-5.6 Sol | openai | openai/gpt-5.6-sol | $4 | $20 | $0.4 | 1.05M | #22 | #20 | #15 | #31 | #18 | #24 | #15 | #23 | 163 |  |  |  | 27% |
 | Claude Opus 4.8 | anthropic | anthropic/claude-opus-4-8 | $5 | $25 | $0.5 | 1M | #25 | #18 |  | #44 | #17 | #27 | #13 | #13 | 160 |  |  |  | 21% |
@@ -84,6 +82,8 @@ Synced 2026-11-06 · arena board `text_style_control` published 2026-10-28. Tier
 | GPT-5.3 Codex Spark | openai | openai/gpt-5.3-codex-spark | $1.75 | $14 | $0.175 | 128k |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | Daybreak Red | openai | openai/gpt-5.6-cyber | $12.5 | $75 | $1.25 | 400k |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | GPT-Realtime-2.1 | openai | openai/gpt-realtime-2.1 | $4 | $24 | $0.4 | 128k |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Grok 4.20 (Non-Reasoning) | xai | xai/grok-4.20-0309-non-reasoning | $1.25 | $2.5 | $0.2 | 1M |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| Grok 4.20 (Reasoning) | xai | xai/grok-4.20-0309-reasoning | $1.25 | $2.5 | $0.2 | 1M |  |  |  |  |  |  |  |  |  |  |  |  |  |
 | Grok Build 0.1 | xai | xai/grok-build-0.1 | $1 | $2 | $0.2 | 256k |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 ## Best when

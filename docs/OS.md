@@ -455,7 +455,7 @@ Which model fits which job is kept here as tiers, with synced costs and ranks be
 
 ### Model tiers (`chezmoi-agents models`)
 
-Models are grouped into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync computes the tiers; nobody assigns them by hand. It also adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers`, ranks from the LMArena leaderboard dataset (board `text_style_control`) and Epoch AI benchmarks. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Every table has the same columns: model, provider, id, $in, $out, $cache, context, arena ranks, benchmarks. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
+Models are grouped into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync computes the tiers; nobody assigns them by hand. It also adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers`, ranks from the LMArena leaderboard dataset (board `text_style_control`) and Epoch AI benchmarks. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Every table has the same columns: model, provider, id (the canonical id `<provider>/<id>`, the key `pin` and `ignore` use), $in, $out, $cache, context, arena ranks, benchmarks. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
 
 - `chezmoi agents models`: validate the file and print the tiers and untiered models.
 - `chezmoi agents models sync [-file] [-doc]`: fetch every source (Epoch AI always, since its Epoch Capabilities Index, ECI, drives the rule), recompute the tiers, rewrite `models.json` and `docs/MODELS.md`; all-or-nothing, nothing is written when a source fails.
@@ -463,7 +463,7 @@ Models are grouped into four tiers (lightweight, versatile, powerful, extra) in 
 
 Manual keys: `providers`, `since`, `ignore`, `pin`, `aliases`. Synced keys: `models`, `tiers`, `sources`, `syncedAt` (sync never touches the manual ones). Schema 2.
 
-`providers` are models.dev provider keys (today `anthropic`, `google`, `moonshotai`, `openai`, `xai`), the same ids as the usage tool. Every price is the first-party provider's API price per million tokens (input, output, cache read; cache write is stored), whichever harness runs the model; a model with no first-party price shows `n/a`. Each model records `provider`, `id` (id at the provider's API), `name`, `releaseDate`, `context`, `api`.
+`providers` are models.dev provider keys (today `anthropic`, `google`, `moonshotai`, `openai`, `xai`), the same ids as the usage tool. Every price is the first-party provider's API price per million tokens (input, output, cache read; cache write is stored), whichever harness runs the model; a model with no first-party price shows `n/a`. Each model records `provider`, `id` (the provider's API id; the canonical id `<provider>/<id>` is built from it), `name`, `releaseDate`, `context`, `api`.
 
 **Tier rule.** The rule is deterministic; its constants live in `tools/agents/internal/catalog/tier.go`.
 
@@ -477,7 +477,9 @@ Manual keys: `providers`, `since`, `ignore`, `pin`, `aliases`. Synced keys: `mod
 
 Untiered models are those the rule leaves out (above). The catalog holds the models listed by their first-party provider (the provider key is the prefix of the canonical id `<provider>/<id>`) released on or after `since` that output text, support tool calls and are not deprecated, minus `ignore`.
 
-Agent roles use tiers: scout and worker are lightweight, driver is powerful, escalate is extra (`harnessPolicy.models.tiers` in `.chezmoidata/harness-policy.toml`).
+Agent roles pin an explicit model per role in `harnessPolicy.models.tiers` (`.chezmoidata/harness-policy.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). Nothing checks them against the catalog yet: after a re-tier, review them by hand (the planned doctor advisory will flag drift).
+
+`chezmoi agents models` and `render -check` (`make lint`) fail when the stored `tiers` differ from the rule, so `tiers` is never hand-edited. `syncedAt` only moves when the synced data changes, so the weekly workflow opens a PR only on real changes.
 
 **Refresh the data**
 

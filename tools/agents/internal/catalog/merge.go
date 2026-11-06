@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"bytes"
 	"cmp"
 	"maps"
 	"regexp"
@@ -70,7 +71,6 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 		models[id] = m
 	}
 
-	out.SyncedAt = src.Today
 	out.Schema = Schema
 	out.Sources.Arena = ArenaInfo{Board: ArenaBoard, PublishDate: arenaPublishDate(c, src.Arena)}
 	rep.Unmatched = append(rep.Unmatched, applyArena(c, idx, models, fresh, src.Arena)...)
@@ -78,12 +78,26 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	out.Models = models
 	out.Tiers = ComputeTiers(models, c.Pin)
 
+	out.SyncedAt = syncedAt(c, out, src.Today)
+
 	rep.Untiered = out.Untiered()
 	rep.Unmatched = append(rep.Unmatched, danglingAliases(c.Aliases, models)...)
 	rep.Unmatched = sortedUnique(rep.Unmatched)
 	rep.Stale = sortedUnique(rep.Stale)
 	rep.Missing = sortedUnique(rep.Missing)
 	return out, rep
+}
+
+// syncedAt keeps c's date when the data did not change, so a sync without news
+// leaves the file (and the page rendered from it) byte-identical.
+func syncedAt(c, out Catalog, today string) string {
+	out.SyncedAt = c.SyncedAt
+	old, err1 := Marshal(c)
+	cur, err2 := Marshal(out)
+	if err1 == nil && err2 == nil && bytes.Equal(old, cur) {
+		return c.SyncedAt
+	}
+	return today
 }
 
 // freshModels builds the models of the kept canonical ids from models.dev,
@@ -157,15 +171,20 @@ func newIndex(models map[string]Model) index {
 }
 
 // match resolves a source name to canonical ids: the alias if there is one,
-// else Key matching.
-func (idx index) match(models map[string]Model, aliases map[string]string, name string) []string {
+// else Key matching. A key shared by several models is ambiguous: it matches
+// none of them, and ambiguous lists them.
+func (idx index) match(models map[string]Model, aliases map[string]string, name string) (ids, ambiguous []string) {
 	if target, ok := aliases[name]; ok {
 		if _, ok := models[target]; ok {
-			return []string{target}
+			return []string{target}, nil
 		}
-		return nil
+		return nil, nil
 	}
-	return idx[Key(name)]
+	ids = idx[Key(name)]
+	if len(ids) > 1 {
+		return nil, ids
+	}
+	return ids, nil
 }
 
 func arenaPublishDate(c Catalog, rows []ArenaRow) string {
@@ -208,6 +227,17 @@ func reportUnmatched(r ArenaRow, orgs map[string]bool) bool {
 	return r.Rank <= unmatchedTopRank && orgs[strings.ToLower(r.Org)]
 }
 
+// unmatchedLine is the report line of an unmatched arena row; ambiguous lists
+// the models its key is shared by, if any.
+func unmatchedLine(r ArenaRow, ambiguous []string) string {
+	base, _ := splitVariant(r.ModelName)
+	line := "arena: " + base
+	if len(ambiguous) > 0 {
+		line += " (ambiguous: " + strings.Join(ambiguous, ", ") + ")"
+	}
+	return line
+}
+
 // applyArena sets Model.Arena and returns the unmatched report lines.
 func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []ArenaRow) []string {
 	best := map[string]map[string]ArenaRow{}
@@ -218,11 +248,10 @@ func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []Are
 		if !ok {
 			continue
 		}
-		ids := idx.match(models, c.Aliases.Arena, r.ModelName)
+		ids, ambiguous := idx.match(models, c.Aliases.Arena, r.ModelName)
 		if len(ids) == 0 {
 			if reportUnmatched(r, orgs) {
-				base, _ := splitVariant(r.ModelName)
-				unmatched = append(unmatched, "arena: "+base)
+				unmatched = append(unmatched, unmatchedLine(r, ambiguous))
 			}
 			continue
 		}
@@ -251,7 +280,7 @@ func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []Are
 // Epoch's history is mostly legacy models, and aliases.epoch covers a gap.
 func applyEpoch(c Catalog, idx index, models map[string]Model, rows []EpochRow) {
 	for _, r := range rows {
-		ids := idx.match(models, c.Aliases.Epoch, r.Model)
+		ids, _ := idx.match(models, c.Aliases.Epoch, r.Model)
 		for _, id := range ids {
 			m := models[id]
 			setExternal(&m.External, r)

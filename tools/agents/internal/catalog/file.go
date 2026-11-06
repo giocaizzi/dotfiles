@@ -31,7 +31,7 @@ func Marshal(c Catalog) ([]byte, error) {
 }
 
 // Validate checks the catalog: known schema, providers, tier and pin names, no
-// pin on an ignored id, every tiered id present in Models, no id in two tiers.
+// pin on an ignored id, every tiered id present in Models, no id in two tiers, tiers equal to the rule.
 func (c Catalog) Validate() error {
 	var errs []error
 	if c.Schema != Schema {
@@ -64,7 +64,21 @@ func (c Catalog) Validate() error {
 			}
 		}
 	}
+	errs = append(errs, c.tierDrift()...)
 	return errors.Join(errs...)
+}
+
+// tierDrift reports the tiers that differ from the rule, so a hand edit of
+// tiers fails; an absent and an empty tier are the same.
+func (c Catalog) tierDrift() []error {
+	var errs []error
+	want := ComputeTiers(c.Models, c.Pin)
+	for _, tier := range Tiers() {
+		if !slices.Equal(c.Tiers[tier], want[tier]) {
+			errs = append(errs, fmt.Errorf("tiers.%s: differs from the rule (run chezmoi agents models sync)", tier))
+		}
+	}
+	return errs
 }
 
 // TierOf returns the tier of id, or "" when it has none.

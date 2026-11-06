@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"cmp"
+	"math"
 	"slices"
 	"strings"
 )
@@ -15,6 +16,9 @@ import (
 //     (BlendInWeight, BlendOutWeight) picks the band: below BandVersatile is
 //     lightweight, below BandPowerful versatile, below BandExtra powerful,
 //     else extra. A price exactly on a limit belongs to the higher band.
+//     Prices are compared at micro-dollar precision, and each product is an
+//     explicit float64 conversion, so the band does not depend on whether the
+//     CPU fuses multiply-add.
 //  3. A model whose ECI is in the top quartile of the catalog (ECI > 0 and at
 //     least the k-th highest ECI, k = max(1, n/4), n the models with an ECI)
 //     moves up one band, never into extra.
@@ -38,7 +42,10 @@ const (
 
 // BlendedPrice is the input-weighted mean of the input and output price, $/Mtok.
 func BlendedPrice(p Price) float64 {
-	return (BlendInWeight*p.In + BlendOutWeight*p.Out) / (BlendInWeight + BlendOutWeight)
+	// The explicit conversions forbid fused multiply-add (Go spec), which
+	// would otherwise change the last bit per CPU architecture.
+	v := (float64(BlendInWeight*p.In) + float64(BlendOutWeight*p.Out)) / (BlendInWeight + BlendOutWeight)
+	return math.Round(v*1e6) / 1e6
 }
 
 // priceTier is the tier of a blended price.
