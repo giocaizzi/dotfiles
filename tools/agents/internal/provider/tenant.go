@@ -32,7 +32,6 @@ type tenantEntry struct {
 	inactive  bool
 	source    string
 	host      string // GitHub Enterprise URL or domain the login was made on, raw
-	hashKey   bool   // derive a GitHub Copilot key from the token (pi has no row id)
 }
 
 // account maps the entry to an Account.
