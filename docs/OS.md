@@ -455,13 +455,17 @@ Which model fits which job is kept here as tiers, with synced costs and ranks be
 
 ### Model tiers (`chezmoi-agents models`)
 
-Models are sorted by hand into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync adds costs from [models.dev](https://models.dev) (Anthropic, OpenAI, GitHub Copilot) and ranks from the LMArena leaderboard dataset (board `text_style_control`), plus Epoch AI benchmarks with `-external`. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
+Models are sorted by hand into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers` and ranks from the LMArena leaderboard dataset (board `text_style_control`), plus Epoch AI benchmarks with `-external`. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Every table has the same columns: model, provider, id, $in, $out, $cache, context, arena ranks, benchmarks. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
 
 - `chezmoi agents models`: validate the file and print the tiers and untiered models.
 - `chezmoi agents models sync [-external]`: fetch every source, rewrite `models.json` and `docs/MODELS.md`; all-or-nothing, nothing is written when a source fails.
 - `chezmoi agents models render [-check]`: regenerate `docs/MODELS.md` offline; `-check` only compares and runs in `make lint`.
 
-Manual keys: `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sources`, `syncedAt` (sync never touches the manual ones). Untiered is computed, not stored: every Copilot model, plus Anthropic and OpenAI models released on or after `since` that output text and support tool calls, minus the tiered and ignored ones.
+Manual keys: `providers`, `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sources`, `syncedAt` (sync never touches the manual ones). Schema 2.
+
+`providers` are models.dev provider keys (today `anthropic`, `google`, `moonshotai`, `openai`, `xai`), the same ids as the usage tool. Every price is the first-party provider's API price per million tokens (input, output, cache read; cache write is stored), whichever harness runs the model; a model with no first-party price shows `n/a`. Each model records `provider`, `id` (id at the provider's API), `name`, `releaseDate`, `context`, `api`.
+
+Untiered is computed, not stored: models listed by their first-party provider (the provider key is the prefix of the canonical id `<provider>/<id>`) released on or after `since` that output text, support tool calls and are not deprecated, minus the tiered and ignored ones.
 
 **Refresh the data**
 
@@ -472,6 +476,19 @@ Manual keys: `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sour
 3. `make check`, ship the PR.
 
 **Verify:** `chezmoi agents models render -check` exits 0.
+
+**Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
+
+**Track a new provider**
+
+**When:** a provider whose models should appear in the catalog.
+
+1. `dots models`: add its models.dev key to `providers`.
+2. `make models-sync` (network).
+3. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`; tier or `ignore` the new models, then `chezmoi agents models render`.
+4. `make check`, ship the PR.
+
+**Verify:** `chezmoi agents models render -check` exits 0 and the provider's models appear in `docs/MODELS.md`.
 
 **Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
 
