@@ -27,7 +27,7 @@ func (d Deps) runUsage(ctx context.Context, args []string) int {
 }
 
 // runUsageWith is runUsage with the credential store and the fetcher injected.
-func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.Store, f fetcher) int {
+func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.Store, f usageFetcher) int {
 	flags := newFlags("usage")
 	live := flags.Bool("live", false, "query every provider and rewrite the cache")
 	only := flags.String("provider", "", "limit the output to one provider id")
@@ -95,7 +95,7 @@ func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
 // cachedView is the default view: the cached snapshots, plus one row per
 // discovered account the cache lacks. Offline sources fill openai and google;
 // an account that cannot be queried shows why; the rest show "no data yet".
-func cachedView(accounts []provider.Account, cached []usg.Snapshot, f fetcher) []usg.Snapshot {
+func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetcher) []usg.Snapshot {
 	have := make(map[string]bool, len(cached))
 	for _, s := range cached {
 		have[snapKey(s.Provider, s.Account, s.Harnesses)] = true

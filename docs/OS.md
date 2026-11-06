@@ -119,19 +119,48 @@ chezmoi execute-template --init \
 
 ### Shared harness policy
 
-`.chezmoidata/harness-policy.toml` holds declarative cross-harness configurations across 8 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
+`.chezmoidata/harness-policy.toml` holds declarative cross-harness configurations across 9 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, voice input (dictation), and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
 
 | Harness | Shared policy adapter | Native settings and limits |
 |---|---|---|
-| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
-| Copilot CLI | Bell → `beep`; telemetry env injected | `native.copilot.agents` keeps per-agent model/effort bindings. |
-| VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme | Editor settings in `home/dot_config/Code/User/settings.json` checked via `chezmoi-agents check`. |
-| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
-| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env | LSP enabled, `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
-| pi | Shared instructions, MCP and plugin wiring; telemetry env | Bell via `sounds` plugin, native model and extension settings. |
-| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission | Managed via `antigravity-settings.json`. |
+| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
+| Copilot CLI | Bell → `beep`; telemetry env injected; voice: none (no documented key) | `native.copilot.agents` keeps per-agent model/effort bindings. |
+| VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` are static; `chezmoi-agents check` compares its voice keys (`dictation.enabled`, `agents.voice.language`) with the policy. |
+| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no native dictation) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
+| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no native dictation) | LSP enabled, `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
+| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation) | Bell via `sounds` plugin, native model and extension settings. |
+| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: none (no documented key) | Managed via `antigravity-settings.json`. |
 
 These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
+
+#### Voice input
+
+`[harnessPolicy.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the policy (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `chezmoi-agents check` (part of `make check`) fails on drift. Claude's template reads the policy and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the policy instead.
+
+| Harness | One-time steps and use | Limits |
+|---|---|---|
+| Claude Code | `/voice` or the managed setting; hold Space to record, Esc cancels | claude.ai sign-in only (no API key or Bedrock); audio goes to Anthropic; no SSH sessions. macOS: mic prompt for the terminal app, reset with `tccutil reset Microphone com.mitchellh.ghostty`. Linux: falls back to `arecord` or SoX. WSL: needs WSLg and `sox libsox-fmt-pulse` |
+| Copilot CLI | Run `/voice` once per machine (downloads runtime and model, multilingual default); hold Space or Ctrl+X V | Local transcription; macOS Apple Silicon, Linux x64, Windows x64/ARM64 |
+| VS Code | Cmd/Ctrl+I in chat; hold for push-to-talk | Local on desktop |
+| Antigravity | `/logout` and sign in once, then F5 | Not for business or enterprise accounts; docs cover macOS and Windows |
+| Codex, opencode, pi | None: use the OS dictation | No native dictation |
+
+OS dictation fallback (types into the focused terminal):
+
+| OS | Fallback |
+|---|---|
+| macOS | Dictation: Microphone key, or the shortcut in System Settings → Keyboard → Dictation |
+| Windows | Voice typing, Win+H (online) |
+| Linux | None built in (gap) |
+
+Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/163). Docs checked 2026-11-06.
+
+Change the voice preference:
+
+- When: dictation should be on or off, or switch between hold and tap, or auto-submit.
+- Steps: run `dots agents/policy` and edit `[harnessPolicy.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
+- Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
+- Rollback: `git restore` both files and apply again.
 
 To change the shared setup:
 
@@ -422,7 +451,41 @@ Workspace MCP servers are canonically configured in `.mcp.json` at the root of a
 
 ## Models and subscriptions
 
-What the harnesses can use and how much of it is left.
+Which model fits which job is kept here as tiers, with synced costs and ranks beside them. Subscription usage shows how much of each plan is left.
+
+### Model tiers (`chezmoi-agents models`)
+
+Models are sorted by hand into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync adds costs from [models.dev](https://models.dev) (Anthropic, OpenAI, GitHub Copilot) and ranks from the LMArena leaderboard dataset (board `text_style_control`), plus Epoch AI benchmarks with `-external`. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
+
+- `chezmoi agents models`: validate the file and print the tiers and untiered models.
+- `chezmoi agents models sync [-external]`: fetch every source, rewrite `models.json` and `docs/MODELS.md`; all-or-nothing, nothing is written when a source fails.
+- `chezmoi agents models render [-check]`: regenerate `docs/MODELS.md` offline; `-check` only compares and runs in `make lint`.
+
+Manual keys: `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sources`, `syncedAt` (sync never touches the manual ones). Untiered is computed, not stored: every Copilot model, plus Anthropic and OpenAI models released on or after `since` that output text and support tool calls, minus the tiered and ignored ones.
+
+**Refresh the data**
+
+**When:** whenever, e.g. monthly, or when a new model ships.
+
+1. `make models-sync` (network); `tools/agents/bin/chezmoi-agents models sync -external` also refreshes the benchmarks.
+2. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`; put each flagged untiered model in a tier (or in `ignore`) with `dots models`, then `chezmoi agents models render`.
+3. `make check`, ship the PR.
+
+**Verify:** `chezmoi agents models render -check` exits 0.
+
+**Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
+
+**Re-tier a model**
+
+**When:** a model moves tier, or a new one enters a tier.
+
+1. `dots models` (edits `models.json`; ids are `<org>/<id>` as in the table).
+2. `chezmoi agents models render` regenerates `docs/MODELS.md`.
+3. `make check`, ship the PR.
+
+**Verify:** `chezmoi agents models` shows the model in its tier.
+
+**Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
 
 ### Subscription usage (`chezmoi-agents usage`)
 

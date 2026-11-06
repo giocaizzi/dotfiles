@@ -22,7 +22,7 @@ import (
 // secret is the fake token every test uses; it must never reach a snapshot.
 const secret = "tok-SECRET-0123456789"
 
-var fixedNow = time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
+var usageNow = time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
 
 // seen is what the fake servers keep of a request.
 type seen struct {
@@ -48,10 +48,10 @@ func (r *recorder) all() []seen {
 	return append([]seen(nil), r.reqs...)
 }
 
-func testFetcher(t *testing.T, srv *httptest.Server) fetcher {
+func testFetcher(t *testing.T, srv *httptest.Server) usageFetcher {
 	t.Helper()
 	f := newFetcher(t.TempDir(), func(string) string { return "" })
-	f.now = func() time.Time { return fixedNow }
+	f.now = func() time.Time { return usageNow }
 	f.agyPath = func() (string, error) { return "", os.ErrNotExist }
 	if srv != nil {
 		f.anthropicURL, f.chatgptURL, f.githubURL = srv.URL, srv.URL, srv.URL
@@ -121,7 +121,7 @@ func TestFetchAnthropicHeaders(t *testing.T) {
 		}
 	}
 	if snap.Provider != provider.Anthropic || snap.Account != "me@example.com" ||
-		!cmp.Equal(snap.Harnesses, []string{"h1", "h2"}) || snap.Plan.Name != "Plus" || !snap.FetchedAt.Equal(fixedNow) {
+		!cmp.Equal(snap.Harnesses, []string{"h1", "h2"}) || snap.Plan.Name != "Plus" || !snap.FetchedAt.Equal(usageNow) {
 		t.Errorf("snapshot identity wrong: %+v", snap)
 	}
 	if snap.Status != usg.StatusOK || snap.Source != sourceAPI {

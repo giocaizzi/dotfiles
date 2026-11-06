@@ -79,6 +79,11 @@ desc = "giocaizzi/harness plugins per harness"
 source = ".chezmoidata/harness.toml"
 check = ["chezmoi-agents", "check", "-file", "{file}"]
 
+[edit.models]
+desc = "Model tiers (manual) and synced model data"
+source = ".chezmoidata/models.json"
+note = "Regenerate docs/MODELS.md: chezmoi agents models render"
+
 [edit."claude/settings"]
 desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
 source = ".chezmoitemplates/claude-settings.json"

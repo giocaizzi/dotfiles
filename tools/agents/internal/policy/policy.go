@@ -12,6 +12,7 @@ type Policy struct {
 	Notifications Notifications `json:"notifications" toml:"notifications"`
 	Telemetry     Telemetry     `json:"telemetry"     toml:"telemetry"`
 	LSP           LSP           `json:"lsp"           toml:"lsp"`
+	Voice         Voice         `json:"voice"         toml:"voice"`
 	Native        Native        `json:"native"        toml:"native"`
 }
 
@@ -99,6 +100,14 @@ type LSP struct {
 	TypeScript string   `json:"typescript,omitempty" toml:"typescript,omitempty"`
 	Go         string   `json:"go,omitempty"         toml:"go,omitempty"`
 	Servers    []string `json:"servers,omitempty"    toml:"servers,omitempty"`
+}
+
+// Voice configures dictation (voice input) where a harness supports it natively.
+type Voice struct {
+	Enabled    bool   `json:"enabled,omitempty"    toml:"enabled,omitempty"`
+	Mode       string `json:"mode,omitempty"       toml:"mode,omitempty"`
+	AutoSubmit bool   `json:"autoSubmit,omitempty" toml:"autoSubmit,omitempty"`
+	Language   string `json:"language,omitempty"   toml:"language,omitempty"`
 }
 
 // Native holds harness-specific configuration settings and overrides.

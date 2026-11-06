@@ -21,7 +21,7 @@ ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help dots agents lint test test-syntax check check-fast aliases-audit usage
+.PHONY: help dots agents models-sync lint test test-syntax check check-fast aliases-audit usage
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -32,6 +32,9 @@ dots: ## Build the chezmoi-dots plugin into tools/dots/bin/
 agents: ## Build chezmoi-agents into tools/agents/bin/
 	@$(MAKE) --no-print-directory -C tools/agents build
 
+models-sync: agents ## Refresh model data and docs/MODELS.md (network)
+	tools/agents/bin/chezmoi-agents models sync
+
 usage: agents ## Show subscription usage per provider account (live, needs the network)
 	@tools/agents/bin/chezmoi-agents usage -live
 
@@ -40,6 +43,7 @@ lint: dots agents ## shellcheck, validate JSON, lint registries, templates, poli
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
 	tools/agents/bin/chezmoi-agents check
+	tools/agents/bin/chezmoi-agents models render -check
 	$(MAKE) -C tools/dots lint
 	$(MAKE) -C tools/agents lint
 

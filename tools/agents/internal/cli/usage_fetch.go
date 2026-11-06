@@ -34,7 +34,7 @@ const (
 
 // fetcher queries the providers. Base URLs and the agy lookup are fields so
 // tests can point them at httptest servers and a fake script.
-type fetcher struct {
+type usageFetcher struct {
 	client       *http.Client
 	anthropicURL string
 	chatgptURL   string
@@ -45,8 +45,8 @@ type fetcher struct {
 	now          func() time.Time
 }
 
-func newFetcher(home string, getenv func(string) string) fetcher {
-	return fetcher{
+func newFetcher(home string, getenv func(string) string) usageFetcher {
+	return usageFetcher{
 		client:       &http.Client{Timeout: liveTimeout},
 		anthropicURL: "https://api.anthropic.com",
 		chatgptURL:   "https://chatgpt.com",
@@ -60,14 +60,14 @@ func newFetcher(home string, getenv func(string) string) fetcher {
 
 // statusError is an HTTP answer outside 2xx. It carries the code only: never a
 // header or a body, which could echo a token.
-type statusError struct{ code int }
+type usageStatusError struct{ code int }
 
-func (e statusError) Error() string { return "HTTP " + strconv.Itoa(e.code) }
+func (e usageStatusError) Error() string { return "HTTP " + strconv.Itoa(e.code) }
 
 // failNote turns a request error into the note shown for the account. It never
 // includes a URL query, a header or a body.
 func failNote(err error) string {
-	var se statusError
+	var se usageStatusError
 	switch {
 	case errors.As(err, &se):
 		switch se.code {
@@ -86,7 +86,7 @@ func failNote(err error) string {
 	return "unavailable: " + err.Error()
 }
 
-func (f fetcher) base(acct provider.Account) usg.Snapshot {
+func (f usageFetcher) base(acct provider.Account) usg.Snapshot {
 	return usg.Snapshot{
 		Provider:  acct.Provider,
 		Account:   acct.Label,
@@ -106,7 +106,7 @@ func unavailable(s usg.Snapshot, note string) usg.Snapshot {
 
 // fetch queries one account. It never returns an error: a failure is the
 // snapshot's status.
-func (f fetcher) fetch(ctx context.Context, acct provider.Account, timeout time.Duration) usg.Snapshot {
+func (f usageFetcher) fetch(ctx context.Context, acct provider.Account, timeout time.Duration) usg.Snapshot {
 	snap := f.base(acct)
 	if acct.Status != "" && acct.Status != usg.StatusOK {
 		snap.Status = acct.Status
@@ -133,7 +133,7 @@ func (f fetcher) fetch(ctx context.Context, acct provider.Account, timeout time.
 
 // get performs one GET and returns the body (at most 1 MiB). A non-2xx answer
 // is a statusError.
-func (f fetcher) get(ctx context.Context, rawURL string, header map[string]string) ([]byte, error) {
+func (f usageFetcher) get(ctx context.Context, rawURL string, header map[string]string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return nil, errors.New("bad request")
@@ -149,7 +149,7 @@ func (f fetcher) get(ctx context.Context, rawURL string, header map[string]strin
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxBody))
-		return nil, statusError{resp.StatusCode}
+		return nil, usageStatusError{resp.StatusCode}
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
 	if err != nil {
@@ -158,7 +158,7 @@ func (f fetcher) get(ctx context.Context, rawURL string, header map[string]strin
 	return body, nil
 }
 
-func (f fetcher) fetchAnthropic(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
+func (f usageFetcher) fetchAnthropic(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
 	body, err := f.get(ctx, f.anthropicURL+"/api/oauth/usage", map[string]string{
 		hdrAuth:          "Bearer " + acct.Cred.Token(),
 		"anthropic-beta": "oauth-2025-04-20",
@@ -176,7 +176,7 @@ func (f fetcher) fetchAnthropic(ctx context.Context, acct provider.Account, snap
 	return snap
 }
 
-func (f fetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
+func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
 	header := map[string]string{
 		hdrAuth:      "Bearer " + acct.Cred.Token(),
 		"originator": "codex_cli_rs",
@@ -211,14 +211,14 @@ func (f fetcher) fetchOpenAI(ctx context.Context, acct provider.Account, snap us
 	return snap
 }
 
-func (f fetcher) fetchCopilot(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
+func (f usageFetcher) fetchCopilot(ctx context.Context, acct provider.Account, snap usg.Snapshot) usg.Snapshot {
 	token := acct.Cred.Token()
 	scheme := "token "
 	body, err := f.get(ctx, f.githubURL+"/copilot_internal/user", map[string]string{
 		hdrAuth:   scheme + token,
 		hdrAccept: jsonType,
 	})
-	var se statusError
+	var se usageStatusError
 	if errors.As(err, &se) && se.code == http.StatusUnauthorized {
 		scheme = "Bearer "
 		body, err = f.get(ctx, f.githubURL+"/copilot_internal/user", map[string]string{
@@ -259,7 +259,7 @@ func (f fetcher) fetchCopilot(ctx context.Context, acct provider.Account, snap u
 	return snap
 }
 
-func (f fetcher) fetchAgy(ctx context.Context, snap usg.Snapshot, timeout time.Duration) usg.Snapshot {
+func (f usageFetcher) fetchAgy(ctx context.Context, snap usg.Snapshot, timeout time.Duration) usg.Snapshot {
 	if body, err := f.runAgy(ctx, timeout); err == nil {
 		if limits, perr := usg.ParseAgyUsage(body); perr == nil {
 			snap.Limits = limits
@@ -274,7 +274,7 @@ func (f fetcher) fetchAgy(ctx context.Context, snap usg.Snapshot, timeout time.D
 	return unavailable(snap, agyUnavailable)
 }
 
-func (f fetcher) runAgy(ctx context.Context, timeout time.Duration) ([]byte, error) {
+func (f usageFetcher) runAgy(ctx context.Context, timeout time.Duration) ([]byte, error) {
 	path, err := f.agyPath()
 	if err != nil {
 		return nil, err
@@ -308,7 +308,7 @@ func (l *limitWriter) Write(p []byte) (int, error) {
 
 // agyLogFallback reads the newest Antigravity CLI log for an exhausted window
 // that has not reset yet.
-func (f fetcher) agyLogFallback(acct provider.Account) (usg.Snapshot, bool) {
+func (f usageFetcher) agyLogFallback(acct provider.Account) (usg.Snapshot, bool) {
 	dir := filepath.Join(f.home, ".gemini", "antigravity-cli", "log")
 	names, err := filepath.Glob(filepath.Join(dir, "cli-*.log"))
 	if err != nil || len(names) == 0 {
@@ -352,7 +352,7 @@ func (f fetcher) agyLogFallback(acct provider.Account) (usg.Snapshot, bool) {
 
 // codexSessionFallback reads the newest rate-limit snapshot Codex wrote in its
 // session logs, looking at the last 7 day directories.
-func (f fetcher) codexSessionFallback(acct provider.Account) (usg.Snapshot, bool) {
+func (f usageFetcher) codexSessionFallback(acct provider.Account) (usg.Snapshot, bool) {
 	root := filepath.Join(f.home, ".codex")
 	if f.getenv != nil {
 		if h := f.getenv("CODEX_HOME"); h != "" {
@@ -388,7 +388,7 @@ func recentDays(root string, n int) []string {
 	return days
 }
 
-func (f fetcher) codexSnapshot(acct provider.Account, name string) (usg.Snapshot, bool) {
+func (f usageFetcher) codexSnapshot(acct provider.Account, name string) (usg.Snapshot, bool) {
 	file, err := os.Open(filepath.Clean(name))
 	if err != nil {
 		return usg.Snapshot{}, false
@@ -429,7 +429,7 @@ func sortedDirs(dir string) []string {
 
 // liveSnapshots fetches every account in parallel, perProvider each, and
 // returns the snapshots in the order of accounts.
-func liveSnapshots(ctx context.Context, accounts []provider.Account, f fetcher, perProvider time.Duration) []usg.Snapshot {
+func liveSnapshots(ctx context.Context, accounts []provider.Account, f usageFetcher, perProvider time.Duration) []usg.Snapshot {
 	out := make([]usg.Snapshot, len(accounts))
 	var wg sync.WaitGroup
 	for i, acct := range accounts {

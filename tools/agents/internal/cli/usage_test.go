@@ -36,7 +36,7 @@ func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]
 func (fakeStore) Getenv(string) string                  { return "" }
 func (s fakeStore) Home() string                        { return s.home }
 func (fakeStore) GOOS() string                          { return "linux" }
-func (fakeStore) Now() time.Time                        { return fixedNow }
+func (fakeStore) Now() time.Time                        { return usageNow }
 func (fakeStore) OpencodeCredentials(string) ([]provider.OpencodeRow, error) {
 	return nil, fs.ErrNotExist
 }
@@ -106,8 +106,8 @@ func TestRunUsageLiveWritesCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("cache not readable: %v", err)
 	}
-	if !c.WrittenAt.Equal(fixedNow) {
-		t.Errorf("WrittenAt = %v, want %v", c.WrittenAt, fixedNow)
+	if !c.WrittenAt.Equal(usageNow) {
+		t.Errorf("WrittenAt = %v, want %v", c.WrittenAt, usageNow)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestUsageCacheRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "sub", "usage.json")
 	snaps := sampleSnapshots()
 
-	if err := writeUsageCache(path, snaps, fixedNow); err != nil {
+	if err := writeUsageCache(path, snaps, usageNow); err != nil {
 		t.Fatal(err)
 	}
 	if runtime.GOOS != "windows" {
@@ -140,7 +140,7 @@ func TestUsageCacheRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !got.WrittenAt.Equal(fixedNow) {
+	if !got.WrittenAt.Equal(usageNow) {
 		t.Errorf("WrittenAt = %v", got.WrittenAt)
 	}
 	if diff := cmp.Diff(sortSnapshots(snaps), sortSnapshots(got.Snapshots)); diff != "" {
@@ -245,7 +245,7 @@ func TestCachedViewUsesOfflineSources(t *testing.T) {
 
 func TestKeepStale(t *testing.T) {
 	t.Parallel()
-	old := fixedNow.Add(-time.Hour)
+	old := usageNow.Add(-time.Hour)
 	cached := []usg.Snapshot{
 		{Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", FetchedAt: old, Limits: []usg.Limit{{Name: "5h"}}},
 		{Provider: "openai", Account: "b", Harnesses: []string{"codex"}, Status: usg.StatusExpired, FetchedAt: old},
@@ -281,7 +281,7 @@ func TestRunUsageEndToEnd(t *testing.T) {
 	}))
 	defer srv.Close()
 	f := testFetcher(t, srv)
-	expires := fixedNow.Add(time.Hour).UnixMilli()
+	expires := usageNow.Add(time.Hour).UnixMilli()
 	store := fakeStore{home: "/h", files: map[string]string{
 		"/h/.claude/.credentials.json": fmt.Sprintf(`{"claudeAiOauth":{"accessToken":%q,"expiresAt":%d,"subscriptionType":"max","rateLimitTier":"default_claude_max_5x"}}`, secret, expires),
 	}}

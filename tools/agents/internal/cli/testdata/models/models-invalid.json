@@ -1,0 +1,17 @@
+{
+  "modelCatalog": {
+    "schema": 1,
+    "since": "2026-01-01",
+    "sources": {
+      "arena": {
+        "board": "text_style_control"
+      }
+    },
+    "tiers": {
+      "powerful": [
+        "anthropic/does-not-exist"
+      ]
+    },
+    "models": {}
+  }
+}
