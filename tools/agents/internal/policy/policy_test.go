@@ -152,6 +152,8 @@ func TestValidate_LSP(t *testing.T) {
 		{"no extensions", with(func(s *policy.LSPServer) { s.Extensions = nil }), []string{"lsp.server.s.extensions is empty"}},
 		{"extension without dot", with(func(s *policy.LSPServer) { s.Extensions = map[string]string{"x": "x"} }), []string{`extensions key "x" must start with`}},
 		{"empty language id", with(func(s *policy.LSPServer) { s.Extensions = map[string]string{".x": ""} }), []string{`extensions[".x"] has an empty language id`}},
+		{"blank filetype", with(func(s *policy.LSPServer) { s.Filetypes = []string{"sh", " "} }), []string{"lsp.server.s.filetypes has an empty entry"}},
+		{"filetypes ok", with(func(s *policy.LSPServer) { s.Filetypes = []string{"sh", "bash"} }), nil},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

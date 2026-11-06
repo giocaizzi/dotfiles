@@ -40,6 +40,9 @@ func (p Policy) validateLSP(where string) []finding.Finding {
 		if len(srv.Extensions) == 0 {
 			fs = append(fs, finding.New(where, "lsp.server.%s.extensions is empty", name))
 		}
+		if slices.ContainsFunc(srv.Filetypes, func(ft string) bool { return strings.TrimSpace(ft) == "" }) {
+			fs = append(fs, finding.New(where, "lsp.server.%s.filetypes has an empty entry", name))
+		}
 		for _, ext := range slices.Sorted(maps.Keys(srv.Extensions)) {
 			if !strings.HasPrefix(ext, ".") {
 				fs = append(fs, finding.New(where, "lsp.server.%s.extensions key %q must start with \".\"", name, ext))

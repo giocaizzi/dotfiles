@@ -101,11 +101,12 @@ type LSP struct {
 }
 
 // LSPServer describes one language server: its packages.toml row, the argv that
-// starts it on stdio, the file extensions it serves and whether editors format with it.
+// starts it on stdio, the file extensions it serves, the Vim filetypes it attaches to and whether editors format with it.
 type LSPServer struct {
 	Package    string            `json:"package,omitempty"    toml:"package,omitempty"`
 	Command    []string          `json:"command,omitempty"    toml:"command,omitempty"`
 	Extensions map[string]string `json:"extensions,omitempty" toml:"extensions,omitempty"`
+	Filetypes  []string          `json:"filetypes,omitempty"  toml:"filetypes,omitempty"`
 	Format     bool              `json:"format,omitempty"     toml:"format,omitempty"`
 }
 
