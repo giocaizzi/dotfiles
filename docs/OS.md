@@ -14,6 +14,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
 | `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
+| `dot_copilot/modify_private_lsp-config.json` (merge) | `~/.copilot/lsp-config.json`                                | `~/.copilot/lsp-config.json`                   | `~/.copilot/lsp-config.json`                                                       |
 | `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; `hud` the status line (both CLIs) and the Claude band and pane; `sounds` the Claude toasts and sounds; full machines only |
 | `.chezmoidata/aliases.toml` (+ `.aliases.private.toml.age`) | `~/.config/shell/aliases.sh`, `~/.config/shell/omz-aliases.zsh` | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
@@ -125,11 +126,11 @@ chezmoi execute-template --init \
 
 | Harness | Shared policy adapter | Native settings and limits |
 |---|---|---|
-| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
-| Copilot CLI | Bell → `beep`; telemetry env injected; voice: none (no documented key) | `native.copilot.agents` keeps per-agent model/effort bindings. |
+| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`); LSP: none from the policy, only from plugins (the official `pyright-lsp`, `typescript-lsp`, `gopls-lsp`) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
+| Copilot CLI | Bell → `beep`; telemetry env injected; voice: none (no documented key); LSP servers → `~/.copilot/lsp-config.json` (`modify_private_lsp-config.json`) | `native.copilot.agents` keeps per-agent model/effort bindings. |
 | VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` are static; `chezmoi-agents check` compares its voice keys (`dictation.enabled`, `agents.voice.language`) with the policy. |
 | Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no native dictation) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
-| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no native dictation) | LSP enabled, `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
+| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no native dictation) | LSP servers from the policy (override the built-ins of the same name), `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
 | pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation) | Bell via `sounds` plugin, native model and extension settings. |
 | Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: none (no documented key) | Managed via `antigravity-settings.json`. |
 
@@ -163,6 +164,21 @@ Change the voice preference:
 - Steps: run `dots agents/policy` and edit `[harnessPolicy.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
 - Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
 - Rollback: `git restore` both files and apply again.
+
+#### Language servers
+
+Each server is a `[harnessPolicy.lsp.server.<name>]` entry in the policy: `package` (its row in `packages.toml`), `command` (argv), `extensions` (`".ext"` → language id) and `format` (format on save). `.chezmoitemplates/lsp-servers` returns the servers whose package installs on this role and OS (`{}` when `lsp.enabled` is false); every consumer reads it.
+
+| Consumer | Where |
+|---|---|
+| Copilot CLI | `~/.copilot/lsp-config.json` `lspServers` (`modify_private_lsp-config.json`: `command`, `args`, `fileExtensions`; other servers stay) |
+| opencode | `lsp` in `opencode.jsonc` (`modify_opencode.jsonc`: `command`, `extensions`; a name equal to a built-in overrides it, the other built-ins stay on) |
+| Vim | `.chezmoitemplates/vim-lsp.vim` → `~/.config/vim/plugin/lsp.vim` (Unix), `~/vimfiles/plugin/lsp.vim` (Windows); client `yegappan/lsp`, pinned in `.chezmoiexternal.toml.tmpl`; servers registered on `User LspSetup`, format on save for those with `format = true` |
+| VS Code | Static settings, set by hand to match: `js/ts.experimental.useTsgo`, the `TypeScriptTeam.native-preview` extension (TypeScript 7), the Go extension using gopls |
+
+Claude Code gets LSP only from plugins. Codex, pi and Antigravity CLI have no native LSP config, so none is written.
+
+TypeScript is TypeScript 7, whose own `tsc --lsp --stdio` is the server (source: `tsc/cmd/tsc/main.go` and `lsp.go` in microsoft/TypeScript); the `typescript` npm package floats to the latest release. To add a server: a policy entry plus its package row.
 
 To change the shared setup:
 

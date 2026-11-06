@@ -1,0 +1,14 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /* Language servers from the policy ([harnessPolicy.lsp.server.*], selected per machine by
+       .chezmoitemplates/lsp-servers) merged into Copilot CLI's user LSP config. A server of
+       the same name is overwritten; other servers and keys stay. */ -}}
+{{- $current := dict -}}
+{{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- $servers := get $current "lspServers" | default dict -}}
+{{- range $name, $s := includeTemplate "lsp-servers" . | fromJson -}}
+{{-   $entry := dict "command" (first $s.command) "fileExtensions" $s.extensions -}}
+{{-   if gt (len $s.command) 1 }}{{ $_ := set $entry "args" (rest $s.command) }}{{ end -}}
+{{-   $_ := set $servers $name $entry -}}
+{{- end -}}
+{{- $_ := set $current "lspServers" $servers -}}
+{{- $current | toPrettyJson }}
