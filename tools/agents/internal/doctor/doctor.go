@@ -8,6 +8,7 @@ package doctor
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/catalog"
@@ -143,10 +144,66 @@ func Loud(fs []Finding) bool {
 	return false
 }
 
+// harnessOrder is the display order of the harnesses.
+func harnessOrder() []string {
+	return []string{hClaude, hCopilot, hCodex, hAntigravity, hOpenCode, hPi}
+}
+
+// Harness names.
+const (
+	hClaude      = "claude"
+	hCopilot     = "copilot"
+	hCodex       = "codex"
+	hAntigravity = "antigravity"
+	hOpenCode    = "opencode"
+	hPi          = "pi"
+)
+
 // Settings lists the configured models of the given harnesses from the
-// policy, in harness then role order.
-func Settings(_ policy.Policy, _ []string) []Setting {
-	return nil // TODO(doctor): implemented in its own unit
+// policy, in harness then role order. Harness names it does not know are
+// ignored.
+func Settings(p policy.Policy, harnesses []string) []Setting {
+	var out []Setting
+	for _, h := range harnessOrder() {
+		if !slices.Contains(harnesses, h) {
+			continue
+		}
+		for _, role := range Roles() {
+			model := p.Models.Tiers[role].Model
+			key := "harnessPolicy.models.tiers." + role
+			if h == hCopilot {
+				if b, ok := p.Native.Copilot.Agents["dev-tools:"+role]; ok && b.Model != "" {
+					model = b.Model
+					key = fmt.Sprintf("harnessPolicy.native.copilot.agents.%q", "dev-tools:"+role)
+				}
+			}
+			if model != "" {
+				out = append(out, Setting{Harness: h, Role: role, Model: model, Key: key})
+			}
+		}
+		if s, ok := defaultSetting(p, h); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+// defaultSetting is the harness's own default model, for the harnesses whose
+// native settings have one.
+func defaultSetting(p policy.Policy, h string) (Setting, bool) {
+	s := Setting{Harness: h, Role: RoleDefault}
+	switch h {
+	case hCodex:
+		if p.Native.Codex.Model == nil {
+			return s, false
+		}
+		s.Model, s.Key = *p.Native.Codex.Model, "harnessPolicy.native.codex.model"
+	case hPi:
+		s.Model, s.Provider, s.Key = p.Native.Pi.DefaultModel, p.Native.Pi.DefaultProvider, "harnessPolicy.native.pi.defaultModel"
+	case hOpenCode:
+		s.Model, s.Key = p.Native.OpenCode.DefaultModel, "harnessPolicy.native.opencode.defaultModel"
+	}
+	return s, s.Model != ""
 }
 
 // Check runs every check and returns the findings: global ones first, then
@@ -155,6 +212,19 @@ func Check(in Input) []Finding {
 	var out []Finding
 	if f, ok := staleCatalog(in.Catalog, in.Now); ok {
 		out = append(out, f)
+	}
+	rs := resolveAll(in.Catalog, in.Settings)
+	out = append(out, unknownModels(rs)...)
+	out = append(out, tierDrifts(in.Catalog, rs)...)
+	if !in.HaveUsage {
+		return append(out, Finding{
+			Level: LevelInfo, Kind: KindNoUsage,
+			Text: "no usage data yet: account, capacity and model checks skipped",
+			Fix:  "chezmoi agents usage -live",
+		})
+	}
+	for _, h := range in.Harnesses {
+		out = append(out, harnessFindings(in, h, rs)...)
 	}
 	return out
 }
