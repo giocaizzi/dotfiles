@@ -159,3 +159,48 @@ func TestSetReleaseErrors(t *testing.T) {
 		t.Error("checksum without a line: want an error")
 	}
 }
+
+func TestValidateVersionCmd(t *testing.T) {
+	t.Parallel()
+	const want = "versionCmd must be a non-empty argv list"
+	for _, tt := range []struct {
+		name string
+		v    any
+		ok   bool
+	}{
+		{"valid", []any{"{dest}", "version"}, true},
+		{"empty list", []any{}, false},
+		{"empty string", []any{""}, false},
+		{"not a list", "x --version", false},
+		{"non-string", []any{1}, false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			d := validData()
+			rels, _ := d["release"].(map[string]any)
+			x, _ := rels["x"].(map[string]any)
+			x["versionCmd"] = tt.v
+			d["package"] = map[string]any{"p": map[string]any{"brew": "p", "versionCmd": tt.v}}
+			got := finding.Lines(Validate(d))
+			if tt.ok && got != "" {
+				t.Errorf("Validate() = %q, want none", got)
+			}
+			if !tt.ok && strings.Count(got, want) != 2 {
+				t.Errorf("Validate() = %q, want %q for both the release and the package", got, want)
+			}
+		})
+	}
+}
+
+func TestSetReleaseLeavesVersionCmd(t *testing.T) {
+	t.Parallel()
+	text := "[release.x]\nversionCmd = [\"{dest}\", \"version\"]\nversion = \"1.0.0\"\n\n[release.x.sha256]\n"
+	got, err := SetRelease(text, "x", "2.0.0", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := strings.Replace(text, `"1.0.0"`, `"2.0.0"`, 1)
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("SetRelease() (-want +got):\n%s", diff)
+	}
+}

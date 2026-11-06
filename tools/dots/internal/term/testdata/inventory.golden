@@ -1,0 +1,39 @@
+chezmoi dots outdated — every tool on this machine   darwin · personal · online
+
+Pinned releases (4)
+  TOOL            INSTALLED  PINNED  LATEST  STATE
+  age             1.2.1      1.2.1   1.2.1   ✓ up to date
+  chezmoi-agents  0.7.0      0.7.1   0.7.1   ≠ drifted
+  gitleaks        8.28.0     8.28.0  8.30.0  ↑ outdated
+  shfmt           —          3.12.0  3.12.0  ✗ not installed
+
+Homebrew (2)
+  TOOL          INSTALLED  LATEST  STATE
+  fd (fd-find)  10.2.0     10.3.0  ↑ outdated
+  jq            1.8.1      1.8.1   ✓ up to date
+  latest versions come from brew outdated
+
+uv tools (1)
+  TOOL  INSTALLED  LATEST   STATE
+  ruff  0.14.0     unknown  ? unknown
+  offline: latest versions not looked up
+
+npm tools (2)
+  TOOL        INSTALLED  PINNED  LATEST  STATE
+  typescript  6.0.1      5       5.9.2   ≠ drifted
+  prettier    3.6.0      —       3.6.0   ✓ up to date
+
+Official installers (1)
+  TOOL  INSTALLED  LATEST   STATE
+  bun   —          unknown  ✗ not installed
+
+source  main · 2 behind upstream · 3 local changes · fetched 3h ago
+summary 10 tools · 3 up to date · 2 outdated · 2 drifted · 2 not installed · 1 unknown
+
+next
+  chezmoi dots upgrade dotfiles  pull 2 commits from origin/main, then re-run
+  chezmoi dots bump gitleaks     pin the newer release
+  chezmoi apply                  install the pinned chezmoi-agents, shfmt
+  chezmoi dots upgrade brew      upgrade 1 brew package
+  npm install -g typescript@5    back to the registry pin
+  not installed: bun (the install script runs when packages.toml changes; docs/OS.md#packages)

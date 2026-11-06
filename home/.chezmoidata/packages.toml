@@ -18,6 +18,8 @@
 #   agents   = true: named to AI agents as available (agent instructions, env layer)
 #   script   = OSes where the install script has its own step for it (an official
 #              installer or a repo to add); the step is named after <name>
+#   versionCmd = argv that prints the installed version, for `chezmoi dots outdated`
+#              (the first dotted number is the version; default ["<cmd or name>", "--version"])
 #
 # [release.<name>]  a binary from a release page, installed by chezmoi itself as an
 #                   external (.chezmoiexternal.toml.tmpl) and verified by checksum
@@ -31,9 +33,11 @@
 #   exe      = true: ".exe" is appended to path and dest on Windows
 #   stripComponents = archive path components to drop
 #   roles    = as above
+#   versionCmd = as above; {dest} expands to the installed path (default ["{dest}", "--version"])
 #
-# Update: `chezmoi dots outdated` lists newer releases, `chezmoi dots bump` rewrites
-# versions and checksums here (docs/OS.md#packages).
+# Update: `chezmoi dots outdated` shows every tool with its installed, pinned and latest
+# versions, `chezmoi dots bump` rewrites release versions and checksums here
+# (docs/OS.md#packages).
 # ----------------------------------------------------------------------------
 
 # --- Core: every machine ---
@@ -201,6 +205,7 @@ brew = true
 
 [package.gopls]
 roles = ["personal"]
+versionCmd = ["gopls", "version"]
 brew = true
 script = ["linux"] # go install, with the Go release below
 
@@ -289,6 +294,7 @@ target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
 # Official toolchain (apt's golang-go lags), per user.
 roles = ["personal"]
 version = "1.27.3"
+versionCmd = ["{dest}/bin/go", "version"]
 url = "https://go.dev/dl/go{version}.linux-{target}.tar.gz"
 type = "archive"
 dest = ".local/go"
@@ -334,6 +340,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 # The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
 # on a dots-vX.Y.Z tag. A bare binary per platform.
 version = "0.4.0"
+versionCmd = ["{dest}", "version"]
 url = "https://github.com/giocaizzi/dotfiles/releases/download/dots-v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
 exe = true

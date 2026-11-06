@@ -275,7 +275,36 @@ Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`;
 - `[package.<name>]`: installed by the install scripts with the platform's native manager (brew on macOS, apt on Linux, winget on Windows), plus uv, npm, an Azure CLI extension or a PowerShell module, per role (`light`, `work`, `personal`). `agents = true` also names the tool to AI agents in the environment layer of the [agent instructions](#agent-instructions).
 - `[release.<name>]`: a binary from a release page, pinned by version and checksum and installed by chezmoi as an external into `~/.local/bin` (no sudo, no package manager).
 
-`chezmoi dots lint packages` (part of `make check`) validates both tables, including that every release target has a 64-hex sha256.
+`chezmoi dots lint packages` (part of `make check`) validates both tables, including that every release target has a 64-hex sha256 and that an optional `versionCmd` is a non-empty list of strings.
+
+**What `chezmoi dots outdated` shows**
+
+`chezmoi dots outdated [--offline] [--fetch] [--check]` prints every tool the registry gives this machine (its OS and role), one table per source: pinned releases, then the OS's manager (Homebrew formulae and casks, apt, winget), uv tools, npm tools and official installers (entries with `script` for this OS and no native-manager key). Columns: `TOOL`, `INSTALLED`, `PINNED` (releases, and npm specs that pin a version), `LATEST`, `STATE`.
+
+- States: `up to date`; `outdated` (upstream has a newer release than the pin, or the manager knows a newer package); `drifted` (installed differs from the pin, e.g. after a pull before `chezmoi apply`); `not installed`; `unknown`.
+- Footer: a `source` line (this checkout against its upstream from the last fetched refs: behind/ahead, local changes, when last fetched), a `summary` line and `next` hints per state (`chezmoi dots upgrade dotfiles`, `chezmoi dots bump <release>`, `chezmoi apply`, `chezmoi dots upgrade <brew|apt|winget|uv|npm>`).
+- Installed: the manager's local query, or, for releases and official installers, the tool's version command (`versionCmd`, run without a shell, with a timeout). Latest: releases from upstream tags; brew and apt from their local index as of the last `brew update` / `apt update`; uv and npm from their registries; winget and official installers are not looked up. Lookups run in parallel with timeouts and never print command output.
+- `--offline` skips every network lookup (LATEST shows `unknown`, never an error); `--fetch` runs `git fetch` on the dotfiles first; `--check` exits 1 when anything is outdated, drifted or not installed (the overview alone always exits 0).
+
+| Command | Moves | Reads |
+|---|---|---|
+| `chezmoi dots outdated` | nothing | remote (upstream releases, `origin/main`), source (`packages.toml` pins), installed |
+| `chezmoi dots bump` | remote → source (pins in `packages.toml`) | upstream releases |
+| `chezmoi apply` | source → installed (the pins) | this checkout |
+| `chezmoi dots upgrade` | remote → source → installed (`chezmoi update`), plus system packages, uv and npm tools | |
+
+Releases move only with a bump. `upgrade` still ends with the release-only check.
+
+**Add a version command**
+
+**When:** a tool's installed version shows `unknown` because `--version` does not print it.
+
+1. Add `versionCmd = [...]` to its entry in `packages.toml` (argv; `{dest}` expands to a release's installed path). The first dotted number in the output is the version.
+2. `chezmoi dots lint packages`.
+
+**Verify:** `chezmoi dots outdated --offline` shows the tool's installed version.
+
+**Rollback:** remove the key; the default applies.
 
 **Update everything on this machine**
 
@@ -284,11 +313,11 @@ Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`;
 1. `chezmoi dots upgrade`: updates the dotfiles (`chezmoi update --refresh-externals`), then the system packages (brew on macOS, apt on Linux, winget on Windows), uv tools, global npm tools and, on Windows, PowerShell modules. A step whose tool is missing is skipped; a failing step does not stop the others. `--dry-run` prints the plan, and naming steps (`chezmoi dots upgrade brew npm`) runs only those.
 2. Pinned release binaries do not move with it: they change when the pin changes (below), then `chezmoi apply` fetches the new version.
 
-**Verify:** `chezmoi dots outdated` lists nothing; `chezmoi status` prints nothing.
+**Verify:** `chezmoi dots outdated` shows every tool up to date; `chezmoi status` prints nothing.
 
 **Bump the pinned release binaries**
 
-**When:** `chezmoi dots outdated` lists a newer version (the weekly `bump-releases` workflow opens a PR for this too).
+**When:** `chezmoi dots outdated` marks a release outdated (the weekly `bump-releases` workflow opens a PR for this too).
 
 1. `chezmoi dots bump` (or `chezmoi dots bump <release>...`; `--dry-run` previews): finds the newest tag of each release (git tags on GitHub/GitLab, go.dev for Go), downloads the assets for every target, and rewrites the version and sha256 lines in `packages.toml`, leaving comments and order alone.
 2. Review the diff, `make check`, ship the PR; `chezmoi apply` installs the new versions.
