@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 	"time"
@@ -59,10 +61,33 @@ func TestCodex(t *testing.T) {
 	t.Run("keyring fallback", func(t *testing.T) {
 		t.Parallel()
 		f := newFake("darwin")
-		f.secrets["Codex Auth\x00"] = codexAuthJSON(t, access, id, "acct-1")
+		f.secrets["Codex Auth\x00"+codexStoreKey(f.path(".codex"))] = codexAuthJSON(t, access, id, "acct-1")
 		want := oauth
 		want.Source = "keychain"
 		assertViews(t, readCodex(f), []view{want})
+	})
+	t.Run("keyring of another home is not read", func(t *testing.T) {
+		t.Parallel()
+		f := newFake("darwin")
+		f.secrets["Codex Auth\x00"+codexStoreKey("/other/.codex")] = codexAuthJSON(t, access, id, "acct-1")
+		f.secrets["Codex Auth\x00"] = codexAuthJSON(t, access, id, "acct-1")
+		assertViews(t, readCodex(f), nil)
+	})
+	t.Run("keyring uses the canonical CODEX_HOME", func(t *testing.T) {
+		t.Parallel()
+		f := newFake("darwin")
+		f.env["CODEX_HOME"] = "/link/codex"
+		f.canon = map[string]string{"/link/codex": "/real/codex"}
+		f.secrets["Codex Auth\x00"+codexStoreKey("/real/codex")] = codexAuthJSON(t, access, id, "acct-1")
+		want := oauth
+		want.Source = "keychain"
+		assertViews(t, readCodex(f), []view{want})
+	})
+	t.Run("keyring not queried off darwin", func(t *testing.T) {
+		t.Parallel()
+		f := newFake("linux")
+		f.secrets["Codex Auth\x00"+codexStoreKey(f.path(".codex"))] = codexAuthJSON(t, access, id, "acct-1")
+		assertViews(t, readCodex(f), nil)
 	})
 	t.Run("account id from claim when absent", func(t *testing.T) {
 		t.Parallel()
@@ -111,4 +136,24 @@ func TestCodex(t *testing.T) {
 		f.files[f.path(".codex", "auth.json")] = `{"tokens": fake-token-1`
 		assertViews(t, readCodex(f), []view{{Provider: OpenAI, Harnesses: []string{"codex"}, Auth: AuthNone, Status: "unavailable", Note: "credentials unreadable", Source: "file"}})
 	})
+}
+
+func TestCodexStoreKey(t *testing.T) {
+	t.Parallel()
+	sum := sha256.Sum256([]byte("/home/user/.codex"))
+	tests := []struct{ name, home, want string }{
+		{"computed", "/home/user/.codex", "cli|" + hex.EncodeToString(sum[:])[:16]},
+		{"hard-coded", "/home/user/.codex", "cli|59448a44901f7128"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := codexStoreKey(tt.home); got != tt.want {
+				t.Errorf("codexStoreKey(%q) = %q, want %q", tt.home, got, tt.want)
+			}
+		})
+	}
+	if codexStoreKey("/home/user/.codex") == codexStoreKey("/other/.codex") {
+		t.Error("different homes share a key")
+	}
 }

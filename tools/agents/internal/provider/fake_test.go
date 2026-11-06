@@ -21,6 +21,7 @@ type fakeStore struct {
 	files   map[string]string
 	secrets map[string]string // service + "\x00" + account
 	env     map[string]string
+	canon   map[string]string        // Canonical mapping
 	rows    map[string][]OpencodeRow // by database path
 	rowsErr error                    // returned for any database not in rows, instead of ErrNotExist
 }
@@ -65,6 +66,14 @@ func (f *fakeStore) OpencodeCredentials(db string) ([]OpencodeRow, error) {
 		return nil, f.rowsErr
 	}
 	return nil, &fs.PathError{Op: "open", Path: db, Err: fs.ErrNotExist}
+}
+
+// Canonical returns the path unchanged unless canon maps it.
+func (f *fakeStore) Canonical(p string) string {
+	if c, ok := f.canon[p]; ok {
+		return c
+	}
+	return p
 }
 
 func (f *fakeStore) Exists(p string) bool {
