@@ -16,6 +16,7 @@ Where the code differs from the first design below, the code wins:
 - TOML is read through `chezmoi data` (no TOML library); the registry rewrite in `pkgreg.SetRelease` is a line-preserving text edit so comments and order survive.
 - End-to-end tests call `cli.Run` against a real chezmoi and a fixture source (`internal/cli/e2e_test.go`), not `testscript`.
 - `dotsRender`: an override-data flag set on every read-only render; `.chezmoiexternal.toml.tmpl` renders empty under it, because chezmoi fetches every external while reading the source state, even for a `dump` that excludes them.
+- `outdated` is the inventory overview: a pure `inventory` model and parsers, a `survey` use case over the `Runner` port, a `term` renderer; the machine's tools are selected by rendering the role, releases and packages templates through chezmoi.
 - `audit aliases` (port of the old `aliases-audit.sh`) and the release version (`-ldflags -X main.buildVersion`, set by the release workflow) were added.
 
 ## Goals and rules

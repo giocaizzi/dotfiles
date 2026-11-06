@@ -11,9 +11,11 @@ import (
 
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/edit"
+	"github.com/giocaizzi/dotfiles/tools/dots/internal/inventory"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/lint"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/pkgreg"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/release"
+	"github.com/giocaizzi/dotfiles/tools/dots/internal/survey"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/term"
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/upgrade"
 )
@@ -82,10 +84,41 @@ func (d Deps) releases(ctx context.Context) (string, []pkgreg.Release, error) {
 	return filepath.Join(src, ".chezmoidata", "packages.toml"), pkgreg.Releases(data), nil
 }
 
+// outdated prints the overview of every tool on this machine.
 func (d Deps) outdated(ctx context.Context, args []string) error {
-	if pos, err := parse(newFlags("outdated"), args); err != nil || len(pos) > 0 {
+	fs := newFlags("outdated")
+	offline := fs.Bool("offline", false, "")
+	fetch := fs.Bool("fetch", false, "")
+	check := fs.Bool("check", false, "")
+	if pos, err := parse(fs, args); err != nil || len(pos) > 0 {
 		return ErrUsage
 	}
+	cz, _ := d.chezmoi()
+	out, err := cz.Execute(ctx, nil, []byte(inventory.SelectionTemplate), false)
+	if err != nil {
+		return fmt.Errorf("read the package selection: %w", err)
+	}
+	sel, err := inventory.ParseSelection(out)
+	if err != nil {
+		return fmt.Errorf("read the package selection: %w", err)
+	}
+	wt := d.Getenv("CHEZMOI_WORKING_TREE")
+	if wt == "" {
+		wt, _ = cz.WorkingTree(ctx) // unknown is reported by the overview itself
+	}
+	rep := survey.Survey{
+		Runner: d.Runner, Latest: d.finder().Latest, Stat: os.Stat, LookPath: d.LookPath,
+		Home: d.Home, GOOS: d.GOOS, WorkingTree: wt, Offline: *offline, Fetch: *fetch,
+	}.Run(ctx, sel)
+	term.NewStyle(d.Stdout, d.Getenv).Inventory(d.Stdout, rep, time.Now())
+	if *check && rep.Failing() {
+		return ErrReported
+	}
+	return nil
+}
+
+// releaseCheck prints whether each pinned release has a newer upstream version.
+func (d Deps) releaseCheck(ctx context.Context) error {
 	_, rels, err := d.releases(ctx)
 	if err != nil {
 		return err
@@ -183,7 +216,7 @@ func (d Deps) upgrade(ctx context.Context, args []string) error {
 	}
 	if len(only) == 0 || slices.Contains(only, "releases") {
 		fmt.Fprintln(d.Stdout, "==> releases: pinned binaries")
-		return d.outdated(ctx, nil)
+		return d.releaseCheck(ctx)
 	}
 	return nil
 }
