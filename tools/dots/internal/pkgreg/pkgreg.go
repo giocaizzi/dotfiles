@@ -21,11 +21,11 @@ func installKeys() []string {
 }
 
 func packageKeys() []string {
-	return append([]string{"roles", "scope", "cmd", "agents", "fontFile"}, installKeys()...)
+	return append([]string{"roles", "scope", "cmd", "versionCmd", "agents", "fontFile"}, installKeys()...)
 }
 
 func releaseKeys() []string {
-	return []string{"roles", "version", "url", "type", "path", "dest", "stripComponents", "exe", "target", "sha256"}
+	return []string{"roles", "version", "url", "type", "path", "dest", "stripComponents", "exe", "versionCmd", "target", "sha256"}
 }
 
 var (
@@ -69,6 +69,9 @@ func validatePackage(n string, p map[string]any) []finding.Finding {
 	if s, ok := p["scope"]; ok && s != "machine" {
 		bad(`scope must be "machine"`)
 	}
+	if v, ok := p["versionCmd"]; ok && !argv(v) {
+		bad("versionCmd must be a non-empty argv list")
+	}
 	if _, ok := p["ompFont"]; ok && p["fontFile"] == nil {
 		bad("ompFont needs fontFile")
 	}
@@ -94,6 +97,9 @@ func validateRelease(n string, r map[string]any) []finding.Finding {
 	}
 	if ro, ok := r["roles"]; ok && !subset(ro, roles()) {
 		bad("roles must be a subset of %v", roles())
+	}
+	if v, ok := r["versionCmd"]; ok && !argv(v) {
+		bad("versionCmd must be a non-empty argv list")
 	}
 	targets, _ := r["target"].(map[string]any)
 	if len(targets) == 0 {
@@ -252,6 +258,20 @@ func toAny(m map[string]string) map[string]any {
 		out[k] = true
 	}
 	return out
+}
+
+// argv reports whether v is a non-empty list of non-empty strings.
+func argv(v any) bool {
+	list, ok := v.([]any)
+	if !ok || len(list) == 0 {
+		return false
+	}
+	for _, x := range list {
+		if s, isStr := x.(string); !isStr || s == "" {
+			return false
+		}
+	}
+	return true
 }
 
 func subset(v any, allowed []string) bool {
