@@ -80,18 +80,25 @@ func copilotLimit(key string, raw json.RawMessage, scope Scope, resets *time.Tim
 		return Limit{}, false
 	}
 	premium := key == copilotPremium
-	if q.Unlimited && !premium {
+	unlimited := q.Unlimited || (q.Entitlement != nil && *q.Entitlement < 0)
+	if unlimited && !premium {
 		return Limit{}, false
 	}
-	if !q.Unlimited && q.PercentRemaining == nil && q.Entitlement == nil {
+	if !unlimited && q.PercentRemaining == nil && q.Entitlement == nil {
 		return Limit{}, false
 	}
 	name := spaced(key)
 	if premium {
 		name = "premium"
 	}
-	l := Limit{Name: name, Kind: LimitAllowance, Scope: scope, ResetsAt: resets, Overage: q.OveragePermitted, Unlimited: q.Unlimited}
-	if q.Unlimited {
+	l := Limit{Name: name, Kind: LimitAllowance, Scope: scope, ResetsAt: resets, Overage: q.OveragePermitted, Unlimited: unlimited}
+	if unlimited {
+		return l, true
+	}
+	if q.Entitlement != nil && *q.Entitlement == 0 {
+		// An explicit zero entitlement is "0 / 0 reported", not fully consumed.
+		l.ResetsAt = nil
+		l.Note = "none included"
 		return l, true
 	}
 	switch {
