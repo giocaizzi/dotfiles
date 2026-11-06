@@ -148,6 +148,9 @@ type Store interface {
 	OpencodeCredentials(dbPath string) ([]OpencodeRow, error)
 	// Exists reports whether a path exists.
 	Exists(path string) bool
+	// Canonical is the path with symlinks resolved, or the cleaned path as
+	// given when that fails.
+	Canonical(path string) string
 	Getenv(key string) string
 	Home() string
 	GOOS() string
