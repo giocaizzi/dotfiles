@@ -69,16 +69,31 @@ func (c Catalog) Validate() error {
 }
 
 // tierDrift reports the tiers that differ from the rule, so a hand edit of
-// tiers fails; an absent and an empty tier are the same.
+// tiers fails; an absent and an empty tier are the same. Pinned ids are left
+// out of both sides: a pin takes effect at the next sync, so adding one must
+// not fail Validate before it (pins do not move the ECI cut, so the other ids
+// are unaffected). Removing a pin whose id still sits in its pinned tier fails,
+// as the id is no longer pinned.
 func (c Catalog) tierDrift() []error {
 	var errs []error
 	want := ComputeTiers(c.Models, c.Pin)
 	for _, tier := range Tiers() {
-		if !slices.Equal(c.Tiers[tier], want[tier]) {
+		if !slices.Equal(withoutPinned(c.Tiers[tier], c.Pin), withoutPinned(want[tier], c.Pin)) {
 			errs = append(errs, fmt.Errorf("tiers.%s: differs from the rule (run chezmoi agents models sync)", tier))
 		}
 	}
 	return errs
+}
+
+// withoutPinned returns ids without the pinned ones, order kept.
+func withoutPinned(ids []string, pin map[string]string) []string {
+	var out []string
+	for _, id := range ids {
+		if _, ok := pin[id]; !ok {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 // TierOf returns the tier of id, or "" when it has none.
