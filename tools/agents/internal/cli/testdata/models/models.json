@@ -13,6 +13,9 @@
         "board": "text_style_control"
       }
     },
+    "pin": {
+      "anthropic/claude-opus-5-5": "powerful"
+    },
     "tiers": {
       "lightweight": [],
       "versatile": [],

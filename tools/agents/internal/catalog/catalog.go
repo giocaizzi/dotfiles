@@ -22,8 +22,18 @@ const (
 	CatMultiTurn            = "multiTurn"
 )
 
-// Tiers are the manual tier names, in display order.
-func Tiers() []string { return []string{"lightweight", "versatile", "powerful", "extra"} }
+// Tier names.
+const (
+	TierLightweight = "lightweight"
+	TierVersatile   = "versatile"
+	TierPowerful    = "powerful"
+	TierExtra       = "extra"
+)
+
+// Tiers are the tier names, in display order.
+func Tiers() []string {
+	return []string{TierLightweight, TierVersatile, TierPowerful, TierExtra}
+}
 
 // Categories are the arena rank keys of Model.Arena, in display order.
 func Categories() []string {
@@ -39,8 +49,8 @@ type File struct {
 	Catalog Catalog `json:"modelCatalog"`
 }
 
-// Catalog is the model catalog. Providers, Tiers, Ignore, Aliases and Since
-// are manual; sync rewrites Models, Sources and SyncedAt.
+// Catalog is the model catalog. Providers, Since, Ignore, Pin and Aliases are
+// manual; sync rewrites Models, Sources, SyncedAt and Tiers (see tier.go).
 type Catalog struct {
 	Schema    int                 `json:"schema"`
 	SyncedAt  string              `json:"syncedAt,omitzero"`
@@ -49,6 +59,7 @@ type Catalog struct {
 	Sources   SourceInfo          `json:"sources"`
 	Tiers     map[string][]string `json:"tiers"`
 	Ignore    []string            `json:"ignore,omitzero"`
+	Pin       map[string]string   `json:"pin,omitzero"` // canonical id -> tier, wins over the computed tier
 	Aliases   Aliases             `json:"aliases,omitzero"`
 	Models    map[string]Model    `json:"models"`
 }
@@ -143,8 +154,7 @@ type EpochRow struct {
 	Score     float64
 }
 
-// Sources is everything one sync fetched. Epoch is nil when external data was
-// not requested; Apply then keeps the existing External values.
+// Sources is everything one sync fetched.
 type Sources struct {
 	ModelsDev []ProviderModel
 	Arena     []ArenaRow
@@ -155,7 +165,7 @@ type Sources struct {
 // Report is what a sync found that needs a human.
 type Report struct {
 	Unmatched []string // arena/epoch names of tracked orgs that matched no model
-	Untiered  []string // canonical ids in Models with no tier and not ignored
-	Stale     []string // tiered ids no provider lists any more (kept)
-	Missing   []string // tiered ids with no data at all (Validate fails on them)
+	Untiered  []string // canonical ids in Models with no tier
+	Stale     []string // pinned ids no provider lists any more (kept)
+	Missing   []string // pinned ids with no data at all (sync fails on them)
 }

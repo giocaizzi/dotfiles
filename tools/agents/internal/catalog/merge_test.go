@@ -18,19 +18,17 @@ func baseCatalog() Catalog {
 		Schema:    Schema,
 		Since:     "2026-01-01",
 		Providers: []string{"anthropic", "openai", "google"},
-		Tiers: map[string][]string{
-			"powerful": {"anthropic/claude-opus-5-5"},
-		},
-		Ignore: []string{"openai/gpt-realtime-2.1"},
-		Models: map[string]Model{},
+		Pin:       map[string]string{"anthropic/claude-opus-5-5": "powerful"},
+		Ignore:    []string{"openai/gpt-realtime-2.1"},
+		Models:    map[string]Model{},
 	}
 }
 
 func TestApplyKeepRules(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
-	c.Tiers["lightweight"] = []string{"anthropic/claude-haiku-3"}
-	c.Tiers["extra"] = []string{"openai/gpt-realtime-2.1"}
+	c.Pin["anthropic/claude-haiku-3"] = "lightweight"
+	c.Pin["openai/gpt-realtime-2.1"] = "extra"
 	c.Ignore = append(c.Ignore, "openai/gpt-ignored")
 	noText := pm("openai", "gpt-image", "GPT Image", "openai/gpt-image", "2026-07-06", 4, 24)
 	noText.TextOutput = false
@@ -86,7 +84,7 @@ func TestApplyKeepRules(t *testing.T) {
 func TestApplyCanonicalIDPartWins(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
-	c.Tiers["extra"] = []string{"openai/gpt-5.6-sol"}
+	c.Pin["openai/gpt-5.6-sol"] = "extra"
 	alias := pm("openai", "gpt-5.6", "GPT-5.6", "openai/gpt-5.6-sol", "2026-08-01", 4, 20)
 	sol := pm("openai", "gpt-5.6-sol", "GPT-5.6 Sol", "openai/gpt-5.6-sol", "2026-08-02", 5, 25)
 	for _, entries := range [][]ProviderModel{{alias, sol}, {sol, alias}} {
@@ -101,7 +99,7 @@ func TestApplyCanonicalIDPartWins(t *testing.T) {
 func TestApplyFirstEntryByIDWithoutCanonicalPart(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
-	c.Tiers["extra"] = []string{"openai/gpt-x"}
+	c.Pin["openai/gpt-x"] = "extra"
 	b := pm("openai", "gpt-x-b", "B", "openai/gpt-x", "2026-08-01", 1, 1)
 	a := pm("openai", "gpt-x-a", "A", "openai/gpt-x", "2026-08-01", 2, 2)
 	got, _ := Apply(c, Sources{ModelsDev: []ProviderModel{b, a}})
@@ -113,7 +111,8 @@ func TestApplyFirstEntryByIDWithoutCanonicalPart(t *testing.T) {
 func TestApplyStaleAndMissing(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
-	c.Tiers["versatile"] = []string{"openai/gone", "openai/never-seen"}
+	c.Pin["openai/gone"] = "versatile"
+	c.Pin["openai/never-seen"] = "versatile"
 	c.Models["openai/gone"] = Model{Name: "Gone", Provider: "openai", ID: "gone", API: &Price{In: 1, Out: 2}}
 	got, rep := Apply(c, Sources{Today: "2026-11-06"})
 	if diff := cmp.Diff([]string{"anthropic/claude-opus-5-5", "openai/never-seen"}, rep.Missing); diff != "" {
@@ -253,8 +252,8 @@ func TestApplyExternal(t *testing.T) {
 
 	src := arenaSrc()
 	got, _ := Apply(c, src)
-	if got.Models["anthropic/claude-opus-5-5"].External != old {
-		t.Errorf("nil epoch must keep external, got %+v", got.Models["anthropic/claude-opus-5-5"].External)
+	if got.Models["anthropic/claude-opus-5-5"].External != (External{}) {
+		t.Errorf("external is rebuilt from epoch, got %+v", got.Models["anthropic/claude-opus-5-5"].External)
 	}
 
 	src.Epoch = []EpochRow{
@@ -284,10 +283,10 @@ func TestApplyDoesNotMutateInput(t *testing.T) {
 		External: External{ECI: 1},
 	}
 	c.Models["openai/gone"] = Model{Name: "Gone", Arena: map[string]Rank{"text": {Rank: 8}}}
-	c.Tiers["versatile"] = []string{"openai/gone"}
+	c.Pin["openai/gone"] = "versatile"
 	want := Catalog{
 		Schema: c.Schema, Since: c.Since, Providers: c.Providers,
-		Tiers:  map[string][]string{"powerful": {"anthropic/claude-opus-5-5"}, "versatile": {"openai/gone"}},
+		Pin:    map[string]string{"anthropic/claude-opus-5-5": "powerful", "openai/gone": "versatile"},
 		Ignore: []string{"openai/gpt-realtime-2.1"},
 		Models: map[string]Model{
 			"anthropic/claude-opus-5-5": {
@@ -313,8 +312,8 @@ func TestApplyKeepsManualKeys(t *testing.T) {
 	c := baseCatalog()
 	c.Aliases = Aliases{Arena: map[string]string{"a": "b"}, Epoch: map[string]string{"c": "d"}}
 	got, _ := Apply(c, arenaSrc())
-	if diff := cmp.Diff(c.Tiers, got.Tiers); diff != "" {
-		t.Errorf("tiers: %s", diff)
+	if diff := cmp.Diff(c.Pin, got.Pin); diff != "" {
+		t.Errorf("pin: %s", diff)
 	}
 	if diff := cmp.Diff(c.Ignore, got.Ignore); diff != "" {
 		t.Errorf("ignore: %s", diff)

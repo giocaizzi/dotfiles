@@ -48,37 +48,25 @@ func arenaKey(board, category string) (string, bool) {
 func Apply(c Catalog, src Sources) (Catalog, Report) {
 	var rep Report
 	out := c
-	tiered := map[string]bool{}
-	for _, ids := range c.Tiers {
-		for _, id := range ids {
-			tiered[id] = true
-		}
-	}
 
-	fresh := freshModels(c, src.ModelsDev, tiered)
+	fresh := freshModels(c, src.ModelsDev)
 	models := maps.Clone(fresh)
-	for _, tier := range sortedKeys(c.Tiers) {
-		for _, id := range c.Tiers[tier] {
-			if _, ok := fresh[id]; ok {
-				continue
-			}
-			if old, ok := c.Models[id]; ok {
-				models[id] = old
-				rep.Stale = append(rep.Stale, id)
-			} else {
-				rep.Missing = append(rep.Missing, id)
-			}
+	for _, id := range sortedKeys(c.Pin) {
+		if _, ok := fresh[id]; ok {
+			continue
+		}
+		if old, ok := c.Models[id]; ok {
+			models[id] = old
+			rep.Stale = append(rep.Stale, id)
+		} else {
+			rep.Missing = append(rep.Missing, id)
 		}
 	}
 
 	idx := newIndex(models)
 	for id, m := range models {
 		m.Arena = nil
-		if src.Epoch != nil {
-			m.External = External{}
-		} else {
-			m.External = c.Models[id].External
-		}
+		m.External = External{}
 		models[id] = m
 	}
 
@@ -86,10 +74,9 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	out.Schema = Schema
 	out.Sources.Arena = ArenaInfo{Board: ArenaBoard, PublishDate: arenaPublishDate(c, src.Arena)}
 	rep.Unmatched = append(rep.Unmatched, applyArena(c, idx, models, fresh, src.Arena)...)
-	if src.Epoch != nil {
-		applyEpoch(c, idx, models, src.Epoch)
-	}
+	applyEpoch(c, idx, models, src.Epoch)
 	out.Models = models
+	out.Tiers = ComputeTiers(models, c.Pin)
 
 	rep.Untiered = out.Untiered()
 	rep.Unmatched = append(rep.Unmatched, danglingAliases(c.Aliases, models)...)
@@ -101,7 +88,7 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 
 // freshModels builds the models of the kept canonical ids from models.dev,
 // using only first-party entries of the tracked providers.
-func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map[string]Model {
+func freshModels(c Catalog, entries []ProviderModel) map[string]Model {
 	groups := map[string][]ProviderModel{}
 	for _, e := range entries {
 		org, _, _ := strings.Cut(e.CanonicalID, "/")
@@ -112,10 +99,10 @@ func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map
 	}
 	fresh := map[string]Model{}
 	for id, offers := range groups {
-		if slices.Contains(c.Ignore, id) && !tiered[id] {
+		if slices.Contains(c.Ignore, id) && c.Pin[id] == "" {
 			continue
 		}
-		if tiered[id] || keep(c.Since, offers) {
+		if c.Pin[id] != "" || keep(c.Since, offers) {
 			fresh[id] = buildModel(id, offers)
 		}
 	}

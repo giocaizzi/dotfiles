@@ -16,6 +16,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/catalog"
 )
 
 // arenaTotals is the row count per board of the fake dataset: text needs two pages.
@@ -404,8 +406,8 @@ func TestModelsSyncFetchesEverySourceAndWritesBothFiles(t *testing.T) {
 	if got := srv.count("/api.json"); got != 1 {
 		t.Errorf("models.dev requests = %d, want 1", got)
 	}
-	if got := srv.count("/epoch.zip"); got != 0 {
-		t.Errorf("epoch requested without -external (%d times)", got)
+	if got := srv.count("/epoch.zip"); got != 1 {
+		t.Errorf("epoch requests = %d, want 1", got)
 	}
 	// Needs catalog.ParseArenaPage returning the total (unit 1): the text
 	// board has 150 rows, hence a second page.
@@ -428,7 +430,7 @@ func TestModelsSyncFetchesEverySourceAndWritesBothFiles(t *testing.T) {
 	if !strings.Contains(stdout.String(), "synced 3 models · arena text_style_control 2026-11-05") {
 		t.Errorf("stdout lacks the summary: %q", stdout.String())
 	}
-	if !strings.Contains(stdout.String(), "untiered: anthropic/claude-sonnet-5-5 (Claude Sonnet 5.5)") {
+	if !strings.Contains(stdout.String(), "untiered: anthropic/claude-sonnet-5-5 (Claude Sonnet 5.5): no ranking data") {
 		t.Errorf("stdout lacks the untiered warning: %q", stdout.String())
 	}
 	if !strings.Contains(string(mustRead(t, file)), `"syncedAt": "2026-11-06"`) {
@@ -439,23 +441,30 @@ func TestModelsSyncFetchesEverySourceAndWritesBothFiles(t *testing.T) {
 	}
 }
 
-func TestModelsSyncExternalAlsoFetchesEpoch(t *testing.T) {
+func TestModelsSyncRebuildsExternalAndTiers(t *testing.T) {
 	t.Parallel()
 	ctx := t.Context()
 	srv := newFakeServer(t)
 	_, file, _ := repoDir(t, "models.json")
 	d, _, stderr := testDeps()
 
-	code := d.syncModels(ctx, modelsOpts{file: file, external: true}, srv.endpoints(), fixedNow)
+	code := d.syncModels(ctx, modelsOpts{file: file}, srv.endpoints(), fixedNow)
 	if code != 0 {
 		t.Fatalf("exit %d, stderr %q", code, stderr.String())
 	}
-	if got := srv.count("/epoch.zip"); got != 1 {
-		t.Errorf("epoch requests = %d, want 1", got)
-	}
-	// Needs catalog.ParseEpoch and catalog.Apply (unit 1).
-	if !strings.Contains(string(mustRead(t, file)), `"eci": 155.5`) {
+	data := string(mustRead(t, file))
+	if !strings.Contains(data, `"eci": 155.5`) {
 		t.Errorf("models.json lacks the Epoch score")
+	}
+	if !strings.Contains(data, `"pin"`) {
+		t.Errorf("models.json lost the pin")
+	}
+	c, err := catalog.Parse([]byte(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := c.TierOf("anthropic/claude-opus-5-5"); got != "powerful" {
+		t.Errorf("opus tier = %q, want powerful", got)
 	}
 }
 
@@ -471,7 +480,7 @@ func TestModelsSyncPersistent500Exits1AndWritesNothing(t *testing.T) {
 			before := mustRead(t, file)
 			d, _, stderr := testDeps()
 
-			code := d.syncModels(ctx, modelsOpts{file: file, external: true}, srv.endpoints(), fixedNow)
+			code := d.syncModels(ctx, modelsOpts{file: file}, srv.endpoints(), fixedNow)
 			if code != 1 {
 				t.Fatalf("exit %d, want 1", code)
 			}
@@ -570,7 +579,7 @@ func TestModelsSyncFillsASeedCatalog(t *testing.T) { // regression: sync must no
 	ctx := t.Context()
 	srv := newFakeServer(t)
 	_, file, _ := repoDir(t, "models-invalid.json")
-	seed := strings.Replace(string(mustRead(t, file)), "anthropic/does-not-exist", "anthropic/claude-opus-5-5", 1)
+	seed := strings.ReplaceAll(string(mustRead(t, file)), "anthropic/does-not-exist", "anthropic/claude-opus-5-5")
 	if err := os.WriteFile(file, []byte(seed), 0o644); err != nil {
 		t.Fatal(err)
 	}
