@@ -211,8 +211,15 @@ Agreed on 2026-11-06 with the driver of `chezmoi agents usage` (plan: `docs/wip/
 | Usage snapshots | usage tool | `internal/usage`, cache file `os.UserCacheDir()/chezmoi-agents/usage.json` written only by `chezmoi agents usage`; `internal/cache.Dir(getenv)` owned by the usage tool |
 | Model catalog | this plan | `internal/catalog`, `home/.chezmoidata/models.json` (the only `edit.toml` entry of the two), `docs/MODELS.md` |
 | Terminal helpers | split | this plan: `term.Width`, `term.Pad`, `term.Table`, `term.Warn` in `internal/term/table.go`; usage tool: `term.Bar` in `internal/term/bar.go`; `term.go` untouched, no new colours |
-| Apply hook and warning surface | this plan | one `chezmoi agents doctor` subcommand and one `run_after_agents-doctor.{sh,ps1}.tmpl`, later PR; the usage tool contributes `usage.Advisories(snaps, now) []string`, printed with `term.Warn` |
+| Apply hook and warning surface | this plan | one `chezmoi agents doctor` subcommand and one `run_after_agents-doctor.{sh,ps1}.tmpl`, later PR; capacity facts come from the usage tool (below), printed with `term.Warn` |
 | Shared files | both | `cli.go`: one `case` and usage lines each; `docs/OS.md`: parent section "Models and subscriptions" (created here) with one subsection each; one bullet each in the AGENTS.md files; whoever merges second rebases |
+
+Subscription and billing model (owned by the usage tool, read here; covers individual, team, enterprise seat, enterprise usage-based, overage, API key, cloud-hosted, org gateway, free and unknown future plans):
+
+- `usage.Plan{Provider, Kind, Billing, Payer, Raw}`: Kind free | individual | team | enterprise | api | cloud | gateway | unknown; Billing flat | metered | mixed | unknown; Payer self | org | cloud | unknown; Raw is the provider's own plan string (shown as `unknown (<raw>)` when unmapped).
+- `usage.Limit{Name, Kind (window | allowance | spend | credits), Scope (seat | pool | account), UsedPct, Used, Cap, Remaining, ResetsAt, Overage, Visible}`; `Visible=false` means managed by the org and not visible.
+- `usage.Snapshot{Plan, Account, Limits, Status, FetchedAt}`, cached in `<cache dir>/chezmoi-agents/usage.json`.
+- Pure functions the doctor calls: `usage.Summaries(snaps, now) []Summary{Provider, Plan, Headroom}` (one per provider; Headroom is the fraction left on the tightest visible limit with a future reset, nil when unknown; several accounts take the best headroom) and `usage.Advisories(snaps, now) []Advisory{Provider, Level, Text}` (capacity facts only).
 
 ## Apply-time advisory (`chezmoi agents doctor`, later PR)
 
@@ -220,8 +227,9 @@ Requirement (2026-11-06): `chezmoi update` / `chezmoi apply` warn, never change 
 
 What it checks, per harness selected on the machine (`includeTemplate "harnesses"`):
 
-1. Reachable models: the harness's providers (fixed for Claude Code, Codex, Antigravity and Copilot; discovered from `auth.json` for opencode and pi) intersected with the accounts `provider.Discover` finds; a model is reachable when one of those providers serves it in `models.json`.
+1. Reachable models: the harness's providers (fixed for Claude Code, Codex, Antigravity and Copilot; discovered from `auth.json` for opencode and pi) that have a `usage.Summary`; a model is reachable when one of those providers serves it in `models.json`. No account, no recommendation.
 2. Better config: for each configured model (`harnessPolicy.models.tiers.*.model`, the `native.*` default models and Copilot agent models), the catalog tier it sits in; warn when a reachable model in the same catalog tier is newer (`releaseDate`) and ranks better on arena `text` and `coding`, or when the configured model is untiered or no reachable provider serves it any more.
+   Billing shapes the suggestion (the judgement lives in the doctor's glue, since it needs the catalog): flat billing with healthy headroom may suggest a stronger model inside the plan; metered billing (api, cloud, enterprise usage-based) or an org payer with a spend cap prefers the cheaper model of the same tier by catalog $/Mtok and never suggests moving up a tier for rank alone; headroom below 10% on the provider of a default model suggests the same-tier model from a provider with headroom (info level); Kind unknown or a limit not visible means no capacity-based suggestion, rank only. Nothing is ever guessed or changed.
 3. Stale data: `syncedAt` older than 30 days ("run `make models-sync`").
 4. Capacity: the usage tool's advisories from its cached snapshot.
 
