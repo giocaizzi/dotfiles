@@ -66,7 +66,7 @@ func TestInventoryGolden(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			want, err := os.ReadFile(path) //nolint:gosec // a fixed testdata path
+			want, err := os.ReadFile(path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -80,7 +80,8 @@ func TestInventoryGolden(t *testing.T) {
 func TestInventoryClean(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	Style{}.Inventory(&buf, inventory.Report{OS: "linux", Role: "light", Offline: true,
+	Style{}.Inventory(&buf, inventory.Report{
+		OS: "linux", Role: "light", Offline: true,
 		Groups: []inventory.Group{{Source: inventory.Brew, Tools: []inventory.Tool{{Name: "jq", Installed: "1", Latest: "1"}}}},
 		Tree:   inventory.Tree{Branch: "main"},
 	}, now)

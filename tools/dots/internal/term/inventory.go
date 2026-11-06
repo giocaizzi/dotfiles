@@ -11,14 +11,22 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/inventory"
 )
 
-var groupTitles = map[inventory.Source]string{
-	inventory.Release: "Pinned releases",
-	inventory.Brew:    "Homebrew",
-	inventory.Apt:     "apt",
-	inventory.Winget:  "winget",
-	inventory.UV:      "uv tools",
-	inventory.Npm:     "npm tools",
-	inventory.Script:  "Official installers",
+func groupTitle(src inventory.Source) string {
+	switch src {
+	case inventory.Release:
+		return "Pinned releases"
+	case inventory.Brew:
+		return "Homebrew"
+	case inventory.UV:
+		return "uv tools"
+	case inventory.Npm:
+		return "npm tools"
+	case inventory.Script:
+		return "Official installers"
+	case inventory.Apt, inventory.Winget:
+		return string(src)
+	}
+	return string(src)
 }
 
 // Inventory prints the tooling overview: a table per source, the dotfiles checkout
@@ -34,7 +42,7 @@ func (s Style) Inventory(w io.Writer, r inventory.Report, now time.Time) {
 		if len(g.Tools) == 0 {
 			continue
 		}
-		fmt.Fprintf(w, "%s%s%s %s(%d)%s\n", s.B, groupTitles[g.Source], s.O, s.D, len(g.Tools), s.O)
+		fmt.Fprintf(w, "%s%s%s %s(%d)%s\n", s.B, groupTitle(g.Source), s.O, s.D, len(g.Tools), s.O)
 		s.inventoryTable(w, g)
 		if g.Note != "" {
 			fmt.Fprintf(w, "  %s%s%s\n", s.D, g.Note, s.O)
@@ -131,9 +139,10 @@ func (s Style) stateText(st inventory.State) string {
 		return s.C + "≠ drifted" + s.O
 	case inventory.Missing:
 		return s.R + "✗ not installed" + s.O
-	default:
+	case inventory.Unknown:
 		return s.D + "? unknown" + s.O
 	}
+	return ""
 }
 
 // treeText describes the dotfiles checkout against its upstream.

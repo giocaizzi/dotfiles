@@ -1,6 +1,7 @@
 package inventory
 
 import (
+	"cmp"
 	"fmt"
 	"slices"
 	"strings"
@@ -45,18 +46,27 @@ func (r Report) names(s Source, states ...State) []string {
 
 // Hints lists the next steps the report calls for, in the order to take them.
 func (r Report) Hints() []Hint {
+	return append(r.treeHints(), r.toolHints()...)
+}
+
+func (r Report) treeHints() []Hint {
 	var hs []Hint
-	add := func(cmd, why string) { hs = append(hs, Hint{cmd, why}) }
 	t := r.Tree
 	if t.Known && t.Behind > 0 {
-		add("chezmoi dots upgrade dotfiles", fmt.Sprintf("pull %d commit(s) from %s, then re-run", t.Behind, t.Upstream))
+		hs = append(hs, Hint{"chezmoi dots upgrade dotfiles", fmt.Sprintf("pull %d commit(s) from %s, then re-run", t.Behind, t.Upstream)})
 	}
 	if t.Known && t.Upstream != "" && t.Fetched.IsZero() {
-		add("chezmoi dots outdated --fetch", t.Upstream+" was never fetched here")
+		hs = append(hs, Hint{"chezmoi dots outdated --fetch", t.Upstream + " was never fetched here"})
 	}
 	if t.Ahead > 0 {
-		add("git push", fmt.Sprintf("%d local commit(s) not on %s", t.Ahead, t.Upstream))
+		hs = append(hs, Hint{"git push", fmt.Sprintf("%d local commit(s) not on %s", t.Ahead, t.Upstream)})
 	}
+	return hs
+}
+
+func (r Report) toolHints() []Hint {
+	var hs []Hint
+	add := func(cmd, why string) { hs = append(hs, Hint{cmd, why}) }
 	if n := r.names(Release, Outdated); len(n) > 0 {
 		add("chezmoi dots bump "+strings.Join(n, " "), "pin the newer release(s)")
 	}
@@ -68,23 +78,7 @@ func (r Report) Hints() []Hint {
 			add("chezmoi dots upgrade "+string(s), fmt.Sprintf("upgrade %d %s package(s)", len(n), s))
 		}
 	}
-	var specs []string
-	for _, g := range r.Groups {
-		if g.Source != Npm {
-			continue
-		}
-		for _, tl := range g.Tools {
-			if tl.State(Npm) == Drifted {
-				id := tl.ID
-				if id == "" {
-					id = tl.Name
-				}
-				specs = append(specs, id+"@"+tl.Pinned)
-			}
-		}
-	}
-	if len(specs) > 0 {
-		slices.Sort(specs)
+	if specs := r.npmDrift(); len(specs) > 0 {
 		add("npm install -g "+strings.Join(specs, " "), "back to the registry pin")
 	}
 	var missing []string
@@ -98,4 +92,21 @@ func (r Report) Hints() []Hint {
 		add("", "not installed: "+strings.Join(missing, ", ")+" (the install script runs when packages.toml changes; docs/OS.md#packages)")
 	}
 	return hs
+}
+
+// npmDrift lists the sorted name@pin specs of the npm tools off their pin.
+func (r Report) npmDrift() []string {
+	var specs []string
+	for _, g := range r.Groups {
+		if g.Source != Npm {
+			continue
+		}
+		for _, t := range g.Tools {
+			if t.State(Npm) == Drifted {
+				specs = append(specs, cmp.Or(t.ID, t.Name)+"@"+t.Pinned)
+			}
+		}
+	}
+	slices.Sort(specs)
+	return specs
 }

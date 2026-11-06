@@ -20,14 +20,30 @@ func TestCountsAndFailing(t *testing.T) {
 		fail   bool
 	}{
 		{"empty", inventory.Report{}, map[inventory.State]int{}, false},
-		{"fine", inventory.Report{Groups: []inventory.Group{{Source: inventory.Brew, Tools: []inventory.Tool{ok}}}},
-			map[inventory.State]int{inventory.UpToDate: 1}, false},
-		{"outdated", inventory.Report{Groups: []inventory.Group{{Source: inventory.Brew, Tools: []inventory.Tool{ok, old}}}},
-			map[inventory.State]int{inventory.UpToDate: 1, inventory.Outdated: 1}, true},
-		{"missing", inventory.Report{Groups: []inventory.Group{{Source: inventory.Apt, Tools: []inventory.Tool{{Name: "c", Missing: true}}}}},
-			map[inventory.State]int{inventory.Missing: 1}, true},
-		{"unknown only", inventory.Report{Groups: []inventory.Group{{Source: inventory.UV, Tools: []inventory.Tool{{Name: "d", Installed: "1"}}}}},
-			map[inventory.State]int{inventory.Unknown: 1}, false},
+		{
+			"fine",
+			inventory.Report{Groups: []inventory.Group{{Source: inventory.Brew, Tools: []inventory.Tool{ok}}}},
+			map[inventory.State]int{inventory.UpToDate: 1},
+			false,
+		},
+		{
+			"outdated",
+			inventory.Report{Groups: []inventory.Group{{Source: inventory.Brew, Tools: []inventory.Tool{ok, old}}}},
+			map[inventory.State]int{inventory.UpToDate: 1, inventory.Outdated: 1},
+			true,
+		},
+		{
+			"missing",
+			inventory.Report{Groups: []inventory.Group{{Source: inventory.Apt, Tools: []inventory.Tool{{Name: "c", Missing: true}}}}},
+			map[inventory.State]int{inventory.Missing: 1},
+			true,
+		},
+		{
+			"unknown only",
+			inventory.Report{Groups: []inventory.Group{{Source: inventory.UV, Tools: []inventory.Tool{{Name: "d", Installed: "1"}}}}},
+			map[inventory.State]int{inventory.Unknown: 1},
+			false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
