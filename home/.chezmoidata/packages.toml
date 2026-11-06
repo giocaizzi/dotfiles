@@ -301,34 +301,34 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.goreleaser]
 roles = ["personal"]
-version = "2.19.0"
+version = "2.20.0"
 url = "https://github.com/goreleaser/goreleaser/releases/download/v{version}/goreleaser_Linux_{target}.tar.gz"
 target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
 
 [release.goreleaser.sha256]
-"linux/amd64" = "ebc3194ad1d1b1787614405285a0039665cd4c5bd3305215a1b201600f90630b"
-"linux/arm64" = "ef33741b684c9f62d6a21e7a3c8b051f139ea7b1d301693b67cc819c46226d53"
+"linux/amd64" = "d2483159e6007f814132cb56635ad30a70013dbeb813d6033a7e01adf6ae108c"
+"linux/arm64" = "2dada0a6bbcd10f3a05228d98e77d25fb362efb9e5bab6362cf37e64c8a26cb9"
 
 [release.syft]
 roles = ["personal"]
-version = "1.55.0"
+version = "1.57.0"
 url = "https://github.com/anchore/syft/releases/download/v{version}/syft_{version}_linux_{target}.tar.gz"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.syft.sha256]
-"linux/amd64" = "bb65249542db5fedeeb4d3f9b018b75e7264dbfbbb10486f044581a92f90490d"
-"linux/arm64" = "929bd163db2d7cd2255d3bcb8967208079813d7b46b0c952f7b794d8e2c7d304"
+"linux/amd64" = "9c077a7d43029b3b13e98a8db720661e700c4d58db6352153a06395ae4a2a704"
+"linux/arm64" = "410cbfa0ae0f63246bc0057843760b1de2833cd23919e025e368fd7681308cdb"
 
 [release.glab]
 roles = ["work"]
-version = "1.126.0"
+version = "1.128.0"
 url = "https://gitlab.com/gitlab-org/cli/-/releases/v{version}/downloads/glab_{version}_linux_{target}.tar.gz"
 path = "bin/glab"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.glab.sha256]
-"linux/amd64" = "f386519ba83e9482979992ee7f60eeebee4d95b950f95f4fe7289e0a1b1ea74c"
-"linux/arm64" = "de5e92c9c8b306eeebb19daa854d48101b78328850e7b9cd677ecd6f98cd4391"
+"linux/amd64" = "bc024819e7598b19429a199cd87f640d98b2b67416d8ad796f19e4260b57a7c7"
+"linux/arm64" = "60d0512085a8c1be7c5ef51aa7e4ee28213444cea0376b3260707d90489199ea"
 
 [release.chezmoi-dots]
 # The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
