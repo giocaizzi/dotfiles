@@ -36,12 +36,18 @@
     "next-steps@claude-community": false,
     "frontend-design@claude-plugins-official": true,
     "skill-creator@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true{{ if and (ne .chezmoi.os "windows") (not (get . "work")) }},
-    "gopls-lsp@claude-plugins-official": true
-    {{- end }}
+    "pyright-lsp@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "gopls-lsp@claude-plugins-official": false,
+    "lsp@dotfiles": {{ .harnessPolicy.lsp.enabled | default false | toJson }}
   },
   "extraKnownMarketplaces": {
+    "dotfiles": {
+      "source": {
+        "source": "directory",
+        "path": {{ printf "%s/.claude/dotfiles-plugins" .chezmoi.homeDir | toJson }}
+      }
+    },
     "giocaizzi-harness": {
       "source": {
         "source": "github",
