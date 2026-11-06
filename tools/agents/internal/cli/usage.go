@@ -48,23 +48,17 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 		fmt.Fprintf(d.Stderr, "usage: ignoring cache: %v\n", cacheErr)
 	}
 
-	accounts := provider.Discover(store)
-	if *live {
-		accounts = provider.Merge(bindCached(f.resolveIdentities(ctx, accounts), cached.Snapshots))
-	} else {
-		accounts = provider.Merge(bindCached(accounts, cached.Snapshots))
-	}
-
 	var snaps []usg.Snapshot
 	var meta string
 	if *live {
-		snaps = liveSnapshots(ctx, accounts, f, liveTimeout)
-		snaps = keepStale(snaps, cached.Snapshots)
-		if err := writeUsageCache(path, snaps, now); err != nil {
+		var err error
+		snaps, err = refreshUsage(ctx, store, f, path, cached, liveTimeout, liveTimeout)
+		if err != nil {
 			fmt.Fprintf(d.Stderr, "usage: cache not written: %v\n", err)
 		}
 		meta = "(live)"
 	} else {
+		accounts := provider.Merge(bindCached(provider.Discover(store), cached.Snapshots))
 		snaps = cachedView(accounts, cached.Snapshots, f)
 		switch {
 		case cached.WrittenAt.IsZero():
@@ -79,6 +73,19 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 	}
 	renderUsage(d.Stdout, term.NewStyle(d.Stdout, d.Getenv), snaps, meta, now)
 	return 0
+}
+
+// refreshUsage is the live flow shared by usage and doctor: discover the
+// accounts, resolve their identities (under identity), bind them to the cached
+// snapshots, query every provider (perProvider each), keep the cached snapshot
+// of a failed one and rewrite the cache. It returns the snapshots; the error
+// is the cache write failure, which leaves the snapshots valid.
+func refreshUsage(ctx context.Context, store provider.Store, f usageFetcher, path string, cached usg.Cache, perProvider, identity time.Duration) ([]usg.Snapshot, error) {
+	ictx, cancel := context.WithTimeout(ctx, identity)
+	defer cancel()
+	accounts := provider.Merge(bindCached(f.resolveIdentities(ictx, provider.Discover(store)), cached.Snapshots))
+	snaps := keepStale(liveSnapshots(ctx, accounts, f, perProvider), cached.Snapshots)
+	return snaps, writeUsageCache(path, snaps, f.now())
 }
 
 // snapKey identifies the account of a snapshot: its stable id under the
@@ -241,8 +248,11 @@ func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 	return out
 }
 
+// readUsageCache reads the cache; a missing file is an empty cache. Only a
+// regular file up to maxReadFile bytes is read, so a FIFO or device cannot
+// block it.
 func readUsageCache(path string) (usg.Cache, error) {
-	b, err := os.ReadFile(filepath.Clean(path))
+	b, err := readRegular(path)
 	if errors.Is(err, fs.ErrNotExist) {
 		return usg.Cache{}, nil
 	}
