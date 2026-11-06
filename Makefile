@@ -21,7 +21,7 @@ ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help dots agents models-sync lint test test-syntax check check-fast aliases-audit
+.PHONY: help dots agents models-sync lint test test-syntax check check-fast aliases-audit usage
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -34,6 +34,9 @@ agents: ## Build chezmoi-agents into tools/agents/bin/
 
 models-sync: agents ## Refresh model data and docs/MODELS.md (network)
 	tools/agents/bin/chezmoi-agents models sync
+
+usage: agents ## Show subscription usage per provider account (live, needs the network)
+	@tools/agents/bin/chezmoi-agents usage -live
 
 lint: dots agents ## shellcheck, validate JSON, lint registries, templates, policy, and plugins
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)

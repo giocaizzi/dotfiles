@@ -78,6 +78,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runMCP(ctx, rest)
 	case "models":
 		return d.runModels(ctx, rest)
+	case "usage":
+		return d.runUsage(ctx, rest)
 	case "version", "--version", "-v":
 		v := d.Version
 		if v == "" {
@@ -120,6 +122,7 @@ func usage(s term.Style) string {
 	p("  %schezmoi agents%s %smodels%s %s[-file <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %smodels sync%s %s[-external] [-file <path>] [-doc <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %smodels render%s %s[-check] [-file <path>] [-doc <path>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %susage%s %s[-live] [-provider <id>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
 	p("%sCOMMANDS%s\n", b, o)
@@ -131,6 +134,7 @@ func usage(s term.Style) string {
 	p("  %s%-13s%s %s%-27s%s %s\n", m, "models", o, d, "[-file <path>]", o, "Print the model tier list with costs and arena ranks")
 	p("  %s%-13s%s %s%-27s%s %s\n", m, "models sync", o, d, "[-external]", o, "Refresh model data from models.dev, LMArena and Epoch AI")
 	p("  %s%-13s%s %s%-27s%s %s\n", m, "models render", o, d, "[-check]", o, "Regenerate docs/MODELS.md offline")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "usage", o, d, "[-live] [-provider <id>]", o, "Show subscription usage per provider account (cached; -live refreshes)")
 	p("  %s%-13s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
 	p("  %s%-13s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
 
@@ -142,7 +146,9 @@ func usage(s term.Style) string {
 	p("  %s-check%s               Validate layer presence or models doc freshness without printing output\n", y, o)
 	p("  %s-external%s            Also fetch Epoch AI benchmarks (models sync)\n", y, o)
 	p("  %s-doc%s %s<path>%s          Path to docs/MODELS.md\n", y, o, d, o)
-	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n\n", y, o, d, o)
+	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n", y, o, d, o)
+	p("  %s-live%s                Query every provider and rewrite the usage cache\n", y, o)
+	p("  %s-provider%s %s<id>%s       Limit usage output to one provider id\n\n", y, o, d, o)
 
 	p("%sEXAMPLES%s\n", b, o)
 	p("  %schezmoi-agents check%s                           Validate policy, client parity, and harness plugins\n", m, o)

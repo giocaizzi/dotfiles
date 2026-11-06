@@ -1,0 +1,109 @@
+package provider
+
+import (
+	"cmp"
+	"crypto/sha256"
+	"encoding/hex"
+	"strings"
+	"time"
+
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/usage"
+)
+
+// Credential types of the multi-tenant stores, normalized.
+const (
+	tenantOAuth    = "oauth"
+	tenantKey      = "key"
+	tenantExternal = "external"
+)
+
+// tenantEntry is one credential of a multi-tenant harness (opencode, pi),
+// before it becomes an Account.
+type tenantEntry struct {
+	harness   string
+	provider  string // models.dev id; the stores already use it
+	typ       string // tenantOAuth, tenantKey or tenantExternal
+	access    string
+	refresh   string
+	key       string
+	expires   time.Time
+	accountID string
+	rowID     string // opencode credential row id
+	label     string
+	inactive  bool
+	source    string
+	host      string // GitHub Enterprise URL or domain the login was made on, raw
+	hashKey   bool   // derive a GitHub Copilot key from the token (pi has no row id)
+}
+
+func tokenKey(prefix, token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return prefix + hex.EncodeToString(sum[:])[:12]
+}
+
+// account maps the entry to an Account.
+func (e tenantEntry) account(now time.Time) Account {
+	a := Account{
+		Provider:  e.provider,
+		ID:        e.harness + ":" + cmp.Or(e.rowID, e.provider),
+		Harnesses: []string{e.harness},
+		Plan:      unknownPlan(),
+		Source:    e.source,
+	}
+	switch e.typ {
+	case tenantExternal:
+		a.Auth = AuthAPIKey
+		a.Label = e.label
+		a.Status = usage.StatusNotVisible
+		a.Note = "external credential"
+	case tenantKey:
+		a.Label = e.label
+		if strings.HasPrefix(e.key, "!") {
+			a.Auth = AuthCommand
+			a.Status = usage.StatusSkipped
+			a.Note = "key from a command, not run"
+			break
+		}
+		a.Auth = AuthAPIKey
+		a.Plan = usage.Plan{Kind: usage.KindAPI, Billing: usage.BillingMetered, Payer: usage.PayerUnknown}
+		a.Status = usage.StatusNoAPI
+		a.Note = "no usage API for API keys"
+	default: // oauth
+		a.Auth = AuthOAuth
+		switch e.provider {
+		case OpenAI:
+			o := openaiOAuth(e.harness, e.access, "", e.accountID)
+			a.Key, a.Plan, a.Expires, a.Cred = o.Key, o.Plan, o.Expires, o.Cred
+		case GitHubCopilot:
+			token := e.refresh // the GitHub OAuth token
+			if token == "" {
+				token = e.access
+			}
+			switch {
+			case e.rowID != "" && !e.hashKey:
+				a.Key = "copilot:" + e.rowID
+			case token != "":
+				a.Key = tokenKey("copilot:", token)
+			}
+			a.Cred = NewCredential(token, "")
+			a.Host = normalizeHost(e.host)
+		case Anthropic:
+			// Claude Code's credential holds no identity, so a login of
+			// another harness never merges with it unless proven the same.
+			a.Key = tokenKey("anthropic:", e.access)
+			a.Cred = NewCredential(e.access, "")
+		default:
+			a.Label = e.label
+			a.Key = e.accountID
+			a.Cred = NewCredential(e.access, e.accountID)
+		}
+		if !e.expires.IsZero() {
+			a.Expires = e.expires
+		}
+		expiredStatus(&a, now, e.harness)
+	}
+	if e.inactive {
+		a.Note = strings.TrimSpace(a.Note + " (inactive)")
+	}
+	return a
+}
