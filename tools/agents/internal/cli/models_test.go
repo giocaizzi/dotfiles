@@ -648,3 +648,20 @@ func TestRetryAfter(t *testing.T) {
 		}
 	}
 }
+
+func TestModelsSyncOtherSchemaExits1WithoutFetching(t *testing.T) {
+	t.Parallel()
+	srv := newFakeServer(t)
+	_, file, _ := repoDir(t, "models.json")
+	other := strings.Replace(string(mustRead(t, file)), `"schema": 1`, `"schema": 2`, 1)
+	if err := os.WriteFile(file, []byte(other), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	d, _, _ := testDeps()
+	if code := d.syncModels(t.Context(), modelsOpts{file: file}, srv.endpoints(), fixedNow); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if n := len(srv.log()); n != 0 {
+		t.Errorf("%d requests for a catalog of another schema", n)
+	}
+}

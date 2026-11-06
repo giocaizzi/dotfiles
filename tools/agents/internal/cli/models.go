@@ -207,6 +207,9 @@ func (d Deps) syncModels(ctx context.Context, opts modelsOpts, ep endpoints, now
 	if err != nil {
 		return d.modelsFail("%v", err)
 	}
+	if c.Schema != catalog.Schema {
+		return d.modelsFail("%s: schema %d, want %d", path, c.Schema, catalog.Schema)
+	}
 	docFile := docPath(path, opts.doc)
 
 	f := fetcher{client: &http.Client{Timeout: 60 * time.Second}, backoff: ep.backoff}
@@ -261,6 +264,8 @@ type fileWrite struct {
 
 // writeFilesAtomic stages every file as a temp file next to its target, then
 // renames them all, so a failure while staging leaves every target untouched.
+// A failed later rename can leave the doc behind models.json: `models render
+// -check` in make lint catches that, and `models render` repairs it.
 func writeFilesAtomic(files []fileWrite) error {
 	staged := make([]string, 0, len(files))
 	defer func() {

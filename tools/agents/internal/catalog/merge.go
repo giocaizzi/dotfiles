@@ -92,6 +92,7 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	out.Models = models
 
 	rep.Untiered = out.Untiered()
+	rep.Unmatched = append(rep.Unmatched, danglingAliases(c.Aliases, models)...)
 	rep.Unmatched = sortedUnique(rep.Unmatched)
 	rep.Stale = sortedUnique(rep.Stale)
 	rep.Missing = sortedUnique(rep.Missing)
@@ -318,4 +319,18 @@ func orgSet(models map[string]Model) map[string]bool {
 func sortedUnique(s []string) []string {
 	slices.Sort(s)
 	return slices.Compact(s)
+}
+
+// danglingAliases reports aliases whose target is not in models, so a typo in
+// aliases.* does not go unnoticed.
+func danglingAliases(a Aliases, models map[string]Model) []string {
+	var out []string
+	for source, m := range map[string]map[string]string{"arena": a.Arena, "epoch": a.Epoch} {
+		for name, target := range m {
+			if _, ok := models[target]; !ok {
+				out = append(out, "alias "+source+": "+name+" -> "+target+" (not in models)")
+			}
+		}
+	}
+	return out
 }

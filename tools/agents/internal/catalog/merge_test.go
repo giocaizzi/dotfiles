@@ -306,3 +306,14 @@ func TestApplyKeepsManualKeys(t *testing.T) {
 		t.Errorf("since = %q", got.Since)
 	}
 }
+
+func TestApplyReportsDanglingAliases(t *testing.T) {
+	t.Parallel()
+	c := baseCatalog()
+	c.Aliases = Aliases{Epoch: map[string]string{"Typo Model": "openai/does-not-exist"}}
+	_, rep := Apply(c, arenaSrc())
+	want := []string{"alias epoch: Typo Model -> openai/does-not-exist (not in models)"}
+	if diff := cmp.Diff(want, rep.Unmatched); diff != "" {
+		t.Errorf("unmatched (-want +got):\n%s", diff)
+	}
+}
