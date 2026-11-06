@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"slices"
 	"sort"
@@ -246,12 +247,12 @@ func (s Survey) brew(ctx context.Context, pkgs []inventory.PackageSel) inventory
 			installed, listErr = casks, errC
 		}
 		if listErr == nil {
-			v, ok := installed[p.ID]
+			v, ok := installed[brewName(p.ID)]
 			t.Installed, t.Missing = v, !ok
 		}
 		if !t.Missing && errO == nil && t.Installed != "" {
 			t.Latest = t.Installed
-			if v, ok := outdated[p.ID]; ok {
+			if v, ok := outdated[brewName(p.ID)]; ok {
 				t.Latest = v
 			}
 		}
@@ -265,6 +266,13 @@ func (s Survey) brew(ctx context.Context, pkgs []inventory.PackageSel) inventory
 		g.Note = "latest unknown: brew outdated failed"
 	}
 	return g
+}
+
+// brewName is the name brew list and brew outdated print for id: a tap-qualified
+// "owner/tap/name" is listed as "name".
+func brewName(id string) string {
+	_, name := path.Split(id)
+	return name
 }
 
 func (s Survey) apt(ctx context.Context, pkgs []inventory.PackageSel) inventory.Group {
