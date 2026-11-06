@@ -71,17 +71,14 @@ type step struct {
 	less   func(a, b candidate) int
 }
 
-// steps are the ways to win in the order the billing mode prefers them: a flat
-// or unknown plan wants the strongest model; a metered or org one gets only a
-// cheaper model, never a stronger and pricier one.
-func (k contest) steps(mode string) []step {
-	strong := step{reasonBetter, k.better, byRank}
-	fresh := step{reasonNewer, k.newer, byRelease}
-	cheap := step{reasonCheap, k.cheapRanked, byBlended}
-	if mode == modeOrg || mode == modeMetered {
-		return []step{cheap}
+// steps are the ways to win, strongest first. A candidate paid by a metered
+// account or an org seat can win only as cheaper (see betterModel).
+func (k contest) steps() []step {
+	return []step{
+		{reasonBetter, k.better, byRank},
+		{reasonNewer, k.newer, byRelease},
+		{reasonCheap, k.cheapRanked, byBlended},
 	}
-	return []step{strong, fresh, cheap}
 }
 
 // candidates are the tier's models the harness can use in place of the
@@ -115,11 +112,21 @@ func betterModel(in Input, h string, r resolved, accts []usage.Snapshot, avail [
 		return Finding{}, false
 	}
 	cands := candidates(c, tier, r.ID, r.Model, avail)
-	mode := billingMode(serving(h, r.Model.Provider, accts))
-	for _, st := range (contest{r.Model}).steps(mode) {
+	// Billing comes from the account that would pay for each candidate.
+	modes := map[string]string{}
+	modeOf := func(cd candidate) string {
+		m, ok := modes[cd.m.Provider]
+		if !ok {
+			m = billingMode(serving(h, cd.m.Provider, accts))
+			modes[cd.m.Provider] = m
+		}
+		return m
+	}
+	for _, st := range (contest{r.Model}).steps() {
 		var pool []candidate
 		for _, cd := range cands {
-			if st.ok(cd) {
+			perUse := modeOf(cd) == modeMetered || modeOf(cd) == modeOrg
+			if st.ok(cd) && (!perUse || st.reason == reasonCheap) {
 				pool = append(pool, cd)
 			}
 		}
@@ -129,7 +136,7 @@ func betterModel(in Input, h string, r resolved, accts []usage.Snapshot, avail [
 		slices.SortFunc(pool, func(a, b candidate) int {
 			return cmp.Or(st.less(a, b), byRank(a, b), byRelease(a, b), cmp.Compare(a.id, b.id))
 		})
-		return suggestion(in, h, r, pool[0], st.reason, mode, accts), true
+		return suggestion(in, h, r, pool[0], st.reason, modeOf(pool[0]), accts), true
 	}
 	return Finding{}, false
 }
@@ -171,7 +178,8 @@ func billingMode(accts []usage.Snapshot) string {
 	return modeRanking
 }
 
-// suggestion builds the better-model finding.
+// suggestion builds the better-model finding; mode is the billing of the
+// account that would pay for cd.
 func suggestion(in Input, h string, r resolved, cd candidate, reason, mode string, accts []usage.Snapshot) Finding {
 	c := in.Catalog
 	cat := sharedCategory(r.Model, cd.m)
@@ -182,7 +190,7 @@ func suggestion(in Input, h string, r resolved, cd candidate, reason, mode strin
 	switch mode {
 	case modeFlat:
 		ok := true
-		for _, s := range usage.Summaries(serving(h, r.Model.Provider, accts), in.Now) {
+		for _, s := range usage.Summaries(serving(h, cd.m.Provider, accts), in.Now) {
 			if s.Headroom != nil && *s.Headroom < LowHeadroom {
 				ok = false
 			}

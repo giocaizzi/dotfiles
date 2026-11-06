@@ -621,7 +621,7 @@ Runbook: one account shows twice, or "same account? unknown".
 |---|---|
 | (none) | Offline: reads `.chezmoidata/models.json` (the catalog), `.chezmoidata/harness-policy.toml` and the usage cache `usage.json`. No network, no credential read |
 | `-live` | Refreshes usage like `usage -live` (2 s per provider, failures degrade quietly) and rewrites the cache, the only file the doctor writes |
-| `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet |
+| `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet. Otherwise a short head: at most 5 lines (warnings first, then suggestions, no info lines), then `… N more: run chezmoi agents doctor` |
 | `-json` | Prints `{"findings":[...]}`; a finding has `level`, `kind`, `harness`, `role`, `text`, `fix`, `current`, `suggested`, `reason`, `billing` |
 | `-harness <list>` | Comma-separated harnesses to check; defaults to the harnesses in the usage cache |
 
@@ -644,26 +644,26 @@ Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption abo
 **Checks:**
 
 1. **Catalog:** a configured model not in the catalog (retired, renamed, untracked) warns; a role model outside its role's tier warns (tier drift), an untiered one is info.
-2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing:
-    - a flat plan you pay yourself picks the stronger model (`within your flat plan` when headroom is at least 10%);
-    - metered billing, or a seat paid by an organization (team, enterprise), gets only a cheaper model (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
-    - an unknown plan or hidden data gives ranking-only advice, with no capacity claims.
+2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing of the account that would pay for the suggested model (not the current model's account):
+    - paid by a flat plan you pay yourself, the stronger model may be suggested (`within your flat plan` when headroom is at least 10%);
+    - paid by metered billing or a seat paid by an organization (team, enterprise), only a cheaper model is suggested (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
+    - paid by an unknown plan or with hidden data, the advice is ranking-only, with no capacity claims.
 3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync` or the weekly models-sync PR.
 4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
 5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then chezmoi agents usage -live`.
 
 Without a usage cache the account, capacity and suggestion checks are skipped, with one info line.
 
-**Output** is in the Catppuccin style of `usage`: global lines first, then one group per harness (harnesses with identical findings share a group). Markers: `!` warning, `↑` suggestion, `i` info.
+**Output** is in the Catppuccin style of `usage`: global lines first, then the suggestions (one line per role and current → suggested model, listing every harness it applies to), then one group per harness for the rest (harnesses with identical findings share a group). Markers: `!` warning, `↑` suggestion, `i` info. The hook uses `-q`, so an apply shows at most the short head; run the plain command for everything.
 
-**Hook:** `run_after_agents-doctor.sh.tmpl` / `.ps1.tmpl` run `chezmoi-agents doctor -q -harness <selection>` after every `chezmoi apply` and `chezmoi update`, on machines with a harness selected only (never light machines). It never prompts, never fails or blocks the apply, and writes nothing. A binary older than the doctor (before the pin moves) is skipped silently. There is no per-check switch; skip it for one run with `chezmoi apply --exclude=scripts` (which skips every script).
+**Hook:** `run_after_agents-doctor.sh.tmpl` / `.ps1.tmpl` run `chezmoi-agents doctor -q -harness <selection>` after every `chezmoi apply` and `chezmoi update`, on machines with a harness selected only (never light machines). The PowerShell hook switches the console to UTF-8 for the glyphs (unverified on a Windows machine so far). It never prompts, never fails or blocks the apply, and writes nothing. A binary older than the doctor (before the pin moves) is skipped silently. There is no per-check switch; skip it for one run with `chezmoi apply --exclude=scripts` (which skips every script).
 
 Runbook: a doctor warning.
 
 - **When:** `chezmoi agents doctor` (or the hook after an apply) prints a `!` warning or a `↑` suggestion.
 - **Steps**, by kind:
-    - *Unknown or drifted model:* edit the key named in the fix in `harness-policy.toml` (`dots` edit), `make check`, ship the PR.
-    - *Suggestion:* decide whether the model is worth the change; if so, edit the key named in the fix, `make check`, ship the PR; if not, leave it (a suggestion is advice only).
+    - *Unknown or drifted model:* edit the policy key the line names (in parentheses, or after `edit`) in `harness-policy.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
+    - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`harnessPolicy.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
     - *Stale catalog:* merge the weekly models-sync PR, or run `make models-sync` and ship it (see [Refresh the data](#model-tiers-chezmoi-agents-models)).
     - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage -live`.
     - *No account:* log in to the named harness, then `chezmoi agents usage -live`.

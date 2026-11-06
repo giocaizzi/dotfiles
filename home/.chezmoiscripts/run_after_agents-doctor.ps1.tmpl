@@ -7,8 +7,11 @@
 # credentials); prints nothing when there is nothing to say; never fails the apply. A binary
 # without the doctor command is skipped silently (its error goes to $null).
 # Runbook: docs/OS.md#doctor-chezmoi-agents-doctor.
-$exe = '{{ joinPath .chezmoi.homeDir $r.dest }}'
+# Single-quoted literals: an apostrophe in the home path is doubled.
+$exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
 if (-not (Test-Path -LiteralPath $exe)) { exit 0 }
-& $exe doctor -q -harness '{{ $sel | replace " " "," }}' 2>$null
+# The output has non-ASCII glyphs: switch the console to UTF-8 (no console: no switch).
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch { }
+& $exe doctor -q -harness '{{ $sel | replace " " "," | replace "'" "''" }}' 2>$null
 exit 0
 {{ end -}}
