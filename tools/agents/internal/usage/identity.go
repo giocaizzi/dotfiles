@@ -50,3 +50,29 @@ func ParseGitHubUser(body []byte) (Profile, error) {
 	}
 	return Profile{Login: u.Login}, nil
 }
+
+// ParseOpenAIIdentity reads the identity fields of GET
+// chatgpt.com/backend-api/wham/usage: the top-level account_id and user_id,
+// which the Codex client checks against its token's chatgpt_account_id and
+// chatgpt_user_id (codex-rs/backend-client/src/types.rs,
+// RateLimitStatusWithResetCredits). It fails unless both are present: the
+// account id is a workspace shared by every member. Errors never include body
+// content.
+func ParseOpenAIIdentity(body []byte) (Profile, error) {
+	var u struct {
+		AccountID string `json:"account_id"`
+		UserID    string `json:"user_id"`
+		PlanType  string `json:"plan_type"`
+	}
+	if json.Unmarshal(body, &u) != nil {
+		return Profile{}, errors.New("parse openai identity: malformed JSON")
+	}
+	if u.AccountID == "" || u.UserID == "" {
+		return Profile{}, errors.New("parse openai identity: no account or user id")
+	}
+	out := Profile{AccountID: u.AccountID, UserID: u.UserID}
+	if p := OpenAIPlan(u.PlanType); p.Kind != KindUnknown {
+		out.Plan = p
+	}
+	return out, nil
+}
