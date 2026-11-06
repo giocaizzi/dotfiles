@@ -11,4 +11,5 @@
 - Tests: standard `testing` plus `go-cmp`, hand-written fakes (no mock libraries), `t.Parallel()`, `t.TempDir()`, `-race -shuffle=on`. The end-to-end test drives a real chezmoi and skips when it is absent. A bug gets a failing test first.
 - chezmoi's Go packages are internal, so the stable surface is its command line (`data`, `dump`, `managed`, `cat`, `source-path`, `execute-template`): extend `chez.Client`, never shell out elsewhere. Read-only renders set `dotsRender` so previews download no externals.
 - A new registry key, lint check or subcommand also needs: usage text in `internal/cli`, a case in the tests, and the docs in `docs/OS.md` / `docs/CI.md`.
+- Installed versions come from registry data (`versionCmd`, package-manager queries), never per-tool code branches; network lookups take a timeout and fail to "unknown"; never print command output, only parsed versions.
 - Release: tag `dots-vX.Y.Z` (runbook: `docs/OS.md` → The chezmoi-dots plugin).
