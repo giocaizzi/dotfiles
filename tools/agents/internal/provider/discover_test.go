@@ -60,7 +60,7 @@ func TestDiscoverMergesOneChatGPTAccount(t *testing.T) {
 	if want := "codex,opencode,pi"; strings.Join(oa.Harnesses, ",") != want {
 		t.Errorf("harnesses = %v, want %s", oa.Harnesses, want)
 	}
-	if oa.Label != "me@example.com" || oa.Key != "acct-1" {
+	if oa.Label != "me@example.com" || oa.Key != "openai:acct-1" {
 		t.Errorf("label/key = %q/%q", oa.Label, oa.Key)
 	}
 	// The opencode token expires last, so it is the newest and wins.

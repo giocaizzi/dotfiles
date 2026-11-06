@@ -113,13 +113,13 @@ func readCopilot(st Store) []Account {
 			Provider:  GitHubCopilot,
 			ID:        "copilot:" + normalizeHost(u.host) + ":" + u.login,
 			Label:     u.login,
-			Key:       u.login,
 			Login:     u.login,
 			Host:      normalizeHost(u.host), // the keychain lookup keeps the host as written
 			Harnesses: []string{"copilot"},
 			Auth:      AuthOAuth,
 			Plan:      unknownPlan(),
 		}
+		proven(&a, CopilotKey(u.host, u.login))
 		token := ""
 		if envToken != "" && u.login == active {
 			token, a.Source = envToken, srcEnv
