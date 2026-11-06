@@ -41,9 +41,10 @@ const wantPlain = `chezmoi agents doctor — models, accounts and capacity   (li
 ! model catalog synced 40 days ago (2026-09-27)  · chezmoi agents models sync
 i no usage data: account checks skipped
 
+↑ driver   Old 4 → New 5   better-ranked · coding #9 → #2 · $3/$15 → $2.5/$12.5 /Mtok · included in your plan · claude, codex
+
 claude · codex
   ! scout: model ghost is not in the catalog  · harnessPolicy.models.tiers.scout
-  ↑ driver   Old 4 → New 5   better-ranked · coding #9 → #2 · $3/$15 → $2.5/$12.5 /Mtok · included in your plan
 
 pi
   ↑ pi: no account for provider acme  · chezmoi agents usage -live
@@ -52,7 +53,7 @@ pi
 func TestRenderDoctorPlain(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	renderDoctor(&buf, term.Style{}, sampleFindings(), "(live)")
+	renderDoctor(&buf, term.Style{}, sampleFindings(), "(live)", 0)
 	if diff := cmp.Diff(wantPlain, buf.String()); diff != "" {
 		t.Errorf("render mismatch (-want +got):\n%s", diff)
 	}
@@ -62,15 +63,16 @@ func TestRenderDoctorStyled(t *testing.T) {
 	t.Parallel()
 	st := term.Style{B: "<B>", M: "<M>", R: "<R>", G: "<G>", Y: "<Y>", C: "<C>", D: "<D>", O: "<O>"}
 	var buf bytes.Buffer
-	renderDoctor(&buf, st, sampleFindings(), "(live)")
+	renderDoctor(&buf, st, sampleFindings(), "(live)", 0)
 	want := `<B>chezmoi agents doctor — models, accounts and capacity<O>   <D>(live)<O>
 
 <Y>!<O> model catalog synced 40 days ago (2026-09-27)  <D>· chezmoi agents models sync<O>
 <D>i<O> no usage data: account checks skipped
 
+<G>↑<O> <M>driver   <O>Old 4 → <M>New 5<O>   <D>better-ranked · coding #9 → #2 · $3/$15 → $2.5/$12.5 /Mtok · included in your plan · claude, codex<O>
+
 <B>claude · codex<O>
   <Y>!<O> scout: model ghost is not in the catalog  <D>· harnessPolicy.models.tiers.scout<O>
-  <G>↑<O> <M>driver   <O>Old 4 → <M>New 5<O>   <D>better-ranked · coding #9 → #2 · $3/$15 → $2.5/$12.5 /Mtok · included in your plan<O>
 
 <B>pi<O>
   <G>↑<O> pi: no account for provider acme  <D>· chezmoi agents usage -live<O>
@@ -83,7 +85,7 @@ func TestRenderDoctorStyled(t *testing.T) {
 func TestRenderDoctorNothingToReport(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	renderDoctor(&buf, term.Style{}, nil, "(no usage cache; -live to refresh)")
+	renderDoctor(&buf, term.Style{}, nil, "(no usage cache; -live to refresh)", 0)
 	want := "chezmoi agents doctor — models, accounts and capacity   (no usage cache; -live to refresh)\n\n  ✓ nothing to report\n"
 	if diff := cmp.Diff(want, buf.String()); diff != "" {
 		t.Errorf("render mismatch (-want +got):\n%s", diff)
@@ -99,7 +101,7 @@ func TestRenderDoctorGroupOrder(t *testing.T) {
 	}
 	findings := []doctor.Finding{a("pi"), {Level: doctor.LevelInfo, Harness: "codex", Text: "other"}, a("claude"), a("zed")}
 	var buf bytes.Buffer
-	renderDoctor(&buf, term.Style{}, findings, "")
+	renderDoctor(&buf, term.Style{}, findings, "", 0)
 	want := "claude · pi · zed\n  i same\n\ncodex\n  i other\n"
 	if !strings.HasSuffix(buf.String(), want) {
 		t.Errorf("groups = %q, want suffix %q", buf.String(), want)
@@ -110,7 +112,7 @@ func TestRenderDoctorGroupOrder(t *testing.T) {
 func TestRenderDoctorSuggestWithoutModels(t *testing.T) {
 	t.Parallel()
 	var buf bytes.Buffer
-	renderDoctor(&buf, term.Style{}, []doctor.Finding{{Level: doctor.LevelSuggest, Text: "try acme", Fix: "do it"}}, "")
+	renderDoctor(&buf, term.Style{}, []doctor.Finding{{Level: doctor.LevelSuggest, Text: "try acme", Fix: "do it"}}, "", 0)
 	if want := "↑ try acme  · do it\n"; !strings.HasSuffix(buf.String(), want) {
 		t.Errorf("output = %q, want suffix %q", buf.String(), want)
 	}
@@ -128,8 +130,89 @@ func TestRenderDoctorSanitizes(t *testing.T) {
 		f,
 	}
 	var buf bytes.Buffer
-	renderDoctor(&buf, term.Style{}, findings, "(me\x1bta)")
+	renderDoctor(&buf, term.Style{}, findings, "(me\x1bta)", 0)
 	if strings.ContainsRune(buf.String(), '\x1b') || strings.ContainsRune(buf.String(), '\x07') {
 		t.Errorf("control character in output: %q", buf.String())
+	}
+}
+
+func roleSuggest(harness, role, sug string) doctor.Finding {
+	f := suggestFinding(harness)
+	f.Role = role
+	f.Suggested.ID = sug
+	return f
+}
+
+// Identical suggestions collapse into one line per role, in role order, with
+// their harnesses in harness order; a different model pair stays apart.
+func TestRenderDoctorCollapsesSuggestions(t *testing.T) {
+	t.Parallel()
+	findings := []doctor.Finding{
+		roleSuggest("pi", doctor.RoleDriver, "acme/new"),
+		roleSuggest("copilot", doctor.RoleScout, "acme/new"),
+		roleSuggest("claude", doctor.RoleDriver, "acme/new"),
+		roleSuggest("pi", doctor.RoleScout, "acme/new"),
+		roleSuggest("codex", doctor.RoleDriver, "acme/other"),
+	}
+	var buf bytes.Buffer
+	renderDoctor(&buf, term.Style{}, findings, "", 0)
+	var got []string
+	for l := range strings.SplitSeq(buf.String(), "\n") {
+		if strings.HasPrefix(l, "↑") {
+			got = append(got, l[strings.LastIndex(l, " · ")+len(" · "):])
+		}
+	}
+	want := []string{"copilot, pi", "claude, pi", "codex"}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("collapsed harness lists (-want +got):\n%s\n%s", diff, buf.String())
+	}
+	if strings.Contains(buf.String(), "\nclaude") || strings.Contains(buf.String(), "\npi") {
+		t.Errorf("suggestions still repeat in harness groups:\n%s", buf.String())
+	}
+}
+
+func quietFindings(warns, sugs int) []doctor.Finding {
+	fs := make([]doctor.Finding, 0, 1+warns+sugs)
+	fs = append(fs, doctor.Finding{Level: doctor.LevelInfo, Text: "info dropped"})
+	for range warns {
+		fs = append(fs, doctor.Finding{Level: doctor.LevelWarn, Kind: doctor.KindCapacity, Harness: "codex", Text: "openai 5h at 95%, resets in 5h 11m"})
+	}
+	roles := []string{doctor.RoleScout, doctor.RoleWorker, doctor.RoleDriver, doctor.RoleEscalate}
+	for i := range sugs {
+		fs = append(fs, roleSuggest("claude", roles[i], "acme/new"))
+	}
+	return fs
+}
+
+func TestRenderDoctorQuietWithinLimit(t *testing.T) {
+	t.Parallel()
+	findings := append([]doctor.Finding{{Level: doctor.LevelWarn, Text: "global warn"}}, quietFindings(2, 2)...)
+	var buf bytes.Buffer
+	renderDoctor(&buf, term.Style{}, findings, "(live)", 5)
+	lines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	if len(lines) != 2+5 {
+		t.Fatalf("lines = %d, want title, blank and 5:\n%s", len(lines), buf.String())
+	}
+	for i, prefix := range []string{"! global warn", "! codex: openai 5h at 95%, resets in 5h 11m", "! codex: openai", "↑ scout", "↑ worker"} {
+		if !strings.HasPrefix(lines[2+i], prefix) {
+			t.Errorf("line %d = %q, want prefix %q", i, lines[2+i], prefix)
+		}
+	}
+	if strings.Contains(buf.String(), "more") || strings.Contains(buf.String(), "info dropped") {
+		t.Errorf("unexpected content:\n%s", buf.String())
+	}
+}
+
+func TestRenderDoctorQuietOverLimit(t *testing.T) {
+	t.Parallel()
+	st := term.Style{D: "<D>", O: "<O>"}
+	var buf bytes.Buffer
+	renderDoctor(&buf, st, quietFindings(4, 3), "", 5)
+	lines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	if len(lines) != 2+5+1 {
+		t.Fatalf("lines = %d, want title, blank, 5 and the more line:\n%s", len(lines), buf.String())
+	}
+	if want := "  <D>… 2 more: run chezmoi agents doctor<O>"; lines[len(lines)-1] != want {
+		t.Errorf("last line = %q, want %q", lines[len(lines)-1], want)
 	}
 }

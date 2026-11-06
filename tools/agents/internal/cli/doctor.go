@@ -25,6 +25,12 @@ type doctorBudget struct {
 	offline, live, perProvider, identity time.Duration
 }
 
+// doctorGrace is how long an overrun run waits for its worker after cancel.
+const doctorGrace = 250 * time.Millisecond
+
+// quietLines caps the loud lines of -q output (the apply hook).
+const quietLines = 5
+
 func defaultDoctorBudget() doctorBudget {
 	return doctorBudget{
 		offline:     2 * time.Second,
@@ -85,6 +91,13 @@ func (d Deps) runDoctorBudget(ctx context.Context, args []string, store provider
 		return r.code
 	case <-timer.C:
 		cancel()
+		// Give a worker that is writing the cache a moment to finish or bail out.
+		grace := time.NewTimer(doctorGrace)
+		defer grace.Stop()
+		select {
+		case <-done:
+		case <-grace.C:
+		}
 		if !*quiet {
 			fmt.Fprintf(d.Stderr, "doctor: timed out after %s\n", budget)
 		}
@@ -170,7 +183,11 @@ func (d Deps) doctorWork(ctx context.Context, store provider.Store, f usageFetch
 		}
 	case quiet && !doctor.Loud(findings):
 	default:
-		renderDoctor(&r.out, term.NewStyle(d.Stdout, d.Getenv), findings, meta)
+		limit := 0
+		if quiet {
+			limit = quietLines
+		}
+		renderDoctor(&r.out, term.NewStyle(d.Stdout, d.Getenv), findings, meta, limit)
 	}
 	return r
 }
