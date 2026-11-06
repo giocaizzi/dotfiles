@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          token: ${{ secrets.BUMP_TOKEN || github.token }}
+          persist-credentials: false
       - uses: actions/setup-go@v7
         with:
           go-version-file: tools/dots/go.mod
@@ -37,6 +37,8 @@ jobs:
           branch=chore/bump-releases
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Checkout keeps no credential; only this step gets the token, for git through gh.
+          gh auth setup-git
           git switch -c "$branch"
           git commit -am "chore(deps): bump pinned release binaries"
           git push --force origin "$branch"
