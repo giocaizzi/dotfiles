@@ -16,55 +16,72 @@ import (
 var update = flag.Bool("update", false, "rewrite golden files")
 
 func sample() Catalog {
-	offer := func(id string, in, out float64) Offer { return Offer{ID: id, In: in, Out: out} }
 	rank := func(r int, v string) Rank { return Rank{Rank: r, Variant: v} }
 	return Catalog{
-		Schema:   Schema,
-		SyncedAt: "2026-11-06",
-		Sources:  SourceInfo{Arena: ArenaInfo{Board: ArenaBoard, PublishDate: "2026-10-28"}},
+		Schema:    Schema,
+		SyncedAt:  "2026-11-06",
+		Providers: []string{"anthropic", "openai", "google"},
+		Sources:   SourceInfo{Arena: ArenaInfo{Board: ArenaBoard, PublishDate: "2026-10-28"}},
 		Tiers: map[string][]string{
-			"lightweight": {"openai/gpt-6-luna", "copilot/only-mini"},
+			"lightweight": {"openai/gpt-6-luna", "google/gemma-4-31b-it"},
 			"versatile":   {"anthropic/claude-sonnet-5-5", "openai/ghost"},
 			"powerful":    {"anthropic/claude-opus-5-5"},
 		},
 		Models: map[string]Model{
 			"openai/gpt-6-luna": {
-				Name: "GPT-6 Luna",
-				Providers: map[string]Offer{
-					"openai":         offer("gpt-6-luna", 0.1, 0.5),
-					"github-copilot": offer("gpt-6-luna", 0.1, 0.5),
-				},
+				Name: "GPT-6 Luna", Provider: "openai", ID: "gpt-6-luna", Context: 1050000,
+				API:   &Price{In: 0.1, Out: 0.5, CacheRead: 0.01},
 				Arena: map[string]Rank{"text": rank(12, "Low"), "coding": rank(60, "")},
 			},
-			"copilot/only-mini": {
-				Name:      "Only Mini",
-				Providers: map[string]Offer{"github-copilot": offer("only-mini", 0.25, 2)},
-				Arena:     map[string]Rank{"text": rank(30, "")},
+			"google/gemma-4-31b-it": {
+				Name: "Gemma 4 31B", Provider: "google", ID: "gemma-4-31b-it", Context: 262144,
+				Arena: map[string]Rank{"text": rank(30, "")},
 			},
 			"anthropic/claude-sonnet-5-5": {
-				Name:      "Claude Sonnet 5.5",
-				Providers: map[string]Offer{"anthropic": offer("claude-sonnet-5-5", 3, 15)},
-				Arena:     map[string]Rank{"text": rank(4, "High"), "coding": rank(2, ""), "math": rank(9, "")},
-				External:  External{ECI: 151.4, METRHorizonMin: 95},
+				Name: "Claude Sonnet 5.5", Provider: "anthropic", ID: "claude-sonnet-5-5", Context: 200000,
+				API:      &Price{In: 3, Out: 15, CacheRead: 0.3, CacheWrite: 3.75},
+				Arena:    map[string]Rank{"text": rank(4, "High"), "coding": rank(2, ""), "math": rank(9, "")},
+				External: External{ECI: 151.4, METRHorizonMin: 95},
 			},
 			"anthropic/claude-opus-5-5": {
-				Name: "Claude Opus 5.5",
-				Providers: map[string]Offer{
-					"anthropic":      offer("claude-opus-5-5", 5, 25),
-					"github-copilot": offer("claude-opus-5-5", 5, 25),
-				},
+				Name: "Claude Opus 5.5", Provider: "anthropic", ID: "claude-opus-5-5", Context: 1000000,
+				API:   &Price{In: 5, Out: 25, CacheRead: 0.5},
 				Arena: map[string]Rank{"text": rank(1, "High"), "coding": rank(2, "High"), "webdev": rank(3, "")},
 			},
 			"openai/untiered-pipe": {
-				Name:      "Untiered | Pipe",
-				Providers: map[string]Offer{"openai": offer("x", 1, 4)},
-				Arena:     map[string]Rank{"agent": rank(7, "")},
+				Name: "Untiered | Pipe", Provider: "openai", ID: "x", Context: 400000,
+				API:   &Price{In: 1, Out: 4},
+				Arena: map[string]Rank{"agent": rank(7, "")},
 			},
 			"openai/gpt-6-sol": {
-				Name:      "GPT-6 Sol",
-				Providers: map[string]Offer{"openai": offer("gpt-6-sol", 2.5, 10)},
+				Name: "GPT-6 Sol", Provider: "openai", ID: "gpt-6-sol", Context: 1048576,
+				API: &Price{In: 2.5, Out: 10},
 			},
 		},
+	}
+}
+
+func TestContextCell(t *testing.T) {
+	t.Parallel()
+	for in, want := range map[int]string{
+		0: "", 512: "512", 200000: "200k", 262144: "262k", 400000: "400k",
+		1000000: "1M", 1048576: "1.05M", 1050000: "1.05M", 2000000: "2M",
+	} {
+		if got := contextCell(in); got != want {
+			t.Errorf("contextCell(%d) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestPriceCellsNotAvailable(t *testing.T) {
+	t.Parallel()
+	in, out, cache := priceCells(Model{})
+	if in != "n/a" || out != "n/a" || cache != "" {
+		t.Errorf("priceCells = %q %q %q", in, out, cache)
+	}
+	md := string(Markdown(sample()))
+	if !strings.Contains(md, "| Gemma 4 31B | google | google/gemma-4-31b-it | n/a | n/a |  | 262k |") {
+		t.Errorf("n/a row missing:\n%s", md)
 	}
 }
 
@@ -138,7 +155,7 @@ func TestExternalFormats(t *testing.T) {
 			ECI: 150.6, TerminalBench: 0.512, SWEBenchVerified: 80.4, METRHorizonMin: 120, OSWorld: 0.5,
 		}}},
 	}
-	want := "| X |  |  |  |  |  |  |  |  |  | 151 | 51% | 80% | 120m | 50% |"
+	want := "| X |  | a/x | n/a | n/a |  |  |  |  |  |  |  |  |  |  | 151 | 51% | 80% | 120m | 50% |"
 	if got := string(Markdown(c)); !strings.Contains(got, want) {
 		t.Errorf("row %q not in:\n%s", want, got)
 	}

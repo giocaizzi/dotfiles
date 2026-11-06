@@ -9,14 +9,15 @@ import (
 func pm(provider, id, name, canonical, date string, in, out float64) ProviderModel {
 	return ProviderModel{
 		Provider: provider, ID: id, Name: name, CanonicalID: canonical, ReleaseDate: date,
-		In: in, Out: out, ToolCall: true, TextOutput: true,
+		Context: 1000, Price: &Price{In: in, Out: out}, ToolCall: true, TextOutput: true,
 	}
 }
 
 func baseCatalog() Catalog {
 	return Catalog{
-		Schema: Schema,
-		Since:  "2026-01-01",
+		Schema:    Schema,
+		Since:     "2026-01-01",
+		Providers: []string{"anthropic", "openai", "google"},
 		Tiers: map[string][]string{
 			"powerful": {"anthropic/claude-opus-5-5"},
 		},
@@ -30,65 +31,82 @@ func TestApplyKeepRules(t *testing.T) {
 	c := baseCatalog()
 	c.Tiers["lightweight"] = []string{"anthropic/claude-haiku-3"}
 	c.Tiers["extra"] = []string{"openai/gpt-realtime-2.1"}
+	c.Ignore = append(c.Ignore, "openai/gpt-ignored")
+	noText := pm("openai", "gpt-image", "GPT Image", "openai/gpt-image", "2026-07-06", 4, 24)
+	noText.TextOutput = false
+	deprecated := pm("google", "gemini-old", "Gemini Old", "google/gemini-old", "2026-05-01", 1, 2)
+	deprecated.Deprecated = true
+	noPrice := pm("google", "gemma-4", "Gemma 4", "google/gemma-4", "2026-06-01", 0, 0)
+	noPrice.Price = nil
 	src := Sources{Today: "2026-11-06", ModelsDev: []ProviderModel{
 		pm("anthropic", "claude-opus-5-5", "Claude Opus 5.5", "anthropic/claude-opus-5-5", "2026-09-22", 4, 20),
-		pm("github-copilot", "claude-opus-5.5", "Claude Opus 5.5 (copilot)", "anthropic/claude-opus-5-5", "2026-09-23", 4, 20),
-		pm("github-copilot", "gemini-3.6-flash", "Gemini 3.6 Flash", "google/gemini-3.6-flash", "2026-07-21", 0.75, 3.75),
+		// untracked provider: ignored entirely
+		pm("reseller", "claude-opus-5.5", "Claude Opus 5.5 (reseller)", "anthropic/claude-opus-5-5", "2026-09-23", 9, 9),
+		pm("reseller", "only-here", "Only Here", "reseller/only-here", "2026-07-21", 1, 1),
+		// non-first-party entry under a tracked provider: ignored
+		pm("openai", "claude-clone", "Claude Clone", "anthropic/claude-clone", "2026-09-23", 1, 1),
 		pm("anthropic", "claude-3-opus", "Claude 3 Opus", "anthropic/claude-3-opus", "2024-02-29", 15, 75),
 		pm("anthropic", "claude-haiku-3", "Claude Haiku 3", "anthropic/claude-haiku-3", "2024-03-07", 0.25, 1.25),
 		pm("openai", "gpt-6-luna", "GPT-6 Luna", "openai/gpt-6-luna", "2026-09-22", 0.1, 0.5),
 		pm("openai", "gpt-realtime-2.1", "GPT-Realtime-2.1", "openai/gpt-realtime-2.1", "2026-07-06", 4, 24),
-		pm("openai", "gpt-image", "GPT Image", "openai/gpt-image", "2026-07-06", 4, 24),
+		noText,
 		pm("openai", "gpt-ignored", "Ignored", "openai/gpt-ignored", "2026-07-06", 1, 1),
+		deprecated,
+		noPrice,
 	}}
-	src.ModelsDev[len(src.ModelsDev)-2].TextOutput = false
-	c.Ignore = append(c.Ignore, "openai/gpt-ignored")
 
 	got, rep := Apply(c, src)
 
 	wantIDs := []string{
-		"anthropic/claude-haiku-3", "anthropic/claude-opus-5-5", "google/gemini-3.6-flash",
+		"anthropic/claude-haiku-3", "anthropic/claude-opus-5-5", "google/gemma-4",
 		"openai/gpt-6-luna", "openai/gpt-realtime-2.1",
 	}
 	if diff := cmp.Diff(wantIDs, sortedKeys(got.Models)); diff != "" {
 		t.Errorf("model ids (-want +got):\n%s", diff)
 	}
-	opus := got.Models["anthropic/claude-opus-5-5"]
 	wantOpus := Model{
-		Name: "Claude Opus 5.5", ReleaseDate: "2026-09-22",
-		Providers: map[string]Offer{
-			"anthropic":      {ID: "claude-opus-5-5", In: 4, Out: 20},
-			"github-copilot": {ID: "claude-opus-5.5", In: 4, Out: 20},
-		},
+		Name: "Claude Opus 5.5", Provider: "anthropic", ID: "claude-opus-5-5", ReleaseDate: "2026-09-22",
+		Context: 1000, API: &Price{In: 4, Out: 20},
 	}
-	if diff := cmp.Diff(wantOpus, opus); diff != "" {
+	if diff := cmp.Diff(wantOpus, got.Models["anthropic/claude-opus-5-5"]); diff != "" {
 		t.Errorf("opus (-want +got):\n%s", diff)
 	}
-	if got.Models["google/gemini-3.6-flash"].Name != "Gemini 3.6 Flash" {
-		t.Errorf("copilot-only model missing its name: %+v", got.Models["google/gemini-3.6-flash"])
+	if m := got.Models["google/gemma-4"]; m.API != nil || m.Provider != "google" {
+		t.Errorf("gemma = %+v, want provider google and no API price", m)
 	}
 	if got.SyncedAt != "2026-11-06" || got.Schema != Schema || got.Since != c.Since {
 		t.Errorf("header = %q %d %q", got.SyncedAt, got.Schema, got.Since)
 	}
-	wantUntiered := []string{"google/gemini-3.6-flash", "openai/gpt-6-luna"}
+	wantUntiered := []string{"google/gemma-4", "openai/gpt-6-luna"}
 	if diff := cmp.Diff(wantUntiered, rep.Untiered); diff != "" {
 		t.Errorf("untiered (-want +got):\n%s", diff)
 	}
 }
 
-func TestApplyFirstPartyNameWins(t *testing.T) {
+func TestApplyCanonicalIDPartWins(t *testing.T) {
 	t.Parallel()
-	src := Sources{ModelsDev: []ProviderModel{
-		pm("anthropic", "claude-opus-5-5", "First Party", "anthropic/claude-opus-5-5", "2026-09-22", 4, 20),
-		pm("github-copilot", "claude-opus-5.5", "Copilot Name", "anthropic/claude-opus-5-5", "2026-09-30", 4, 20),
-		pm("github-copilot", "gpt-x", "Copilot GPT", "openai/gpt-x", "2026-02-02", 1, 2),
-	}}
-	got, _ := Apply(baseCatalog(), src)
-	if m := got.Models["anthropic/claude-opus-5-5"]; m.Name != "First Party" || m.ReleaseDate != "2026-09-22" {
-		t.Errorf("opus = %q %q", m.Name, m.ReleaseDate)
+	c := baseCatalog()
+	c.Tiers["extra"] = []string{"openai/gpt-5.6-sol"}
+	alias := pm("openai", "gpt-5.6", "GPT-5.6", "openai/gpt-5.6-sol", "2026-08-01", 4, 20)
+	sol := pm("openai", "gpt-5.6-sol", "GPT-5.6 Sol", "openai/gpt-5.6-sol", "2026-08-02", 5, 25)
+	for _, entries := range [][]ProviderModel{{alias, sol}, {sol, alias}} {
+		got, _ := Apply(c, Sources{ModelsDev: entries})
+		m := got.Models["openai/gpt-5.6-sol"]
+		if m.ID != "gpt-5.6-sol" || m.Name != "GPT-5.6 Sol" || m.API.In != 5 {
+			t.Errorf("model = %+v, want the gpt-5.6-sol entry", m)
+		}
 	}
-	if m := got.Models["openai/gpt-x"]; m.Name != "Copilot GPT" || m.ReleaseDate != "2026-02-02" {
-		t.Errorf("gpt-x = %q %q", m.Name, m.ReleaseDate)
+}
+
+func TestApplyFirstEntryByIDWithoutCanonicalPart(t *testing.T) {
+	t.Parallel()
+	c := baseCatalog()
+	c.Tiers["extra"] = []string{"openai/gpt-x"}
+	b := pm("openai", "gpt-x-b", "B", "openai/gpt-x", "2026-08-01", 1, 1)
+	a := pm("openai", "gpt-x-a", "A", "openai/gpt-x", "2026-08-01", 2, 2)
+	got, _ := Apply(c, Sources{ModelsDev: []ProviderModel{b, a}})
+	if m := got.Models["openai/gpt-x"]; m.ID != "gpt-x-a" {
+		t.Errorf("model = %+v, want the first entry by id", m)
 	}
 }
 
@@ -96,7 +114,7 @@ func TestApplyStaleAndMissing(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
 	c.Tiers["versatile"] = []string{"openai/gone", "openai/never-seen"}
-	c.Models["openai/gone"] = Model{Name: "Gone", Providers: map[string]Offer{"openai": {ID: "gone", In: 1, Out: 2}}}
+	c.Models["openai/gone"] = Model{Name: "Gone", Provider: "openai", ID: "gone", API: &Price{In: 1, Out: 2}}
 	got, rep := Apply(c, Sources{Today: "2026-11-06"})
 	if diff := cmp.Diff([]string{"anthropic/claude-opus-5-5", "openai/never-seen"}, rep.Missing); diff != "" {
 		t.Errorf("missing (-want +got):\n%s", diff)
@@ -188,7 +206,7 @@ func TestApplyArenaAliasWinsOverKey(t *testing.T) {
 	}
 }
 
-func TestApplyArenaMatchesByNameAndOfferID(t *testing.T) {
+func TestApplyArenaMatchesByNameAndAPIID(t *testing.T) {
 	t.Parallel()
 	src := arenaSrc(
 		ArenaRow{Board: ArenaBoard, Category: "overall", ModelName: "GPT-6.1 Sol (Max)", Org: "openai", Rank: 2, Rating: 1, PublishDate: "d"},
@@ -259,23 +277,25 @@ func TestApplyDoesNotMutateInput(t *testing.T) {
 	t.Parallel()
 	c := baseCatalog()
 	c.Models["anthropic/claude-opus-5-5"] = Model{
-		Name:      "Old",
-		Providers: map[string]Offer{"anthropic": {ID: "old"}},
-		Arena:     map[string]Rank{"text": {Rank: 9}},
-		External:  External{ECI: 1},
+		Name:     "Old",
+		ID:       "old",
+		API:      &Price{In: 1},
+		Arena:    map[string]Rank{"text": {Rank: 9}},
+		External: External{ECI: 1},
 	}
 	c.Models["openai/gone"] = Model{Name: "Gone", Arena: map[string]Rank{"text": {Rank: 8}}}
 	c.Tiers["versatile"] = []string{"openai/gone"}
 	want := Catalog{
-		Schema: c.Schema, Since: c.Since,
+		Schema: c.Schema, Since: c.Since, Providers: c.Providers,
 		Tiers:  map[string][]string{"powerful": {"anthropic/claude-opus-5-5"}, "versatile": {"openai/gone"}},
 		Ignore: []string{"openai/gpt-realtime-2.1"},
 		Models: map[string]Model{
 			"anthropic/claude-opus-5-5": {
-				Name:      "Old",
-				Providers: map[string]Offer{"anthropic": {ID: "old"}},
-				Arena:     map[string]Rank{"text": {Rank: 9}},
-				External:  External{ECI: 1},
+				Name:     "Old",
+				ID:       "old",
+				API:      &Price{In: 1},
+				Arena:    map[string]Rank{"text": {Rank: 9}},
+				External: External{ECI: 1},
 			},
 			"openai/gone": {Name: "Gone", Arena: map[string]Rank{"text": {Rank: 8}}},
 		},

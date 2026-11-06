@@ -30,12 +30,15 @@ func Marshal(c Catalog) ([]byte, error) {
 	return append(data, '\n'), nil
 }
 
-// Validate checks the manual keys: known schema and tier names, every tiered
+// Validate checks the manual keys: known schema, providers and tier names, every tiered
 // id present in Models, no id in two tiers.
 func (c Catalog) Validate() error {
 	var errs []error
 	if c.Schema != Schema {
 		errs = append(errs, fmt.Errorf("schema %d, want %d", c.Schema, Schema))
+	}
+	if len(c.Providers) == 0 {
+		errs = append(errs, errors.New("providers: empty (list the tracked models.dev provider keys)"))
 	}
 	seen := map[string]string{}
 	for _, tier := range sortedKeys(c.Tiers) {

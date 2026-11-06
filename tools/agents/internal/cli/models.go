@@ -215,7 +215,7 @@ func (d Deps) syncModels(ctx context.Context, opts modelsOpts, ep endpoints, now
 	f := fetcher{client: &http.Client{Timeout: 60 * time.Second}, backoff: ep.backoff}
 	src := catalog.Sources{Today: now().Format("2006-01-02")}
 
-	if src.ModelsDev, err = f.modelsDev(ctx, ep); err != nil {
+	if src.ModelsDev, err = f.modelsDev(ctx, ep, c.Providers); err != nil {
 		return d.modelsFail("%v", err)
 	}
 	if src.Arena, err = f.arena(ctx, ep); err != nil {
@@ -309,12 +309,12 @@ type fetcher struct {
 	backoff []time.Duration
 }
 
-func (f fetcher) modelsDev(ctx context.Context, ep endpoints) ([]catalog.ProviderModel, error) {
+func (f fetcher) modelsDev(ctx context.Context, ep endpoints, providers []string) ([]catalog.ProviderModel, error) {
 	body, err := f.get(ctx, ep.modelsDev)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := catalog.ParseModelsDev(body)
+	rows, err := catalog.ParseModelsDev(body, providers)
 	if err != nil {
 		return nil, fmt.Errorf("parse %s: %w", ep.modelsDev, err)
 	}

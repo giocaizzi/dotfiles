@@ -653,7 +653,7 @@ func TestModelsSyncOtherSchemaExits1WithoutFetching(t *testing.T) {
 	t.Parallel()
 	srv := newFakeServer(t)
 	_, file, _ := repoDir(t, "models.json")
-	other := strings.Replace(string(mustRead(t, file)), `"schema": 1`, `"schema": 2`, 1)
+	other := strings.Replace(string(mustRead(t, file)), `"schema": 2`, `"schema": 3`, 1)
 	if err := os.WriteFile(file, []byte(other), 0o644); err != nil {
 		t.Fatal(err)
 	}

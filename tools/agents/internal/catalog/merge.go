@@ -99,10 +99,15 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	return out, rep
 }
 
-// freshModels builds the models of the kept canonical ids from models.dev.
+// freshModels builds the models of the kept canonical ids from models.dev,
+// using only first-party entries of the tracked providers.
 func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map[string]Model {
 	groups := map[string][]ProviderModel{}
 	for _, e := range entries {
+		org, _, _ := strings.Cut(e.CanonicalID, "/")
+		if e.Provider != org || !slices.Contains(c.Providers, e.Provider) {
+			continue
+		}
 		groups[e.CanonicalID] = append(groups[e.CanonicalID], e)
 	}
 	fresh := map[string]Model{}
@@ -117,48 +122,30 @@ func freshModels(c Catalog, entries []ProviderModel, tiered map[string]bool) map
 	return fresh
 }
 
+// keep reports whether some first-party entry is a recent, live text model
+// with tool calling.
 func keep(since string, offers []ProviderModel) bool {
 	for _, o := range offers {
-		if o.Provider == ProviderCopilot {
-			return true
-		}
-		if (o.Provider == ProviderAnthropic || o.Provider == ProviderOpenAI) &&
-			o.ReleaseDate >= since && o.TextOutput && o.ToolCall {
+		if o.ReleaseDate >= since && o.TextOutput && o.ToolCall && !o.Deprecated {
 			return true
 		}
 	}
 	return false
 }
 
-// buildModel takes name and release date from the first-party offer, else
-// from the Copilot one. The first offer (by id) of a provider wins.
+// buildModel takes every field from the entry whose id is the canonical id's
+// part after the provider, else the first entry by id.
 func buildModel(id string, offers []ProviderModel) Model {
-	m := Model{Providers: map[string]Offer{}}
-	org, _, _ := strings.Cut(id, "/")
-	var first, copilot *ProviderModel
-	for i, o := range offers {
-		if _, dup := m.Providers[o.Provider]; !dup {
-			m.Providers[o.Provider] = Offer{ID: o.ID, In: o.In, Out: o.Out}
-		}
-		switch o.Provider {
-		case org:
-			if first == nil {
-				first = &offers[i]
-			}
-		case ProviderCopilot:
-			if copilot == nil {
-				copilot = &offers[i]
-			}
-		}
+	org, part, _ := strings.Cut(id, "/")
+	src := slices.MinFunc(offers, func(a, b ProviderModel) int { return strings.Compare(a.ID, b.ID) })
+	if i := slices.IndexFunc(offers, func(o ProviderModel) bool { return o.ID == part }); i >= 0 {
+		src = offers[i]
 	}
-	src := first
-	if src == nil {
-		src = copilot
+	m := Model{Name: src.Name, Provider: org, ID: src.ID, ReleaseDate: src.ReleaseDate, Context: src.Context}
+	if src.Price != nil {
+		p := *src.Price
+		m.API = &p
 	}
-	if src == nil {
-		src = &offers[0]
-	}
-	m.Name, m.ReleaseDate = src.Name, src.ReleaseDate
 	return m
 }
 
@@ -177,9 +164,7 @@ func newIndex(models map[string]Model) index {
 		_, part, _ := strings.Cut(id, "/")
 		add(Key(part), id)
 		add(Key(m.Name), id)
-		for _, o := range m.Providers {
-			add(Key(o.ID), id)
-		}
+		add(Key(m.ID), id)
 	}
 	return idx
 }

@@ -1,7 +1,11 @@
 {
   "modelCatalog": {
-    "schema": 1,
+    "schema": 2,
     "since": "2026-01-01",
+    "providers": [
+      "anthropic",
+      "openai"
+    ],
     "sources": {
       "arena": {
         "board": "text_style_control"
