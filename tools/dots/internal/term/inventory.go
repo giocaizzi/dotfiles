@@ -166,7 +166,7 @@ func (s Style) treeText(t inventory.Tree, now time.Time) string {
 		}
 	}
 	if t.Dirty > 0 {
-		parts = append(parts, fmt.Sprintf("%s%d local change(s)%s", s.Y, t.Dirty, s.O))
+		parts = append(parts, s.Y+inventory.Count(t.Dirty, "local change")+s.O)
 	}
 	if t.Fetched.IsZero() {
 		parts = append(parts, s.D+"not fetched"+s.O)

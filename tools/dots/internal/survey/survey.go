@@ -359,8 +359,8 @@ func (s Survey) uv(ctx context.Context, pkgs []inventory.PackageSel) inventory.G
 	}
 	g := inventory.Group{}
 	for _, p := range pkgs {
-		t := pkgTool(p)
 		name := inventory.UVName(p.ID)
+		t := pkgTool(inventory.PackageSel{Name: p.Name, ID: name})
 		v, ok := installed[name]
 		t.Installed, t.Missing = v, !ok
 		if ok && !s.Offline && !outdatedFailed {
@@ -416,8 +416,8 @@ func (s Survey) npm(ctx context.Context, pkgs []inventory.PackageSel) inventory.
 	}
 	g := inventory.Group{}
 	for _, p := range pkgs {
-		t := pkgTool(p)
 		name, pin := inventory.NpmSpec(p.ID)
+		t := pkgTool(inventory.PackageSel{Name: p.Name, ID: name})
 		t.Pinned = pin
 		v, ok := installed[name]
 		t.Installed, t.Missing = v, !ok

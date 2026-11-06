@@ -53,13 +53,13 @@ func (r Report) treeHints() []Hint {
 	var hs []Hint
 	t := r.Tree
 	if t.Known && t.Behind > 0 {
-		hs = append(hs, Hint{"chezmoi dots upgrade dotfiles", fmt.Sprintf("pull %d commit(s) from %s, then re-run", t.Behind, t.Upstream)})
+		hs = append(hs, Hint{"chezmoi dots upgrade dotfiles", "pull " + Count(t.Behind, "commit") + " from " + t.Upstream + ", then re-run"})
 	}
 	if t.Known && t.Upstream != "" && t.Fetched.IsZero() {
 		hs = append(hs, Hint{"chezmoi dots outdated --fetch", t.Upstream + " was never fetched here"})
 	}
 	if t.Ahead > 0 {
-		hs = append(hs, Hint{"git push", fmt.Sprintf("%d local commit(s) not on %s", t.Ahead, t.Upstream)})
+		hs = append(hs, Hint{"git push", Count(t.Ahead, "local commit") + " not on " + t.Upstream})
 	}
 	return hs
 }
@@ -68,14 +68,14 @@ func (r Report) toolHints() []Hint {
 	var hs []Hint
 	add := func(cmd, why string) { hs = append(hs, Hint{cmd, why}) }
 	if n := r.names(Release, Outdated); len(n) > 0 {
-		add("chezmoi dots bump "+strings.Join(n, " "), "pin the newer release(s)")
+		add("chezmoi dots bump "+strings.Join(n, " "), "pin the newer "+plural(len(n), "release"))
 	}
 	if n := r.names(Release, Drifted, Missing); len(n) > 0 {
 		add("chezmoi apply", "install the pinned "+strings.Join(n, ", "))
 	}
 	for _, s := range []Source{Brew, Apt, Winget, UV, Npm} {
 		if n := r.names(s, Outdated); len(n) > 0 {
-			add("chezmoi dots upgrade "+string(s), fmt.Sprintf("upgrade %d %s package(s)", len(n), s))
+			add("chezmoi dots upgrade "+string(s), "upgrade "+Count(len(n), string(s)+" package"))
 		}
 	}
 	if specs := r.npmDrift(); len(specs) > 0 {
@@ -109,4 +109,14 @@ func (r Report) npmDrift() []string {
 	}
 	slices.Sort(specs)
 	return specs
+}
+
+// Count is n and word, plural when n is not 1: "1 commit", "3 commits".
+func Count(n int, word string) string { return fmt.Sprintf("%d %s", n, plural(n, word)) }
+
+func plural(n int, word string) string {
+	if n == 1 {
+		return word
+	}
+	return word + "s"
 }

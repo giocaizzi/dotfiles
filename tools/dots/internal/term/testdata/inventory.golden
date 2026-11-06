@@ -27,13 +27,13 @@ Official installers (1)
   TOOL  INSTALLED  LATEST   STATE
   bun   —          unknown  ✗ not installed
 
-source  main · 2 behind upstream · 3 local change(s) · fetched 3h ago
+source  main · 2 behind upstream · 3 local changes · fetched 3h ago
 summary 10 tools · 3 up to date · 2 outdated · 2 drifted · 2 not installed · 1 unknown
 
 next
-  chezmoi dots upgrade dotfiles  pull 2 commit(s) from origin/main, then re-run
-  chezmoi dots bump gitleaks     pin the newer release(s)
+  chezmoi dots upgrade dotfiles  pull 2 commits from origin/main, then re-run
+  chezmoi dots bump gitleaks     pin the newer release
   chezmoi apply                  install the pinned chezmoi-agents, shfmt
-  chezmoi dots upgrade brew      upgrade 1 brew package(s)
+  chezmoi dots upgrade brew      upgrade 1 brew package
   npm install -g typescript@5    back to the registry pin
   not installed: bun (the install script runs when packages.toml changes; docs/OS.md#packages)

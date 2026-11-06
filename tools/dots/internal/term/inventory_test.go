@@ -107,7 +107,7 @@ func TestTreeText(t *testing.T) {
 		{"no git", inventory.Tree{}, "not a git checkout"},
 		{"no upstream", inventory.Tree{Known: true, Branch: "dev"}, "dev · no upstream · not fetched"},
 		{"even", inventory.Tree{Known: true, Branch: "main", Upstream: "origin/main", Fetched: fetched}, "main · up to date with upstream · fetched 12m ago"},
-		{"ahead and behind", inventory.Tree{Known: true, Branch: "main", Upstream: "origin/main", Ahead: 1, Behind: 4, Dirty: 2, Fetched: now}, "main · 4 behind upstream · 1 ahead · 2 local change(s) · fetched just now"},
+		{"ahead and behind", inventory.Tree{Known: true, Branch: "main", Upstream: "origin/main", Ahead: 1, Behind: 4, Dirty: 2, Fetched: now}, "main · 4 behind upstream · 1 ahead · 2 local changes · fetched just now"},
 		{"detached", inventory.Tree{Known: true, Upstream: "u", Fetched: now.Add(-50 * time.Hour)}, "(detached) · up to date with upstream · fetched 2d ago"},
 	}
 	for _, tt := range tests {

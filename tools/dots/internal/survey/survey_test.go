@@ -243,7 +243,7 @@ func TestOfflineRunsNoNetworkCommand(t *testing.T) {
 	if !rep.Offline || !rep.Tree.Known {
 		t.Errorf("report = %+v", rep)
 	}
-	checkGroup(t, group(t, rep, inventory.Npm), offlineNote, []inventory.Tool{{Name: "ts", ID: "ts@5", Installed: "5.1.0", Pinned: "5"}})
+	checkGroup(t, group(t, rep, inventory.Npm), offlineNote, []inventory.Tool{{Name: "ts", Installed: "5.1.0", Pinned: "5"}})
 }
 
 func TestBrew(t *testing.T) {
@@ -352,7 +352,7 @@ func TestUV(t *testing.T) {
 		s := base(newRunner(map[string]reply{"uv tool list": list, "uv tool list --outdated": {stdout: "pyright v1.1.400 [latest: 1.1.405]\n"}}))
 		checkGroup(t, s.uv(t.Context(), pkgs), "", []inventory.Tool{
 			{Name: "gone", Missing: true},
-			{Name: "pyright", ID: "pyright[x]>=1", Installed: "1.1.400", Latest: "1.1.405"},
+			{Name: "pyright", Installed: "1.1.400", Latest: "1.1.405"},
 			{Name: "ruff", Installed: "0.9.1", Latest: "0.9.1"},
 		})
 	})
@@ -360,7 +360,7 @@ func TestUV(t *testing.T) {
 		t.Parallel()
 		s := base(newRunner(map[string]reply{"uv tool list": list, "uv tool list --outdated": {err: errors.New("x"), stderr: secret}}))
 		checkGroup(t, s.uv(t.Context(), pkgs[:2]), "latest unknown for 2 (no network or lookup failed)", []inventory.Tool{
-			{Name: "pyright", ID: "pyright[x]>=1", Installed: "1.1.400"},
+			{Name: "pyright", Installed: "1.1.400"},
 			{Name: "ruff", Installed: "0.9.1"},
 		})
 	})
@@ -387,7 +387,7 @@ func TestNpm(t *testing.T) {
 		checkGroup(t, s.npm(t.Context(), pkgs), "", []inventory.Tool{
 			{Name: "cli", ID: "@s/cli", Installed: "1.0.0", Latest: "1.0.0"},
 			{Name: "gone", Missing: true},
-			{Name: "ts", ID: "typescript@5", Installed: "5.9.2", Pinned: "5", Latest: "6.0.0"},
+			{Name: "ts", ID: "typescript", Installed: "5.9.2", Pinned: "5", Latest: "6.0.0"},
 		})
 	})
 	t.Run("darwin has no prefix, outdated fails", func(t *testing.T) {
@@ -399,7 +399,7 @@ func TestNpm(t *testing.T) {
 		s.GOOS = "darwin"
 		s.LookPath = lookPath("npm")
 		checkGroup(t, s.npm(t.Context(), pkgs[:1]), "latest unknown for 1 (no network or lookup failed)", []inventory.Tool{
-			{Name: "ts", ID: "typescript@5", Installed: "5.9.2", Pinned: "5"},
+			{Name: "ts", ID: "typescript", Installed: "5.9.2", Pinned: "5"},
 		})
 	})
 	t.Run("nothing outdated", func(t *testing.T) {
