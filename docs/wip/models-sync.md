@@ -253,7 +253,7 @@ Questions 1 to 6 were answered by approving this plan with its recommendations (
 ### For the apply-time advisory (block the `doctor` PR only)
 
 7. Integration point: (a) `run_after_` script, (b) `run_onchange_after_`, (c) harness SessionStart hook, (d) manual only. Recommended (a).
-8. Network on apply: (a) offline only (local `models.json`, cached usage); (b) refresh models.dev once a day with a 2 s timeout, quiet on failure. Recommended (a), with question 5 answered (b) (weekly sync PR).
+8. Network on apply: answered by the user (relayed by the usage tool's driver, 2026-11-06): the doctor reads the cached `usage.json` by default; `--live` queries providers with a 2 s cap each and degrades quietly to the cache. The model catalog side stays offline (local `models.json`).
 9. Catalog tier ↔ policy tier mapping, to judge "better in the same tier": proposed scout→lightweight, worker→lightweight, driver→powerful, escalate→extra (matches today's config: gpt-6-luna, gpt-6-luna, gpt-6.1-sol, gpt-6-astra). Alternatively an explicit `tierMap` key in `models.json`. Recommended: the fixed mapping in code.
 10. Plan-level availability: models.dev lists what a provider serves, not what each subscription plan includes (e.g. Copilot Free vs Pro+). (a) provider-level reachability only; (b) a hand-kept plan → model allow-list. Recommended (a): (b) is a second, stale source.
 11. Subcommand name: `doctor` (agreed with the usage tool) or `notice`.
