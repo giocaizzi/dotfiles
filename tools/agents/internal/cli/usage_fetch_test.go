@@ -20,7 +20,7 @@ import (
 )
 
 // secret is the fake token every test uses; it must never reach a snapshot.
-const secret = "tok-SECRET-0123456789"
+const secret = "tok-SECRET-0123456789" // gitleaks:allow (fake redaction-test fixture)
 
 var usageNow = time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
 
