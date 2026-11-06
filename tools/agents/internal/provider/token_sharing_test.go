@@ -39,6 +39,8 @@ func TestOpenAITokenSharingClassification(t *testing.T) {
 		{"scp array", map[string]any{"scp": []any{"openid", scope}}, true},
 		{"scp string", map[string]any{"scp": "openid " + scope}, true},
 		{"scope string", map[string]any{"scope": "openid " + scope + " email"}, true},
+		{"scope array", map[string]any{"scope": []any{"openid", scope}}, true},
+		{"scope array without it", map[string]any{"scope": []any{"openid", 7}}, false},
 		{"other scopes", map[string]any{"scp": []any{"openid", "offline_access"}, "scope": "openid"}, false},
 		{"scope as a substring only", map[string]any{"scope": "x" + scope}, false},
 		{"no scope", nil, false},
