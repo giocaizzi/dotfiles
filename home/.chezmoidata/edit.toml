@@ -83,6 +83,7 @@ check = ["chezmoi-agents", "check", "-file", "{file}"]
 desc = "Model tiers (manual) and synced model data"
 source = ".chezmoidata/models.json"
 note = "Regenerate docs/MODELS.md: chezmoi agents models render"
+check = ["chezmoi-agents", "models", "-file", "{file}"]
 
 [edit."claude/settings"]
 desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
