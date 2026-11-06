@@ -420,6 +420,67 @@ Workspace MCP servers are canonically configured in `.mcp.json` at the root of a
 - Auto-detects transport (`http` when `<commandOrUrl>` starts with `http://` or `https://`, otherwise `stdio`), rejects namespace collisions, ensures symlink safety, and writes with mode `0600`.
 
 
+## Models and subscriptions
+
+What the harnesses can use and how much of it is left.
+
+### Subscription usage (`chezmoi-agents usage`)
+
+`chezmoi agents usage [-live] [-provider <id>]` shows, per provider account the machine is logged into, the plan and billing model, rolling windows (5 h, weekly), monthly allowances, spend and credits. Provider ids are the models.dev keys: `anthropic`, `openai`, `github-copilot`, `google`, plus API-key providers. The same account seen from several harnesses is shown once, with the harnesses listed.
+
+Accounts are found from the credentials the harnesses already store:
+
+| Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
+|---|---|---|
+| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
+| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`), or the OS keyring service `Codex Auth` when Codex stores it there |
+| Copilot CLI | `github-copilot` | OS keyring service `copilot-cli` (Keychain / Secret Service / Credential Manager); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN` |
+| Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
+| opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
+| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`) |
+
+Plans and billing: every account is one generic model, so new plans need no code change.
+
+- **Plan:** Kind (`free`, `individual`, `team`, `enterprise`, `api`, `cloud`, `gateway`, `unknown`), Billing (`flat`, `metered`, `mixed`, `unknown`), Payer (`self`, `org`, `cloud`, `unknown`).
+- **Limits:** a window (5 h, weekly), a monthly allowance, a spend against a cap, or a credit balance; scoped to a seat, an organization pool or the account.
+- **Unmapped plan:** shown as `unknown (<raw>)`, never an error.
+- **Data a seat holder cannot see:** shown as "managed by org", never a guess.
+- **Cloud, gateway and API-key modes:** shown as "not visible" (usage lives in your cloud console or gateway) or "no usage API".
+
+Cached vs live:
+
+- The default reads the cache, `<user cache dir>/chezmoi-agents/usage.json` (`$XDG_CACHE_HOME` honoured), and shows each snapshot's age. It holds usage numbers and plan names, no credentials.
+- `-live` queries every account (10 s each, in parallel) and rewrites the cache; a failed account keeps its cached snapshot, marked stale.
+- `-provider <id>` limits the output to one provider.
+- `make usage` runs `-live`.
+
+Security:
+
+- Credentials are read into memory only: never printed, logged, cached or written back.
+- Expired tokens are not refreshed: open the harness once to refresh.
+- The endpoints are the vendors' own undocumented ones (the ones their CLIs call) and may change; that account then shows "unavailable" and the others still show.
+
+Runbook: check capacity before fanning out agents.
+
+- **When:** before starting several parallel agents or a long run.
+- **Steps:** `make usage` (or `chezmoi agents usage -live`); read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
+- **Verify:** every account you use shows a bar and a reset time, with a fresh age.
+- **Rollback:** nothing to undo; delete the cache file to forget old snapshots.
+
+Runbook: an account shows "token expired" or "unauthorized".
+
+- **When:** `usage` lists an account as expired, or 401 / 403.
+- **Steps:** open the harness named on that row once (it refreshes its own login; log in again if it asks), then `chezmoi agents usage -live`.
+- **Verify:** the account shows bars instead of the warning.
+- **Rollback:** none; nothing is written besides the cache.
+
+Runbook: an account shows "managed by org" or "not visible".
+
+- **When:** a seat in a team or enterprise plan, or a cloud (Bedrock, Vertex, Foundry) or gateway mode.
+- **Steps:** none is needed: this is expected, the numbers are not available to a seat holder or have no usage API. Check your organization's console, cloud billing or gateway.
+- **Verify:** the rows that are visible (windows, allowance) still show.
+- **Rollback:** none.
+
 ## Source layout (`.chezmoiroot`)
 
 `.chezmoiroot` makes `home/` the source state: every source path in these docs (`dot_config/…`, `.chezmoidata/…`) is relative to it, and `chezmoi source-path` prints `~/.local/share/chezmoi/home`. The repo root holds what is never deployed (docs, `scripts/`, `tools/`, `Makefile`, agent config), so `.chezmoiignore` has no repo-meta block, and a git worktree anywhere in the repo (e.g. `.claude/worktrees/<slug>`) sits outside the source state: chezmoi never reads its `.chezmoidata`.
