@@ -165,3 +165,51 @@ func TestOpencodeCredentialsMissingDB(t *testing.T) {
 		t.Fatalf("err = %v, want fs.ErrNotExist", err)
 	}
 }
+
+// stubSecurity points securityBin at a script that mimics the security tool:
+// with -a it returns the item of that account only (the fresh one for wantAcct,
+// exit 44 otherwise); without -a it returns the stale item of another account.
+// It returns the script path.
+func stubSecurity(t *testing.T, wantAcct string) string {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("shell stub")
+	}
+	script := `#!/bin/sh
+acct=""
+while [ $# -gt 0 ]; do
+  if [ "$1" = "-a" ]; then acct="$2"; fi
+  shift
+done
+if [ -z "$acct" ]; then echo stale-token; exit 0; fi
+if [ "$acct" = "` + wantAcct + `" ]; then echo fresh-token; exit 0; fi
+exit 44
+`
+	path := filepath.Join(t.TempDir(), "security")
+	if err := os.WriteFile(path, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func TestSecretPrefersCurrentUserItem(t *testing.T) {
+	t.Parallel()
+	s := testStore(t)
+	s.goos = "darwin"
+	s.securityBin = stubSecurity(t, currentUser(s.getenv))
+	got, err := s.Secret("svc", "")
+	if err != nil || got != "fresh-token" {
+		t.Fatalf("Secret = %q, %v; want the current user's item", got, err)
+	}
+}
+
+func TestSecretFallsBackToAnyAccount(t *testing.T) {
+	t.Parallel()
+	s := testStore(t)
+	s.goos = "darwin"
+	s.securityBin = stubSecurity(t, "someone-else")
+	got, err := s.Secret("svc", "")
+	if err != nil || got != "stale-token" {
+		t.Fatalf("Secret = %q, %v; want the service-only fallback", got, err)
+	}
+}
