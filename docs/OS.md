@@ -479,14 +479,14 @@ Untiered models are those the rule leaves out (above). The catalog holds the mod
 
 Agent roles pin an explicit model per role in `harnessPolicy.models.tiers` (`.chezmoidata/harness-policy.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). Nothing checks them against the catalog yet: after a re-tier, review them by hand (the planned doctor advisory will flag drift).
 
-`chezmoi agents models` and `render -check` (`make lint`) fail when the stored `tiers` differ from the rule, so `tiers` is never hand-edited. `syncedAt` only moves when the synced data changes, so the weekly workflow opens a PR only on real changes.
+`chezmoi agents models` and `render -check` (`make lint`) fail when the stored `tiers` differ from the rule, so `tiers` is never hand-edited. Pinned ids are left out of that check, so a new pin passes `dots models` and takes effect at the next sync. `syncedAt` only moves when the synced data changes, so the weekly workflow opens a PR only on real changes.
 
 **Refresh the data**
 
 **When:** weekly, automatically: the `models-sync` workflow (Mondays) runs `models sync` and opens or updates the PR `chore(agents): refresh the model catalog` when `models.json` or `docs/MODELS.md` changed; review and merge it like any PR (it needs the `BUMP_TOKEN` secret for CI to run, see [CI.md](./CI.md)). Run it on demand with `gh workflow run models-sync` (or Actions → models-sync → Run workflow), or locally:
 
 1. `make models-sync` (network).
-2. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`, including tier moves; ignore noise ids with `dots models`.
+2. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`, including tier moves; ignore noise ids with `dots models`. The sync warns `unmatched source names:`; an `arena: <name> (ambiguous: …)` or `epoch: <name> (ambiguous: …)` entry is a source name shared by several models, which then gets no rank or benchmark: map it to one canonical id in `aliases.arena` or `aliases.epoch`.
 3. `make check`, ship the PR.
 
 **Verify:** `chezmoi agents models render -check` exits 0.
