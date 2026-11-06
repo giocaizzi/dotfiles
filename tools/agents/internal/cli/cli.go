@@ -76,6 +76,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runPrompt(ctx, rest)
 	case "mcp":
 		return d.runMCP(ctx, rest)
+	case "models":
+		return d.runModels(ctx, rest)
 	case "version", "--version", "-v":
 		v := d.Version
 		if v == "" {
@@ -115,23 +117,31 @@ func usage(s term.Style) string {
 	p("  %schezmoi agents%s %sprompt%s %s[-profile <personal|work|light>]%s %s[-check]%s %s[-file <path>]%s\n", m, o, m, o, d, o, d, o, d, o)
 	p("  %schezmoi agents%s %smcp sync%s %s[path] [-check] [-account <id>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %smcp add%s %s[flags] <name> <commandOrUrl> [args...]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %smodels%s %s[-file <path>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %smodels sync%s %s[-external] [-file <path>] [-doc <path>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %smodels render%s %s[-check] [-file <path>] [-doc <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
 	p("%sCOMMANDS%s\n", b, o)
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "check", o, d, "[-file <path>]", o, "Validate harness policy, 6-way client parity, and plugins")
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "render", o, y, "-harness <name>", o, "Render client-native configuration (JSON/TOML)")
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "prompt", o, d, "[-profile <profile>]", o, "Compose or validate layered system prompt")
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp sync", o, d, "[path]", o, "Sync workspace .mcp.json to native Codex, pi and Antigravity configs")
-	p("  %s%-9s%s %s%-27s%s %s\n", m, "mcp add", o, d, "<name> <cmd|url> [args]", o, "Add or update server in workspace .mcp.json and sync configs")
-	p("  %s%-9s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
-	p("  %s%-9s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "check", o, d, "[-file <path>]", o, "Validate harness policy, 6-way client parity, and plugins")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "render", o, y, "-harness <name>", o, "Render client-native configuration (JSON/TOML)")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "prompt", o, d, "[-profile <profile>]", o, "Compose or validate layered system prompt")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "mcp sync", o, d, "[path]", o, "Sync workspace .mcp.json to native Codex, pi and Antigravity configs")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "mcp add", o, d, "<name> <cmd|url> [args]", o, "Add or update server in workspace .mcp.json and sync configs")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "models", o, d, "[-file <path>]", o, "Print the model tier list with costs and arena ranks")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "models sync", o, d, "[-external]", o, "Refresh model data from models.dev, LMArena and Epoch AI")
+	p("  %s%-13s%s %s%-27s%s %s\n", m, "models render", o, d, "[-check]", o, "Regenerate docs/MODELS.md offline")
+	p("  %s%-13s%s %-27s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
+	p("  %s%-13s%s %-27s %s\n\n", m, "help", o, "", "Display this help message")
 
 	p("%sFLAGS%s\n", b, o)
-	p("  %s-file%s %s<path>%s         Path to harness-policy.toml, harness.toml, or prompt layer\n", y, o, d, o)
+	p("  %s-file%s %s<path>%s         Path to harness-policy.toml, harness.toml, models.json, or prompt layer\n", y, o, d, o)
 	p("  %s-harness%s %s<name>%s      Target harness (claude|antigravity|copilot|codex|pi|opencode)\n", y, o, d, o)
 	p("  %s-harness-dir%s %s<path>%s  Checkout of giocaizzi/harness (defaults to HARNESS_DIR)\n", y, o, d, o)
 	p("  %s-profile%s %s<profile>%s   System prompt profile (personal|work|light)\n", y, o, d, o)
-	p("  %s-check%s               Validate layer presence without printing output\n", y, o)
+	p("  %s-check%s               Validate layer presence or models doc freshness without printing output\n", y, o)
+	p("  %s-external%s            Also fetch Epoch AI benchmarks (models sync)\n", y, o)
+	p("  %s-doc%s %s<path>%s          Path to docs/MODELS.md\n", y, o, d, o)
 	p("  %s-target%s %s<file>%s       Target file to write rendered configuration\n\n", y, o, d, o)
 
 	p("%sEXAMPLES%s\n", b, o)
@@ -144,6 +154,7 @@ func usage(s term.Style) string {
 
 	p("%sDOCUMENTATION%s\n", b, o)
 	p("  %sdocs/OS.md#shared-harness-policy%s %s·%s %sdocs/OS.md#agent-instructions%s %s·%s %sdocs/OS.md#agent-plugins-giocaizzi-harness%s\n", d, o, d, o, d, o, d, o, d, o)
+	p("  %sdocs/MODELS.md%s %s·%s %sdocs/OS.md#model-tiers-chezmoi-agents-models%s\n", d, o, d, o, d, o)
 
 	return sb.String()
 }

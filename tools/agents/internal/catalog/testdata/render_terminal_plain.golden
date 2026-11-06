@@ -1,0 +1,33 @@
+Model tiers · synced 2026-11-06 · arena text_style_control 2026-10-28
+
+Lightweight (2)
+  MODEL              PROVIDERS $/MTOK                   TEXT  CODE  AGENT  WEB  HARD  MATH  IF  MULTI  ECI  METR
+  GPT-6 Luna         API $0.1/$0.5 · Copilot $0.1/$0.5  #12   #60   ·      ·    ·     ·     ·   ·      ·    ·
+  Only Mini          Copilot $0.25/$2                   #30   ·     ·      ·    ·     ·     ·   ·      ·    ·
+
+Versatile (2)
+  MODEL              PROVIDERS $/MTOK                   TEXT  CODE  AGENT  WEB  HARD  MATH  IF  MULTI  ECI  METR
+  Claude Sonnet 5.5  API $3/$15                         #4    #2    ·      ·    ·     #9    ·   ·      151  95m
+  openai/ghost                                          ·     ·     ·      ·    ·     ·     ·   ·      ·    ·
+
+Powerful (1)
+  MODEL              PROVIDERS $/MTOK                   TEXT  CODE  AGENT  WEB  HARD  MATH  IF  MULTI  ECI  METR
+  Claude Opus 5.5    API $5/$25 · Copilot $5/$25        #1    #2    ·      #3   ·     ·     ·   ·      ·    ·
+
+Extra (0)
+  none
+
+Untiered (2)
+  MODEL            ID                    PROVIDERS $/MTOK
+  GPT-6 Sol        openai/gpt-6-sol      API $2.5/$10
+  Untiered | Pipe  openai/untiered-pipe  API $1/$4
+
+Best when
+  CATEGORY  MODEL                   RANK
+  Text      Claude Opus 5.5 (High)  #1
+  Coding    Claude Opus 5.5 (High)  #2
+  Agent     Untiered | Pipe         #7
+  WebDev    Claude Opus 5.5         #3
+  Math      Claude Sonnet 5.5       #9
+
+Rankings: LMArena leaderboard dataset · Benchmarks: Epoch AI, CC-BY
