@@ -6,10 +6,12 @@ dbaeumer.vscode-eslint
 esbenp.prettier-vscode
 github.vscode-github-actions
 github.vscode-pull-request-github
-golang.go
+{{- if get . "terraform" }}
 hashicorp.terraform
+{{- end }}
 hediet.vscode-drawio
 james-yu.latex-workshop
+mads-hartmann.bash-ide-vscode
 mechatroner.rainbow-csv
 ms-azuretools.vscode-containers
 ms-python.python
@@ -38,6 +40,9 @@ ms-vscode.powershell
 {{- else }}
 ahmadalli.vscode-nginx-conf
 antyos.openscad
+{{- if ne .chezmoi.os "windows" }}
+golang.go
+{{- end }}
 grafana.grafana-alloy
 redis.redis-for-vscode
 {{- end }}
