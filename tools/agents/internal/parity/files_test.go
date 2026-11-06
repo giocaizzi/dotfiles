@@ -20,7 +20,8 @@ func writeSource(t *testing.T, vscode, claude string) string {
 	files := map[string]string{
 		"dot_config/Code/User/settings.json":     vscode,
 		".chezmoitemplates/claude-settings.json": claude,
-		".chezmoidata/packages.toml":             "[package.pyright]\n[package.typescript]\n[package.gopls]\n",
+		".chezmoidata/packages.toml": "[package.pyright]\n[package.ruff]\n[package.typescript]\n[package.gopls]\n[package.bash-language-server]\n" +
+			"[package.yaml-language-server]\n[package.vscode-langservers-extracted]\n[package.terraform-ls]\n[package.tflint]\n",
 	}
 	for rel, content := range files {
 		path := filepath.Join(dir, filepath.FromSlash(rel))
