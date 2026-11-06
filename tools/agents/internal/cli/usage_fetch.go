@@ -93,6 +93,7 @@ func failNote(err error) string {
 
 func (f usageFetcher) base(acct provider.Account) usg.Snapshot {
 	return usg.Snapshot{
+		ID:        acct.ID,
 		Provider:  acct.Provider,
 		Account:   acct.Label,
 		Harnesses: acct.Harnesses,
@@ -225,10 +226,7 @@ func (f usageFetcher) fetchCopilot(ctx context.Context, acct provider.Account, s
 	host := acct.Host
 	if host != githubHost {
 		snap.Status = usg.StatusNotVisible
-		snap.Note = "unknown GitHub host: usage not queried"
-		if host != "" {
-			snap.Note = "GitHub Enterprise host " + stripScheme(host) + ": usage not queried"
-		}
+		snap.Note = hostNote(host)
 		return snap
 	}
 	// The Copilot clients authenticate copilot_internal calls with
@@ -271,6 +269,18 @@ func (f usageFetcher) fetchCopilot(ctx context.Context, acct provider.Account, s
 	return snap
 }
 
+// hostNote explains why a Copilot account's host is not queried.
+func hostNote(host string) string {
+	if host == "" {
+		return "unknown GitHub host: usage not queried"
+	}
+	h := strings.ToLower(stripScheme(host))
+	if name, _, _ := strings.Cut(h, ":"); name == "github.com" || name == "www.github.com" {
+		return "unrecognised GitHub host form: usage not queried"
+	}
+	return "GitHub Enterprise host " + stripScheme(host) + ": usage not queried"
+}
+
 func stripScheme(host string) string {
 	if _, rest, ok := strings.Cut(host, "://"); ok {
 		return rest
@@ -303,7 +313,7 @@ func (f usageFetcher) fetchAgy(ctx context.Context, snap usg.Snapshot, timeout t
 			return snap
 		}
 	}
-	acct := provider.Account{Provider: snap.Provider, Label: snap.Account, Harnesses: snap.Harnesses, Plan: snap.Plan}
+	acct := provider.Account{ID: snap.ID, Provider: snap.Provider, Label: snap.Account, Harnesses: snap.Harnesses, Plan: snap.Plan}
 	if fb, ok := f.agyLogFallback(acct); ok {
 		return fb
 	}

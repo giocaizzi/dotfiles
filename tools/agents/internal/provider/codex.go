@@ -21,6 +21,7 @@ type codexAuth struct {
 func openaiAPIKeyAccount(harness string) Account {
 	return Account{
 		Provider:  OpenAI,
+		ID:        harness,
 		Harnesses: []string{harness},
 		Auth:      AuthAPIKey,
 		Plan:      usage.Plan{Kind: usage.KindAPI, Billing: usage.BillingMetered, Payer: usage.PayerUnknown},
@@ -34,6 +35,7 @@ func openaiAPIKeyAccount(harness string) Account {
 func openaiOAuth(harness, access, idToken, accountID string) Account {
 	a := Account{
 		Provider:  OpenAI,
+		ID:        harness,
 		Harnesses: []string{harness},
 		Auth:      AuthOAuth,
 		Plan:      unknownPlan(),

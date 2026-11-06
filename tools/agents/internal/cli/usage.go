@@ -76,12 +76,64 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 	return 0
 }
 
-// snapKey identifies the account of a snapshot: provider and account label,
-// never the harness list, which changes when a harness logs in or out. A
-// snapshot carries no host, so two Copilot logins with one label on different
-// hosts share a key.
-func snapKey(provider, account string) string {
-	return provider + "\x00" + account
+// snapKey identifies the account of a snapshot: its stable id under the
+// provider, never the harness list, which changes when a harness logs in or
+// out. Without an id (a cache file from before ids) it falls back to the
+// provider and label.
+func snapKey(id, provider, label string) string {
+	if id != "" {
+		return provider + "\x00id\x00" + id
+	}
+	return provider + "\x00label\x00" + label
+}
+
+// acctRef is the identity of a discovered account or a live snapshot.
+type acctRef struct{ id, provider, label string }
+
+// cacheIndex finds the cached snapshot of an account. A cached snapshot with
+// an id matches by id. One without (an old cache file) matches only by
+// provider and label, and only when no other current account of that provider
+// shares the label; otherwise it is dropped as unknown.
+type cacheIndex struct {
+	byKey  map[string]usg.Snapshot
+	legacy map[string]usg.Snapshot
+	shared map[string]int
+}
+
+func newCacheIndex(cached []usg.Snapshot, current []acctRef) cacheIndex {
+	c := cacheIndex{
+		byKey:  make(map[string]usg.Snapshot, len(cached)),
+		legacy: make(map[string]usg.Snapshot),
+		shared: make(map[string]int, len(current)),
+	}
+	for _, s := range cached {
+		k := snapKey(s.ID, s.Provider, s.Account)
+		dst := c.byKey
+		if s.ID == "" {
+			dst = c.legacy
+		}
+		if _, dup := dst[k]; !dup {
+			dst[k] = s
+		}
+	}
+	for _, r := range current {
+		c.shared[snapKey("", r.provider, r.label)]++
+	}
+	return c
+}
+
+func (c cacheIndex) find(r acctRef) (usg.Snapshot, bool) {
+	if r.id != "" {
+		if s, ok := c.byKey[snapKey(r.id, r.provider, r.label)]; ok {
+			return s, true
+		}
+	}
+	k := snapKey("", r.provider, r.label)
+	if c.shared[k] > 1 {
+		return usg.Snapshot{}, false
+	}
+	s, ok := c.legacy[k]
+	return s, ok
 }
 
 func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
@@ -100,21 +152,21 @@ func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
 // cached snapshot, offline sources fill openai and google; an account that
 // cannot be queried shows why; the rest show "no data yet".
 func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetcher) []usg.Snapshot {
-	have := make(map[string]usg.Snapshot, len(cached))
-	for _, s := range cached {
-		if _, dup := have[snapKey(s.Provider, s.Account)]; !dup {
-			have[snapKey(s.Provider, s.Account)] = s
-		}
+	refs := make([]acctRef, len(accounts))
+	for i, a := range accounts {
+		refs[i] = acctRef{a.ID, a.Provider, a.Label}
 	}
+	have := newCacheIndex(cached, refs)
 	var out []usg.Snapshot
 	seen := make(map[string]bool, len(accounts))
-	for _, a := range accounts {
-		key := snapKey(a.Provider, a.Label)
+	for i, a := range accounts {
+		key := snapKey(a.ID, a.Provider, a.Label)
 		if seen[key] {
 			continue
 		}
 		seen[key] = true
-		if s, ok := have[key]; ok {
+		if s, ok := have.find(refs[i]); ok {
+			s.ID = a.ID
 			s.Harnesses = a.Harnesses
 			out = append(out, s)
 			continue
@@ -144,20 +196,22 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 // account, marked stale with the failure as its note. Only live accounts are
 // kept, so an account no longer discovered leaves the rewritten cache.
 func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
-	old := make(map[string]usg.Snapshot, len(cached))
-	for _, s := range cached {
-		old[snapKey(s.Provider, s.Account)] = s
+	refs := make([]acctRef, len(live))
+	for i, s := range live {
+		refs[i] = acctRef{s.ID, s.Provider, s.Account}
 	}
+	old := newCacheIndex(cached, refs)
 	out := make([]usg.Snapshot, len(live))
 	for i, s := range live {
 		out[i] = s
 		if s.Status != usg.StatusUnavailable {
 			continue
 		}
-		prev, ok := old[snapKey(s.Provider, s.Account)]
+		prev, ok := old.find(refs[i])
 		if !ok || (prev.Status != usg.StatusOK && prev.Status != usg.StatusStale) {
 			continue
 		}
+		prev.ID = s.ID
 		prev.Harnesses = s.Harnesses
 		prev.Status = usg.StatusStale
 		prev.Note = s.Note

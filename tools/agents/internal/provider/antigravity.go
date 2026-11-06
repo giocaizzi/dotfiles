@@ -14,6 +14,7 @@ func readAntigravity(st Store) []Account {
 	}
 	return []Account{{
 		Provider:  Google,
+		ID:        harnessAntigravity,
 		Key:       harnessAntigravity,
 		Harnesses: []string{harnessAntigravity},
 		Auth:      AuthCLI,

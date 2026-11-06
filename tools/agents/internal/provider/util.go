@@ -123,6 +123,7 @@ func expiredStatus(a *Account, now time.Time, harness string) {
 func unreadable(provider, harness string) Account {
 	return Account{
 		Provider:  provider,
+		ID:        harness,
 		Harnesses: []string{harness},
 		Auth:      AuthNone,
 		Plan:      unknownPlan(),

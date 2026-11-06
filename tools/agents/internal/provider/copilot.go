@@ -111,6 +111,7 @@ func readCopilot(st Store) []Account {
 	for _, u := range users {
 		a := Account{
 			Provider:  GitHubCopilot,
+			ID:        "copilot:" + normalizeHost(u.host) + ":" + u.login,
 			Label:     u.login,
 			Key:       u.login,
 			Login:     u.login,

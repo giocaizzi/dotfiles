@@ -158,11 +158,11 @@ func TestReadUsageCacheMissingIsEmpty(t *testing.T) {
 
 func TestSnapKey(t *testing.T) {
 	t.Parallel()
-	a := snapKey("openai", "me@example.com")
-	if a == snapKey("openai", "other@example.com") || a == snapKey("anthropic", "me@example.com") {
+	a := snapKey("codex", "openai", "me@example.com")
+	if a == snapKey("pi:openai", "openai", "me@example.com") || a == snapKey("codex", "anthropic", "me@example.com") {
 		t.Error("snapKey collides across distinct accounts")
 	}
-	if a != snapKey("openai", "me@example.com") {
+	if a != snapKey("codex", "openai", "me@example.com") {
 		t.Error("snapKey is not stable")
 	}
 }

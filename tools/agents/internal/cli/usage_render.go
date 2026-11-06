@@ -20,15 +20,27 @@ const (
 )
 
 // sanitize drops control characters (C0, DEL, C1, ESC and so tab and newline
-// too) from a string that came from a provider or the cache, so it cannot
+// too), bidi controls and zero-width characters from a string that came from a provider or the cache, so it cannot
 // drive the terminal.
 func sanitize(s string) string {
 	return strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) {
+		if unicode.IsControl(r) || hidden(r) {
 			return -1
 		}
 		return r
 	}, s)
+}
+
+// hidden reports bidi controls and zero-width characters, which can reorder or
+// hide text on screen.
+func hidden(r rune) bool {
+	switch {
+	case r >= 0x202A && r <= 0x202E, r >= 0x2066 && r <= 0x2069, r == 0x200E, r == 0x200F:
+		return true
+	case r >= 0x200B && r <= 0x200D, r == 0x2060, r == 0xFEFF:
+		return true
+	}
+	return false
 }
 
 // sanitized returns a copy of the snapshot with every printable string cleaned.

@@ -149,3 +149,23 @@ func TestFetchDoesNotFollowRedirects(t *testing.T) {
 		t.Errorf("redirect target got %d requests, want 0", n)
 	}
 }
+
+func TestHostNote(t *testing.T) {
+	t.Parallel()
+	const odd = "unrecognised GitHub host form: usage not queried"
+	tests := map[string]string{
+		"":                        "unknown GitHub host: usage not queried",
+		"HTTP://GITHUB.COM":       odd,
+		"https://github.com:443":  odd,
+		"github.com":              odd,
+		"https://www.github.com":  odd,
+		"WWW.GitHub.com:8443":     odd,
+		gheHost:                   "GitHub Enterprise host acme.ghe.com: usage not queried",
+		"github.com.evil.example": "GitHub Enterprise host github.com.evil.example: usage not queried",
+	}
+	for host, want := range tests {
+		if got := hostNote(host); got != want {
+			t.Errorf("hostNote(%q) = %q, want %q", host, got, want)
+		}
+	}
+}

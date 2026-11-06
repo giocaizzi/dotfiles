@@ -61,6 +61,7 @@ func merge(a, b Account) Account {
 	if newer(a, b) {
 		win, lose = b, a
 	}
+	win.ID = min(a.ID, b.ID)
 	win.Harnesses = append(slices.Clone(a.Harnesses), b.Harnesses...)
 	if win.Label == "" {
 		win.Label = lose.Label

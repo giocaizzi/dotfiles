@@ -12,11 +12,15 @@ import (
 func TestSanitize(t *testing.T) {
 	t.Parallel()
 	tests := map[string]string{
-		"plain text":                "plain text",
-		"\x1b[31mX\x1b[0m":          "[31mX[0m",
-		"a\u009bb\u0085c\x7fd":      "abcd",
-		"tab\there\nnew\rline\x00z": "tabherenewlinez",
-		"héllo · ünï":               "héllo · ünï",
+		"plain text":                           "plain text",
+		"\x1b[31mX\x1b[0m":                     "[31mX[0m",
+		"a\u009bb\u0085c\x7fd":                 "abcd",
+		"tab\there\nnew\rline\x00z":            "tabherenewlinez",
+		"héllo · ünï":                          "héllo · ünï",
+		"a\u202ab\u202bc\u202cd\u202de\u202ef": "abcdef",
+		"a\u2066b\u2067c\u2068d\u2069e":        "abcde",
+		"a\u200eb\u200fc":                      "abc",
+		"a\u200bb\u200cc\u200dd\u2060e\ufeff":  "abcde",
 	}
 	for in, want := range tests {
 		if got := sanitize(in); got != want {

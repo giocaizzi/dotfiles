@@ -46,7 +46,7 @@ func claudeOverride(st Store, settings claudeSettings) (Account, bool) {
 		s, _ := settings.Env[k].(string)
 		return s
 	}
-	a := Account{Provider: Anthropic, Harnesses: []string{harnessClaude}, Source: srcEnv, Status: usage.StatusNotVisible}
+	a := Account{Provider: Anthropic, ID: harnessClaude, Harnesses: []string{harnessClaude}, Source: srcEnv, Status: usage.StatusNotVisible}
 	for _, c := range []struct{ env, name string }{
 		{"CLAUDE_CODE_USE_BEDROCK", "Bedrock"},
 		{"CLAUDE_CODE_USE_VERTEX", "Vertex AI"},
@@ -116,7 +116,7 @@ func readClaude(st Store) []Account {
 		return []Account{a}
 	}
 
-	oauth := Account{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{harnessClaude}, Auth: AuthOAuth}
+	oauth := Account{Provider: Anthropic, ID: harnessClaude, Key: "claude-oauth", Harnesses: []string{harnessClaude}, Auth: AuthOAuth}
 	raw, source, err := claudeSecret(st, dir, cfgDir)
 	oauth.Source = source
 	if err != nil && (isNotExist(err) || source == srcKeychain) {

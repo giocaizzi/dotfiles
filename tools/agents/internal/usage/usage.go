@@ -113,9 +113,10 @@ const (
 
 // Snapshot is the usage of one provider account at one time.
 type Snapshot struct {
-	Provider  string    `json:"provider"`  // models.dev provider id: anthropic, openai, github-copilot, google, ...
-	Account   string    `json:"account"`   // display label: email or login, never a token or an id
-	Harnesses []string  `json:"harnesses"` // harnesses logged into this account
+	ID        string    `json:"id,omitempty"` // the account's stable, non-secret id
+	Provider  string    `json:"provider"`     // models.dev provider id: anthropic, openai, github-copilot, google, ...
+	Account   string    `json:"account"`      // display label: email or login, never a token or an id
+	Harnesses []string  `json:"harnesses"`    // harnesses logged into this account
 	Plan      Plan      `json:"plan"`
 	Limits    []Limit   `json:"limits,omitempty"`
 	Status    Status    `json:"status"`

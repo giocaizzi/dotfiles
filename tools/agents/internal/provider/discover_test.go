@@ -166,3 +166,13 @@ func TestDiscoverNeverLeaksToken(t *testing.T) {
 		}
 	}
 }
+
+func TestMergeKeepsSmallestID(t *testing.T) {
+	t.Parallel()
+	for _, pair := range [][2]string{{"pi:x", "opencode:y"}, {"opencode:y", "pi:x"}} {
+		got := merge(Account{ID: pair[0], Harnesses: []string{"a"}}, Account{ID: pair[1], Harnesses: []string{"b"}})
+		if got.ID != "opencode:y" {
+			t.Errorf("merge(%v).ID = %q, want opencode:y", pair, got.ID)
+		}
+	}
+}

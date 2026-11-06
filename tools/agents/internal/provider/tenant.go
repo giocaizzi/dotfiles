@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
 	"strings"
@@ -44,6 +45,7 @@ func tokenKey(prefix, token string) string {
 func (e tenantEntry) account(now time.Time) Account {
 	a := Account{
 		Provider:  e.provider,
+		ID:        e.harness + ":" + cmp.Or(e.rowID, e.provider),
 		Harnesses: []string{e.harness},
 		Plan:      unknownPlan(),
 		Source:    e.source,

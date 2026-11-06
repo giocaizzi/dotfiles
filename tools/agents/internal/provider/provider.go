@@ -112,6 +112,7 @@ func (c Credential) LogValue() slog.Value { return slog.StringValue(redacted) }
 // Account is one provider account found on this machine.
 type Account struct {
 	Provider  string       // models.dev provider id
+	ID        string       // stable, non-secret identity for caching, never derived from a token
 	Label     string       // email or login for display; never a token or an id
 	Key       string       // merge key: provider account id, login or email; never displayed
 	Harnesses []string     // harnesses logged into this account, sorted
