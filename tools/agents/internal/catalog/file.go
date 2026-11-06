@@ -30,12 +30,23 @@ func Marshal(c Catalog) ([]byte, error) {
 	return append(data, '\n'), nil
 }
 
-// Validate checks the manual keys: known schema and tier names, every tiered
-// id present in Models, no id in two tiers.
+// Validate checks the catalog: known schema, providers, tier and pin names, no
+// pin on an ignored id, every tiered id present in Models, no id in two tiers, tiers equal to the rule.
 func (c Catalog) Validate() error {
 	var errs []error
 	if c.Schema != Schema {
 		errs = append(errs, fmt.Errorf("schema %d, want %d", c.Schema, Schema))
+	}
+	if len(c.Providers) == 0 {
+		errs = append(errs, errors.New("providers: empty (list the tracked models.dev provider keys)"))
+	}
+	for _, id := range sortedKeys(c.Pin) {
+		if !slices.Contains(Tiers(), c.Pin[id]) {
+			errs = append(errs, fmt.Errorf("pin.%s: unknown tier %q (want one of %v)", id, c.Pin[id], Tiers()))
+		}
+		if slices.Contains(c.Ignore, id) {
+			errs = append(errs, fmt.Errorf("pin.%s: the id is also in ignore", id))
+		}
 	}
 	seen := map[string]string{}
 	for _, tier := range sortedKeys(c.Tiers) {
@@ -53,7 +64,21 @@ func (c Catalog) Validate() error {
 			}
 		}
 	}
+	errs = append(errs, c.tierDrift()...)
 	return errors.Join(errs...)
+}
+
+// tierDrift reports the tiers that differ from the rule, so a hand edit of
+// tiers fails; an absent and an empty tier are the same.
+func (c Catalog) tierDrift() []error {
+	var errs []error
+	want := ComputeTiers(c.Models, c.Pin)
+	for _, tier := range Tiers() {
+		if !slices.Equal(c.Tiers[tier], want[tier]) {
+			errs = append(errs, fmt.Errorf("tiers.%s: differs from the rule (run chezmoi agents models sync)", tier))
+		}
+	}
+	return errs
 }
 
 // TierOf returns the tier of id, or "" when it has none.

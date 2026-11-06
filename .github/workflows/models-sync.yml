@@ -1,0 +1,53 @@
+name: models-sync
+
+# Weekly: refresh the model catalog (`chezmoi agents models sync`: first-party API
+# prices from models.dev, LMArena ranks, Epoch AI benchmarks, tiers and
+# docs/MODELS.md) and open a PR when it changed. Public endpoints only; a failed
+# source writes nothing. Set the BUMP_TOKEN secret (a token that may open PRs) so
+# CI runs on that PR; without it the PR is opened with GITHUB_TOKEN and its checks
+# must be started by hand.
+on:
+  schedule:
+    - cron: "37 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: models-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.BUMP_TOKEN || github.token }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: tools/agents/go.mod
+      - run: make -C tools/agents build
+      - name: Sync
+        env:
+          CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
+        run: tools/agents/bin/chezmoi-agents models sync
+      - name: Open the PR
+        env:
+          GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
+        run: |
+          set -eu
+          git diff --quiet -- home/.chezmoidata/models.json docs/MODELS.md && { echo "The model catalog is up to date."; exit 0; }
+          branch=chore/models-sync
+          title="chore(agents): refresh the model catalog"
+          body="Prices, ranks, benchmarks and tiers from \`chezmoi agents models sync\`. See docs/OS.md#model-tiers-chezmoi-agents-models."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add home/.chezmoidata/models.json docs/MODELS.md
+          git commit -m "$title"
+          git push --force origin "$branch"
+          gh pr create --base main --head "$branch" --title "$title" --body "$body" \
+            || gh pr edit "$branch" --body "$body"
