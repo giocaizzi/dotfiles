@@ -137,3 +137,38 @@ func TestVSCodeSettings(t *testing.T) {
 		t.Errorf("expected https://github.com/** to be true")
 	}
 }
+
+func TestVSCodeSettings_Voice(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		voice        policy.Voice
+		wantEnabled  bool
+		wantLanguage any
+	}{
+		{"language unset", policy.Voice{Enabled: true}, true, nil},
+		{"language set", policy.Voice{Enabled: true, Language: "it"}, true, "it"},
+		{"disabled", policy.Voice{}, false, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := translate.VSCodeSettings(&policy.Policy{Voice: tt.voice})
+			if got["dictation.enabled"] != tt.wantEnabled {
+				t.Errorf("dictation.enabled = %v, want %v", got["dictation.enabled"], tt.wantEnabled)
+			}
+			if lang := got["agents.voice.language"]; lang != tt.wantLanguage {
+				t.Errorf("agents.voice.language = %v, want %v", lang, tt.wantLanguage)
+			}
+		})
+	}
+}
+
+func TestClaudeSettings_VoiceModeDefault(t *testing.T) {
+	t.Parallel()
+	got := translate.ClaudeSettings(&policy.Policy{Voice: policy.Voice{Enabled: true}}, "linux")
+	want := map[string]any{"enabled": true, "mode": "hold", "autoSubmit": false}
+	if diff := cmp.Diff(want, got["voice"]); diff != "" {
+		t.Errorf("voice mismatch (-want +got):\n%s", diff)
+	}
+}

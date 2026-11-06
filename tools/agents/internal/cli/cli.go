@@ -193,6 +193,23 @@ func (d Deps) loadPolicy(explicitPath string) (*policy.Policy, string, error) {
 	return nil, "", errors.New("harness-policy.toml not found")
 }
 
+// findPolicySourceDir returns the chezmoi source directory (the one holding
+// .chezmoidata/harness-policy.toml), searched in the order loadPolicy uses.
+func (d Deps) findPolicySourceDir() (string, error) {
+	var candidates []string
+	if src := d.Getenv("CHEZMOI_SOURCE_DIR"); src != "" {
+		candidates = append(candidates, src)
+	}
+	candidates = append(candidates, "home", ".", filepath.Join("..", "home"), filepath.Join("..", "..", "home"))
+	for _, cand := range candidates {
+		cleaned := filepath.Clean(cand)
+		if _, err := os.Stat(filepath.Join(cleaned, ".chezmoidata", "harness-policy.toml")); err == nil {
+			return cleaned, nil
+		}
+	}
+	return "", errors.New("chezmoi source directory not found; cannot check native voice settings")
+}
+
 func (d Deps) findHarnessToml(explicitPath string) (string, error) {
 	if explicitPath != "" {
 		cleaned := filepath.Clean(explicitPath)

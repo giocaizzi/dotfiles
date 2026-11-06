@@ -30,11 +30,16 @@ func VSCodeSettings(p *policy.Policy) map[string]any {
 		theme = "Catppuccin Mocha"
 	}
 
-	return map[string]any{
+	out := map[string]any{
+		"dictation.enabled":                            p.Voice.Enabled,
 		"chat.autopilot.enabled":                       p.Autonomy.ExecutionMode == defaultAuto || p.Autonomy.Mode == defaultAuto,
 		"chat.subagents.allowInvocationsFromSubagents": p.Autonomy.AllowSubagentInvocations,
 		"chat.tools.terminal.autoApprove":              terminalAutoApprove,
 		"chat.tools.urls.autoApprove":                  urlsAutoApprove,
 		"workbench.colorTheme":                         theme,
 	}
+	if p.Voice.Language != "" {
+		out["agents.voice.language"] = p.Voice.Language
+	}
+	return out
 }
