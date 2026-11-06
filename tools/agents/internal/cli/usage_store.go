@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -43,23 +44,61 @@ type osStore struct {
 
 	securityBin string        // the macOS security tool; tests stub it
 	user        func() string // the current OS user name; tests stub it
+	timeout     time.Duration // per credential read; zero means secretTimeout
+}
+
+// limit is the per-read timeout.
+func (s osStore) limit() time.Duration {
+	if s.timeout > 0 {
+		return s.timeout
+	}
+	return secretTimeout
 }
 
 // newOSStore builds the store from the CLI dependencies.
 func newOSStore(d Deps) osStore {
 	home, _ := os.UserHomeDir()
 	return osStore{
-		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security",
+		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security", timeout: secretTimeout,
 		user: func() string { return currentUser(d.Getenv) },
 	}
 }
 
 var _ provider.Store = osStore{}
 
+// maxReadFile caps what ReadFile reads. Credential files are a few KiB, but
+// Claude Code's .claude.json grows with every project it has seen.
+const maxReadFile = 64 << 20
+
+var errNotRegular = errors.New("not a regular file")
+
+// ReadFile reads a regular file of at most maxReadFile bytes. A FIFO or device
+// is opened without blocking and rejected; errors carry no file content.
 func (s osStore) ReadFile(path string) ([]byte, error) {
-	b, err := os.ReadFile(filepath.Clean(path))
+	return readRegular(path)
+}
+
+// readRegular opens path without blocking, requires a regular file and reads
+// it up to maxReadFile bytes. A longer file returns provider.ErrTooLarge.
+func readRegular(path string) ([]byte, error) {
+	f, err := openNoBlock(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, fmt.Errorf("read file: %w", errNotRegular)
+	}
+	b, err := io.ReadAll(io.LimitReader(f, maxReadFile+1))
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	if len(b) > maxReadFile {
+		return nil, fmt.Errorf("read file: %w", provider.ErrTooLarge)
 	}
 	return b, nil
 }
@@ -67,6 +106,17 @@ func (s osStore) ReadFile(path string) ([]byte, error) {
 func (s osStore) Exists(path string) bool {
 	_, err := os.Stat(filepath.Clean(path))
 	return err == nil
+}
+
+// SameFile reports whether two paths are the same file or directory; false when
+// either cannot be read.
+func (s osStore) SameFile(a, b string) bool {
+	fa, err := os.Stat(filepath.Clean(a))
+	if err != nil {
+		return false
+	}
+	fb, err := os.Stat(filepath.Clean(b))
+	return err == nil && os.SameFile(fa, fb)
 }
 
 // Canonical resolves symlinks in the absolute path; when that fails it returns
@@ -84,6 +134,19 @@ func (s osStore) Canonical(path string) string {
 	return resolved
 }
 
+// ListDir lists the sorted entry names of a directory; nil on error.
+func (s osStore) ListDir(dir string) []string {
+	entries, err := os.ReadDir(filepath.Clean(dir))
+	if err != nil {
+		return nil
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names
+}
+
 func (s osStore) Getenv(key string) string { return s.getenv(key) }
 func (s osStore) Home() string             { return s.home }
 func (s osStore) GOOS() string             { return s.goos }
@@ -93,7 +156,7 @@ func (s osStore) Now() time.Time           { return s.now() }
 // only macOS supports it, through the security tool. Errors never carry the
 // secret.
 func (s osStore) Secret(service, account string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), secretTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.limit())
 	defer cancel()
 
 	if account == "" {
@@ -206,7 +269,7 @@ func (s osStore) OpencodeCredentials(dbPath string) ([]provider.OpencodeRow, err
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), secretTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.limit())
 	defer cancel()
 	rows, err := db.QueryContext(ctx, `SELECT id, integration_id, label, active, value FROM credential`)
 	if err != nil {

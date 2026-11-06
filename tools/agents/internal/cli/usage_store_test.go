@@ -224,6 +224,7 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 			t.Parallel()
 			s := testStore(t)
 			s.goos = "darwin"
+			s.timeout = time.Minute // loaded CI hosts spawn the stub slowly
 			s.user = func() string { return tt.user }
 			s.securityBin = stubSecurity(t, tt.wantAcct, tt.acctExit, tt.anyExit)
 			got, err := s.Secret("svc", "")
@@ -240,6 +241,23 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 				t.Errorf("Secret error %q echoes stderr", err)
 			}
 		})
+	}
+}
+
+func TestOSStoreListDir(t *testing.T) {
+	t.Parallel()
+	s := testStore(t)
+	for _, d := range []string{".claude-b", ".claude-a", ".other"} {
+		if err := os.Mkdir(filepath.Join(s.Home(), d), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []string{".claude-a", ".claude-b", ".other"}
+	if diff := cmp.Diff(want, s.ListDir(s.Home())); diff != "" {
+		t.Errorf("ListDir (-want +got):\n%s", diff)
+	}
+	if got := s.ListDir(filepath.Join(s.Home(), "missing")); got != nil {
+		t.Errorf("ListDir(missing) = %v, want nil", got)
 	}
 }
 

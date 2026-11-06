@@ -75,6 +75,9 @@ func merge(a, b Account) Account {
 	if win.Login == "" {
 		win.Login = lose.Login
 	}
+	if win.CodexHome == "" {
+		win.CodexHome = lose.CodexHome
+	}
 	win.IdentityKnown = a.IdentityKnown || b.IdentityKnown
 	win.Fingerprints = unionFingerprints(a.Fingerprints, b.Fingerprints)
 	return win

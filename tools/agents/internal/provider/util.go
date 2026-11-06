@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"strings"
 	"time"
@@ -44,6 +45,9 @@ func unknownPlan() usage.Plan {
 
 func isNotExist(err error) bool { return errors.Is(err, fs.ErrNotExist) }
 
+// errTooLargeFile is readJSON's fixed error for a file over the cap.
+var errTooLargeFile = fmt.Errorf("unreadable file: %w", ErrTooLarge)
+
 var errMalformed = errors.New("malformed JSON")
 
 // unmarshalQuiet is json.Unmarshal with an error that never carries content.
@@ -62,6 +66,9 @@ func readJSON(st Store, path string, v any) (found bool, err error) {
 	if err != nil {
 		if isNotExist(err) {
 			return false, nil
+		}
+		if errors.Is(err, ErrTooLarge) {
+			return true, errTooLargeFile
 		}
 		return true, errors.New("unreadable file")
 	}

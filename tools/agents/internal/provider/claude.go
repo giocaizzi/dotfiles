@@ -3,8 +3,8 @@ package provider
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"io/fs"
 	"path/filepath"
 	"strings"
 
@@ -46,24 +46,25 @@ func truthy(s string) bool {
 }
 
 // claudeOverride returns the account of a cloud, gateway or API setup, if the
-// environment or settings.json holds one. It overrides the OAuth login, as in
+// environment (active profile only) or settings.json holds one. It overrides the OAuth login, as in
 // Claude Code itself.
-func claudeOverride(st Store, settings claudeSettings) (Account, bool) {
+func claudeOverride(st Store, p profile, settings claudeSettings) (Account, bool) {
 	env := func(k string) string {
-		if v := st.Getenv(k); v != "" {
+		// The process environment belongs to the active profile only.
+		if v := st.Getenv(k); v != "" && p.active {
 			return v
 		}
 		s, _ := settings.Env[k].(string)
 		return s
 	}
-	a := Account{Provider: Anthropic, ID: harnessClaude, Harnesses: []string{harnessClaude}, Source: srcEnv, Status: usage.StatusNotVisible}
+	a := Account{Provider: Anthropic, ID: p.label(), Harnesses: []string{p.label()}, Source: srcEnv, Status: usage.StatusNotVisible}
 	for _, c := range []struct{ env, name string }{
 		{"CLAUDE_CODE_USE_BEDROCK", "Bedrock"},
 		{"CLAUDE_CODE_USE_VERTEX", "Vertex AI"},
 		{"CLAUDE_CODE_USE_FOUNDRY", "Foundry"},
 	} {
 		if truthy(env(c.env)) {
-			a.Key = "claude-cloud"
+			a.Key = "claude-cloud" + p.keySuffix()
 			a.Auth = AuthCloud
 			a.Plan = usage.Plan{Kind: usage.KindCloud, Billing: usage.BillingMetered, Payer: usage.PayerCloud, Name: c.name}
 			a.Note = "usage in your cloud billing console"
@@ -73,14 +74,14 @@ func claudeOverride(st Store, settings claudeSettings) (Account, bool) {
 
 	hasToken := env("ANTHROPIC_AUTH_TOKEN") != ""
 	if env("ANTHROPIC_BASE_URL") != "" && (hasToken || settings.APIKeyHelper != "") {
-		a.Key = "claude-gateway"
+		a.Key = "claude-gateway" + p.keySuffix()
 		a.Auth = AuthGateway
 		a.Plan = usage.Plan{Kind: usage.KindGateway, Billing: usage.BillingUnknown, Payer: usage.PayerOrg}
 		a.Note = "usage in your organization's gateway"
 		return a, true
 	}
 	if env("ANTHROPIC_API_KEY") != "" || hasToken || settings.APIKeyHelper != "" {
-		a.Key = "claude-api-key"
+		a.Key = "claude-api-key" + p.keySuffix()
 		a.Auth = AuthAPIKey
 		a.Plan = usage.Plan{Kind: usage.KindAPI, Billing: usage.BillingMetered, Payer: usage.PayerUnknown}
 		a.Status = usage.StatusNoAPI
@@ -90,50 +91,51 @@ func claudeOverride(st Store, settings claudeSettings) (Account, bool) {
 	return Account{}, false
 }
 
-// claudeSecret reads the OAuth credentials JSON: the keychain on darwin, else
-// <dir>/.credentials.json. A missing source returns an error matching fs.ErrNotExist.
-func claudeSecret(st Store, dir, cfgDir string) (raw []byte, source string, err error) {
-	if st.GOOS() != "darwin" {
-		b, rerr := st.ReadFile(filepath.Join(dir, ".credentials.json"))
-		if rerr != nil {
-			rerr = fmt.Errorf("read credentials file: %w", rerr)
+// claudeSecret reads the OAuth credentials JSON of a profile: the keychain on
+// darwin, else (or when the keychain has no item) <dir>/.credentials.json. A
+// missing source returns an error matching fs.ErrNotExist.
+func claudeSecret(st Store, p profile) (raw []byte, source string, err error) {
+	if st.GOOS() == "darwin" {
+		service := claudeKeychainService
+		if p.explicit() {
+			sum := sha256.Sum256([]byte(p.dir))
+			service += "-" + hex.EncodeToString(sum[:])[:8]
 		}
-		return b, srcFile, rerr
+		if s, kerr := st.Secret(service, ""); kerr == nil && s != "" {
+			return []byte(s), srcKeychain, nil
+		}
+		// Claude Code stores the login in the file when the keychain write fails.
 	}
-	service := claudeKeychainService
-	if cfgDir != "" {
-		sum := sha256.Sum256([]byte(cfgDir))
-		service += "-" + hex.EncodeToString(sum[:])[:8]
+	b, rerr := st.ReadFile(filepath.Join(p.dir, ".credentials.json"))
+	if rerr != nil {
+		rerr = fmt.Errorf("read credentials file: %w", rerr)
 	}
-	s, err := st.Secret(service, "")
-	if err == nil && s == "" {
-		err = fs.ErrNotExist
-	}
-	return []byte(s), srcKeychain, err
+	return b, srcFile, rerr
 }
 
-// readClaude finds the Claude Code account.
+// readClaude finds the Claude Code accounts of every login profile.
 func readClaude(st Store) []Account {
-	cfgDir := st.Getenv("CLAUDE_CONFIG_DIR")
-	dir := cfgDir
-	if dir == "" {
-		dir = filepath.Join(st.Home(), ".claude")
-	}
+	return claudeSpec().collect(st, readClaudeProfile)
+}
 
+func readClaudeProfile(st Store, p profile) []Account {
 	var settings claudeSettings
-	_, _ = readJSON(st, filepath.Join(dir, "settings.json"), &settings) // malformed settings count as absent
-	if a, ok := claudeOverride(st, settings); ok {
+	_, _ = readJSON(st, filepath.Join(p.dir, "settings.json"), &settings) // malformed settings count as absent
+	if a, ok := claudeOverride(st, p, settings); ok {
 		return []Account{a}
 	}
 
-	oauth := Account{Provider: Anthropic, ID: harnessClaude, Key: "claude-oauth", Harnesses: []string{harnessClaude}, Auth: AuthOAuth}
-	raw, source, err := claudeSecret(st, dir, cfgDir)
+	oauth := Account{Provider: Anthropic, ID: p.label(), Key: "claude-oauth" + p.keySuffix(), Harnesses: []string{p.label()}, Auth: AuthOAuth}
+	raw, source, err := claudeSecret(st, p)
 	oauth.Source = source
-	if err != nil && (isNotExist(err) || source == srcKeychain) {
-		return nil // no credentials; a keychain error (locked, denied) is the same to us
+	if err != nil && isNotExist(err) {
+		return nil // no credentials
 	}
 	var c claudeCreds
 	if err != nil || unmarshalQuiet(raw, &c) != nil {
+		if p.silent() {
+			return nil
+		}
 		oauth.Plan = unknownPlan()
 		oauth.Status = usage.StatusUnavailable
 		oauth.Note = noteUnreadable
@@ -146,18 +148,25 @@ func readClaude(st Store) []Account {
 	oauth.Cred = NewCredential(o.AccessToken, "")
 	var prof claudeProfile
 	cfgPath := filepath.Join(st.Home(), ".claude.json")
-	if cfgDir != "" {
-		cfgPath = filepath.Join(cfgDir, ".claude.json")
+	if p.explicit() {
+		cfgPath = filepath.Join(p.dir, ".claude.json")
 	}
-	_, _ = readJSON(st, cfgPath, &prof) // missing or malformed counts as absent
-	if p := prof.OauthAccount; p.AccountUUID != "" {
-		proven(&oauth, AnthropicKey(p.AccountUUID, p.OrganizationUUID))
-		oauth.Label = p.EmailAddress
+	tooLarge := false
+	if _, err := readJSON(st, cfgPath, &prof); errors.Is(err, ErrTooLarge) { // missing or malformed counts as absent
+		tooLarge = true
+		prof = claudeProfile{}
+	}
+	if pr := prof.OauthAccount; pr.AccountUUID != "" {
+		proven(&oauth, AnthropicKey(pr.AccountUUID, pr.OrganizationUUID))
+		oauth.Label = pr.EmailAddress
 	} else {
 		unproven(&oauth, o.AccessToken)
+		if tooLarge {
+			oauth.Note = "account profile too large (.claude.json): identity unknown"
+		}
 	}
 	oauth.Plan = usage.AnthropicPlan(o.SubscriptionType, o.RateLimitTier)
 	oauth.Expires = msTime(o.ExpiresAt)
-	expiredStatus(&oauth, st.Now(), harnessClaude)
+	expiredStatus(&oauth, st.Now(), p.label())
 	return []Account{oauth}
 }

@@ -646,10 +646,11 @@ func TestCodexSessionsAreNotUsedForPiOpenAI(t *testing.T) {
 		"/h/.codex/auth.json": fmt.Sprintf(`{"auth_mode":"chatgpt","tokens":{"access_token":%q,"account_id":"acct-pi"}}`, access),
 	}))
 
-	run := func(store provider.Store, args ...string) (*flow, usg.Snapshot) {
+	run := func(store kcStore, args ...string) (*flow, usg.Snapshot) {
 		fl := newFlow(t, srv)
 		f := testFetcher(t, srv.Server)
 		writeCodexSession(t, f.home)
+		store = rehome(store, f.home)
 		fl.out.Reset()
 		if code := fl.d.runUsageWith(t.Context(), args, store, f); code != 0 {
 			t.Fatalf("exit = %d", code)
@@ -671,4 +672,14 @@ func TestCodexSessionsAreNotUsedForPiOpenAI(t *testing.T) {
 	if _, s := run(withCodex, "-live"); s.Source != "codex-session" || s.Status != usg.StatusStale {
 		t.Errorf("codex row = %+v, want the session fallback", s)
 	}
+}
+
+// rehome moves the store's home, and the files under it, to home.
+func rehome(s kcStore, home string) kcStore {
+	files := make(map[string]string, len(s.files))
+	for k, v := range s.files {
+		files[strings.Replace(k, s.home, home, 1)] = v
+	}
+	s.files, s.home = files, home
+	return s
 }

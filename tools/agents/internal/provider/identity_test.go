@@ -149,15 +149,20 @@ func TestOpenAIClaimFallbacks(t *testing.T) {
 		},
 		{
 			name:      "account argument wins",
-			access:    map[string]any{openaiAuthClaim: map[string]any{"chatgpt_account_id": "a"}},
+			access:    map[string]any{openaiAuthClaim: map[string]any{"chatgpt_account_id": "a", "chatgpt_user_id": "u"}},
 			accountID: "arg",
-			wantKey:   "openai:arg",
+			wantKey:   "openai:arg:u",
+		},
+		{
+			name:    "sub claim identifies the user",
+			access:  map[string]any{"sub": "s1", openaiAuthClaim: map[string]any{"chatgpt_account_id": "a"}},
+			wantKey: "openai:a:s1",
 		},
 		{
 			name:      "email from the access token",
-			access:    map[string]any{"email": "acc@example.com"},
+			access:    map[string]any{"email": "acc@example.com", "sub": "s2"},
 			accountID: "arg",
-			wantKey:   "openai:arg",
+			wantKey:   "openai:arg:s2",
 			wantLabel: "acc@example.com",
 		},
 	}
@@ -170,6 +175,15 @@ func TestOpenAIClaimFallbacks(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("account id without any user claim is unproven", func(t *testing.T) {
+		t.Parallel()
+		access := jwt(t, map[string]any{"exp": exp.Unix(), openaiAuthClaim: map[string]any{"chatgpt_account_id": "a"}})
+		a := openaiOAuth("codex", access, "", "")
+		if a.IdentityKnown || a.ID != "codex" || a.Key != fingerprint(OpenAI, access) {
+			t.Errorf("got key %q id %q known %v", a.Key, a.ID, a.IdentityKnown)
+		}
+	})
 
 	t.Run("no account id is unproven", func(t *testing.T) {
 		t.Parallel()
@@ -334,6 +348,9 @@ func checkClaudeProfile(t *testing.T, tt claudeProfileCase) {
 	t.Helper()
 	f := newFake("linux")
 	f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(testNow.Add(time.Hour))
+	if tt.env["CLAUDE_CONFIG_DIR"] != "" {
+		delete(f.files, f.path(".claude", ".credentials.json")) // the env dir alone, not next to a default login
+	}
 	maps.Copy(f.env, tt.env)
 	for p, content := range tt.files {
 		if !filepath.IsAbs(p) {
@@ -396,5 +413,31 @@ func TestAccountFormatNeverLeaksToken(t *testing.T) {
 		if out := fmt.Sprintf(verb, a); strings.Contains(out, secret) {
 			t.Errorf("Sprintf(%q, Account) leaks the token: %q", verb, out)
 		}
+	}
+}
+
+func TestSharedWorkspaceKeepsUsersApart(t *testing.T) {
+	t.Parallel()
+	f := newFake("linux")
+	exp := testNow.Add(time.Hour)
+	mk := func(user, email string) string {
+		return jwt(t, map[string]any{
+			"exp":              exp.Unix(),
+			openaiAuthClaim:    map[string]any{"chatgpt_account_id": "ws-1", "chatgpt_user_id": user},
+			openaiProfileClaim: map[string]any{"email": email},
+		})
+	}
+	f.files[f.path(".codex", "auth.json")] = codexAuthJSON(t, mk("user-1", "a@example.com"), "", "ws-1")
+	f.files[f.path(".pi", "agent", "auth.json")] = fmt.Sprintf(
+		`{"openai-codex":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d,"accountId":"ws-1"}}`,
+		mk("user-2", "b@example.com"), exp.UnixMilli())
+	var keys []string
+	for _, a := range Discover(f) {
+		if a.Provider == OpenAI {
+			keys = append(keys, a.Key)
+		}
+	}
+	if len(keys) != 2 {
+		t.Fatalf("keys = %v, want 2 rows", keys)
 	}
 }

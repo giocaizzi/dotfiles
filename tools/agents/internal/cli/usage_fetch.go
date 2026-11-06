@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,11 +41,10 @@ type usageFetcher struct {
 	githubURL    string
 	agyPath      func() (string, error)
 	home         string
-	getenv       func(string) string
 	now          func() time.Time
 }
 
-func newFetcher(home string, getenv func(string) string) usageFetcher {
+func newFetcher(home string) usageFetcher {
 	return usageFetcher{
 		client: &http.Client{
 			Timeout: liveTimeout,
@@ -59,7 +57,6 @@ func newFetcher(home string, getenv func(string) string) usageFetcher {
 		githubURL:    "https://api.github.com",
 		agyPath:      func() (string, error) { return exec.LookPath("agy") },
 		home:         home,
-		getenv:       getenv,
 		now:          time.Now,
 	}
 }
@@ -100,11 +97,21 @@ func (f usageFetcher) base(acct provider.Account) usg.Snapshot {
 		Harnesses: acct.Harnesses,
 		Plan:      acct.Plan,
 		Status:    usg.StatusOK,
+		Note:      okNote(acct),
 		FetchedAt: f.now(),
 
 		Fingerprints:    acct.Fingerprints,
 		IdentityUnknown: identityUnknown(acct),
 	}
+}
+
+// okNote is the account's note when its status is OK: a fact about the
+// identity that the row shows.
+func okNote(acct provider.Account) string {
+	if acct.Status == "" || acct.Status == usg.StatusOK {
+		return acct.Note
+	}
+	return ""
 }
 
 func unavailable(s usg.Snapshot, note string) usg.Snapshot {
@@ -207,12 +214,9 @@ func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, sn
 		note = "unavailable: " + err.Error()
 	}
 	if note != "" {
-		// The session logs are Codex's own: only a Codex login may show them.
-		if slices.Contains(acct.Harnesses, "codex") {
-			if fb, ok := f.codexSessionFallback(acct); ok {
-				fb.Note = note
-				return fb
-			}
+		if fb, ok := f.codexSessionFallback(acct); ok {
+			fb.Note = note
+			return fb
 		}
 		return unavailable(snap, note)
 	}
@@ -424,21 +428,17 @@ func (f usageFetcher) agyLogFallback(acct provider.Account) (usg.Snapshot, bool)
 	return snap, true
 }
 
-// codexSessionFallback reads the newest rate-limit snapshot Codex wrote in its
-// session logs, looking at the last 7 day directories.
+// codexSessionFallback reads the newest rate-limit snapshot Codex wrote in the
+// session logs of the profile the account was logged in from, looking at the
+// last 7 day directories. An account with no Codex profile has none.
 func (f usageFetcher) codexSessionFallback(acct provider.Account) (usg.Snapshot, bool) {
-	root := filepath.Join(f.home, ".codex")
-	if f.getenv != nil {
-		if h := f.getenv("CODEX_HOME"); h != "" {
-			root = h
-		}
+	if acct.CodexHome == "" {
+		return usg.Snapshot{}, false
 	}
-	root = filepath.Join(root, "sessions")
+	root := filepath.Join(acct.CodexHome, "sessions")
 
 	for _, day := range recentDays(root, 7) {
-		files, _ := filepath.Glob(filepath.Join(day, "rollout-*.jsonl"))
-		sort.Sort(sort.Reverse(sort.StringSlice(files)))
-		for _, name := range files {
+		for _, name := range rolloutFiles(day) {
 			if snap, ok := f.codexSnapshot(acct, name); ok {
 				return snap, true
 			}
@@ -462,13 +462,32 @@ func recentDays(root string, n int) []string {
 	return days
 }
 
+// rolloutFiles lists the rollout-*.jsonl entries of a day directory, newest
+// (lexically last) first. Names are matched on the entry, never as a glob, so
+// metacharacters in the path are plain characters.
+func rolloutFiles(day string) []string {
+	entries, err := os.ReadDir(day)
+	if err != nil {
+		return nil
+	}
+	var out []string
+	for _, e := range entries {
+		if n := e.Name(); strings.HasPrefix(n, "rollout-") && strings.HasSuffix(n, ".jsonl") {
+			out = append(out, filepath.Join(day, n))
+		}
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(out)))
+	return out
+}
+
+// codexSnapshot parses one rollout log. A FIFO, a device or a file over the
+// read cap is skipped.
 func (f usageFetcher) codexSnapshot(acct provider.Account, name string) (usg.Snapshot, bool) {
-	file, err := os.Open(filepath.Clean(name))
+	b, err := readRegular(name)
 	if err != nil {
 		return usg.Snapshot{}, false
 	}
-	defer file.Close()
-	plan, limits, at, err := usg.ParseCodexSession(file)
+	plan, limits, at, err := usg.ParseCodexSession(bytes.NewReader(b))
 	if err != nil || len(limits) == 0 {
 		return usg.Snapshot{}, false
 	}

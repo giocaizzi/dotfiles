@@ -129,6 +129,20 @@ func TestRenderUsageSortsByProviderThenAccount(t *testing.T) {
 	}
 }
 
+func TestRenderUnprovenNextToAPIKeyIsIdentityUnknown(t *testing.T) {
+	t.Parallel()
+	snaps := []usg.Snapshot{
+		{Provider: "openai", Plan: usg.Plan{Kind: usg.KindUnknown}, IdentityUnknown: true},
+		{Provider: "openai", Plan: usg.Plan{Kind: usg.KindAPI}},
+	}
+	var buf bytes.Buffer
+	renderUsage(&buf, term.Style{}, snaps, "(live)", renderNow)
+	out := buf.String()
+	if !strings.Contains(out, "identity unknown") || strings.Contains(out, "same account?") {
+		t.Errorf("want identity unknown only:\n%s", out)
+	}
+}
+
 func TestPlanText(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

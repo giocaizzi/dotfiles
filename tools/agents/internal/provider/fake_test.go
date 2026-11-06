@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -22,6 +23,7 @@ type fakeStore struct {
 	secrets map[string]string // service + "\x00" + account
 	env     map[string]string
 	canon   map[string]string        // Canonical mapping
+	alias   map[string]string        // canonical path -> the path SameFile treats it as
 	rows    map[string][]OpencodeRow // by database path
 	rowsErr error                    // returned for any database not in rows, instead of ErrNotExist
 }
@@ -76,6 +78,18 @@ func (f *fakeStore) Canonical(p string) string {
 	return p
 }
 
+// SameFile compares the canonical paths, after the alias mapping.
+func (f *fakeStore) SameFile(a, b string) bool {
+	norm := func(p string) string {
+		c := f.Canonical(p)
+		if al, ok := f.alias[c]; ok {
+			return al
+		}
+		return c
+	}
+	return norm(a) == norm(b)
+}
+
 func (f *fakeStore) Exists(p string) bool {
 	if _, ok := f.files[p]; ok {
 		return true
@@ -86,6 +100,32 @@ func (f *fakeStore) Exists(p string) bool {
 		}
 	}
 	return false
+}
+
+// ListDir returns the names of the entries directly under dir, derived from
+// the file paths.
+func (f *fakeStore) ListDir(dir string) []string {
+	return listFakeDir(f.files, dir)
+}
+
+// listFakeDir returns the sorted first path components under dir.
+func listFakeDir(files map[string]string, dir string) []string {
+	seen := map[string]bool{}
+	var out []string
+	prefix := dir + string(filepath.Separator)
+	for k := range files {
+		rest, ok := strings.CutPrefix(k, prefix)
+		if !ok {
+			continue
+		}
+		name, _, _ := strings.Cut(rest, string(filepath.Separator))
+		if !seen[name] {
+			seen[name] = true
+			out = append(out, name)
+		}
+	}
+	slices.Sort(out)
+	return out
 }
 
 func (f *fakeStore) Getenv(k string) string { return f.env[k] }
