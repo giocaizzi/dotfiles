@@ -137,7 +137,7 @@ func TestFetchDoesNotFollowRedirects(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	f := newFetcher(t.TempDir(), func(string) string { return "" })
+	f := newFetcher(t.TempDir())
 	f.now = func() time.Time { return usageNow }
 	f.chatgptURL = srv.URL
 	snap := f.fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)

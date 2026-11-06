@@ -80,18 +80,23 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 
 // readCodex finds the Codex accounts of every login profile.
 func readCodex(st Store) []Account {
-	profiles := codexSpec().profiles(st)
-	per := make([][]Account, 0, len(profiles))
-	for _, p := range profiles {
-		per = append(per, readCodexProfile(st, p))
-	}
-	return joinProfiles("codex", per)
+	return codexSpec().collect(st, readCodexProfile)
 }
 
-// readCodexProfile reads the Codex login of one CODEX_HOME: auth.json, else the
-// OS credential store (cli_auth_credentials_store = keyring), else, for the
-// active profile, OPENAI_API_KEY.
+// readCodexProfile reads the Codex login of one CODEX_HOME and records the
+// directory on the accounts, for the session-log fallback.
 func readCodexProfile(st Store, p profile) []Account {
+	accs := codexAccounts(st, p)
+	for i := range accs {
+		accs[i].CodexHome = p.dir
+	}
+	return accs
+}
+
+// codexAccounts reads auth.json, else the OS credential store
+// (cli_auth_credentials_store = keyring), else, for the active profile,
+// OPENAI_API_KEY.
+func codexAccounts(st Store, p profile) []Account {
 	label := p.label()
 	apiKeyEnv := p.active && st.Getenv("OPENAI_API_KEY") != ""
 

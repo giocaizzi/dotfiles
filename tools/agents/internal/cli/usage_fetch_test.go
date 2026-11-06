@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -50,7 +51,7 @@ func (r *recorder) all() []seen {
 
 func testFetcher(t *testing.T, srv *httptest.Server) usageFetcher {
 	t.Helper()
-	f := newFetcher(t.TempDir(), func(string) string { return "" })
+	f := newFetcher(t.TempDir())
 	f.now = func() time.Time { return usageNow }
 	f.agyPath = func() (string, error) { return "", os.ErrNotExist }
 	if srv != nil {
@@ -559,13 +560,14 @@ func TestAgyLogFallbackWithoutLogs(t *testing.T) {
 func TestCodexSessionFallback(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
-	if _, ok := f.codexSessionFallback(oauthAccount(provider.OpenAI)); ok {
+	acct := codexAccount(f.home)
+	if _, ok := f.codexSessionFallback(acct); ok {
 		t.Fatal("fallback found a session in an empty home")
 	}
 
 	writeCodexSession(t, f.home)
 
-	snap, ok := f.codexSessionFallback(oauthAccount(provider.OpenAI))
+	snap, ok := f.codexSessionFallback(acct)
 	if !ok {
 		t.Fatal("fallback found no session")
 	}
@@ -580,36 +582,51 @@ func TestCodexSessionFallback(t *testing.T) {
 	}
 }
 
+// codexAccount is an OAuth OpenAI account logged in from <home>/.codex.
+func codexAccount(home string) provider.Account {
+	a := oauthAccount(provider.OpenAI)
+	a.CodexHome = filepath.Join(home, ".codex")
+	return a
+}
+
 func writeCodexSession(t *testing.T, home string) {
 	t.Helper()
-	day := filepath.Join(home, ".codex", "sessions", "2026", "11", "05")
+	writeCodexRollout(t, filepath.Join(home, ".codex"), 12)
+}
+
+// writeCodexRollout writes a recent rollout file under <codexHome>/sessions
+// whose 5h window is pct used.
+func writeCodexRollout(t *testing.T, codexHome string, pct int) {
+	t.Helper()
+	day := filepath.Join(codexHome, "sessions", "2026", "11", "05")
 	if err := os.MkdirAll(day, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	line := `{"timestamp":"2026-11-05T10:00:01.000Z","type":"event_msg","payload":{"type":"token_count","rate_limits":{"plan_type":"plus",` +
-		`"primary":{"used_percent":12,"window_minutes":300,"resets_at":1793000000}}}}` + "\n"
+	line := fmt.Sprintf(`{"timestamp":"2026-11-05T10:00:01.000Z","type":"event_msg","payload":{"type":"token_count","rate_limits":{"plan_type":"plus",`+
+		`"primary":{"used_percent":%d,"window_minutes":300,"resets_at":1793000000}}}}`+"\n", pct)
 	if err := os.WriteFile(filepath.Join(day, "rollout-2026-11-05T10-00-00-abc.jsonl"), []byte(line), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
 
-func TestCodexSessionFallbackRespectsCodexHome(t *testing.T) {
+func TestCodexSessionFallbackReadsTheAccountsHomeOnly(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
 	other := t.TempDir()
-	f.getenv = func(k string) string {
-		if k == "CODEX_HOME" {
-			return other
-		}
-		return ""
-	}
-	// An old session far outside the 7-day window must be ignored either way.
+	writeCodexSession(t, f.home) // ~/.codex of the fetcher's home
+	// An old session far outside the 7-day window is ignored.
 	old := filepath.Join(other, "sessions", "2026", "01", "01")
 	if err := os.MkdirAll(old, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := f.codexSessionFallback(oauthAccount(provider.OpenAI)); ok {
-		t.Error("fallback used a session with no files")
+	acct := oauthAccount(provider.OpenAI)
+	acct.CodexHome = other
+	if _, ok := f.codexSessionFallback(acct); ok {
+		t.Error("fallback used a session with no files, or another home's")
+	}
+	acct.CodexHome = ""
+	if _, ok := f.codexSessionFallback(acct); ok {
+		t.Error("an account with no Codex home used a session log")
 	}
 }
 
@@ -621,8 +638,7 @@ func TestOpenAIFailureUsesSessionFallback(t *testing.T) {
 	defer srv.Close()
 
 	f := testFetcher(t, srv)
-	acct := oauthAccount(provider.OpenAI)
-	acct.Harnesses = []string{"codex"} // only a Codex login may use Codex's session logs
+	acct := codexAccount(f.home) // only a Codex login has session logs
 	snap := f.fetch(t.Context(), acct, time.Second)
 	// No session on disk: the failure stays unavailable.
 	if snap.Status != usg.StatusUnavailable || snap.Note != "rate limited (429)" {

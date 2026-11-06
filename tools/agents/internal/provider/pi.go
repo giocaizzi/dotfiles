@@ -33,12 +33,7 @@ func sortedKeys[V any](m map[string]V) []string {
 // readPi reads the auth.json of every pi profile, one entry per provider. A
 // key starting with "!" is a command that is never run.
 func readPi(st Store) []Account {
-	profiles := piSpec().profiles(st)
-	per := make([][]Account, 0, len(profiles))
-	for _, p := range profiles {
-		per = append(per, readPiProfile(st, p))
-	}
-	return joinProfiles("pi", per)
+	return piSpec().collect(st, readPiProfile)
 }
 
 func readPiProfile(st Store, p profile) []Account {

@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"slices"
 	"time"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/cache"
@@ -23,7 +22,7 @@ const (
 
 func (d Deps) runUsage(ctx context.Context, args []string) int {
 	store := newOSStore(d)
-	return d.runUsageWith(ctx, args, store, newFetcher(store.home, d.Getenv))
+	return d.runUsageWith(ctx, args, store, newFetcher(store.home))
 }
 
 // runUsageWith is runUsage with the credential store and the fetcher injected.
@@ -189,7 +188,7 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 		case a.Status != "" && a.Status != usg.StatusOK:
 			snap, ok = f.base(a), true
 			snap.Status, snap.Note = a.Status, a.Note
-		case a.Provider == provider.OpenAI && slices.Contains(a.Harnesses, "codex"):
+		case a.Provider == provider.OpenAI:
 			snap, ok = f.codexSessionFallback(a)
 		case a.Provider == provider.Google:
 			snap, ok = f.agyLogFallback(a)

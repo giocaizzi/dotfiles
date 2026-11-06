@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
@@ -65,10 +66,44 @@ func newOSStore(d Deps) osStore {
 
 var _ provider.Store = osStore{}
 
+// maxCredentialFile caps what ReadFile reads: credential and profile files are
+// a few KiB.
+const maxCredentialFile = 1 << 20
+
+var (
+	errNotRegular = errors.New("not a regular file")
+	errTooLarge   = errors.New("file too large")
+)
+
+// ReadFile reads a regular file of at most maxCredentialFile bytes. A FIFO or
+// device is never opened; errors carry no file content.
 func (s osStore) ReadFile(path string) ([]byte, error) {
-	b, err := os.ReadFile(filepath.Clean(path))
+	path = filepath.Clean(path)
+	fi, err := os.Stat(path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, fmt.Errorf("read file: %w", errNotRegular)
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	defer f.Close()
+	// The path may have been swapped between Stat and Open.
+	if fi, err = f.Stat(); err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	if !fi.Mode().IsRegular() {
+		return nil, fmt.Errorf("read file: %w", errNotRegular)
+	}
+	b, err := io.ReadAll(io.LimitReader(f, maxCredentialFile+1))
+	if err != nil {
+		return nil, fmt.Errorf("read file: %w", err)
+	}
+	if len(b) > maxCredentialFile {
+		return nil, fmt.Errorf("read file: %w", errTooLarge)
 	}
 	return b, nil
 }
@@ -93,13 +128,17 @@ func (s osStore) Canonical(path string) string {
 	return resolved
 }
 
-// Glob lists the paths matching a filepath.Glob pattern; nil on error.
-func (s osStore) Glob(pattern string) []string {
-	m, err := filepath.Glob(pattern)
+// ListDir lists the sorted entry names of a directory; nil on error.
+func (s osStore) ListDir(dir string) []string {
+	entries, err := os.ReadDir(filepath.Clean(dir))
 	if err != nil {
 		return nil
 	}
-	return m
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	return names
 }
 
 func (s osStore) Getenv(key string) string { return s.getenv(key) }

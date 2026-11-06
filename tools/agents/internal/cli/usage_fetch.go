@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -42,11 +41,10 @@ type usageFetcher struct {
 	githubURL    string
 	agyPath      func() (string, error)
 	home         string
-	getenv       func(string) string
 	now          func() time.Time
 }
 
-func newFetcher(home string, getenv func(string) string) usageFetcher {
+func newFetcher(home string) usageFetcher {
 	return usageFetcher{
 		client: &http.Client{
 			Timeout: liveTimeout,
@@ -59,7 +57,6 @@ func newFetcher(home string, getenv func(string) string) usageFetcher {
 		githubURL:    "https://api.github.com",
 		agyPath:      func() (string, error) { return exec.LookPath("agy") },
 		home:         home,
-		getenv:       getenv,
 		now:          time.Now,
 	}
 }
@@ -207,12 +204,9 @@ func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, sn
 		note = "unavailable: " + err.Error()
 	}
 	if note != "" {
-		// The session logs are Codex's own: only a Codex login may show them.
-		if slices.Contains(acct.Harnesses, "codex") {
-			if fb, ok := f.codexSessionFallback(acct); ok {
-				fb.Note = note
-				return fb
-			}
+		if fb, ok := f.codexSessionFallback(acct); ok {
+			fb.Note = note
+			return fb
 		}
 		return unavailable(snap, note)
 	}
@@ -424,16 +418,14 @@ func (f usageFetcher) agyLogFallback(acct provider.Account) (usg.Snapshot, bool)
 	return snap, true
 }
 
-// codexSessionFallback reads the newest rate-limit snapshot Codex wrote in its
-// session logs, looking at the last 7 day directories.
+// codexSessionFallback reads the newest rate-limit snapshot Codex wrote in the
+// session logs of the profile the account was logged in from, looking at the
+// last 7 day directories. An account with no Codex profile has none.
 func (f usageFetcher) codexSessionFallback(acct provider.Account) (usg.Snapshot, bool) {
-	root := filepath.Join(f.home, ".codex")
-	if f.getenv != nil {
-		if h := f.getenv("CODEX_HOME"); h != "" {
-			root = h
-		}
+	if acct.CodexHome == "" {
+		return usg.Snapshot{}, false
 	}
-	root = filepath.Join(root, "sessions")
+	root := filepath.Join(acct.CodexHome, "sessions")
 
 	for _, day := range recentDays(root, 7) {
 		files, _ := filepath.Glob(filepath.Join(day, "rollout-*.jsonl"))

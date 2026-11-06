@@ -46,6 +46,12 @@ func rows(accs []Account) []string {
 	return out
 }
 
+// pathHash8 is the first 8 hex of the sha256 of a canonical path.
+func pathHash8(canonical string) string {
+	sum := sha256.Sum256([]byte(canonical))
+	return hex.EncodeToString(sum[:])[:8]
+}
+
 func claudeHashed(dir string) string {
 	sum := sha256.Sum256([]byte(dir))
 	return claudeKeychainService + "-" + hex.EncodeToString(sum[:])[:8]
@@ -166,8 +172,9 @@ func TestClaudeProfileIDsStayQualified(t *testing.T) {
 	f := newFake("linux")
 	f.files[f.path(".claude-work", ".credentials.json")] = claudeCredsFor("fake-tok-w", "max", testNow.Add(time.Hour))
 	got := readClaude(f)
-	if len(got) != 1 || got[0].ID != "claude:work" || strings.Join(got[0].Harnesses, ",") != "claude" {
-		t.Errorf("id %q harnesses %v, want id claude:work and harness claude", got[0].ID, got[0].Harnesses)
+	want := "claude:work@" + pathHash8(f.path(".claude-work"))
+	if len(got) != 1 || got[0].ID != want || strings.Join(got[0].Harnesses, ",") != "claude" {
+		t.Errorf("id %q harnesses %v, want id %s and harness claude", got[0].ID, got[0].Harnesses, want)
 	}
 }
 
@@ -182,7 +189,7 @@ func TestClaudeExpiredNoteNamesProfile(t *testing.T) {
 			note = a.Note
 		}
 	}
-	if want := "token expired, open claude:work to refresh"; note != want {
+	if want := "token expired, open claude:work (CLAUDE_CONFIG_DIR=~/.claude-work) to refresh"; note != want {
 		t.Errorf("note = %q, want %q", note, want)
 	}
 }
@@ -445,8 +452,9 @@ func TestPiProfiles(t *testing.T) {
 		f := newFake("linux")
 		f.files[f.path(".pi", "agent-work", "auth.json")] = `{"anthropic":{"type":"oauth","access":"fake-pi-tok"}}`
 		got := readPi(f)
-		if len(got) != 1 || got[0].ID != "pi:work:anthropic" || got[0].Harnesses[0] != "pi" {
-			t.Errorf("got id %q harnesses %v", got[0].ID, got[0].Harnesses)
+		want := "pi:work@" + pathHash8(f.path(".pi", "agent-work")) + ":anthropic"
+		if len(got) != 1 || got[0].ID != want || got[0].Harnesses[0] != "pi" {
+			t.Errorf("got id %q harnesses %v, want id %s", got[0].ID, got[0].Harnesses, want)
 		}
 	})
 }

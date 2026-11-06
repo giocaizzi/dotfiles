@@ -114,12 +114,7 @@ func claudeSecret(st Store, p profile) (raw []byte, source string, err error) {
 
 // readClaude finds the Claude Code accounts of every login profile.
 func readClaude(st Store) []Account {
-	profiles := claudeSpec().profiles(st)
-	per := make([][]Account, 0, len(profiles))
-	for _, p := range profiles {
-		per = append(per, readClaudeProfile(st, p))
-	}
-	return joinProfiles(harnessClaude, per)
+	return claudeSpec().collect(st, readClaudeProfile)
 }
 
 func readClaudeProfile(st Store, p profile) []Account {

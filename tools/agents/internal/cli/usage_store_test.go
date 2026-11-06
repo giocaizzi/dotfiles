@@ -244,7 +244,7 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 	}
 }
 
-func TestOSStoreGlob(t *testing.T) {
+func TestOSStoreListDir(t *testing.T) {
 	t.Parallel()
 	s := testStore(t)
 	for _, d := range []string{".claude-b", ".claude-a", ".other"} {
@@ -252,12 +252,12 @@ func TestOSStoreGlob(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	want := []string{filepath.Join(s.Home(), ".claude-a"), filepath.Join(s.Home(), ".claude-b")}
-	if diff := cmp.Diff(want, s.Glob(filepath.Join(s.Home(), ".claude-*"))); diff != "" {
-		t.Errorf("Glob (-want +got):\n%s", diff)
+	want := []string{".claude-a", ".claude-b", ".other"}
+	if diff := cmp.Diff(want, s.ListDir(s.Home())); diff != "" {
+		t.Errorf("ListDir (-want +got):\n%s", diff)
 	}
-	if got := s.Glob("[bad"); got != nil {
-		t.Errorf("Glob(bad pattern) = %v, want nil", got)
+	if got := s.ListDir(filepath.Join(s.Home(), "missing")); got != nil {
+		t.Errorf("ListDir(missing) = %v, want nil", got)
 	}
 }
 

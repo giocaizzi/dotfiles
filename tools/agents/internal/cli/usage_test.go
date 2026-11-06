@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -23,6 +24,7 @@ import (
 type fakeStore struct {
 	home  string
 	files map[string]string
+	env   map[string]string
 }
 
 func (s fakeStore) ReadFile(path string) ([]byte, error) {
@@ -33,9 +35,9 @@ func (s fakeStore) ReadFile(path string) ([]byte, error) {
 }
 func (fakeStore) Secret(string, string) (string, error) { return "", fs.ErrNotExist }
 func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]; return ok }
-func (fakeStore) Getenv(string) string                  { return "" }
+func (s fakeStore) Getenv(k string) string              { return s.env[k] }
 func (fakeStore) Canonical(p string) string             { return p }
-func (s fakeStore) Glob(pattern string) []string        { return globFiles(s.files, pattern) }
+func (s fakeStore) ListDir(dir string) []string         { return listFiles(s.files, dir) }
 func (s fakeStore) Home() string                        { return s.home }
 func (fakeStore) GOOS() string                          { return "linux" }
 func (fakeStore) Now() time.Time                        { return usageNow }
@@ -193,7 +195,7 @@ func TestCachedViewListsMissingAccounts(t *testing.T) {
 		{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth},
 		{Provider: "github-copilot", Label: "octocat", Harnesses: []string{"copilot"}, Auth: provider.AuthOAuth},
 		{Provider: "openrouter", Label: "", Harnesses: []string{"pi"}, Auth: provider.AuthAPIKey, Status: usg.StatusNoAPI, Note: "no usage API"},
-		{Provider: "openai", Label: "me@example.com", Harnesses: []string{"codex"}, Auth: provider.AuthOAuth},
+		{Provider: "openai", Label: "me@example.com", Harnesses: []string{"codex"}, Auth: provider.AuthOAuth, CodexHome: filepath.Join(f.home, ".codex")},
 		{Provider: "google", Harnesses: []string{"antigravity"}, Auth: provider.AuthCLI},
 	}
 
@@ -294,7 +296,7 @@ func TestCachedViewUsesOfflineSources(t *testing.T) {
 	writeCodexSession(t, f.home)
 	writeAgyLog(t, f.home, "cli-20261106_100000.log", "E1106 11:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): quota. Resets in 4h58m35s.\n")
 	accts := []provider.Account{
-		{Provider: "openai", Label: "me@example.com", Harnesses: []string{"codex"}, Auth: provider.AuthOAuth},
+		{Provider: "openai", Label: "me@example.com", Harnesses: []string{"codex"}, Auth: provider.AuthOAuth, CodexHome: filepath.Join(f.home, ".codex")},
 		{Provider: "google", Harnesses: []string{"antigravity"}, Auth: provider.AuthCLI},
 	}
 
@@ -408,17 +410,21 @@ func TestRunUsageEndToEnd(t *testing.T) {
 	}
 }
 
-// globFiles matches pattern against the files and their parent directories.
-func globFiles(files map[string]string, pattern string) []string {
+// listFiles returns the sorted first path components under dir.
+func listFiles(files map[string]string, dir string) []string {
 	seen := map[string]bool{}
 	var out []string
 	for f := range files {
-		for p := filepath.Dir(f); p != filepath.Dir(p); p = filepath.Dir(p) {
-			if ok, _ := filepath.Match(pattern, p); ok && !seen[p] {
-				seen[p] = true
-				out = append(out, p)
-			}
+		rest, ok := strings.CutPrefix(f, dir+string(filepath.Separator))
+		if !ok {
+			continue
+		}
+		name, _, _ := strings.Cut(rest, string(filepath.Separator))
+		if !seen[name] {
+			seen[name] = true
+			out = append(out, name)
 		}
 	}
+	slices.Sort(out)
 	return out
 }

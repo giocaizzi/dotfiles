@@ -125,6 +125,10 @@ type Account struct {
 	Login     string       // GitHub login for Copilot billing; empty otherwise
 	Host      string       // GitHub host the Copilot token was issued for, e.g. "https://github.com"; empty for other providers
 	Source    string       // where it was read: "keychain", "file", "sqlite", "env"
+	// CodexHome is the Codex profile directory the login was read from; empty
+	// for every other account. Its session logs belong to this account alone.
+	// Never displayed, never cached.
+	CodexHome string
 	// IdentityKnown is true when Key and ID name a proven account identity
 	// (token claims, a harness's local profile, or the provider's answer for
 	// the token). Accounts of different harnesses merge only on a proven
@@ -138,7 +142,8 @@ type Account struct {
 // Store is everything Discover reads from the machine. The real one lives in
 // cli; tests use a fake.
 type Store interface {
-	// ReadFile reads a file; a missing file returns an error matching fs.ErrNotExist.
+	// ReadFile reads a regular file of at most 1 MiB; a missing file returns
+	// an error matching fs.ErrNotExist, any other kind of file an error.
 	ReadFile(path string) ([]byte, error)
 	// Secret reads one item from the OS credential store (go-keyring). An empty
 	// account means "any account" for that service.
@@ -148,8 +153,8 @@ type Store interface {
 	OpencodeCredentials(dbPath string) ([]OpencodeRow, error)
 	// Exists reports whether a path exists.
 	Exists(path string) bool
-	// Glob returns the paths matching a filepath.Glob pattern; nil on error.
-	Glob(pattern string) []string
+	// ListDir returns the sorted entry names of a directory; nil on error.
+	ListDir(dir string) []string
 	// Canonical is the path with symlinks resolved, or the cleaned path as
 	// given when that fails.
 	Canonical(path string) string

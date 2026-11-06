@@ -89,16 +89,26 @@ func (f *fakeStore) Exists(p string) bool {
 	return false
 }
 
-// Glob matches pattern against the files and their parent directories.
-func (f *fakeStore) Glob(pattern string) []string {
+// ListDir returns the names of the entries directly under dir, derived from
+// the file paths.
+func (f *fakeStore) ListDir(dir string) []string {
+	return listFakeDir(f.files, dir)
+}
+
+// listFakeDir returns the sorted first path components under dir.
+func listFakeDir(files map[string]string, dir string) []string {
 	seen := map[string]bool{}
 	var out []string
-	for k := range f.files {
-		for p := filepath.Dir(k); p != filepath.Dir(p); p = filepath.Dir(p) {
-			if ok, _ := filepath.Match(pattern, p); ok && !seen[p] {
-				seen[p] = true
-				out = append(out, p)
-			}
+	prefix := dir + string(filepath.Separator)
+	for k := range files {
+		rest, ok := strings.CutPrefix(k, prefix)
+		if !ok {
+			continue
+		}
+		name, _, _ := strings.Cut(rest, string(filepath.Separator))
+		if !seen[name] {
+			seen[name] = true
+			out = append(out, name)
 		}
 	}
 	slices.Sort(out)
