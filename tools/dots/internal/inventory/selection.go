@@ -46,7 +46,7 @@ func ParseSelection(b []byte) (Selection, error) {
 
 	table := make(map[string]any, len(raw.Release))
 	for k, v := range raw.Release {
-		table[k] = map[string]any(v)
+		table[k] = v
 	}
 	byName := map[string]pkgreg.Release{}
 	for _, r := range pkgreg.Releases(map[string]any{"release": table}) {

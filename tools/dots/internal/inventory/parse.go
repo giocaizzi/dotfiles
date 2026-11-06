@@ -87,10 +87,10 @@ func WingetExport(b []byte) (map[string]string, error) {
 	var doc struct {
 		Sources []struct {
 			Packages []struct {
-				PackageIdentifier string
-				Version           string
-			}
-		}
+				PackageIdentifier string `json:"PackageIdentifier"`
+				Version           string `json:"Version"`
+			} `json:"Packages"`
+		} `json:"Sources"`
 	}
 	if err := json.Unmarshal(b, &doc); err != nil {
 		return nil, fmt.Errorf("winget export: %w", err)
@@ -132,7 +132,9 @@ func UVOutdated(out string) map[string]string {
 // NpmLs reads `npm ls -g --depth=0 --json` into name to installed version.
 func NpmLs(b []byte) (map[string]string, error) {
 	var doc struct {
-		Dependencies map[string]struct{ Version string } `json:"dependencies"`
+		Dependencies map[string]struct {
+			Version string `json:"version"`
+		} `json:"dependencies"`
 	}
 	if err := json.Unmarshal(b, &doc); err != nil {
 		return nil, fmt.Errorf("npm ls: %w", err)
@@ -151,7 +153,9 @@ func NpmOutdated(b []byte) (map[string]string, error) {
 	if strings.TrimSpace(string(b)) == "" {
 		return m, nil
 	}
-	var doc map[string]struct{ Latest string }
+	var doc map[string]struct {
+		Latest string `json:"latest"`
+	}
 	if err := json.Unmarshal(b, &doc); err != nil {
 		return nil, fmt.Errorf("npm outdated: %w", err)
 	}
