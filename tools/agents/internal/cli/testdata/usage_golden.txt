@@ -9,10 +9,10 @@ anthropic       Pro · other@example.com           pi
 github-copilot  Business seat · octocat           copilot, opencode, pi
   premium        ██████████████░░░░░░   70%   pool · 90 of 300 left · resets Dec 1
   beta           not applied now
-google          unknown (antigravity)             antigravity  (stale, agy-log, 3h 00m ago)
+google          unknown (antigravity)             antigravity  (stale, agy-log, 3h 0m ago)
   Gemini · 7d    ████████████████████  100%   resets Sat 22:48
 openai          Plus · me@example.com             codex, opencode, pi
-  5h             ███████░░░░░░░░░░░░░   33%   resets in 3h 02m
+  5h             ███████░░░░░░░░░░░░░   33%   resets in 3h 2m
   7d             █░░░░░░░░░░░░░░░░░░░    5%   resets Mon 18:30
   credits        12.5 USD left
 openrouter      API key                           pi

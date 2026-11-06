@@ -66,7 +66,7 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 		case cached.WrittenAt.IsZero():
 			meta = "(no cache yet; -live to refresh)"
 		default:
-			meta = "(cached " + humanDuration(now.Sub(cached.WrittenAt)) + " ago; -live to refresh)"
+			meta = "(cached " + usg.HumanDuration(now.Sub(cached.WrittenAt)) + " ago; -live to refresh)"
 		}
 	}
 

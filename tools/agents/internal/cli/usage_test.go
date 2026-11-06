@@ -2,8 +2,10 @@ package cli
 
 import (
 	"bytes"
-	"errors"
+	"fmt"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,14 +19,23 @@ import (
 	usg "github.com/giocaizzi/dotfiles/tools/agents/internal/usage"
 )
 
-type fakeStore struct{ home string }
+// fakeStore is an in-memory provider.Store on Linux: files only, no keychain.
+type fakeStore struct {
+	home  string
+	files map[string]string
+}
 
-func (fakeStore) ReadFile(string) ([]byte, error)       { return nil, fs.ErrNotExist }
+func (s fakeStore) ReadFile(path string) ([]byte, error) {
+	if c, ok := s.files[path]; ok {
+		return []byte(c), nil
+	}
+	return nil, fs.ErrNotExist
+}
 func (fakeStore) Secret(string, string) (string, error) { return "", fs.ErrNotExist }
-func (fakeStore) Exists(string) bool                    { return false }
+func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]; return ok }
 func (fakeStore) Getenv(string) string                  { return "" }
 func (s fakeStore) Home() string                        { return s.home }
-func (fakeStore) GOOS() string                          { return runtime.GOOS }
+func (fakeStore) GOOS() string                          { return "linux" }
 func (fakeStore) Now() time.Time                        { return fixedNow }
 func (fakeStore) OpencodeCredentials(string) ([]provider.OpencodeRow, error) {
 	return nil, fs.ErrNotExist
@@ -91,11 +102,12 @@ func TestRunUsageLiveWritesCache(t *testing.T) {
 	if !strings.Contains(out.String(), "(live)") {
 		t.Errorf("output = %q", out)
 	}
-	if _, err := os.Stat(path); err != nil {
-		// RECHECK: before MarshalCache exists the write fails and says so on stderr.
-		if !strings.Contains(errb.String(), "cache not written") {
-			t.Errorf("no cache file and no warning: %v / %q", err, errb)
-		}
+	c, err := readUsageCache(path)
+	if err != nil {
+		t.Fatalf("cache not readable: %v", err)
+	}
+	if !c.WrittenAt.Equal(fixedNow) {
+		t.Errorf("WrittenAt = %v, want %v", c.WrittenAt, fixedNow)
 	}
 }
 
@@ -104,11 +116,7 @@ func TestUsageCacheRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "sub", "usage.json")
 	snaps := sampleSnapshots()
 
-	err := writeUsageCache(path, snaps, fixedNow)
-	if errors.Is(err, usg.ErrNotImplemented) {
-		t.Skip("usage.MarshalCache is still a stub") // RECHECK after merge
-	}
-	if err != nil {
+	if err := writeUsageCache(path, snaps, fixedNow); err != nil {
 		t.Fatal(err)
 	}
 	if runtime.GOOS != "windows" {
@@ -135,8 +143,8 @@ func TestUsageCacheRoundTrip(t *testing.T) {
 	if !got.WrittenAt.Equal(fixedNow) {
 		t.Errorf("WrittenAt = %v", got.WrittenAt)
 	}
-	if diff := cmp.Diff(len(snaps), len(got.Snapshots)); diff != "" {
-		t.Errorf("snapshot count (-want +got):\n%s", diff)
+	if diff := cmp.Diff(sortSnapshots(snaps), sortSnapshots(got.Snapshots)); diff != "" {
+		t.Errorf("snapshots (-want +got):\n%s", diff)
 	}
 }
 
@@ -206,8 +214,31 @@ func TestCachedViewListsMissingAccounts(t *testing.T) {
 	}
 	// openai and google have no offline data here, so they ask for -live.
 	for _, p := range []string{"openai", "google"} {
-		if s := byProvider[p]; s.Note != noDataNote && s.Status != usg.StatusStale { // RECHECK: offline parsers
+		if s := byProvider[p]; s.Status != usg.StatusUnavailable || s.Note != noDataNote {
 			t.Errorf("%s row = %+v", p, s)
+		}
+	}
+}
+
+func TestCachedViewUsesOfflineSources(t *testing.T) {
+	t.Parallel()
+	f := testFetcher(t, nil)
+	writeCodexSession(t, f.home)
+	writeAgyLog(t, f.home, "cli-20261106_100000.log", "E1106 11:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): quota. Resets in 4h58m35s.\n")
+	accts := []provider.Account{
+		{Provider: "openai", Label: "me@example.com", Harnesses: []string{"codex"}, Auth: provider.AuthOAuth},
+		{Provider: "google", Harnesses: []string{"antigravity"}, Auth: provider.AuthCLI},
+	}
+
+	got := cachedView(accts, nil, f)
+
+	if len(got) != 2 {
+		t.Fatalf("rows = %d, want 2", len(got))
+	}
+	want := map[string]string{"openai": "codex-session", "google": "agy-log"}
+	for _, s := range got {
+		if s.Status != usg.StatusStale || s.Source != want[s.Provider] || len(s.Limits) == 0 || s.Account != map[string]string{"openai": "me@example.com"}[s.Provider] {
+			t.Errorf("%s row = %+v", s.Provider, s)
 		}
 	}
 }
@@ -236,5 +267,75 @@ func TestKeepStale(t *testing.T) {
 	}
 	if got[2].Status != usg.StatusUnavailable || got[3].Status != usg.StatusOK {
 		t.Errorf("accounts without cache changed: %+v / %+v", got[2], got[3])
+	}
+}
+
+func TestRunUsageEndToEnd(t *testing.T) {
+	t.Parallel()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+secret {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`{"five_hour":{"utilization":31,"resets_at":"2026-11-06T14:14:00Z"}}`))
+	}))
+	defer srv.Close()
+	f := testFetcher(t, srv)
+	expires := fixedNow.Add(time.Hour).UnixMilli()
+	store := fakeStore{home: "/h", files: map[string]string{
+		"/h/.claude/.credentials.json": fmt.Sprintf(`{"claudeAiOauth":{"accessToken":%q,"expiresAt":%d,"subscriptionType":"max","rateLimitTier":"default_claude_max_5x"}}`, secret, expires),
+	}}
+	d, out, errb, path := usageDeps(t)
+
+	// Cached, before any live run: the account is listed without data.
+	if code := d.runUsageWith(t.Context(), nil, store, f); code != 0 {
+		t.Fatalf("cached exit = %d, stderr %q", code, errb)
+	}
+	if !strings.Contains(out.String(), "anthropic") || !strings.Contains(out.String(), noDataNote) {
+		t.Errorf("cached output before -live:\n%s", out)
+	}
+
+	// Live: queried, shown and cached.
+	out.Reset()
+	if code := d.runUsageWith(t.Context(), []string{"-live"}, store, f); code != 0 {
+		t.Fatalf("live exit = %d, stderr %q", code, errb)
+	}
+	for _, want := range []string{"(live)", "anthropic", "claude", "5h", " 31%", "resets in 2h 14m"} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("live output lacks %q:\n%s", want, out)
+		}
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("cache not written: %v", err)
+	}
+	if strings.Contains(string(raw), secret) || strings.Contains(out.String(), secret) || strings.Contains(errb.String(), secret) {
+		t.Error("the token reached the cache or the output")
+	}
+
+	// Cached again: served from the cache with no network, filtered by provider.
+	srv.Close()
+	out.Reset()
+	if code := d.runUsageWith(t.Context(), []string{"-provider", "anthropic"}, store, f); code != 0 {
+		t.Fatalf("cached exit = %d", code)
+	}
+	if !strings.Contains(out.String(), "cached ") || !strings.Contains(out.String(), " 31%") {
+		t.Errorf("cached output after -live:\n%s", out)
+	}
+	out.Reset()
+	if code := d.runUsageWith(t.Context(), []string{"-provider", "openai"}, store, f); code != 0 {
+		t.Fatalf("filtered exit = %d", code)
+	}
+	if strings.Contains(out.String(), "anthropic") {
+		t.Errorf("-provider openai still shows anthropic:\n%s", out)
+	}
+
+	// A later failing -live keeps the cached numbers, marked stale.
+	out.Reset()
+	if code := d.runUsageWith(t.Context(), []string{"-live"}, store, f); code != 0 {
+		t.Fatalf("failing live exit = %d", code)
+	}
+	if !strings.Contains(out.String(), "(stale, api") || !strings.Contains(out.String(), " 31%") {
+		t.Errorf("failed -live did not keep the cached snapshot as stale:\n%s", out)
 	}
 }

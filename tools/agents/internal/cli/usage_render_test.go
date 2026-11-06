@@ -129,25 +129,6 @@ func TestRenderUsageSortsByProviderThenAccount(t *testing.T) {
 	}
 }
 
-func TestHumanDuration(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		d    time.Duration
-		want string
-	}{
-		{-time.Minute, "<1m"},
-		{30 * time.Second, "<1m"},
-		{14 * time.Minute, "14m"},
-		{2*time.Hour + 14*time.Minute, "2h 14m"},
-		{3*time.Hour + 2*time.Minute, "3h 02m"},
-	}
-	for _, tt := range tests {
-		if got := humanDuration(tt.d); got != tt.want {
-			t.Errorf("humanDuration(%v) = %q, want %q", tt.d, got, tt.want)
-		}
-	}
-}
-
 func TestPlanText(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -24,10 +24,6 @@ const secret = "tok-SECRET-0123456789"
 
 var fixedNow = time.Date(2026, 11, 6, 12, 0, 0, 0, time.UTC)
 
-// Parser-dependent assertions are loose while internal/usage is a stub: after
-// merging the parser units, re-check the tests marked RECHECK and assert the
-// parsed limits, plans and the stale/ok statuses exactly.
-
 // seen is what the fake servers keep of a request.
 type seen struct {
 	Method string
@@ -84,7 +80,17 @@ func assertNoSecret(t *testing.T, s usg.Snapshot) {
 	}
 }
 
-func stubbed(s usg.Snapshot) bool { return strings.Contains(s.Note, usg.ErrNotImplemented.Error()) }
+// limitByName returns the limit called name, failing the test when absent.
+func limitByName(t *testing.T, s usg.Snapshot, name string) usg.Limit {
+	t.Helper()
+	for _, l := range s.Limits {
+		if l.Name == name {
+			return l
+		}
+	}
+	t.Fatalf("no limit %q in %+v", name, s.Limits)
+	return usg.Limit{}
+}
 
 func TestFetchAnthropicHeaders(t *testing.T) {
 	t.Parallel()
@@ -118,10 +124,11 @@ func TestFetchAnthropicHeaders(t *testing.T) {
 		!cmp.Equal(snap.Harnesses, []string{"h1", "h2"}) || snap.Plan.Name != "Plus" || !snap.FetchedAt.Equal(fixedNow) {
 		t.Errorf("snapshot identity wrong: %+v", snap)
 	}
-	if !stubbed(snap) { // RECHECK: assert StatusOK, Source "api" and the parsed 5h limit.
-		if snap.Status != usg.StatusOK || snap.Source != "api" {
-			t.Errorf("status/source = %s/%s", snap.Status, snap.Source)
-		}
+	if snap.Status != usg.StatusOK || snap.Source != sourceAPI {
+		t.Errorf("status/source = %s/%s", snap.Status, snap.Source)
+	}
+	if l := limitByName(t, snap, "5h"); l.UsedPct == nil || *l.UsedPct != 31 || l.ResetsAt == nil || !l.ResetsAt.Equal(time.Date(2026, 11, 6, 14, 0, 0, 0, time.UTC)) {
+		t.Errorf("5h limit = %+v", l)
 	}
 	assertNoSecret(t, snap)
 }
@@ -131,11 +138,28 @@ func TestFetchOpenAIHeaders(t *testing.T) {
 	rec := &recorder{}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec.add(r)
-		_, _ = w.Write([]byte(`{"plan_type":"plus"}`))
+		_, _ = w.Write([]byte(`{"plan_type":"pro","rate_limit":{"primary_window":{"used_percent":33,"limit_window_seconds":18000,"reset_at":1793000000}},` +
+			`"credits":{"has_credits":true,"balance":"12.50"},"spend_control":{}}`))
 	}))
 	defer srv.Close()
 
 	snap := testFetcher(t, srv).fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
+
+	if snap.Status != usg.StatusOK || snap.Source != sourceAPI {
+		t.Errorf("status/source = %s/%s", snap.Status, snap.Source)
+	}
+	if snap.Plan.Raw != "pro" { // the plan in the response wins over the credential's
+		t.Errorf("plan = %+v, want the response's pro", snap.Plan)
+	}
+	if l := limitByName(t, snap, "5h"); l.UsedPct == nil || *l.UsedPct != 33 {
+		t.Errorf("5h limit = %+v", l)
+	}
+	if l := limitByName(t, snap, "credits"); l.Remaining == nil || l.Remaining.Value != 12.5 {
+		t.Errorf("credits limit = %+v", l)
+	}
+	if l := limitByName(t, snap, "spend limit"); !l.Hidden {
+		t.Errorf("spend limit = %+v, want hidden", l)
+	}
 
 	r := rec.all()[0]
 	if r.URL.Path != "/backend-api/wham/usage" {
@@ -171,27 +195,36 @@ func TestFetchOpenAINoAccountIDHeader(t *testing.T) {
 	}
 }
 
-func TestFetchCopilotAuthRetry(t *testing.T) {
-	t.Parallel()
-	rec := &recorder{}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+const (
+	copilotUserJSON = `{"copilot_plan":"business","organization_login_list":["acme"],"quota_reset_date":"2026-12-01",` +
+		`"quota_snapshots":{"premium_interactions":{"entitlement":300,"remaining":90,"percent_remaining":30}}}`
+	copilotBillingJSON = `{"timePeriod":{"year":2026,"month":11},"usageItems":[{"product":"Copilot","sku":"Copilot Premium Request","unitType":"requests","grossQuantity":10,"netAmount":0.4}]}`
+)
+
+// copilotServer rejects "token" auth, answers the user endpoint on Bearer and
+// the billing endpoint with billingCode.
+func copilotServer(rec *recorder, billingCode int) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rec.add(r)
-		if strings.HasPrefix(r.Header.Get("Authorization"), "token ") {
+		switch {
+		case strings.HasPrefix(r.Header.Get("Authorization"), "token "):
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("bad credentials " + secret))
-			return
+		case strings.HasPrefix(r.URL.Path, "/users/"):
+			w.WriteHeader(billingCode)
+			if billingCode == http.StatusOK {
+				_, _ = w.Write([]byte(copilotBillingJSON))
+			}
+		default:
+			_, _ = w.Write([]byte(copilotUserJSON))
 		}
-		_, _ = w.Write([]byte(`{"copilot_plan":"business"}`))
 	}))
-	defer srv.Close()
-	acct := oauthAccount(provider.GitHubCopilot)
-	acct.Login = "octocat"
+}
 
-	snap := testFetcher(t, srv).fetch(t.Context(), acct, time.Second)
-
-	reqs := rec.all()
-	if len(reqs) < 2 {
-		t.Fatalf("requests = %d, want the token request and the Bearer retry", len(reqs))
+func checkCopilotRequests(t *testing.T, reqs []seen) {
+	t.Helper()
+	if len(reqs) != 3 {
+		t.Fatalf("requests = %d, want the token request, the Bearer retry and billing", len(reqs))
 	}
 	if got := reqs[0].Header.Get("Authorization"); got != "token "+secret {
 		t.Errorf("first Authorization = %q", got)
@@ -202,10 +235,63 @@ func TestFetchCopilotAuthRetry(t *testing.T) {
 	if got := reqs[0].Header.Get("Accept"); got != "application/json" {
 		t.Errorf("Accept = %q", got)
 	}
-	// RECHECK: once ParseCopilotUser exists, assert the billing call
-	// (/users/octocat/settings/billing/premium_request/usage, X-GitHub-Api-Version
-	// 2026-03-10) and the "managed by org" hidden spend limit on 403/404.
-	assertNoSecret(t, snap)
+	bill := reqs[2]
+	if bill.URL.Path != "/users/octocat/settings/billing/premium_request/usage" ||
+		bill.Header.Get("X-Github-Api-Version") != "2026-03-10" ||
+		bill.Header.Get("Authorization") != "Bearer "+secret {
+		t.Errorf("billing request = %s %v", bill.URL.Path, bill.Header)
+	}
+}
+
+func TestFetchCopilot(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name        string
+		billingCode int
+		wantSpend   func(t *testing.T, snap usg.Snapshot)
+	}{
+		{"personal billing", http.StatusOK, func(t *testing.T, snap usg.Snapshot) {
+			t.Helper()
+			if l := limitByName(t, snap, "spend this month"); l.Kind != usg.LimitSpend || l.Hidden {
+				t.Errorf("billing limit = %+v", l)
+			}
+		}},
+		{"forbidden is managed by org", http.StatusForbidden, func(t *testing.T, snap usg.Snapshot) {
+			t.Helper()
+			if l := limitByName(t, snap, "spend"); l.Kind != usg.LimitSpend || !l.Hidden || l.Note != "managed by org" {
+				t.Errorf("spend limit = %+v", l)
+			}
+		}},
+		{"not found is managed by org", http.StatusNotFound, func(t *testing.T, snap usg.Snapshot) {
+			t.Helper()
+			if l := limitByName(t, snap, "spend"); !l.Hidden {
+				t.Errorf("spend limit = %+v", l)
+			}
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			rec := &recorder{}
+			srv := copilotServer(rec, tt.billingCode)
+			defer srv.Close()
+			acct := oauthAccount(provider.GitHubCopilot)
+			acct.Login = "octocat"
+
+			snap := testFetcher(t, srv).fetch(t.Context(), acct, time.Second)
+
+			checkCopilotRequests(t, rec.all())
+			if snap.Status != usg.StatusOK || snap.Source != sourceAPI || snap.Plan.Raw != "business" {
+				t.Errorf("status/source/plan = %s/%s/%+v", snap.Status, snap.Source, snap.Plan)
+			}
+			l := limitByName(t, snap, "premium")
+			if l.UsedPct == nil || *l.UsedPct != 70 || l.ResetsAt == nil || !l.ResetsAt.Equal(time.Date(2026, 12, 1, 0, 0, 0, 0, time.UTC)) {
+				t.Errorf("premium limit = %+v", l)
+			}
+			tt.wantSpend(t, snap)
+			assertNoSecret(t, snap)
+		})
+	}
 }
 
 func TestFetchHTTPErrors(t *testing.T) {
@@ -327,6 +413,14 @@ func TestFetchBodyLimit(t *testing.T) {
 	}
 }
 
+const agyUsageJSON = `{"status":"SUCCESS","num_turns":0,"command":{"name":"usage","data":{"groups":[` +
+	`{"name":"Gemini Models","buckets":[` +
+	`{"id":"gemini-weekly","window":"weekly","remaining_fraction":0,"reset_time":"2026-11-07T21:48:39Z"},` +
+	`{"id":"gemini-5h","window":"5h","disabled":true,"remaining_fraction":0.9688}]},` +
+	`{"name":"Claude and GPT models","buckets":[` +
+	`{"id":"3p-weekly","window":"weekly","remaining_fraction":0.25,"reset_time":"2026-11-08T12:05:47Z"},` +
+	`{"id":"3p-5h","window":"5h","remaining_fraction":1,"reset_time":"2026-11-06T17:36:57Z"}]}]}}}`
+
 func writeScript(t *testing.T, dir, body string) string {
 	t.Helper()
 	path := filepath.Join(dir, "agy")
@@ -351,7 +445,9 @@ func TestFetchAgyRunsUsageCommand(t *testing.T) {
 	dir := t.TempDir()
 	script := writeScript(t, dir, `echo "$@" > "`+dir+`/args"
 pwd > "`+dir+`/cwd"
-printf '{"num_turns":0,"command":{"name":"usage","data":{"groups":[]}}}'
+cat <<'EOF'
+`+agyUsageJSON+`
+EOF
 `)
 	f := testFetcher(t, nil)
 	f.agyPath = func() (string, error) { return script, nil }
@@ -371,12 +467,20 @@ printf '{"num_turns":0,"command":{"name":"usage","data":{"groups":[]}}}'
 	if gotCwd != wantCwd {
 		t.Errorf("agy cwd = %q, want %q", gotCwd, wantCwd)
 	}
-	// RECHECK: with ParseAgyUsage implemented assert StatusOK, Source "agy" and the buckets.
-	if snap.Status == usg.StatusOK && snap.Source != "agy" {
-		t.Errorf("source = %q, want agy", snap.Source)
+	if snap.Status != usg.StatusOK || snap.Source != "agy" || len(snap.Limits) != 4 {
+		t.Fatalf("status/source/limits = %s/%s/%d, want ok/agy/4", snap.Status, snap.Source, len(snap.Limits))
 	}
-	if snap.Status != usg.StatusOK && snap.Note != agyUnavailable {
-		t.Errorf("status/note = %s/%q", snap.Status, snap.Note)
+	var disabled, full int
+	for _, l := range snap.Limits {
+		if l.Disabled {
+			disabled++
+		}
+		if l.UsedPct != nil && *l.UsedPct == 100 {
+			full++
+		}
+	}
+	if disabled != 1 || full != 1 {
+		t.Errorf("disabled = %d, exhausted = %d, want 1 and 1: %+v", disabled, full, snap.Limits)
 	}
 }
 
@@ -402,35 +506,44 @@ func TestFetchAgyFailureIsUnavailable(t *testing.T) {
 	}
 }
 
+func writeAgyLog(t *testing.T, home, name, line string) {
+	t.Helper()
+	dir := filepath.Join(home, ".gemini", "antigravity-cli", "log")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, name), []byte(line), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestFetchAgyMissingFallsBackToLog(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil) // agyPath: not found
-	logDir := filepath.Join(f.home, ".gemini", "antigravity-cli", "log")
-	if err := os.MkdirAll(logDir, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	line := "E1106 11:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): Individual quota reached. Resets in 4h58m35s.\n"
-	for _, name := range []string{"cli-20261105_090000.log", "cli-20261106_100000.log"} {
-		if err := os.WriteFile(filepath.Join(logDir, name), []byte(line), 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
+	// The newest log (10:00 on the 6th) wins over the older one.
+	writeAgyLog(t, f.home, "cli-20261105_090000.log", "E1105 09:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): quota. Resets in 1h0m0s.\n")
+	writeAgyLog(t, f.home, "cli-20261106_100000.log", "E1106 11:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): quota. Resets in 4h58m35s.\n")
 
 	snap := f.fetch(t.Context(), googleAccount(), time.Second)
 
-	if snap.Status == usg.StatusStale { // RECHECK: with the real ParseAgyLog this is the expected outcome.
-		if snap.Source != "agy-log" || len(snap.Limits) == 0 {
-			t.Errorf("fallback snapshot = %+v", snap)
-		}
-		for _, l := range snap.Limits {
-			if l.ResetsAt == nil || !l.ResetsAt.After(fixedNow) {
-				t.Errorf("kept a limit that already reset: %+v", l)
-			}
-		}
-		return
+	if snap.Status != usg.StatusStale || snap.Source != "agy-log" || len(snap.Limits) != 1 {
+		t.Fatalf("snapshot = %+v", snap)
 	}
-	if snap.Status != usg.StatusUnavailable || snap.Note != agyUnavailable {
-		t.Errorf("status/note = %s/%q", snap.Status, snap.Note)
+	want := time.Date(2026, 11, 6, 11, 7, 11, 0, time.UTC).Add(4*time.Hour + 58*time.Minute + 35*time.Second)
+	if l := snap.Limits[0]; l.ResetsAt == nil || l.ResetsAt.Sub(want).Abs() > time.Second {
+		t.Errorf("reset = %v, want about %v", l.ResetsAt, want)
+	}
+}
+
+func TestFetchAgyLogAlreadyResetIsUnavailable(t *testing.T) {
+	t.Parallel()
+	f := testFetcher(t, nil)
+	writeAgyLog(t, f.home, "cli-20261105_090000.log", "E1105 09:07:11.896026 2480 errorreport.go:224] RESOURCE_EXHAUSTED (code 429): quota. Resets in 1h0m0s.\n")
+
+	snap := f.fetch(t.Context(), googleAccount(), time.Second)
+
+	if snap.Status != usg.StatusUnavailable || snap.Note != agyUnavailable || len(snap.Limits) != 0 {
+		t.Errorf("snapshot = %+v", snap)
 	}
 }
 
@@ -448,20 +561,33 @@ func TestCodexSessionFallback(t *testing.T) {
 		t.Fatal("fallback found a session in an empty home")
 	}
 
-	day := filepath.Join(f.home, ".codex", "sessions", "2026", "11", "05")
+	writeCodexSession(t, f.home)
+
+	snap, ok := f.codexSessionFallback(oauthAccount(provider.OpenAI))
+	if !ok {
+		t.Fatal("fallback found no session")
+	}
+	if snap.Status != usg.StatusStale || snap.Source != "codex-session" || snap.Plan.Raw != "plus" {
+		t.Errorf("snapshot = %+v", snap)
+	}
+	if l := limitByName(t, snap, "5h"); l.UsedPct == nil || *l.UsedPct != 12 {
+		t.Errorf("5h limit = %+v", l)
+	}
+	if want := time.Date(2026, 11, 5, 10, 0, 1, 0, time.UTC); !snap.FetchedAt.Equal(want) {
+		t.Errorf("FetchedAt = %v, want the session line time %v", snap.FetchedAt, want)
+	}
+}
+
+func writeCodexSession(t *testing.T, home string) {
+	t.Helper()
+	day := filepath.Join(home, ".codex", "sessions", "2026", "11", "05")
 	if err := os.MkdirAll(day, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	line := `{"type":"event_msg","payload":{"type":"token_count","rate_limits":{"plan_type":"plus","primary":{"used_percent":12,"window_minutes":300,"resets_at":1793000000}}}}` + "\n"
+	line := `{"timestamp":"2026-11-05T10:00:01.000Z","type":"event_msg","payload":{"type":"token_count","rate_limits":{"plan_type":"plus",` +
+		`"primary":{"used_percent":12,"window_minutes":300,"resets_at":1793000000}}}}` + "\n"
 	if err := os.WriteFile(filepath.Join(day, "rollout-2026-11-05T10-00-00-abc.jsonl"), []byte(line), 0o600); err != nil {
 		t.Fatal(err)
-	}
-
-	snap, ok := f.codexSessionFallback(oauthAccount(provider.OpenAI))
-	if ok { // RECHECK: with ParseCodexSession implemented, ok must be true.
-		if snap.Status != usg.StatusStale || snap.Source != "codex-session" {
-			t.Errorf("snapshot = %+v", snap)
-		}
 	}
 }
 
@@ -492,12 +618,19 @@ func TestOpenAIFailureUsesSessionFallback(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	snap := testFetcher(t, srv).fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
-
+	f := testFetcher(t, srv)
+	snap := f.fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
 	// No session on disk: the failure stays unavailable.
 	if snap.Status != usg.StatusUnavailable || snap.Note != "rate limited (429)" {
 		t.Errorf("status/note = %s/%q", snap.Status, snap.Note)
 	}
+
+	writeCodexSession(t, f.home)
+	snap = f.fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
+	if snap.Status != usg.StatusStale || snap.Source != "codex-session" || snap.Note != "rate limited (429)" {
+		t.Errorf("with a session: status/source/note = %s/%s/%q", snap.Status, snap.Source, snap.Note)
+	}
+	assertNoSecret(t, snap)
 }
 
 func TestLiveSnapshotsKeepOrderAndRunInParallel(t *testing.T) {

@@ -14,23 +14,9 @@ import (
 
 const (
 	providerCol = 16
-	nameCol     = 14
+	minNameCol  = 14
 	barWidth    = 20
 )
-
-// humanDuration renders d as "2h 14m", "14m" or "<1m".
-func humanDuration(d time.Duration) string {
-	d = max(d, 0)
-	h := int(d / time.Hour)
-	m := int(d % time.Hour / time.Minute)
-	switch {
-	case h > 0:
-		return fmt.Sprintf("%dh %02dm", h, m)
-	case m > 0:
-		return fmt.Sprintf("%dm", m)
-	}
-	return "<1m"
-}
 
 // planText is the plan column: its name, or unknown (<raw>), then the account.
 func planText(s usg.Snapshot) string {
@@ -72,6 +58,12 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 	fmt.Fprintf(w, "%schezmoi agents usage — subscription usage per provider account%s   %s%s%s\n\n", st.B, st.O, st.D, meta, st.O)
 
 	snaps = sortSnapshots(snaps)
+	nameW := minNameCol
+	for _, s := range snaps {
+		for _, l := range s.Limits {
+			nameW = max(nameW, term.Width(l.Name))
+		}
+	}
 	planWidth := 0
 	for _, s := range snaps {
 		planWidth = max(planWidth, term.Width(planText(s)))
@@ -87,7 +79,7 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 		fmt.Fprintln(w, strings.TrimRight(line, " "))
 
 		for _, l := range s.Limits {
-			fmt.Fprintln(w, limitLine(st, l, now))
+			fmt.Fprintln(w, limitLine(st, l, nameW, now))
 		}
 		if msg := warning(s); msg != "" {
 			fmt.Fprintf(w, "  %s!%s %s\n", st.Y, st.O, msg)
@@ -114,13 +106,13 @@ func staleText(s usg.Snapshot, now time.Time) string {
 		parts = append(parts, s.Source)
 	}
 	if !s.FetchedAt.IsZero() {
-		parts = append(parts, humanDuration(now.Sub(s.FetchedAt))+" ago")
+		parts = append(parts, usg.HumanDuration(now.Sub(s.FetchedAt))+" ago")
 	}
 	return "(" + strings.Join(parts, ", ") + ")"
 }
 
-func limitLine(st term.Style, l usg.Limit, now time.Time) string {
-	head := "  " + term.Pad(l.Name, nameCol) + " "
+func limitLine(st term.Style, l usg.Limit, nameW int, now time.Time) string {
+	head := "  " + term.Pad(l.Name, nameW) + " "
 	dim := func(s string) string { return st.D + s + st.O }
 	switch {
 	case l.Hidden:
@@ -166,7 +158,7 @@ func resetText(at, now time.Time) string {
 	case until <= 0:
 		return "reset"
 	case until < 24*time.Hour:
-		return "resets in " + humanDuration(until)
+		return "resets in " + usg.HumanDuration(until)
 	case until < 7*24*time.Hour:
 		return "resets " + at.In(now.Location()).Format("Mon 15:04")
 	}
