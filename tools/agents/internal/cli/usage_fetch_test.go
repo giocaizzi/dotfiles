@@ -621,14 +621,16 @@ func TestOpenAIFailureUsesSessionFallback(t *testing.T) {
 	defer srv.Close()
 
 	f := testFetcher(t, srv)
-	snap := f.fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
+	acct := oauthAccount(provider.OpenAI)
+	acct.Harnesses = []string{"codex"} // only a Codex login may use Codex's session logs
+	snap := f.fetch(t.Context(), acct, time.Second)
 	// No session on disk: the failure stays unavailable.
 	if snap.Status != usg.StatusUnavailable || snap.Note != "rate limited (429)" {
 		t.Errorf("status/note = %s/%q", snap.Status, snap.Note)
 	}
 
 	writeCodexSession(t, f.home)
-	snap = f.fetch(t.Context(), oauthAccount(provider.OpenAI), time.Second)
+	snap = f.fetch(t.Context(), acct, time.Second)
 	if snap.Status != usg.StatusStale || snap.Source != "codex-session" || snap.Note != "rate limited (429)" {
 		t.Errorf("with a session: status/source/note = %s/%s/%q", snap.Status, snap.Source, snap.Note)
 	}

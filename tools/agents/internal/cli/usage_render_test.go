@@ -140,7 +140,7 @@ func TestPlanText(t *testing.T) {
 		{usg.Snapshot{Plan: usg.Plan{Kind: usg.KindAPI}}, "api"},
 	}
 	for _, tt := range tests {
-		if got := planText(tt.s); got != tt.want {
+		if got := planText(tt.s, false); got != tt.want {
 			t.Errorf("planText = %q, want %q", got, tt.want)
 		}
 	}

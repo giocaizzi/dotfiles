@@ -48,8 +48,8 @@ func TestCopilot(t *testing.T) {
 		f.secrets["copilot-cli\x00https://github.com:octocat:github"] = "fake-token-1"
 		f.secrets["copilot-cli\x00https://github.com:hubot:github"] = "fake-token-2"
 		assertViews(t, readCopilot(f), []view{
-			{Provider: GitHubCopilot, Label: "octocat", Key: "octocat", Login: "octocat", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-1", Source: "keychain"},
-			{Provider: GitHubCopilot, Label: "hubot", Key: "hubot", Login: "hubot", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-2", Source: "keychain"},
+			{Provider: GitHubCopilot, Label: "octocat", Key: "copilot:https://github.com:octocat", Login: "octocat", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-1", Source: "keychain"},
+			{Provider: GitHubCopilot, Label: "hubot", Key: "copilot:https://github.com:hubot", Login: "hubot", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-2", Source: "keychain"},
 		})
 	})
 	t.Run("env token goes to the active login only", func(t *testing.T) {
@@ -59,8 +59,8 @@ func TestCopilot(t *testing.T) {
 		f.env["GITHUB_TOKEN"] = "fake-token-3"
 		got := readCopilot(f)
 		assertViews(t, got, []view{
-			{Provider: GitHubCopilot, Label: "octocat", Key: "octocat", Login: "octocat", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-1", Source: "env"},
-			{Provider: GitHubCopilot, Label: "hubot", Key: "hubot", Login: "hubot", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Status: "unavailable", Note: "token not found in the credential store"},
+			{Provider: GitHubCopilot, Label: "octocat", Key: "copilot:https://github.com:octocat", Login: "octocat", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Token: "fake-token-1", Source: "env"},
+			{Provider: GitHubCopilot, Label: "hubot", Key: "copilot:https://github.com:hubot", Login: "hubot", Harnesses: []string{"copilot"}, Auth: AuthOAuth, Status: "unavailable", Note: "token not found in the credential store"},
 		})
 	})
 	t.Run("COPILOT_GITHUB_TOKEN wins", func(t *testing.T) {
