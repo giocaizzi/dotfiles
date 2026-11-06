@@ -30,8 +30,8 @@ func Marshal(c Catalog) ([]byte, error) {
 	return append(data, '\n'), nil
 }
 
-// Validate checks the manual keys: known schema, providers and tier names, every tiered
-// id present in Models, no id in two tiers.
+// Validate checks the catalog: known schema, providers, tier and pin names, no
+// pin on an ignored id, every tiered id present in Models, no id in two tiers.
 func (c Catalog) Validate() error {
 	var errs []error
 	if c.Schema != Schema {
@@ -39,6 +39,14 @@ func (c Catalog) Validate() error {
 	}
 	if len(c.Providers) == 0 {
 		errs = append(errs, errors.New("providers: empty (list the tracked models.dev provider keys)"))
+	}
+	for _, id := range sortedKeys(c.Pin) {
+		if !slices.Contains(Tiers(), c.Pin[id]) {
+			errs = append(errs, fmt.Errorf("pin.%s: unknown tier %q (want one of %v)", id, c.Pin[id], Tiers()))
+		}
+		if slices.Contains(c.Ignore, id) {
+			errs = append(errs, fmt.Errorf("pin.%s: the id is also in ignore", id))
+		}
 	}
 	seen := map[string]string{}
 	for _, tier := range sortedKeys(c.Tiers) {

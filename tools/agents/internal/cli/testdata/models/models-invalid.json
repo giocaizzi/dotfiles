@@ -11,6 +11,9 @@
         "board": "text_style_control"
       }
     },
+    "pin": {
+      "anthropic/does-not-exist": "powerful"
+    },
     "tiers": {
       "powerful": [
         "anthropic/does-not-exist"

@@ -48,7 +48,6 @@ func defaultEndpoints() endpoints {
 
 type modelsOpts struct {
 	file, doc string
-	external  bool
 }
 
 func (d Deps) runModels(ctx context.Context, args []string) int {
@@ -84,7 +83,7 @@ func (d Deps) flagFail(err error) int {
 }
 
 // loadCatalog reads models.json and, when validate is set, validates it. Sync
-// skips validation: it is what fills models for newly tiered ids.
+// skips validation: it is what fills models and tiers.
 func (d Deps) loadCatalog(explicit string, validate bool) (catalog.Catalog, string, error) {
 	path, err := d.findModelsJSON(explicit)
 	if err != nil {
@@ -191,13 +190,12 @@ func (d Deps) runModelsRender(args []string) int {
 
 func (d Deps) runModelsSync(ctx context.Context, args []string) int {
 	fs := newFlags("models sync")
-	external := fs.Bool("external", false, "also fetch Epoch AI benchmarks")
 	file := fs.String("file", "", "path to models.json")
 	doc := fs.String("doc", "", "path to docs/MODELS.md")
 	if err := fs.Parse(args); err != nil {
 		return d.flagFail(err)
 	}
-	return d.syncModels(ctx, modelsOpts{file: *file, doc: *doc, external: *external}, defaultEndpoints(), time.Now)
+	return d.syncModels(ctx, modelsOpts{file: *file, doc: *doc}, defaultEndpoints(), time.Now)
 }
 
 // syncModels fetches every source, then writes models.json and the doc; any
@@ -221,15 +219,13 @@ func (d Deps) syncModels(ctx context.Context, opts modelsOpts, ep endpoints, now
 	if src.Arena, err = f.arena(ctx, ep); err != nil {
 		return d.modelsFail("%v", err)
 	}
-	if opts.external {
-		if src.Epoch, err = f.epoch(ctx, ep); err != nil {
-			return d.modelsFail("%v", err)
-		}
+	if src.Epoch, err = f.epoch(ctx, ep); err != nil {
+		return d.modelsFail("%v", err)
 	}
 
 	next, rep := catalog.Apply(c, src)
 	if len(rep.Missing) > 0 {
-		return d.modelsFail("tiered models with no data: %s (fix the tier id in models.json)", strings.Join(rep.Missing, ", "))
+		return d.modelsFail("pinned models with no data: %s (fix the pin id in models.json)", strings.Join(rep.Missing, ", "))
 	}
 	if err = next.Validate(); err != nil {
 		return d.modelsFail("%v", err)
@@ -246,7 +242,7 @@ func (d Deps) syncModels(ctx context.Context, opts modelsOpts, ep endpoints, now
 	fmt.Fprintf(d.Stdout, "%s✓%s synced %d models · arena %s %s\n",
 		st.G, st.O, len(next.Models), next.Sources.Arena.Board, next.Sources.Arena.PublishDate)
 	for _, id := range rep.Untiered {
-		st.Warn(d.Stdout, fmt.Sprintf("untiered: %s (%s)", id, next.Models[id].Name))
+		st.Warn(d.Stdout, fmt.Sprintf("untiered: %s (%s): %s", id, next.Models[id].Name, catalog.UntieredReason(next.Models[id])))
 	}
 	for _, id := range rep.Stale {
 		st.Warn(d.Stdout, fmt.Sprintf("stale: %s (no provider lists it; kept)", id))

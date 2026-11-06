@@ -136,7 +136,13 @@ func TestExternalColumnsHiddenWhenZero(t *testing.T) {
 	m := c.Models["anthropic/claude-sonnet-5-5"]
 	m.External = External{}
 	c.Models["anthropic/claude-sonnet-5-5"] = m
-	md := string(Markdown(c))
+	var rows []string
+	for line := range strings.SplitSeq(string(Markdown(c)), "\n") {
+		if strings.HasPrefix(line, "|") {
+			rows = append(rows, line)
+		}
+	}
+	md := strings.Join(rows, "\n")
 	for _, h := range []string{"ECI", "TB", "SWE-V", "METR", "OSWorld", "Epoch"} {
 		if strings.Contains(md, h) {
 			t.Errorf("markdown shows %q with no external data", h)
