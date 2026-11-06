@@ -200,8 +200,11 @@ echo %[4]s >&2; exit %[2]d
 
 const stderrMarker = "stub-stderr-text"
 
-func TestSecretDarwinAnyAccount(t *testing.T) {
-	t.Parallel()
+// Deliberately serial: a fork racing the still-open write descriptor of a
+// freshly written stub makes its exec fail with ETXTBSY, which Secret rightly
+// reports as "not readable". Serial top-level tests run while the parallel
+// ones are paused, so no other fork can overlap the stub writes.
+func TestSecretDarwinAnyAccount(t *testing.T) { //nolint:paralleltest // see above
 	tests := []struct {
 		name     string
 		user     string
@@ -221,7 +224,6 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			s := testStore(t)
 			s.goos = "darwin"
 			s.timeout = time.Minute // loaded CI hosts spawn the stub slowly
