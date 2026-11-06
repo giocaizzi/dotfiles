@@ -34,6 +34,7 @@ func (s fakeStore) ReadFile(path string) ([]byte, error) {
 func (fakeStore) Secret(string, string) (string, error) { return "", fs.ErrNotExist }
 func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]; return ok }
 func (fakeStore) Getenv(string) string                  { return "" }
+func (fakeStore) Canonical(p string) string             { return p }
 func (s fakeStore) Home() string                        { return s.home }
 func (fakeStore) GOOS() string                          { return "linux" }
 func (fakeStore) Now() time.Time                        { return usageNow }

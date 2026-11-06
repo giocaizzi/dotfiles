@@ -242,3 +242,30 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 		})
 	}
 }
+
+func TestOSStoreCanonical(t *testing.T) {
+	t.Parallel()
+	s := testStore(t)
+	dir, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(dir, "real")
+	if err := os.Mkdir(target, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "link")
+	if err := os.Symlink(target, link); err != nil {
+		if runtime.GOOS == "windows" {
+			t.Skipf("symlinks unsupported: %v", err)
+		}
+		t.Fatal(err)
+	}
+	if got := s.Canonical(link); got != target {
+		t.Errorf("Canonical(link) = %q, want %q", got, target)
+	}
+	missing := filepath.Join(dir, "a", "..", "nope")
+	if got, want := s.Canonical(missing), filepath.Join(dir, "nope"); got != want {
+		t.Errorf("Canonical(missing) = %q, want %q", got, want)
+	}
+}
