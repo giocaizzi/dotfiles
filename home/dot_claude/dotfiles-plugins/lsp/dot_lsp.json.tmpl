@@ -2,8 +2,17 @@
        .chezmoitemplates/lsp-servers) as Claude Code's plugin LSP config. {} when LSP is off
        or no server installs here. The plugin has no version: a plugin from a local-path
        marketplace loads in place, so edits apply at the next session or /reload-plugins. */ -}}
+{{- /* Claude Code gives each extension to one server (the first registered): leave out a server whose extensions are all claimed already. */ -}}
 {{- $out := dict -}}
+{{- $claimed := dict -}}
 {{- range $name, $s := includeTemplate "lsp-servers" . | fromJson -}}
-{{-   $_ := set $out $name (dict "command" (first $s.command) "args" (rest $s.command) "extensionToLanguage" $s.extensions) -}}
+{{-   $free := false -}}
+{{-   range $ext, $_ := $s.extensions -}}
+{{-     if not (hasKey $claimed $ext) }}{{ $free = true }}{{ end -}}
+{{-   end -}}
+{{-   if $free -}}
+{{-     range $ext, $_ := $s.extensions }}{{ $_ := set $claimed $ext true }}{{ end -}}
+{{-     $_ := set $out $name (dict "command" (first $s.command) "args" (rest $s.command) "extensionToLanguage" $s.extensions) -}}
+{{-   end -}}
 {{- end -}}
 {{- $out | toPrettyJson }}
