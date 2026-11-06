@@ -398,8 +398,8 @@ func TestBetterModelFindings(t *testing.T) {
 			name, billing string
 			plan          usage.Plan
 		}{
-			{"metered", "metered: cheaper preferred", meteredPlan},
-			{"org", "seat managed by org: cheaper preferred", orgPlan},
+			{"metered", "metered billing", meteredPlan},
+			{"org", "seat managed by org", orgPlan},
 		} {
 			snaps := []usage.Snapshot{snap("anthropic", tt.plan, hs), snap("google", flatPlan, hs)}
 			got := only(check(hs, snaps, settingFor("opencode", RoleScout, "anthropic/claude-haiku-4-5")), KindBetterModel)

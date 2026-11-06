@@ -190,9 +190,9 @@ func suggestion(in Input, h string, r resolved, cd candidate, reason, mode strin
 			billing = "within your flat plan"
 		}
 	case modeOrg:
-		billing = "seat managed by org: cheaper preferred"
+		billing = "seat managed by org"
 	case modeMetered:
-		billing = "metered: cheaper preferred"
+		billing = "metered billing"
 	}
 
 	detail := reason

@@ -646,7 +646,7 @@ A model a harness cannot run at all (a GPT role model on Claude Code) is skipped
 1. **Catalog:** a configured model not in the catalog (retired, renamed, untracked) warns; a role model outside its role's tier warns (tier drift), an untiered one is info.
 2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing:
     - a flat plan you pay yourself picks the stronger model (`within your flat plan` when headroom is at least 10%);
-    - metered billing, or a seat paid by an organization (team, enterprise), prefers the cheaper one (`seat managed by org` for org seats, never a guess);
+    - metered billing, or a seat paid by an organization (team, enterprise), prefers the cheaper one and falls back to a stronger one only when none is cheaper; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
     - an unknown plan or hidden data gives ranking-only advice, with no capacity claims.
 3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync` or the weekly models-sync PR.
 4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
