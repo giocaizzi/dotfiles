@@ -104,20 +104,40 @@ func loudLines(st term.Style, global []doctor.Finding, byHarness map[string][]do
 			lines = append(lines, findingLine(st, f, ""))
 		}
 	}
-	harness := func(level doctor.Level) {
-		for _, h := range names {
-			for _, f := range byHarness[h] {
-				if f.Level == level {
-					lines = append(lines, findingLine(st, prefixed(f), ""))
-				}
-			}
-		}
-	}
-	harness(doctor.LevelWarn)
+	lines = append(lines, harnessLines(st, byHarness, names, doctor.LevelWarn)...)
 	for _, c := range collapsed {
 		lines = append(lines, suggestLine(st, c.f, c.harnesses))
 	}
-	harness(doctor.LevelSuggest)
+	lines = append(lines, harnessLines(st, byHarness, names, doctor.LevelSuggest)...)
+	return lines
+}
+
+// harnessLines are the harness findings of one level for quiet mode: the same
+// finding in several harnesses is one line led by all of them.
+func harnessLines(st term.Style, byHarness map[string][]doctor.Finding, names []string, level doctor.Level) []string {
+	type same struct{ text, fix string }
+	var order []same
+	who := map[same][]string{}
+	first := map[same]doctor.Finding{}
+	for _, h := range names {
+		for _, f := range byHarness[h] {
+			k := same{f.Text, f.Fix}
+			if f.Level != level || slices.Contains(who[k], h) {
+				continue
+			}
+			if _, ok := who[k]; !ok {
+				order = append(order, k)
+				first[k] = f
+			}
+			who[k] = append(who[k], h)
+		}
+	}
+	lines := make([]string, 0, len(order))
+	for _, k := range order {
+		f := first[k]
+		f.Harness = strings.Join(who[k], ", ")
+		lines = append(lines, findingLine(st, prefixed(f), ""))
+	}
 	return lines
 }
 

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -174,8 +175,8 @@ func TestRenderDoctorCollapsesSuggestions(t *testing.T) {
 func quietFindings(warns, sugs int) []doctor.Finding {
 	fs := make([]doctor.Finding, 0, 1+warns+sugs)
 	fs = append(fs, doctor.Finding{Level: doctor.LevelInfo, Text: "info dropped"})
-	for range warns {
-		fs = append(fs, doctor.Finding{Level: doctor.LevelWarn, Kind: doctor.KindCapacity, Harness: "codex", Text: "openai 5h at 95%, resets in 5h 11m"})
+	for i := range warns {
+		fs = append(fs, doctor.Finding{Level: doctor.LevelWarn, Kind: doctor.KindCapacity, Harness: "codex", Text: fmt.Sprintf("openai %dh at 95%%", i+1)})
 	}
 	roles := []string{doctor.RoleScout, doctor.RoleWorker, doctor.RoleDriver, doctor.RoleEscalate}
 	for i := range sugs {
@@ -193,7 +194,7 @@ func TestRenderDoctorQuietWithinLimit(t *testing.T) {
 	if len(lines) != 2+5 {
 		t.Fatalf("lines = %d, want title, blank and 5:\n%s", len(lines), buf.String())
 	}
-	for i, prefix := range []string{"! global warn", "! codex: openai 5h at 95%, resets in 5h 11m", "! codex: openai", "↑ scout", "↑ worker"} {
+	for i, prefix := range []string{"! global warn", "! codex: openai 1h at 95%", "! codex: openai 2h at 95%", "↑ scout", "↑ worker"} {
 		if !strings.HasPrefix(lines[2+i], prefix) {
 			t.Errorf("line %d = %q, want prefix %q", i, lines[2+i], prefix)
 		}
@@ -214,5 +215,18 @@ func TestRenderDoctorQuietOverLimit(t *testing.T) {
 	}
 	if want := "  <D>… 2 more: run chezmoi agents doctor<O>"; lines[len(lines)-1] != want {
 		t.Errorf("last line = %q, want %q", lines[len(lines)-1], want)
+	}
+}
+
+func TestRenderDoctorQuietCollapsesHarnesses(t *testing.T) {
+	t.Parallel()
+	warn := func(h string) doctor.Finding {
+		return doctor.Finding{Level: doctor.LevelWarn, Kind: doctor.KindCapacity, Harness: h, Text: "openai 5h at 95%"}
+	}
+	var buf bytes.Buffer
+	renderDoctor(&buf, term.Style{}, []doctor.Finding{warn("codex"), warn("pi")}, "", 5)
+	lines := strings.Split(strings.TrimSuffix(buf.String(), "\n"), "\n")
+	if diff := cmp.Diff([]string{"! codex, pi: openai 5h at 95%"}, lines[2:]); diff != "" {
+		t.Errorf("quiet lines (-want +got):\n%s", diff)
 	}
 }

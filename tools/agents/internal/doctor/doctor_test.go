@@ -428,29 +428,6 @@ func TestBetterModelFindings(t *testing.T) {
 		}
 	})
 
-	t.Run("billing comes from the account that pays for the suggestion", func(t *testing.T) {
-		t.Parallel()
-		// opencode holds a flat anthropic plan and a metered openai key. The
-		// only better-ranked model is a pricier openai one, paid by the
-		// metered key: no suggestion, though the current model's plan is flat.
-		c := fixtureCatalog()
-		delete(c.Models, "anthropic/claude-haiku-5")
-		c.Models["openai/gpt-pricey-mini"] = model("openai", "gpt-pricey-mini", "GPT Pricey Mini", "2026-09-01", 1.2, 6, 5)
-		c.Tiers = catalog.ComputeTiers(c.Models, nil)
-		if c.TierOf("openai/gpt-pricey-mini") != catalog.TierLightweight {
-			t.Fatalf("fixture: gpt-pricey-mini in %q, want lightweight", c.TierOf("openai/gpt-pricey-mini"))
-		}
-		hs := []string{"opencode"}
-		snaps := []usage.Snapshot{snap("anthropic", flatPlan, hs), snap("openai", meteredPlan, hs)}
-		got := only(Check(Input{
-			Catalog: c, Harnesses: hs, Snapshots: snaps, HaveUsage: true, Now: now,
-			Settings: []Setting{settingFor("opencode", RoleScout, "anthropic/claude-haiku-4-5")},
-		}), KindBetterModel)
-		if len(got) != 0 {
-			t.Errorf("want no suggestion, got %v", texts(got))
-		}
-	})
-
 	t.Run("ranking only has no billing claim", func(t *testing.T) {
 		t.Parallel()
 		got := only(check(claude, []usage.Snapshot{snap("anthropic", unknownPlan, claude)}, scoutHaiku45), KindBetterModel)
@@ -542,4 +519,29 @@ func TestCheckRealData(t *testing.T) {
 	_ = Check(in)
 	in.HaveUsage = false
 	_ = Check(in)
+}
+
+// TestBetterModelPayingAccount: billing comes from the account that would pay
+// for the suggestion, not the current model's.
+func TestBetterModelPayingAccount(t *testing.T) {
+	t.Parallel()
+	// opencode holds a flat anthropic plan and a metered openai key. The
+	// only better-ranked model is a pricier openai one, paid by the
+	// metered key: no suggestion, though the current model's plan is flat.
+	c := fixtureCatalog()
+	delete(c.Models, "anthropic/claude-haiku-5")
+	c.Models["openai/gpt-pricey-mini"] = model("openai", "gpt-pricey-mini", "GPT Pricey Mini", "2026-09-01", 1.2, 6, 5)
+	c.Tiers = catalog.ComputeTiers(c.Models, nil)
+	if c.TierOf("openai/gpt-pricey-mini") != catalog.TierLightweight {
+		t.Fatalf("fixture: gpt-pricey-mini in %q, want lightweight", c.TierOf("openai/gpt-pricey-mini"))
+	}
+	hs := []string{"opencode"}
+	snaps := []usage.Snapshot{snap("anthropic", flatPlan, hs), snap("openai", meteredPlan, hs)}
+	got := only(Check(Input{
+		Catalog: c, Harnesses: hs, Snapshots: snaps, HaveUsage: true, Now: now,
+		Settings: []Setting{settingFor("opencode", RoleScout, "anthropic/claude-haiku-4-5")},
+	}), KindBetterModel)
+	if len(got) != 0 {
+		t.Errorf("want no suggestion, got %v", texts(got))
+	}
 }
