@@ -264,18 +264,12 @@ func TestRunDoctorBudgetOverrun(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			d, out, errb, path := doctorEnv(t, "models-stale")
+			d, out, errb, _ := doctorEnv(t, "models-stale")
 			f := testFetcher(t, nil)
 			release := make(chan struct{})
 			t.Cleanup(func() {
-				// Let the abandoned worker finish and write its cache before
-				// the temp dirs go.
+				// Let the abandoned worker go before the temp dirs do.
 				close(release)
-				for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-					if _, err := os.Stat(path); err == nil {
-						return
-					}
-				}
 			})
 			b := doctorBudget{offline: time.Hour, live: 50 * time.Millisecond, perProvider: time.Second, identity: time.Second}
 			code := d.runDoctorBudget(t.Context(), tc.args, blockingStore{fakeStore{home: f.home}, release}, f, b)
@@ -289,6 +283,64 @@ func TestRunDoctorBudgetOverrun(t *testing.T) {
 				t.Errorf("stderr = %q, want %q", errb, tc.wantStderr)
 			}
 		})
+	}
+}
+
+// The account email of the snapshots never reaches the text, -q or JSON output,
+// though account-derived findings (capacity, accounts, headroom) exist.
+func TestRunDoctorNeverPrintsAccountEmail(t *testing.T) {
+	t.Parallel()
+	for _, args := range [][]string{nil, {"-q"}, {"-json"}} {
+		t.Run(strings.Join(args, ""), func(t *testing.T) {
+			t.Parallel()
+			d, out, errb, path := doctorEnv(t, "models-fresh")
+			snaps := sampleSnapshots()
+			for i := range snaps {
+				if snaps[i].Provider == "openai" {
+					snaps[i].Limits[0].UsedPct = new(95.0)
+				}
+			}
+			if err := writeUsageCache(path, snaps, usageNow.Add(-time.Minute)); err != nil {
+				t.Fatal(err)
+			}
+			f := testFetcher(t, nil)
+			if code := d.runDoctorWith(t.Context(), args, fakeStore{home: f.home}, f); code != 0 {
+				t.Fatalf("exit = %d, stderr %q", code, errb)
+			}
+			checkNoEmail(t, out.String()+errb.String())
+			if !strings.Contains(out.String(), "95%") {
+				t.Errorf("no capacity finding to check against:\n%s", out)
+			}
+		})
+	}
+}
+
+func checkNoEmail(t *testing.T, got string) {
+	t.Helper()
+	if got == "" || strings.Contains(got, "me@example.com") {
+		t.Errorf("output empty or holding the account email:\n%s", got)
+	}
+}
+
+// A live run that overruns its budget leaves neither usage-*.tmp nor a cache
+// behind, even when its worker resumes afterwards.
+func TestRunDoctorLiveOverrunLeavesNoTemp(t *testing.T) {
+	t.Parallel()
+	d, _, _, path := doctorEnv(t, "models-stale")
+	f := testFetcher(t, nil)
+	release := make(chan struct{})
+	b := doctorBudget{offline: time.Hour, live: 50 * time.Millisecond, perProvider: time.Second, identity: time.Second}
+	if code := d.runDoctorBudget(t.Context(), []string{"-live"}, blockingStore{fakeStore{home: f.home}, release}, f, b); code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+	close(release)
+	// Give the released worker time to run to its end.
+	time.Sleep(300 * time.Millisecond)
+	if m, _ := filepath.Glob(filepath.Join(filepath.Dir(path), "usage-*.tmp")); len(m) != 0 {
+		t.Errorf("leftover temp files: %v", m)
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Errorf("cache written after the budget overran")
 	}
 }
 

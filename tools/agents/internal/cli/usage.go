@@ -85,6 +85,10 @@ func refreshUsage(ctx context.Context, store provider.Store, f usageFetcher, pat
 	defer cancel()
 	accounts := provider.Merge(bindCached(f.resolveIdentities(ictx, provider.Discover(store)), cached.Snapshots))
 	snaps := keepStale(liveSnapshots(ctx, accounts, f, perProvider), cached.Snapshots)
+	if ctx.Err() != nil {
+		// Overrun or cancelled: leave the cache alone, a write may be cut off by exit.
+		return snaps, fmt.Errorf("usage refresh: %w", context.Cause(ctx))
+	}
 	return snaps, writeUsageCache(path, snaps, f.now())
 }
 

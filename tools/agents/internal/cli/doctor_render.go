@@ -14,9 +14,11 @@ import (
 const roleCol = 9
 
 // renderDoctor writes the report. meta is the dim text after the title, e.g.
-// "(live)". Global findings come first, then one group per set of harnesses
-// with identical findings.
-func renderDoctor(w io.Writer, st term.Style, findings []doctor.Finding, meta string) {
+// "(live)". Global findings come first, then the suggestions collapsed across
+// harnesses, then one group per set of harnesses with identical findings.
+// With limit > 0 it is the quiet report instead: only the loud lines, at most
+// limit of them, then a dim line counting the rest.
+func renderDoctor(w io.Writer, st term.Style, findings []doctor.Finding, meta string, limit int) {
 	fmt.Fprintf(w, "%schezmoi agents doctor — models, accounts and capacity%s   %s%s%s\n\n", st.B, st.O, st.D, sanitize(meta), st.O)
 	if len(findings) == 0 {
 		fmt.Fprintf(w, "  %s✓%s nothing to report\n", st.G, st.O)
@@ -26,9 +28,14 @@ func renderDoctor(w io.Writer, st term.Style, findings []doctor.Finding, meta st
 	var global []doctor.Finding
 	byHarness := map[string][]doctor.Finding{}
 	var names []string
+	var sugs []doctor.Finding // suggestions with models, collapsed below
 	for _, f := range findings {
-		if f.Harness == "" {
+		switch {
+		case f.Harness == "":
 			global = append(global, f)
+			continue
+		case hasModels(f):
+			sugs = append(sugs, f)
 			continue
 		}
 		if _, ok := byHarness[f.Harness]; !ok {
@@ -36,18 +43,34 @@ func renderDoctor(w io.Writer, st term.Style, findings []doctor.Finding, meta st
 		}
 		byHarness[f.Harness] = append(byHarness[f.Harness], f)
 	}
+	collapsed := collapseSuggestions(sugs)
 
-	for _, f := range global {
-		fmt.Fprintln(w, findingLine(st, f, ""))
+	if limit > 0 {
+		renderQuiet(w, st, global, byHarness, orderHarnesses(names), collapsed, limit)
+		return
 	}
-	groups := harnessGroups(orderHarnesses(names), byHarness)
-	if len(global) > 0 && len(groups) > 0 {
-		fmt.Fprintln(w)
-	}
-	for i, g := range groups {
-		if i > 0 {
+
+	sections := 0
+	gap := func() {
+		if sections > 0 {
 			fmt.Fprintln(w)
 		}
+		sections++
+	}
+	if len(global) > 0 {
+		gap()
+		for _, f := range global {
+			fmt.Fprintln(w, findingLine(st, f, ""))
+		}
+	}
+	if len(collapsed) > 0 {
+		gap()
+		for _, c := range collapsed {
+			fmt.Fprintln(w, suggestLine(st, c.f, c.harnesses))
+		}
+	}
+	for _, g := range harnessGroups(orderHarnesses(names), byHarness) {
+		gap()
 		heads := make([]string, len(g))
 		for j, h := range g {
 			heads[j] = sanitize(h)
@@ -57,6 +80,113 @@ func renderDoctor(w io.Writer, st term.Style, findings []doctor.Finding, meta st
 			fmt.Fprintln(w, findingLine(st, f, "  "))
 		}
 	}
+}
+
+// renderQuiet writes at most limit loud lines, then a dim line counting the rest.
+func renderQuiet(w io.Writer, st term.Style, global []doctor.Finding, byHarness map[string][]doctor.Finding, names []string, collapsed []collapsedSuggestion, limit int) {
+	lines := loudLines(st, global, byHarness, names, collapsed)
+	for i, l := range lines {
+		if i == limit {
+			fmt.Fprintf(w, "  %s… %d more: run chezmoi agents doctor%s\n", st.D, len(lines)-limit, st.O)
+			return
+		}
+		fmt.Fprintln(w, l)
+	}
+}
+
+// loudLines are the lines quiet mode may print: global warnings, harness
+// warnings (prefixed with the harness), the collapsed suggestions, then harness
+// suggestions without models.
+func loudLines(st term.Style, global []doctor.Finding, byHarness map[string][]doctor.Finding, names []string, collapsed []collapsedSuggestion) []string {
+	var lines []string
+	for _, f := range global {
+		if f.Level == doctor.LevelWarn {
+			lines = append(lines, findingLine(st, f, ""))
+		}
+	}
+	harness := func(level doctor.Level) {
+		for _, h := range names {
+			for _, f := range byHarness[h] {
+				if f.Level == level {
+					lines = append(lines, findingLine(st, prefixed(f), ""))
+				}
+			}
+		}
+	}
+	harness(doctor.LevelWarn)
+	for _, c := range collapsed {
+		lines = append(lines, suggestLine(st, c.f, c.harnesses))
+	}
+	harness(doctor.LevelSuggest)
+	return lines
+}
+
+// prefixed is f with its text led by the harness, unless it already is.
+func prefixed(f doctor.Finding) doctor.Finding {
+	if !strings.HasPrefix(f.Text, f.Harness+":") {
+		f.Text = f.Harness + ": " + f.Text
+	}
+	return f
+}
+
+func hasModels(f doctor.Finding) bool {
+	return f.Level == doctor.LevelSuggest && f.Current != nil && f.Suggested != nil
+}
+
+// collapsedSuggestion is a suggestion shared by harnesses (in display order).
+type collapsedSuggestion struct {
+	f         doctor.Finding
+	harnesses []string
+}
+
+// collapseSuggestions merges suggestions identical in role, models, reason and
+// billing, ordered by role, then by the first harness of each.
+func collapseSuggestions(sugs []doctor.Finding) []collapsedSuggestion {
+	var out []collapsedSuggestion
+	for _, f := range sugs {
+		i := slices.IndexFunc(out, func(c collapsedSuggestion) bool {
+			g := c.f
+			return g.Role == f.Role && g.Current.ID == f.Current.ID && g.Suggested.ID == f.Suggested.ID &&
+				g.Reason == f.Reason && g.Billing == f.Billing
+		})
+		if i < 0 {
+			out = append(out, collapsedSuggestion{f: f})
+			i = len(out) - 1
+		}
+		if !slices.Contains(out[i].harnesses, f.Harness) {
+			out[i].harnesses = append(out[i].harnesses, f.Harness)
+		}
+	}
+	roles := []string{doctor.RoleScout, doctor.RoleWorker, doctor.RoleDriver, doctor.RoleEscalate, doctor.RoleDefault}
+	rank := func(r string) int {
+		if i := slices.Index(roles, r); i >= 0 {
+			return i
+		}
+		return len(roles)
+	}
+	for i := range out {
+		out[i].harnesses = orderHarnesses(out[i].harnesses)
+	}
+	first := func(c collapsedSuggestion) int {
+		return slices.Index(orderHarnesses(allHarnesses(sugs)), c.harnesses[0])
+	}
+	slices.SortStableFunc(out, func(a, b collapsedSuggestion) int {
+		if c := rank(a.f.Role) - rank(b.f.Role); c != 0 {
+			return c
+		}
+		return first(a) - first(b)
+	})
+	return out
+}
+
+func allHarnesses(fs []doctor.Finding) []string {
+	var out []string
+	for _, f := range fs {
+		if !slices.Contains(out, f.Harness) {
+			out = append(out, f.Harness)
+		}
+	}
+	return out
 }
 
 // harnessGroups merges the harnesses (already in display order) whose
@@ -95,8 +225,8 @@ func marker(st term.Style, l doctor.Level) string {
 
 // findingLine is one finding as a line, indented by indent.
 func findingLine(st term.Style, f doctor.Finding, indent string) string {
-	if f.Level == doctor.LevelSuggest && f.Current != nil && f.Suggested != nil {
-		return indent + suggestLine(st, f)
+	if hasModels(f) {
+		return indent + suggestLine(st, f, nil)
 	}
 	line := indent + marker(st, f.Level) + " " + sanitize(f.Text)
 	if f.Fix != "" {
@@ -105,7 +235,8 @@ func findingLine(st term.Style, f doctor.Finding, indent string) string {
 	return line
 }
 
-func suggestLine(st term.Style, f doctor.Finding) string {
+// suggestLine is a suggestion with models; harnesses (if any) end the dim part.
+func suggestLine(st term.Style, f doctor.Finding, harnesses []string) string {
 	cur, sug := f.Current, f.Suggested
 	var parts []string
 	if f.Reason != "" {
@@ -117,6 +248,13 @@ func suggestLine(st term.Style, f doctor.Finding) string {
 	parts = append(parts, fmt.Sprintf("$%s/$%s → $%s/$%s /Mtok", num(cur.In), num(cur.Out), num(sug.In), num(sug.Out)))
 	if f.Billing != "" {
 		parts = append(parts, sanitize(f.Billing))
+	}
+	if len(harnesses) > 0 {
+		hs := make([]string, len(harnesses))
+		for i, h := range harnesses {
+			hs[i] = sanitize(h)
+		}
+		parts = append(parts, strings.Join(hs, ", "))
 	}
 	return fmt.Sprintf("%s↑%s %s%s%s%s → %s%s%s   %s%s%s",
 		st.G, st.O,
