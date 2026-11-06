@@ -15,11 +15,11 @@ func chatgptTokens(t *testing.T, exp time.Time, accountID string) (access, id st
 	t.Helper()
 	access = jwt(t, map[string]any{
 		"exp":           exp.Unix(),
-		openaiAuthClaim: map[string]any{"chatgpt_account_id": accountID},
+		openaiAuthClaim: map[string]any{"chatgpt_account_id": accountID, "chatgpt_user_id": "user-1"},
 	})
 	id = jwt(t, map[string]any{
 		"email":         "me@example.com",
-		openaiAuthClaim: map[string]any{"chatgpt_plan_type": "plus", "chatgpt_account_id": accountID},
+		openaiAuthClaim: map[string]any{"chatgpt_plan_type": "plus", "chatgpt_account_id": accountID, "chatgpt_user_id": "user-1"},
 	})
 	return access, id
 }
@@ -43,7 +43,7 @@ func TestCodex(t *testing.T) {
 	t.Parallel()
 	exp := testNow.Add(time.Hour)
 	access, id := chatgptTokens(t, exp, "acct-1")
-	oauth := view{Provider: OpenAI, Label: "me@example.com", Key: "openai:acct-1", Harnesses: []string{"codex"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: exp, Source: "file"}
+	oauth := view{Provider: OpenAI, Label: "me@example.com", Key: "openai:acct-1:user-1", Harnesses: []string{"codex"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: exp, Source: "file"}
 
 	t.Run("chatgpt file", func(t *testing.T) {
 		t.Parallel()
@@ -94,7 +94,7 @@ func TestCodex(t *testing.T) {
 		f := newFake("linux")
 		f.files[f.path(".codex", "auth.json")] = codexAuthJSON(t, access, id, "")
 		got := readCodex(f)
-		if len(got) != 1 || got[0].Key != "openai:acct-1" {
+		if len(got) != 1 || got[0].Key != "openai:acct-1:user-1" {
 			t.Errorf("got %+v", views(got))
 		}
 	})

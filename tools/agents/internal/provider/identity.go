@@ -18,14 +18,11 @@ type Identity struct {
 	Plan  usage.Plan // filled when the account's plan is unknown; Kind "" when not known
 }
 
-// OpenAIKey is the identity of a ChatGPT login: the account (workspace) id,
-// plus the user id when known, since a workspace has several users.
+// OpenAIKey is the identity of a ChatGPT login: the account (workspace) id
+// and the user id. The account id is shared by every member of a workspace,
+// so userID must be non-empty; callers without one have no proven identity.
 func OpenAIKey(accountID, userID string) string {
-	k := "openai:" + accountID
-	if userID != "" {
-		k += ":" + userID
-	}
-	return k
+	return "openai:" + accountID + ":" + userID
 }
 
 // CopilotKey is the identity of a GitHub login on a host; logins are
