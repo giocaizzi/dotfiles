@@ -1,6 +1,6 @@
 # WIP: `chezmoi agents usage` (subscription usage per provider account)
 
-Status: plan, not implemented. Sources checked on 2026-11-06. Delete this file when the feature ships; its lasting content moves to `docs/OS.md`.
+Status: approved, in implementation. Sources checked on 2026-11-06. Delete this file when the feature ships; its lasting content moves to `docs/OS.md`.
 
 ## Goal
 
@@ -15,6 +15,27 @@ One command that shows, for every provider account the machine is logged into, t
 2. Credentials are read into memory only. They are never printed, logged, cached or written back.
 3. The output uses the Catppuccin styles of `internal/term`, like the other `chezmoi-agents` subcommands.
 4. Shared setup with `chezmoi agents models`: see [Shared setup](#shared-setup-with-chezmoi-agents-models). It was agreed with that work and is recorded in both plans.
+5. Integration point: a `chezmoi agents usage` subcommand in `tools/agents`.
+6. New Go dependencies:
+   - `github.com/zalando/go-keyring` reads the OS credential store (macOS Keychain, Windows Credential Manager, Linux Secret Service).
+   - `modernc.org/sqlite` reads opencode's V2 credential store, opened read-only (`mode=ro`).
+7. Expired access tokens are never refreshed: the account shows "token expired, open <harness>" and is not queried.
+8. Copilot shows both sources:
+   - the allowance meter from `copilot_internal/user`;
+   - the spend this month from the official billing API.
+   The billing API covers only a plan the user pays for personally; for an organization seat it shows "managed by org".
+9. API-key accounts with no usage API are listed as "no usage API".
+10. Google is supported through Antigravity's own `/usage`. The primary source is `agy -p /usage --output-format json`; the fallback is the quota-exhausted lines in agy's log. See [Google](#google-antigravity).
+11. Cached by default, live on request:
+    - `chezmoi agents usage` reads the cache `usage.json` by default; `-live` queries every provider and rewrites the cache.
+    - The apply hook (`chezmoi agents doctor`, owned by the models work) works the same way: cache by default, `--live` queries with a 2 s cap per provider, and failures degrade quietly to the cache.
+12. Harness-to-provider facts are Go code in `internal/provider`. There is no data table and no `chezmoi init` prompt.
+13. Every plan and billing model is handled generically, including future ones; see [Plans and billing models](#plans-and-billing-models):
+    - an unmapped plan string shows as a labelled `unknown (<raw>)` row and never crashes;
+    - data a seat holder cannot see shows "managed by org" or "not visible", never a guess.
+14. No employer or organization names appear in code, fixtures or docs. Examples use generic wording (`me@example.com`, `octocat`, "your organization").
+
+Status: approved on 2026-11-06 with the answers above; implementation started.
 
 ## What each provider exposes
 
@@ -73,16 +94,40 @@ Every subscription usage endpoint below is undocumented: it is the one the vendo
   - It covers only a plan the user bought personally.
   - So it does not answer "how much is left".
 
-### Google (Antigravity, Gemini CLI)
+### Google (Antigravity)
 
-- Usage (undocumented Code Assist API): `POST https://cloudcode-pa.googleapis.com/v1internal:loadCodeAssist` gives `currentTier`, `paidTier.name` and `cloudaicompanionProject`.
-- Then `POST .../v1internal:retrieveUserQuota {"project": ...}` gives `buckets[]`, each `{modelId, remainingFraction, resetTime}`.
-- Source: <https://raw.githubusercontent.com/google-gemini/gemini-cli/main/packages/core/src/code_assist/types.ts>.
-- Credentials:
-  - Gemini CLI: `~/.gemini/oauth_creds.json` `{access_token, refresh_token, expiry_date}`. Since 2026-06-18 Gemini CLI OAuth no longer serves individual, AI Pro and Ultra accounts (Standard, Enterprise and Workspace still work).
-  - Antigravity keeps its own login in the OS store under a name not yet identified. Community tools read it from Windows Credential Manager `gemini:antigravity`. On macOS the Keychain item's access list is limited to `agy`, so another process triggers a prompt.
-- Logs: `~/.gemini/antigravity-cli/cli.log` shows only `Cache(loadCodeAssistResponse)` refresh lines and no quota values, so it is not a source. This machine is currently logged out of Antigravity.
-- Conclusion: Google is the weakest provider (open question 6).
+Evidence from this machine (2026-11-06; agy is logged in; earlier "logged out" lines were from older sessions):
+
+- `agy -p /usage --output-format json` answers locally:
+  - It takes about 4 s.
+  - `num_turns: 0` and zero tokens, so no model turn runs.
+  - `command.name: "usage"`.
+  - `command.data.groups[]` is `{name, description, buckets[]}`. Each bucket is `{id, name, window: "5h"|"weekly", remaining_fraction 0-1, reset_time RFC 3339, disabled?, description}`.
+  - Groups seen: "Gemini Models", "Claude and GPT models", "Gemini 4 Argon". Bucket ids seen: `gemini-weekly`, `gemini-5h`, `3p-weekly`, `3p-5h`, `gemini-argon-wtu-weekly`.
+  - The plain `-p /usage` prints the same as TSV: group, bucket, remaining percent or `disabled`, reset time.
+- agy stores its login with `zalando/go-keyring` (the same library this tool uses), through a `KeyringTokenStorage` with a file fallback.
+  - The service name is not visible.
+  - On macOS the item's access list is limited to agy.
+  - Refreshing needs agy's own OAuth client.
+- agy calls `v1internal:retrieveUserQuotaSummary` (`QuotaSummary` buckets) on `cloudcode-pa.googleapis.com`, plus `loadCodeAssist` and `fetchAvailableModels`.
+- `quota_manager.go` logs `doRefreshQuota: starting reload | skipped (throttled) | skipped (not logged in)` with no values.
+- Quota-exhausted errors are logged as:
+  `E1101 13:07:11.896026 2480 errorreport.go:224] ... RESOURCE_EXHAUSTED (code 429): Individual quota reached. ... Resets in 4h58m35s.`
+  The line has no year; the file name `log/cli-YYYYMMDD_HHMMSS.log` gives it.
+- `agy -p /status` is not a local command: it starts a model turn. So the plan name is not exposed, and the plan is `unknown (antigravity)` unless `/usage` says more later.
+
+Design (decided on this evidence):
+
+1. Primary source: run `agy -p /usage --output-format json --print-timeout 10s` with a 10 s context (`usage -live`).
+   - The answer is accepted only if `command.name == "usage"` and `num_turns == 0`. Otherwise it shows "unavailable: agy did not answer /usage" and is never retried. This guards against a future agy that would send `/usage` to the model.
+   - agy keeps owning its credentials and their refresh: nothing is read from its keychain item.
+2. Fallback: when agy is missing, fails or times out, the newest log file's last `RESOURCE_EXHAUSTED ... Resets in <duration>` line still in the future gives an exhausted window with that reset (source `agy-log`). Otherwise the cached snapshot is shown.
+3. Rejected: replicating `retrieveUserQuotaSummary` with agy's token. The keychain item is limited to agy (a prompt every run), the service name is unknown, and refresh needs agy's private OAuth client.
+4. With the doctor's 2 s `--live` cap, agy (about 4 s) degrades quietly to the cache. That is expected.
+5. Mapping: each bucket becomes a window limit named `<group> · 5h|7d`.
+   - `UsedPct = 100 * (1 - remaining_fraction)`.
+   - `disabled: true` maps to `Disabled`.
+   - Scope is account.
 
 ### API-key accounts (opencode, pi, environment)
 
@@ -91,7 +136,7 @@ Every subscription usage endpoint below is undocumented: it is the one the vendo
   - OpenRouter: `GET /api/v1/key`, giving `limit`, `limit_remaining`, `usage`.
   - DeepSeek: `GET /user/balance`.
   - Moonshot: `GET /v1/users/me/balance`.
-- Docs: <https://openrouter.ai/docs/api-reference/limits>, <https://api-docs.deepseek.com/api/get-user-balance>, <https://platform.kimi.ai/docs/api/balance>. Whether to support them is open question 5.
+- Docs: <https://openrouter.ai/docs/api-reference/limits>, <https://api-docs.deepseek.com/api/get-user-balance>, <https://platform.kimi.ai/docs/api/balance>. They are not supported for now (decision 9): such accounts show "no usage API".
 
 ### Multi-tenant stores
 
@@ -106,34 +151,79 @@ Every subscription usage endpoint below is undocumented: it is the one the vendo
   - Docs: <https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/configuration.md>.
 - Logged in on this machine: opencode `openai` and `github-copilot` (oauth); pi `openai` and `github-copilot` (oauth).
 
+## Plans and billing models
+
+Every account is described by one generic model in `internal/usage` (code: `tools/agents/internal/usage/usage.go`). Provider mappings only fill it in.
+
+- `Plan{Kind, Billing, Payer, Name, Raw}`:
+  - Kind: `free`, `individual`, `team`, `enterprise`, `api`, `cloud`, `gateway`, `unknown`.
+  - Billing: `flat` (an allowance included in the plan or seat), `metered` (pay per use), `mixed` (allowance plus overage or credits), `unknown`.
+  - Payer: `self`, `org`, `cloud`, `unknown`.
+  - Raw: the provider's own string. An unmapped value gives Kind `unknown`, shown as `unknown (<raw>)`.
+- `Limit{Name, Kind, Scope, UsedPct, Used, Cap, Remaining, ResetsAt, Overage, Unlimited, Disabled, Hidden, Note}`:
+  - Kind: `window` (5 h, weekly), `allowance` (monthly), `spend` (against a cap or budget), `credits` (a balance).
+  - Scope: `seat`, `pool` (organization), `account`.
+  - Every amount is optional and carries its unit (`requests`, `credits`, `USD`).
+  - `Hidden` means "managed by org, not visible": the row is shown with that label and no number.
+- `Snapshot.Status`:
+  - `ok`;
+  - `stale` (cache or an offline source);
+  - `expired`;
+  - `unavailable` (the call failed);
+  - `no-api`;
+  - `not-visible` (usage lives with the organization, the cloud console or the gateway);
+  - `not-logged-in`;
+  - `skipped`.
+- Unknown JSON fields are ignored.
+  - An unknown window key in a known payload becomes a generic window row named after the key (for example a new `seven_day_*` from Anthropic).
+  - Nothing panics on an unexpected shape: that account becomes `unavailable` with the parse error, and the other accounts still show.
+
+Mappings (checked 2026-11-06; values not in the tables map to `unknown (<raw>)`):
+
+| Provider | How it is detected | Plan mapping | What a seat holder sees |
+|---|---|---|---|
+| anthropic, subscription | `claudeAiOauth` login; `subscriptionType`, `rateLimitTier` | `pro`, `max` (name from `rateLimitTier`, e.g. `default_claude_max_5x` → "Max 5x"): individual / flat / self, extra usage → mixed. `team`: team / flat / org. `enterprise`: enterprise / unknown / org (seat- and usage-based cannot be told apart locally). | `oauth/usage` windows (5 h, 7 d, 7 d per model family, Scope `seat` on team or enterprise). `extra_usage` as a spend limit when present. A window that comes back null on a team or enterprise seat shows "no per-seat window (org-managed or usage-based)". Organization spend limits show as hidden rows. |
+| anthropic, API key | `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` in the environment or in the `env` block of `~/.claude/settings.json`, or `apiKeyHelper` | api / metered / unknown | `no-api`: "usage in the Console" |
+| anthropic, cloud | `CLAUDE_CODE_USE_BEDROCK`, `CLAUDE_CODE_USE_VERTEX` or `CLAUDE_CODE_USE_FOUNDRY` (environment or settings `env`) | cloud / metered / cloud | `not-visible`: "usage in your cloud billing console" |
+| anthropic, gateway | `ANTHROPIC_BASE_URL` with a token or `apiKeyHelper` | gateway / unknown / org | `not-visible`: "usage in your organization's gateway" |
+| openai, subscription | ChatGPT login (Codex, opencode, pi); `plan_type` | `free`: free. `go`, `plus`, `pro`, `prolite`, `promax`: individual / flat / self. `team`, `business`, `self_serve_business_*`: team / org; `*_usage_based` → metered. `enterprise*`, `ent*`, `edu*`, `sci*`: enterprise / org; `*_usage_based` → metered. | `wham/usage` 5 h and weekly windows, `credits`, `spend_control` (shown as hidden when present but without numbers) |
+| openai, API key | `auth_mode: apikey` or `OPENAI_API_KEY` | api / metered | `no-api` |
+| github-copilot | GitHub login (Copilot CLI keychain, opencode, pi); `copilot_plan`, `organization_login_list` | `free`: free. `individual`, `pro`, `pro_plus`, `max`: individual / mixed / self. `business`: team / mixed / org. `enterprise`: enterprise / mixed / org. | Allowance (`premium_interactions` or AI credits, monthly, Scope `seat` or `pool` for organization seats) from `copilot_internal/user`. Spend this month from the billing API on personal plans; a 403 or 404 there shows "managed by org". |
+| google | Antigravity (`agy /usage`) | unknown (antigravity), since agy does not expose the tier | Windows per model group from `/usage` |
+| any API-key-only provider | opencode or pi `key` credentials | api / metered | `no-api` |
+
 ## Command
 
 ```text
-chezmoi agents usage [-provider <id>] [-offline]
+chezmoi agents usage [-live] [-provider <id>]
 ```
 
-- Discovers accounts, queries each provider in parallel (one goroutine per account, 10 s timeout each, overall 15 s), prints, and writes the cache.
+- By default it shows the cached `usage.json`, with each snapshot's age.
+  - Accounts discovered since the last live run but missing from the cache show "no data yet (run with -live)".
+  - The exception is offline sources, which are read without network: the newest Codex session snapshot and the agy log.
+- `-live` discovers accounts and queries each in parallel: one goroutine per account, 10 s each (agy included). It prints the results and rewrites the cache (0600, atomic). A failed account keeps its cached snapshot, marked stale.
 - `-provider` limits the output to one provider id.
-- `-offline` skips the network. It shows discovered accounts, the cached snapshot with its age, and Codex session snapshots.
-- Exit code: 0 when it printed, even when some accounts are unavailable; 1 only on a usage error.
-- Root `Makefile`: `usage: agents ## Show subscription usage per provider account (network)`.
+- Exit code: 0 whenever it printed, even when some accounts are unavailable; 2 on a flag error.
+- Root `Makefile`: `usage: agents ## Show subscription usage per provider account (live)`, which runs `usage -live`.
 
 ### Output (Catppuccin via `internal/term`)
 
 ```text
-chezmoi agents usage — subscription usage per provider account
+chezmoi agents usage — subscription usage per provider account   (cached 12m ago; -live to refresh)
 
-anthropic        Claude Max                              claude
+anthropic        Enterprise seat · me@example.com        claude
   5h             ██████░░░░░░░░░░░░░░   31%   resets in 2h 14m
   7d             ███░░░░░░░░░░░░░░░░░   14%   resets Mon 09:00
-  7d opus        ░░░░░░░░░░░░░░░░░░░░    0%
-openai           ChatGPT Plus · me@example.com           codex, opencode, pi
+  spend limit    managed by org
+openai           Plus · me@example.com                   codex, opencode, pi
   5h             ███████░░░░░░░░░░░░░   33%   resets in 3h 02m
   7d             █░░░░░░░░░░░░░░░░░░░    5%   resets Thu 18:30
-github-copilot   Pro · octocat                           copilot, opencode, pi
-  premium        ██████████████░░░░░░   70%   90 of 300 left · resets Dec 1
-google           Antigravity                             antigravity
-  ! not logged in (run agy)
+github-copilot   Business seat · octocat                 copilot, opencode, pi
+  premium        ██████████████░░░░░░   70%   pool · resets Dec 1
+  spend          managed by org
+google           unknown (antigravity)                   antigravity
+  Gemini · 7d    ████████████████████  100%   resets Sat 22:48
+  Claude/GPT·7d  ███████████████░░░░░   77%   resets Sun 13:05
 openrouter       API key                                 pi
   ! no usage API
 ```
@@ -151,108 +241,82 @@ Agreed with the models-sync work on 2026-11-06 and recorded in both WIP plans. T
 | Piece | Owner | Notes |
 |---|---|---|
 | Provider ids | shared | models.dev provider keys: `anthropic`, `openai`, `github-copilot`, `google`, plus models.dev ids for API-key providers. No second list. |
-| Provider and account registry | usage (this plan) | `internal/provider`, Go code, no data file and no `chezmoi init` prompt. Plan tier and account come from the credentials at run time. Open question 8 offers a `harness.toml` table instead. |
-| Usage queries and snapshot | usage | `internal/usage`; pure `usage.Advisories(snaps, now) []string` for the warning surface |
+| Provider and account registry | usage (this plan) | `internal/provider`, Go code (decision 12), no data file and no `chezmoi init` prompt. Plan tier and account come from the credentials at run time. |
+| Usage queries and snapshot | usage | `internal/usage`: `Plan`, `Limit`, `Snapshot`, and the pure `usage.Summaries(snaps, now) []Summary{Provider, Plans, Headroom}` and `usage.Advisories(snaps, now) []Advisory{Provider, Level, Text}` for the doctor |
+| Plan and billing judgement | models | The doctor's "better config available" rule reads `Summary`: a provider with no account means no recommendation; flat billing with healthy headroom allows a stronger in-plan model; metered billing, or an organization payer, means the cost-efficient model in the same tier (catalog $/Mtok); headroom under 10% means the same-tier model from a provider with headroom (info only); an unknown plan or a hidden limit means rank only. Sent to the models work on 2026-11-06. |
 | Cache dir | usage | `internal/cache.Dir(getenv)`: `$XDG_CACHE_HOME`, otherwise `os.UserCacheDir()`, plus `/chezmoi-agents`. Usage writes `usage.json`. |
 | Model catalog | models | `internal/catalog`; it does not import `provider` (the glue is in `cli`) |
 | `term` helpers | models: `table.go` (`Width`, `Pad`, `Style.Table`, `Style.Warn`, pushed at 02ad341); usage: `bar.go` (`Bar`) | `term.go` untouched |
-| Apply/update warning | models owns the one subcommand `chezmoi agents doctor` and the one script `run_after_agents-doctor.{sh,ps1}.tmpl`, in a later PR | Usage contributes capacity advisories from the cached snapshot. Open question 7. |
+| Apply/update warning | models owns the one subcommand `chezmoi agents doctor` and the one script `run_after_agents-doctor.{sh,ps1}.tmpl`, in a later PR | Usage contributes `Advisories` from the cache, or live with `--live` (2 s cap per provider) (decision 11). |
 | `cli.go`, `docs/OS.md`, AGENTS files | both, minimal hunks | One `case` and its usage lines each. `docs/OS.md` gets a parent section "Models and subscriptions" (created by models) with a subsection per command. Whoever merges second rebases. |
 | `edit.toml` | models only (`[edit.models]`) | Usage has no data file, so it has no entry. |
 
 ## Package layout
 
-Following the `tools/agents` layering: pure packages know nothing of processes or the network, and `cli` wires them.
+Following the `tools/agents` layering: pure packages know nothing of processes or the network, and `cli` wires them. The groundwork commit holds the types and signatures.
 
-- `internal/provider` (pure). Readers take an injected `Store` interface (`ReadFile`, `Secret(service, account)`, `Getenv`, `Home`) and return accounts:
-  - `provider.go`: `Provider` (id, name, kind: subscription or API key), the fixed harness-to-provider facts, and `Account`.
-    - `Account` fields: provider, label, plan, harnesses, auth kind, account key for merging, `expires`, and an unexported credential.
-    - `String`, `GoString`, `MarshalJSON` and `LogValue` redact the credential.
-  - One reader per harness: `claude.go`, `codex.go`, `copilot.go`, `gemini.go`, `opencode.go`, `pi.go`.
-  - `discover.go`: `Discover(ctx, Store, harnesses []string) ([]Account, []Problem)`. It merges by (provider, account key) and keeps the most recently refreshed credential.
-- `internal/usage` (pure):
-  - `Snapshot` (provider, account label, plan, windows, allowance, credits, fetched-at, status).
-  - `Window` (name, used %, resets at).
-  - One parser per response: `anthropic.go`, `openai.go` (HTTP and session JSONL), `copilot.go`, `google.go`, plus `balance.go` if open question 5 says so.
-  - `Advisories`, and `Marshal`/`Parse` for the cache.
-- `internal/cache` (pure apart from `os.UserCacheDir`): `Dir`.
-- `internal/term/bar.go`: `Bar(st Style, percent float64, width int) string`.
-- `internal/cli/usage.go`: flags; the real `Store` (files plus the OS credential store, open question 2); the HTTP client (timeouts, contexts, closed bodies, base URLs overridable for tests); parallel fetch with `sync.WaitGroup.Go`; rendering; the cache write (0600, atomic).
-- Expired tokens: if `expires` has passed, the account shows "token expired, open <harness> to refresh" and is not queried (open question 3).
+- `internal/usage` (pure): `usage.go` holds the model (`Plan`, `Limit`, `Snapshot`, `Summary`, `Advisory`). `api.go` holds the signatures, which the units replace:
+  - the cache: `MarshalCache`, `ParseCache`;
+  - `Summaries`, `Advisories`;
+  - the plan mappings: `AnthropicPlan`, `OpenAIPlan`, `CopilotPlan`;
+  - one parser per payload: `ParseAnthropic`, `ParseOpenAI`, `ParseCodexSession`, `ParseCopilotUser`, `ParseCopilotBilling`, `ParseAgyUsage`, `ParseAgyLog`.
+- `internal/provider` (pure): `Harnesses()` (the fixed facts), `Account`, `Credential`, the `Store` interface and `Discover(Store) []Account`.
+  - `Credential` redacts itself in `String`, `GoString`, `MarshalJSON` and `LogValue`.
+  - There is one reader per harness: `claude.go`, `codex.go`, `copilot.go`, `antigravity.go`, `opencode.go`, `pi.go`.
+  - Accounts are merged by (provider, key), and the newest credential wins.
+- `internal/cache`: `Dir(getenv)`.
+- `internal/term/bar.go`: `Style.Bar(percent, width)`.
+- `internal/term/table.go` comes from the models work (02ad341), carried unchanged so the branches merge cleanly.
+- `internal/cli/usage.go`:
+  - flags;
+  - the real `Store`: files, `go-keyring` (with a macOS fallback for an unknown keychain account), and opencode SQLite opened read-only;
+  - fetchers: an HTTP client with timeouts and contexts, base URLs overridable for tests; agy runs through `os/exec` with a context timeout;
+  - parallel fetch with `sync.WaitGroup.Go`, rendering, and the cache read and write.
 
 ## Tests (offline)
 
-- Every test uses `t.Parallel()`, `t.TempDir()`, `go-cmp`, and runs with `-race -shuffle=on`.
-- Fixtures in `internal/provider/testdata/` hold every credential shape, with fake tokens:
-  - Claude JSON, Codex `auth.json` (file and keyring), Copilot `config.json` (JSONC);
-  - opencode `auth.json` and a small SQLite fixture created in the test, pi `auth.json`, Gemini `oauth_creds.json`.
-- Fixtures in `internal/usage/testdata/` hold every response shape: trimmed real responses with identifiers replaced, and a Codex session JSONL.
-- Table tests: merging, expiry, `!command` keys skipped, MCP rows ignored, redaction (`fmt.Sprint`, `%#v`, `json.Marshal` and `slog` of an `Account` never contain the fake token).
-- CLI tests run against `httptest` servers; golden terminal output is checked with and without colour.
+- Every test uses `t.Parallel()`, `t.TempDir()` and `go-cmp`, and runs with `-race -shuffle=on`.
+- `internal/provider/testdata/` holds every credential shape, with fake tokens.
+- `internal/usage/testdata/` holds every payload, with identifiers replaced:
+  - the trimmed responses, and the agy `/usage` JSON as captured above;
+  - a Codex session JSONL;
+  - an agy log excerpt;
+  - team, enterprise and unknown plan variants.
+- Table tests cover:
+  - plan mapping, including unknown values;
+  - merging, expiry, skipped `!command` keys and ignored MCP rows;
+  - hidden limits;
+  - no panic on malformed payloads;
+  - redaction: `fmt.Sprint`, `%#v`, `json.Marshal` and `slog` never contain the fake token.
+- CLI tests use `httptest` servers and a fake agy script (Unix only; Windows skips the exec test). Golden output is checked with and without colour.
 
 ## Docs, runbook, AGENTS
 
-- `docs/OS.md` gets a subsection "Subscription usage (`chezmoi-agents usage`)" under the shared parent section. It covers:
+- `docs/OS.md` gets the subsection "Subscription usage (`chezmoi-agents usage`)" under "Models and subscriptions". If the models PR has not created that parent yet, this PR adds the parent heading, and the second PR to merge rebases. The subsection covers:
   - what is discovered, per harness and OS;
-  - what each provider shows, and that the endpoints are undocumented;
+  - the plan and billing model;
+  - cache vs `-live`;
+  - that the endpoints are undocumented;
   - that credentials stay in memory.
-  - Runbook (When / Steps / Verify / Rollback): check capacity before fanning out agents, refresh an expired login, add a provider.
-- Root `AGENTS.md`: one bullet linking to the subsection.
-- `tools/agents/AGENTS.md`: add `provider`, `usage` and `cache` to the pure package list, and add a rule: "credentials are read into memory only; never printed, logged, cached or written back".
-- The `host-hygiene` skill's quota line (`claude -p /usage`, `/status`, ...) could later point to `chezmoi agents usage`. That skill lives in the harness repo, so the change is out of scope here; noted in the report.
-- Parity: macOS, Linux and Windows paths are covered in the readers. A source that cannot be built on one OS gets a GitHub issue with a priority label, filed before shipping.
+  - Runbook (When / Steps / Verify / Rollback): check capacity before fanning out agents, an expired login, an account showing "managed by org".
+- Root `AGENTS.md`: one bullet. `tools/agents/AGENTS.md`: `provider`, `usage` and `cache` in the pure package list, plus the in-memory credential rule.
+- Out of scope: the `host-hygiene` skill's quota line (harness repo) could point to `chezmoi agents usage` later.
 
 ## Release
 
-- Independent of the models PR. The packages are disjoint, and the shared files take one hunk each.
-- PR graph:
-  1. PR 1 off `main`: `feat(agents): add usage subcommand for subscription usage per provider`. It contains the code, docs, Makefile target and AGENTS bullets, and deletes this WIP file. It does not depend on the models PR: if `term.Width`/`Pad`/`Warn` are not on `main` yet when this PR lands, it rebases onto the models PR and becomes a stack layer on it.
-  2. The `doctor` hook comes later, in the models work's PR, after both land.
-- Version: tag `agents-vX.Y.0` (the next minor after whatever the models PR takes), then `chore(packages): bump chezmoi-agents`. The hub releases.
-- Implementation split, after the answers:
-  1. On this branch, commit the types and signatures of `provider`, `usage` and `cache`.
-  2. Then, in parallel:
-     - worker A: `internal/provider` and its tests;
-     - worker B: `internal/usage` and `internal/cache` and their tests;
-     - worker C: `term/bar.go`, `cli/usage.go`, the dispatch and the CLI tests.
-  3. Then docs and the Makefile.
-- Done means `make check` passes at the root and in `tools/agents`.
+- PR 1 off `main`: `feat(agents): add usage subcommand for subscription usage per provider`.
+  - It is independent of the models PR. `term/table.go` is carried identically, so the add/add merges cleanly.
+  - It deletes this WIP file.
+- After it merges, the hub tags `agents-vX.Y.0` (the next minor, coordinated with the models release), then `chore(packages): bump chezmoi-agents` (`chezmoi dots bump chezmoi-agents`).
+- The `doctor` hook comes later, from the models work.
+- Implementation split:
+  1. Groundwork on this branch: the types, signatures, `cache.Dir`, `term.Bar`, and `term/table.go` carried over.
+  2. Three parallel workers, each in its own worktree branched from the groundwork:
+     - U1, `internal/usage`: parsers, mappings, cache, `Summaries`, `Advisories`, tests.
+     - U2, `internal/provider`: readers, `Discover`, tests.
+     - U3, `internal/cli/usage.go`: dispatch, the real `Store`, fetchers, rendering, tests, the Makefile target and the docs. It works against the signatures and fake data, and the integration replaces the fakes.
+  3. Integrate and run `make check` at the root and in `tools/agents`.
 
-## Open questions (for the user, one at a time)
+## Open questions
 
-1. Integration point: (a) a `chezmoi agents usage` subcommand in `tools/agents`; (b) a separate tool; (c) a statusline segment in the harness `hud` plugin. Recommended: (a). It reuses the term styles, release and packaging, and sits next to `models`. (c) sees only the running harness's own provider.
-2. Reading the OS credential store, which macOS (Claude, Copilot, Codex keyring mode), Windows and Linux need:
-   - (a) the dependency `github.com/zalando/go-keyring`: one API for all three OSes, but small dependencies, including D-Bus on Linux;
-   - (b) executing the OS tools: `security` on macOS, `secret-tool` on Linux, no Windows equivalent without a module;
-   - (c) files only.
-   - Recommended: (a).
-   - Related: opencode V2 credentials are in SQLite. Reading them needs either the dependency `modernc.org/sqlite` (pure Go, large) or the legacy `auth.json` only, which is stale after V2. Recommended: `modernc.org/sqlite`, read-only.
-3. Expired access tokens:
-   - (a) read-only: show "expired, open <harness>" and never refresh;
-   - (b) refresh in memory without writing back.
-   - Recommended: (a). Refresh tokens rotate (Claude, Codex), so a refresh outside the harness can log it out. Harnesses refresh often, so expiry is rare in practice.
-4. Copilot:
-   - (a) the allowance meter from `copilot_internal/user` (plan, premium allowance used and left, reset date), which works for organization seats;
-   - (b) the official billing API: spend only, personal plans only;
-   - (c) both.
-   - Recommended: (a). The AI Credits shape is checked live first.
-5. Providers with no usage API (plain Anthropic or OpenAI keys, any key-only provider):
-   - (a) list the account with "no usage API";
-   - (b) as (a), plus balances for OpenRouter, DeepSeek and Moonshot through their documented endpoints;
-   - (c) hide them.
-   - Recommended: (a) now. Add (b) only for a key the user actually holds; this machine has none.
-6. Google:
-   - (a) Gemini CLI credentials plus the Code Assist quota API. Antigravity's own login is shown as "usage not supported yet", with a GitHub issue to find its credential store per OS;
-   - (b) also query agy's loopback quota listener while agy runs (undocumented, needs agy running);
-   - (c) leave Google out.
-   - Recommended: (a).
-7. Apply-time capacity advisory, shared with the models `doctor` hook:
-   - (a) cache only: `doctor` reads `usage.json` and warns when a window is at 90% or more and its reset is in the future, but never touches the network on apply;
-   - (b) `doctor` queries live with a 2 s budget;
-   - (c) no capacity advisory on apply.
-   - Recommended: (a). Apply stays offline and fast, and the cache is as fresh as the last `chezmoi agents usage`.
-   - The hook's name (`doctor` or `notice`) is the models plan's open question; do not answer it twice.
-8. Harness-to-provider facts:
-   - (a) Go code in `internal/provider`: nothing in the templates reads them, and opencode and pi are discovered at run time anyway;
-   - (b) a `[harnessProviders]` table in `.chezmoidata/harness.toml`.
-   - Recommended: (a).
+None: all eight are answered (decisions 5-12).
