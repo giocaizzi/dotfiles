@@ -1,0 +1,146 @@
+{
+  "anthropic": {
+    "models": {
+      "claude-opus-5-5": {
+        "id": "claude-opus-5-5",
+        "name": "Claude Opus 5.5",
+        "release_date": "2026-09-22",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 4,
+          "output": 20
+        },
+        "canonical_model_id": "anthropic/claude-opus-5-5"
+      },
+      "claude-haiku-4-5": {
+        "id": "claude-haiku-4-5",
+        "name": "Claude Haiku 4.5 (latest)",
+        "release_date": "2025-10-15",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 1,
+          "output": 5
+        },
+        "canonical_model_id": "anthropic/claude-haiku-4-5"
+      }
+    }
+  },
+  "openai": {
+    "models": {
+      "gpt-realtime-2.1": {
+        "id": "gpt-realtime-2.1",
+        "name": "GPT-Realtime-2.1",
+        "release_date": "2026-07-06",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text",
+            "audio"
+          ]
+        },
+        "cost": {
+          "input": 4,
+          "output": 24
+        },
+        "canonical_model_id": "openai/gpt-realtime-2.1"
+      },
+      "gpt-6-luna": {
+        "id": "gpt-6-luna",
+        "name": "GPT-6 Luna",
+        "release_date": "2026-09-22",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 0.1,
+          "output": 0.5
+        },
+        "canonical_model_id": "openai/gpt-6-luna"
+      }
+    }
+  },
+  "github-copilot": {
+    "models": {
+      "gemini-3.6-flash": {
+        "id": "gemini-3.6-flash",
+        "name": "Gemini 3.6 Flash",
+        "release_date": "2026-07-21",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 0.75,
+          "output": 3.75
+        },
+        "canonical_model_id": "google/gemini-3.6-flash"
+      },
+      "gemini-3.5-flash": {
+        "id": "gemini-3.5-flash",
+        "name": "Gemini 3.5 Flash",
+        "release_date": "2026-05-19",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 1.5,
+          "output": 9
+        },
+        "canonical_model_id": "google/gemini-3.5-flash"
+      },
+      "claude-opus-5.5": {
+        "id": "claude-opus-5.5",
+        "name": "Claude Opus 5.5",
+        "release_date": "2026-09-22",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 4,
+          "output": 20
+        },
+        "canonical_model_id": "anthropic/claude-opus-5-5"
+      }
+    }
+  },
+  "google": {
+    "models": {
+      "gemini-2.5-flash-lite": {
+        "id": "gemini-2.5-flash-lite",
+        "name": "Gemini 2.5 Flash-Lite",
+        "release_date": "2025-06-17",
+        "tool_call": true,
+        "modalities": {
+          "output": [
+            "text"
+          ]
+        },
+        "cost": {
+          "input": 0.1,
+          "output": 0.4
+        }
+      }
+    }
+  }
+}
