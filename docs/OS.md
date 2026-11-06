@@ -639,14 +639,14 @@ Budget: 2 s offline, 6 s live; on overrun it prints nothing and exits 0. Exit 0 
 | Copilot CLI | `anthropic`, `google`, `openai`, `xai`, through its `github-copilot` account |
 | opencode, pi | every provider they hold a login for, plus Copilot's providers when they hold a `github-copilot` login |
 
-A model a harness cannot run at all (a GPT role model on Claude Code) is skipped for it.
+Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption about which vendors Copilot serves, since `github-copilot` is a billing account, not a catalog provider; update it when Copilot adds or drops a vendor. A model a harness cannot run at all (a GPT role model on Claude Code) is skipped for it.
 
 **Checks:**
 
 1. **Catalog:** a configured model not in the catalog (retired, renamed, untracked) warns; a role model outside its role's tier warns (tier drift), an untiered one is info.
 2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing:
     - a flat plan you pay yourself picks the stronger model (`within your flat plan` when headroom is at least 10%);
-    - metered billing, or a seat paid by an organization (team, enterprise), prefers the cheaper one and falls back to a stronger one only when none is cheaper; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
+    - metered billing, or a seat paid by an organization (team, enterprise), gets only a cheaper model (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
     - an unknown plan or hidden data gives ranking-only advice, with no capacity claims.
 3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync` or the weekly models-sync PR.
 4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.

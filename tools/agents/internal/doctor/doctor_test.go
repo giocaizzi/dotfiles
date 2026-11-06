@@ -416,6 +416,18 @@ func TestBetterModelFindings(t *testing.T) {
 		}
 	})
 
+	t.Run("metered and org never fall back to a stronger model", func(t *testing.T) {
+		t.Parallel()
+		// Only anthropic is available, where Claude Haiku 5 ranks better at
+		// the same price: flat suggests it, metered and org stay quiet.
+		for _, plan := range []usage.Plan{meteredPlan, orgPlan} {
+			got := only(check(claude, []usage.Snapshot{snap("anthropic", plan, claude)}, scoutHaiku45), KindBetterModel)
+			if len(got) != 0 {
+				t.Errorf("%+v: want no suggestion, got %v", plan, texts(got))
+			}
+		}
+	})
+
 	t.Run("ranking only has no billing claim", func(t *testing.T) {
 		t.Parallel()
 		got := only(check(claude, []usage.Snapshot{snap("anthropic", unknownPlan, claude)}, scoutHaiku45), KindBetterModel)

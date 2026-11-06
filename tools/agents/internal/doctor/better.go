@@ -72,13 +72,14 @@ type step struct {
 }
 
 // steps are the ways to win in the order the billing mode prefers them: a flat
-// or unknown plan wants the strongest model, a metered or org one the cheapest.
+// or unknown plan wants the strongest model; a metered or org one gets only a
+// cheaper model, never a stronger and pricier one.
 func (k contest) steps(mode string) []step {
 	strong := step{reasonBetter, k.better, byRank}
 	fresh := step{reasonNewer, k.newer, byRelease}
 	cheap := step{reasonCheap, k.cheapRanked, byBlended}
 	if mode == modeOrg || mode == modeMetered {
-		return []step{cheap, strong, fresh}
+		return []step{cheap}
 	}
 	return []step{strong, fresh, cheap}
 }
