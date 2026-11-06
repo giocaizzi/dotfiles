@@ -40,7 +40,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `run_once_after_create-xdg-dirs.sh.tmpl` → `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.sh.tmpl` → the packages of [Packages](#packages) | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.ps1.tmpl` → the same, with winget | — | — | ✓ |
-| `run_onchange_after_install-harness.*`, `run_onchange_after_claude-mcp-user.*`, `run_onchange_after_sync-vscode-extensions.*` | per [AI harnesses](#ai-harnesses) | | |
+| `run_onchange_after_install-harness.*`, `run_onchange_after_claude-mcp-user.*`, `run_onchange_after_sync-vscode-extensions.*`, `run_after_agents-doctor.*` | per [AI harnesses](#ai-harnesses) | | |
 | `run_after_link-pwsh-profile.ps1.tmpl` → resolves the real Documents folder (OneDrive/locale) and links the profile | — | — | ✓ |
 
 Each script states where it runs: its body is wrapped in a condition (OS; harness for the harness scripts), and elsewhere it renders empty, which chezmoi skips. No script is listed in `.chezmoiignore`. The `run_onchange_` scripts re-run when their rendered text changes, so each embeds what it depends on (the package lists, the harness checkout's commit, the extension list).
@@ -101,6 +101,8 @@ Full machines are also asked which AI harnesses chezmoi writes configs for: a mu
 | `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers, LSP, subagent depth and shared permissions); opencode wiring in `run_onchange_after_install-harness.*` |
 | `pi` | `~/.pi/agent/AGENTS.md`, `settings.json` (merge: `defaultProvider`, `defaultModel`, `defaultThinkingLevel`, `packages`), `mcp.json` (merge: user MCP servers); pi wiring in `run_onchange_after_install-harness.*` |
 | `antigravity` | `~/.gemini/config/AGENTS.md`, `~/.gemini/config/mcp_config.json` (merge: user MCP servers), `~/.gemini/antigravity-cli/settings.json` (merge: `agentMode: "auto"`, `toolPermission: "always-proceed"`, `enableTerminalSandbox: false`, `allowNonWorkspaceAccess: true`, `permissions`); Antigravity wiring in `run_onchange_after_install-harness.*` |
+
+The doctor hook (`run_after_agents-doctor.*`, [Doctor](#doctor-chezmoi-agents-doctor)) runs while any harness is selected.
 
 Shared: the `giocaizzi-harness` external and the `run_onchange_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi`, `antigravity` is.
 
@@ -480,7 +482,7 @@ Workspace MCP servers are canonically configured in `.mcp.json` at the root of a
 
 ## Models and subscriptions
 
-Which model fits which job is kept here as tiers, with synced costs and ranks beside them. Subscription usage shows how much of each plan is left.
+Which model fits which job is kept here as tiers, with synced costs and ranks beside them. Subscription usage shows how much of each plan is left, and the doctor warns when a newer or better model or config is available for what you have.
 
 ### Model tiers (`chezmoi-agents models`)
 
@@ -506,7 +508,7 @@ Manual keys: `providers`, `since`, `ignore`, `pin`, `aliases`. Synced keys: `mod
 
 Untiered models are those the rule leaves out (above). The catalog holds the models listed by their first-party provider (the provider key is the prefix of the canonical id `<provider>/<id>`) released on or after `since` that output text, support tool calls and are not deprecated, minus `ignore`.
 
-Agent roles pin an explicit model per role in `harnessPolicy.models.tiers` (`.chezmoidata/harness-policy.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). Nothing checks them against the catalog yet: after a re-tier, review them by hand (the planned doctor advisory will flag drift).
+Agent roles pin an explicit model per role in `harnessPolicy.models.tiers` (`.chezmoidata/harness-policy.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). `chezmoi agents doctor` ([Doctor](#doctor-chezmoi-agents-doctor)) checks them against the catalog and flags drift after a re-tier.
 
 `chezmoi agents models` and `render -check` (`make lint`) fail when the stored `tiers` differ from the rule, so `tiers` is never hand-edited. Pinned ids are left out of that check, so a new pin passes `dots models` and takes effect at the next sync. `syncedAt` only moves when the synced data changes, so the weekly workflow opens a PR only on real changes.
 
@@ -639,6 +641,63 @@ Runbook: one account shows twice, or "same account? unknown".
 - **Steps:** run `chezmoi agents usage -live`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then `-live` again. A pi `openai` login (Sign in with ChatGPT, token sharing) shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type`; it never merges, because its token carries no account or user identity (the user id is salted per client) and chatgpt.com's usage API rejects it, so it is never sent there. Its plan and limits are those of the ChatGPT account you see in Codex.
 - **Verify:** one row per account, with its email or login and every harness that holds it.
 - **Rollback:** none; delete the cache file to drop remembered identities.
+
+### Doctor (`chezmoi-agents doctor`)
+
+`chezmoi agents doctor [-live] [-q] [-json] [-harness <list>]` warns when a newer or better model or config is available for what you have. It never changes anything.
+
+| Flag | Effect |
+|---|---|
+| (none) | Offline: reads `.chezmoidata/models.json` (the catalog), `.chezmoidata/harness-policy.toml` and the usage cache `usage.json`. No network, no credential read |
+| `-live` | Refreshes usage like `usage -live` (2 s per provider, failures degrade quietly) and rewrites the cache, the only file the doctor writes |
+| `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet. Otherwise a short head: at most 5 lines (warnings first, then suggestions, no info lines), then `… N more: run chezmoi agents doctor` |
+| `-json` | Prints `{"findings":[...]}`; a finding has `level`, `kind`, `harness`, `role`, `text`, `fix`, `current`, `suggested`, `reason`, `billing` |
+| `-harness <list>` | Comma-separated harnesses to check; defaults to the harnesses in the usage cache |
+
+Budget: 2 s offline, 6 s live; on overrun it prints nothing and exits 0. Exit 0 when it ran, 1 when `models.json` or the policy cannot be read, 2 on a flag error.
+
+**Models it checks:** the role models in `harnessPolicy.models.tiers` (scout, worker, driver, escalate) for every selected harness; Copilot's `native.copilot.agents."dev-tools:<role>"`, which overrides them for `copilot`; and the default model of Codex (`native.codex.model`), pi (`native.pi.defaultModel`, `defaultProvider`) and opencode (`native.opencode.defaultModel`). A role maps to a fixed tier: scout and worker lightweight, driver powerful, escalate extra. A default model is compared within its own tier.
+
+**Availability:** a model counts as available to a harness when its first-party provider serves it and the harness can use that provider with an account the usage tool found.
+
+| Harness | Providers it can use |
+|---|---|
+| Claude Code | `anthropic` |
+| Codex | `openai` |
+| Antigravity | `google` |
+| Copilot CLI | `anthropic`, `google`, `openai`, `xai`, through its `github-copilot` account |
+| opencode, pi | every provider they hold a login for, plus Copilot's providers when they hold a `github-copilot` login |
+
+Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption about which vendors Copilot serves, since `github-copilot` is a billing account, not a catalog provider; update it when Copilot adds or drops a vendor. A model a harness cannot run at all (a GPT role model on Claude Code) is skipped for it.
+
+**Checks:**
+
+1. **Catalog:** a configured model not in the catalog (retired, renamed, untracked) warns; a role model outside its role's tier warns (tier drift), an untiered one is info.
+2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing of the account that would pay for the suggested model (not the current model's account):
+    - paid by a flat plan you pay yourself, the stronger model may be suggested (`within your flat plan` when headroom is at least 10%);
+    - paid by metered billing or a seat paid by an organization (team, enterprise), only a cheaper model is suggested (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
+    - paid by an unknown plan or with hidden data, the advice is ranking-only, with no capacity claims.
+3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync` or the weekly models-sync PR.
+4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
+5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then chezmoi agents usage -live`.
+
+Without a usage cache the account, capacity and suggestion checks are skipped, with one info line.
+
+**Output** is in the Catppuccin style of `usage`: global lines first, then the suggestions (one line per role and current → suggested model, listing every harness it applies to), then one group per harness for the rest (harnesses with identical findings share a group). Markers: `!` warning, `↑` suggestion, `i` info. The hook uses `-q`, so an apply shows at most the short head; run the plain command for everything.
+
+**Hook:** `run_after_agents-doctor.sh.tmpl` / `.ps1.tmpl` run `chezmoi-agents doctor -q -harness <selection>` after every `chezmoi apply` and `chezmoi update`, on machines with a harness selected only (never light machines). The PowerShell hook switches the console to UTF-8 for the glyphs (unverified on a Windows machine so far). It never prompts, never fails or blocks the apply, and writes nothing. A binary older than the doctor (before the pin moves) is skipped silently. There is no per-check switch; skip it for one run with `chezmoi apply --exclude=scripts` (which skips every script).
+
+Runbook: a doctor warning.
+
+- **When:** `chezmoi agents doctor` (or the hook after an apply) prints a `!` warning or a `↑` suggestion.
+- **Steps**, by kind:
+    - *Unknown or drifted model:* edit the policy key the line names (in parentheses, or after `edit`) in `harness-policy.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
+    - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`harnessPolicy.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
+    - *Stale catalog:* merge the weekly models-sync PR, or run `make models-sync` and ship it (see [Refresh the data](#model-tiers-chezmoi-agents-models)).
+    - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage -live`.
+    - *No account:* log in to the named harness, then `chezmoi agents usage -live`.
+- **Verify:** `chezmoi agents doctor -live` no longer prints the warning.
+- **Rollback:** the doctor changes nothing; `git checkout -- home/.chezmoidata/harness-policy.toml` undoes a policy edit.
 
 ## Source layout (`.chezmoiroot`)
 
