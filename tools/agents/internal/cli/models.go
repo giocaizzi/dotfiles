@@ -42,7 +42,7 @@ func defaultEndpoints() endpoints {
 		modelsDev: "https://models.dev/api.json",
 		arenaRows: "https://datasets-server.huggingface.co/rows",
 		epoch:     "https://epoch.ai/data/benchmark_data.zip",
-		backoff:   []time.Duration{time.Second, 2 * time.Second},
+		backoff:   []time.Duration{2 * time.Second, 8 * time.Second},
 	}
 }
 
@@ -83,8 +83,9 @@ func (d Deps) flagFail(err error) int {
 	return 2
 }
 
-// loadCatalog reads and validates models.json.
-func (d Deps) loadCatalog(explicit string) (catalog.Catalog, string, error) {
+// loadCatalog reads models.json and, when validate is set, validates it. Sync
+// skips validation: it is what fills models for newly tiered ids.
+func (d Deps) loadCatalog(explicit string, validate bool) (catalog.Catalog, string, error) {
 	path, err := d.findModelsJSON(explicit)
 	if err != nil {
 		return catalog.Catalog{}, "", err
@@ -96,6 +97,9 @@ func (d Deps) loadCatalog(explicit string) (catalog.Catalog, string, error) {
 	c, err := catalog.Parse(data)
 	if err != nil {
 		return catalog.Catalog{}, "", fmt.Errorf("parse %s: %w", path, err)
+	}
+	if !validate {
+		return c, path, nil
 	}
 	if err := c.Validate(); err != nil {
 		return catalog.Catalog{}, "", fmt.Errorf("%s:\n%w", path, err)
@@ -146,7 +150,7 @@ func (d Deps) runModelsShow(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return d.flagFail(err)
 	}
-	c, _, err := d.loadCatalog(*file)
+	c, _, err := d.loadCatalog(*file, true)
 	if err != nil {
 		return d.modelsFail("%v", err)
 	}
@@ -162,7 +166,7 @@ func (d Deps) runModelsRender(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return d.flagFail(err)
 	}
-	c, path, err := d.loadCatalog(*file)
+	c, path, err := d.loadCatalog(*file, true)
 	if err != nil {
 		return d.modelsFail("%v", err)
 	}
@@ -199,7 +203,7 @@ func (d Deps) runModelsSync(ctx context.Context, args []string) int {
 // syncModels fetches every source, then writes models.json and the doc; any
 // failure before the writes leaves both files untouched.
 func (d Deps) syncModels(ctx context.Context, opts modelsOpts, ep endpoints, now func() time.Time) int {
-	c, path, err := d.loadCatalog(opts.file)
+	c, path, err := d.loadCatalog(opts.file, false)
 	if err != nil {
 		return d.modelsFail("%v", err)
 	}
@@ -403,6 +407,9 @@ func (f fetcher) get(ctx context.Context, rawURL string) ([]byte, error) {
 			if attempt-1 < len(f.backoff) {
 				wait = f.backoff[attempt-1]
 			}
+			if se, ok := errors.AsType[*statusError](err); ok {
+				wait = max(wait, se.retryAfter)
+			}
 			t := time.NewTimer(wait)
 			select {
 			case <-ctx.Done():
@@ -434,11 +441,32 @@ func (f fetcher) getOnce(ctx context.Context, rawURL string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return nil, fmt.Errorf("get %s: %s", rawURL, resp.Status)
+		return nil, &statusError{url: rawURL, status: resp.Status, retryAfter: retryAfter(resp.Header.Get("Retry-After"))}
 	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, fetchLimit))
 	if err != nil {
 		return nil, fmt.Errorf("get %s: read body: %w", rawURL, err)
 	}
 	return body, nil
+}
+
+// statusError is a non-2xx answer; retryAfter is the server's Retry-After, if any.
+type statusError struct {
+	url, status string
+	retryAfter  time.Duration
+}
+
+func (e *statusError) Error() string { return "get " + e.url + ": " + e.status }
+
+// maxRetryAfter caps how long a Retry-After header can make a sync wait.
+const maxRetryAfter = 30 * time.Second
+
+// retryAfter reads a Retry-After header in seconds (the HTTP-date form is
+// ignored), capped at maxRetryAfter.
+func retryAfter(v string) time.Duration {
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil || n <= 0 {
+		return 0
+	}
+	return min(time.Duration(n)*time.Second, maxRetryAfter)
 }

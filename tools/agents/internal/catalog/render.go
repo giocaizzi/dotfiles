@@ -291,26 +291,57 @@ func termRank(st term.Style, rank int, ok bool) string {
 	}
 }
 
-func termTier(w io.Writer, st term.Style, c Catalog, tier string, header []string, ext []extColumn) {
+func termTierRows(st term.Style, c Catalog, tier string, ext []extColumn) [][]string {
 	ids := c.Tiers[tier]
-	fmt.Fprintf(w, "\n%s%s%s %s(%d)%s\n", st.B, title(tier), st.O, st.D, len(ids), st.O)
-	if len(ids) == 0 {
-		fmt.Fprintf(w, "  %snone%s\n", st.D, st.O)
-		return
-	}
 	rows := make([][]string, 0, len(ids))
 	for _, id := range ids {
 		m, name := lookup(c, id)
-		row := make([]string, 0, len(header))
+		row := make([]string, 0, 2+len(Categories())+len(ext))
 		row = append(row, st.M+name+st.O, providersStyled(st, m))
 		for _, cat := range Categories() {
 			r, ok := rankOf(m, cat)
 			row = append(row, termRank(st, r, ok))
 		}
 		for _, e := range ext {
-			row = append(row, externalCell(m, e))
+			cell := externalCell(m, e)
+			if cell == "" {
+				cell = st.D + "·" + st.O
+			}
+			row = append(row, cell)
 		}
 		rows = append(rows, row)
+	}
+	return rows
+}
+
+// alignColumns pads every cell but the last of each row to the widest cell of
+// its column across all tables, so the tier tables line up with each other.
+func alignColumns(header []string, tables [][][]string) {
+	widths := make([]int, len(header))
+	for i, h := range header {
+		widths[i] = term.Width(h)
+	}
+	for _, rows := range tables {
+		for _, r := range rows {
+			for i, cell := range r {
+				widths[i] = max(widths[i], term.Width(cell))
+			}
+		}
+	}
+	for _, rows := range tables {
+		for _, r := range rows {
+			for i := range len(r) - 1 {
+				r[i] = term.Pad(r[i], widths[i])
+			}
+		}
+	}
+}
+
+func termTier(w io.Writer, st term.Style, tier string, header []string, rows [][]string) {
+	fmt.Fprintf(w, "\n%s%s%s %s(%d)%s\n", st.B, title(tier), st.O, st.D, len(rows), st.O)
+	if len(rows) == 0 {
+		fmt.Fprintf(w, "  %snone%s\n", st.D, st.O)
+		return
 	}
 	st.Table(w, header, rows)
 }
@@ -358,8 +389,13 @@ func WriteTerminal(w io.Writer, st term.Style, c Catalog) {
 	for _, e := range ext {
 		header = append(header, strings.ToUpper(e.head))
 	}
+	tables := make([][][]string, 0, len(Tiers()))
 	for _, tier := range Tiers() {
-		termTier(w, st, c, tier, header, ext)
+		tables = append(tables, termTierRows(st, c, tier, ext))
+	}
+	alignColumns(header, tables)
+	for i, tier := range Tiers() {
+		termTier(w, st, tier, header, tables[i])
 	}
 	termUntiered(w, st, c)
 	termBest(w, st, c)

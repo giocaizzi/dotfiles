@@ -87,7 +87,7 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	out.Sources.Arena = ArenaInfo{Board: ArenaBoard, PublishDate: arenaPublishDate(c, src.Arena)}
 	rep.Unmatched = append(rep.Unmatched, applyArena(c, idx, models, fresh, src.Arena)...)
 	if src.Epoch != nil {
-		rep.Unmatched = append(rep.Unmatched, applyEpoch(c, idx, models, fresh, src.Epoch)...)
+		applyEpoch(c, idx, models, src.Epoch)
 	}
 	out.Models = models
 
@@ -225,6 +225,16 @@ func better(a, b ArenaRow) bool {
 	) < 0
 }
 
+// unmatchedTopRank limits the unmatched report to arena rows ranked this high or
+// better in their category: the rest are legacy models nobody needs to alias.
+const unmatchedTopRank = 20
+
+// reportUnmatched reports whether an unmatched arena row is worth listing: a
+// tracked org's model ranked in the top unmatchedTopRank.
+func reportUnmatched(r ArenaRow, orgs map[string]bool) bool {
+	return r.Rank <= unmatchedTopRank && orgs[strings.ToLower(r.Org)]
+}
+
 // applyArena sets Model.Arena and returns the unmatched report lines.
 func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []ArenaRow) []string {
 	best := map[string]map[string]ArenaRow{}
@@ -237,7 +247,7 @@ func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []Are
 		}
 		ids := idx.match(models, c.Aliases.Arena, r.ModelName)
 		if len(ids) == 0 {
-			if orgs[strings.ToLower(r.Org)] {
+			if reportUnmatched(r, orgs) {
 				base, _ := splitVariant(r.ModelName)
 				unmatched = append(unmatched, "arena: "+base)
 			}
@@ -264,28 +274,17 @@ func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []Are
 	return unmatched
 }
 
-// applyEpoch rebuilds Model.External and returns the unmatched report lines.
-func applyEpoch(c Catalog, idx index, models, fresh map[string]Model, rows []EpochRow) []string {
-	firsts := map[string]bool{}
-	for _, m := range fresh {
-		firsts[firstToken(Key(m.Name))] = true
-	}
-	var unmatched []string
+// applyEpoch rebuilds Model.External. Unmatched Epoch rows are not reported:
+// Epoch's history is mostly legacy models, and aliases.epoch covers a gap.
+func applyEpoch(c Catalog, idx index, models map[string]Model, rows []EpochRow) {
 	for _, r := range rows {
 		ids := idx.match(models, c.Aliases.Epoch, r.Model)
-		if len(ids) == 0 {
-			if k := Key(r.Model); k != "" && firsts[firstToken(k)] {
-				unmatched = append(unmatched, "epoch: "+k)
-			}
-			continue
-		}
 		for _, id := range ids {
 			m := models[id]
 			setExternal(&m.External, r)
 			models[id] = m
 		}
 	}
-	return unmatched
 }
 
 func setExternal(e *External, r EpochRow) {
@@ -305,11 +304,6 @@ func setExternal(e *External, r EpochRow) {
 		return
 	}
 	*field = max(*field, r.Score)
-}
-
-func firstToken(key string) string {
-	tok, _, _ := strings.Cut(key, "-")
-	return tok
 }
 
 func orgSet(models map[string]Model) map[string]bool {

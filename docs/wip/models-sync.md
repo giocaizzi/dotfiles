@@ -65,7 +65,7 @@ Untiered Copilot models at seed time (sync must flag them): `claude-opus-5.5`, `
 | Terminal-Bench | `terminalbench_external.csv` | `Model version` | `Accuracy mean` |
 | SWE-bench Verified | `swe_bench_verified.csv` | `Model version` | `mean_score` |
 | METR time horizon | `metr_time_horizons_external.csv` | `Model version` | `Time horizon` (minutes) |
-| OSWorld | `osworld_2_external.csv` only (the current benchmark; mixing it with `os_world_external.csv` would compare two benchmarks) | `Model version` | `Score` |
+| OSWorld | `osworld_2_external.csv` only (the current benchmark; mixing it with `os_world_external.csv` would compare two benchmarks) | `Model version` | `Binary accuracy` (the file has no `Score` column; `Partial score` is not used) |
 
 - `Model version` forms: `claude-sonnet-5-5_max`, `gpt-6.1-sol_max`, `gpt-5-2025-08-07_high`, `claude-sonnet-4-5-20250929`, sometimes empty (skip those rows).
 - Coverage of the newest models is thin: Terminal-Bench, SWE-bench and METR stop around GPT-5.5; only `osworld_2` has `claude-opus-5_*` and `gpt-5.6-sol_max`. ECI is current. This is why external data stays optional.
@@ -83,7 +83,7 @@ One function `Key(s)` normalizes any name or id:
 
 A source row matches a model when, after the alias map is checked, `Key(row)` equals `Key` of the id part of the model's canonical id, or `Key` of its models.dev `name`. Examples: `Claude Opus 5.5 (High)` and `anthropic/claude-opus-5-5` both give `claude-opus-5-5`; `GPT-6.1 Sol` and `openai/gpt-6.1-sol` both give `gpt-6-1-sol`; `gpt-5-2025-08-07_high` gives `gpt-5`.
 
-Manual aliases in `models.json` (`aliases.arena`, `aliases.epoch`: source name → canonical id) win over the rule. Sync lists rows it could not match, limited to the organizations of the providers' models so other labs do not flood the report.
+Manual aliases in `models.json` (`aliases.arena`, `aliases.epoch`: source name → canonical id) win over the rule. Sync lists arena rows it could not match, limited to the organizations of the tracked models and to rows ranked in the top 20 of their category (the first live sync listed about 180 legacy names otherwise). Unmatched Epoch rows are not listed: Epoch's history is mostly legacy models.
 
 Arena variants: when a model has several variants (High, Max, ...), the best-ranked one wins per category and its variant is recorded (pending open question 2).
 
@@ -166,7 +166,7 @@ Matching the `tools/agents` layering (pure domain packages, `cli` wiring):
   - `modelsdev.go`, `arena.go`, `epoch.go`: parse raw bytes into rows.
   - `merge.go`: `Apply(catalog, sources) (Catalog, Report)`.
   - `render.go`: `Markdown(catalog)` and `WriteTerminal(w, style, catalog)`, built on `term.Table`/`term.Width`/`term.Pad`/`term.Warn` (`internal/term/table.go`).
-- `internal/cli/models.go`: flags, file discovery, HTTP fetching (arena pages at most 4 in parallel, each retried 3 times with backoff); base URLs overridable for tests. Dispatch like `mcp` in `cli.go`, plus usage lines.
+- `internal/cli/models.go`: flags, file discovery, HTTP fetching (arena pages at most 4 in parallel; each request tried 3 times, waiting 2 s then 8 s or the server's `Retry-After`, capped at 30 s); base URLs overridable for tests. Dispatch like `mcp` in `cli.go`, plus usage lines.
 - No new Go dependencies with the JSON arena endpoint (open question 1); `golang.org/x/sync/errgroup` moves from indirect to direct (already in `go.sum`).
 - Sync keeps in `models` every Copilot model, Anthropic and OpenAI models with `release_date >= since`, text output and `tool_call`, and every tiered model (a tiered model no provider lists any more keeps its last data and is reported as stale).
 

@@ -1,18 +1,18 @@
 <b>Model tiers</> <d>· synced 2026-11-06 · arena text_style_control 2026-10-28</>
 
 <b>Lightweight</> <d>(2)</>
-  <d>MODEL             PROVIDERS $/MTOK                                     TEXT  CODE       AGENT    WEB      HARD     MATH     IF       MULTI    ECI  METR</>
-  <m>GPT-6 Luna</>  <d>API</> $0.1/$0.5<d> · </><d>Copilot</> $0.1/$0.5  #12   <d>#60</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>
-  <m>Only Mini</>   <d>Copilot</> $0.25/$2                               #30   <d>·</>    <d>·</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>
+  <d>MODEL                    PROVIDERS $/MTOK                                     TEXT      CODE       AGENT    WEB       HARD     MATH      IF       MULTI    ECI      METR</>
+  <m>GPT-6 Luna</>         <d>API</> $0.1/$0.5<d> · </><d>Copilot</> $0.1/$0.5  #12       <d>#60</>  <d>·</>  <d>·</>   <d>·</>  <d>·</>   <d>·</>  <d>·</>  <d>·</>  <d>·</>
+  <m>Only Mini</>          <d>Copilot</> $0.25/$2                               #30       <d>·</>    <d>·</>  <d>·</>   <d>·</>  <d>·</>   <d>·</>  <d>·</>  <d>·</>  <d>·</>
 
 <b>Versatile</> <d>(2)</>
-  <d>MODEL                    PROVIDERS $/MTOK  TEXT      CODE      AGENT    WEB      HARD     MATH      IF       MULTI    ECI  METR</>
-  <m>Claude Sonnet 5.5</>  <d>API</> $3/$15  <g>#4</>  <g>#2</>  <d>·</>  <d>·</>  <d>·</>  <g>#9</>  <d>·</>  <d>·</>  151  95m
-  <m>openai/ghost</>                         <d>·</>   <d>·</>   <d>·</>  <d>·</>  <d>·</>  <d>·</>   <d>·</>  <d>·</>
+  <d>MODEL                    PROVIDERS $/MTOK                                     TEXT      CODE       AGENT    WEB       HARD     MATH      IF       MULTI    ECI      METR</>
+  <m>Claude Sonnet 5.5</>  <d>API</> $3/$15                                     <g>#4</>  <g>#2</>   <d>·</>  <d>·</>   <d>·</>  <g>#9</>  <d>·</>  <d>·</>  151      95m
+  <m>openai/ghost</>                                                            <d>·</>   <d>·</>    <d>·</>  <d>·</>   <d>·</>  <d>·</>   <d>·</>  <d>·</>  <d>·</>  <d>·</>
 
 <b>Powerful</> <d>(1)</>
-  <d>MODEL                  PROVIDERS $/MTOK                               TEXT      CODE      AGENT    WEB       HARD     MATH     IF       MULTI    ECI  METR</>
-  <m>Claude Opus 5.5</>  <d>API</> $5/$25<d> · </><d>Copilot</> $5/$25  <g>#1</>  <g>#2</>  <d>·</>  <g>#3</>  <d>·</>  <d>·</>  <d>·</>  <d>·</>
+  <d>MODEL                    PROVIDERS $/MTOK                                     TEXT      CODE       AGENT    WEB       HARD     MATH      IF       MULTI    ECI      METR</>
+  <m>Claude Opus 5.5</>    <d>API</> $5/$25<d> · </><d>Copilot</> $5/$25        <g>#1</>  <g>#2</>   <d>·</>  <g>#3</>  <d>·</>  <d>·</>   <d>·</>  <d>·</>  <d>·</>  <d>·</>
 
 <b>Extra</> <d>(0)</>
   <d>none</>

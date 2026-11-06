@@ -211,6 +211,7 @@ func TestApplyUnmatchedLimitedToTrackedOrgs(t *testing.T) {
 		row("Claude Mystery (Max)", "anthropic"),
 		row("Other Lab Model", "otherlab"),
 		ArenaRow{Board: ArenaBoard, Category: "languages", ModelName: "Claude Skipped", Org: "anthropic"},
+		ArenaRow{Board: ArenaBoard, Category: "overall", ModelName: "Claude Legacy", Org: "anthropic", Rank: unmatchedTopRank + 1},
 	)
 	src.Epoch = []EpochRow{
 		{Benchmark: "eci", Model: "Claude Mystery", Score: 1},
@@ -219,7 +220,7 @@ func TestApplyUnmatchedLimitedToTrackedOrgs(t *testing.T) {
 		{Benchmark: "eci", Model: "GPT-9 Zeta", Score: 1},
 	}
 	_, rep := Apply(baseCatalog(), src)
-	want := []string{"arena: Claude Mystery", "epoch: claude-mystery", "epoch: gpt-9-zeta"}
+	want := []string{"arena: Claude Mystery"} // epoch rows are never reported, low ranks neither
 	if diff := cmp.Diff(want, rep.Unmatched); diff != "" {
 		t.Errorf("unmatched (-want +got):\n%s", diff)
 	}

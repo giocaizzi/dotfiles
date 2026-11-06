@@ -544,17 +544,42 @@ func TestModelsSyncCancelledContextExits1AndWritesNothing(t *testing.T) {
 	}
 }
 
-func TestModelsSyncInvalidFileExits1WithoutFetching(t *testing.T) {
+func TestModelsSyncTierWithNoDataExits1AndWritesNothing(t *testing.T) {
+	t.Parallel()
+	ctx := t.Context()
+	srv := newFakeServer(t)
+	_, file, doc := repoDir(t, "models-invalid.json")
+	before := mustRead(t, file)
+	d, _, stderr := testDeps()
+	if code := d.syncModels(ctx, modelsOpts{file: file}, srv.endpoints(), fixedNow); code != 1 {
+		t.Fatalf("exit %d, want 1", code)
+	}
+	if !strings.Contains(stderr.String(), "anthropic/does-not-exist") {
+		t.Errorf("stderr %q does not name the missing tier id", stderr.String())
+	}
+	if !bytes.Equal(before, mustRead(t, file)) {
+		t.Error("models.json changed on a failed sync")
+	}
+	if _, err := os.Stat(doc); err == nil {
+		t.Errorf("%s written on failure", doc)
+	}
+}
+
+func TestModelsSyncFillsASeedCatalog(t *testing.T) { // regression: sync must not validate before it fetches
 	t.Parallel()
 	ctx := t.Context()
 	srv := newFakeServer(t)
 	_, file, _ := repoDir(t, "models-invalid.json")
-	d, _, _ := testDeps()
-	if code := d.syncModels(ctx, modelsOpts{file: file}, srv.endpoints(), fixedNow); code != 1 {
-		t.Fatalf("exit %d, want 1", code)
+	seed := strings.Replace(string(mustRead(t, file)), "anthropic/does-not-exist", "anthropic/claude-opus-5-5", 1)
+	if err := os.WriteFile(file, []byte(seed), 0o644); err != nil {
+		t.Fatal(err)
 	}
-	if n := len(srv.log()); n != 0 {
-		t.Errorf("%d requests for an invalid file", n)
+	d, _, stderr := testDeps()
+	if code := d.syncModels(ctx, modelsOpts{file: file}, srv.endpoints(), fixedNow); code != 0 {
+		t.Fatalf("exit %d, want 0; stderr %q", code, stderr.String())
+	}
+	if !strings.Contains(string(mustRead(t, file)), `"name": "Claude Opus 5.5"`) {
+		t.Error("models.json has no data for the tiered model")
 	}
 }
 
@@ -602,4 +627,24 @@ func TestFindModelsJSON(t *testing.T) { // serial: t.Setenv
 func parseQuery(requestURI string) (url.Values, error) {
 	_, q, _ := strings.Cut(requestURI, "?")
 	return url.ParseQuery(q)
+}
+
+func TestRetryAfter(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		in   string
+		want time.Duration
+	}{
+		{"", 0},
+		{"5", 5 * time.Second},
+		{" 7 ", 7 * time.Second},
+		{"3600", maxRetryAfter},
+		{"-1", 0},
+		{"Wed, 21 Oct 2015 07:28:00 GMT", 0},
+	}
+	for _, tt := range tests {
+		if got := retryAfter(tt.in); got != tt.want {
+			t.Errorf("retryAfter(%q) = %v, want %v", tt.in, got, tt.want)
+		}
+	}
 }
