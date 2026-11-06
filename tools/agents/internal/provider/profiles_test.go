@@ -373,7 +373,7 @@ func TestCodexProfiles(t *testing.T) {
 		a2, i2 := chatgptTokens(t, exp, "acct-2")
 		f.files[f.path(".codex", "auth.json")] = codexAuthJSON(t, a1, i1, "acct-1")
 		f.files[f.path(".codex-work", "auth.json")] = codexAuthJSON(t, a2, i2, "acct-2")
-		want := []string{"codex openai:acct-1", "codex:work openai:acct-2"}
+		want := []string{"codex openai:acct-1:user-1", "codex:work openai:acct-2:user-1"}
 		if diff := cmp.Diff(want, rows(Merge(readCodex(f)))); diff != "" {
 			t.Errorf("rows (-want +got):\n%s", diff)
 		}
@@ -388,7 +388,7 @@ func TestCodexProfiles(t *testing.T) {
 		f.secrets[codexKeyringService+"\x00"+codexStoreKey(f.path(".codex"))] = codexAuthJSON(t, a1, i1, "acct-1")
 		f.secrets[codexKeyringService+"\x00"+codexStoreKey(work)] = codexAuthJSON(t, a2, i2, "acct-2")
 		got := Merge(readCodex(f))
-		if diff := cmp.Diff([]string{"codex openai:acct-1", "codex:work openai:acct-2"}, rows(got)); diff != "" {
+		if diff := cmp.Diff([]string{"codex openai:acct-1:user-1", "codex:work openai:acct-2:user-1"}, rows(got)); diff != "" {
 			t.Errorf("rows (-want +got):\n%s", diff)
 		}
 		for _, a := range got {

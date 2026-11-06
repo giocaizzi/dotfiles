@@ -34,10 +34,10 @@ func TestOpencodeDB(t *testing.T) {
 	}
 	exp0 := time.UnixMilli(exp.UnixMilli())
 	assertViews(t, readOpencode(f), []view{
-		{Provider: "openai", Key: "openai:acct-1", Harnesses: []string{"opencode"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: exp0, Source: "sqlite"},
+		{Provider: "openai", Key: "openai:acct-1:user-1", Harnesses: []string{"opencode"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: exp0, Source: "sqlite"},
 		{Provider: "github-copilot", Key: fingerprint(GitHubCopilot, "fake-gh-token"), Harnesses: []string{"opencode"}, Auth: AuthOAuth, Token: "fake-gh-token", Source: "sqlite"},
 		{Provider: "openrouter", Label: "work", Harnesses: []string{"opencode"}, Auth: AuthAPIKey, Status: "no-api", Note: "no usage API for API keys", Source: "sqlite"},
-		{Provider: "openai", Key: "openai:acct-2", Harnesses: []string{"opencode"}, Auth: AuthOAuth, Token: "fake-other", AccountID: "acct-2", Expires: exp0, Note: "(inactive)", Source: "sqlite"},
+		{Provider: "openai", Key: fingerprint(OpenAI, "fake-other"), Harnesses: []string{"opencode"}, Auth: AuthOAuth, Token: "fake-other", AccountID: "acct-2", Expires: exp0, Note: "(inactive)", Source: "sqlite"},
 		{Provider: "corp", Label: "sso", Harnesses: []string{"opencode"}, Auth: AuthAPIKey, Status: "not-visible", Note: "external credential", Source: "sqlite"},
 	})
 }
@@ -51,7 +51,7 @@ func TestOpencodeOpenAIAccountFromJWT(t *testing.T) {
 		{ID: "cred_1", IntegrationID: "openai", Active: true, Value: fmt.Appendf(nil, `{"type":"oauth","access":%q}`, access)},
 	}
 	got := readOpencode(f)
-	if len(got) != 1 || got[0].Key != "openai:acct-7" || got[0].Cred.AccountID() != "acct-7" {
+	if len(got) != 1 || got[0].Key != "openai:acct-7:user-1" || got[0].Cred.AccountID() != "acct-7" {
 		t.Errorf("got %+v", views(got))
 	}
 }
@@ -131,7 +131,7 @@ func TestPi(t *testing.T) {
 		{Provider: "anthropic", Key: fingerprint(Anthropic, "fake-claude"), Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: "fake-claude", Expires: time.UnixMilli(testNow.Add(-time.Hour).UnixMilli()), Status: "expired", Note: "token expired, open pi to refresh", Source: "file"},
 		{Provider: "deepseek", Harnesses: []string{"pi"}, Auth: AuthCommand, Status: "skipped", Note: "key from a command, not run", Source: "file"},
 		{Provider: "github-copilot", Key: fingerprint(GitHubCopilot, "fake-gh-token"), Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: "fake-gh-token", Source: "file"},
-		{Provider: "openai", Key: "openai:acct-1", Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: e0, Source: "file"},
+		{Provider: "openai", Key: "openai:acct-1:user-1", Harnesses: []string{"pi"}, Auth: AuthOAuth, Token: access, AccountID: "acct-1", Expires: e0, Source: "file"},
 		{Provider: "openrouter", Harnesses: []string{"pi"}, Auth: AuthAPIKey, Status: "no-api", Note: "no usage API for API keys", Source: "file"},
 	})
 }

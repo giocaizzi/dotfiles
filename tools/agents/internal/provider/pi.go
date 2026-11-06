@@ -69,7 +69,6 @@ func readPiProfile(st Store, p profile) []Account {
 			expires:   msTime(e.Expires),
 			host:      cmp.Or(e.EnterpriseURL, e.EnterpriseDomain),
 			source:    srcFile,
-			hashKey:   true,
 		}.account(st.Now()))
 	}
 	return out

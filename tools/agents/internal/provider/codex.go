@@ -57,6 +57,7 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 	userID := cmp.Or(
 		claimString(accessAuth, "chatgpt_user_id"), claimString(accessAuth, "user_id"),
 		claimString(idAuth, "chatgpt_user_id"), claimString(idAuth, "user_id"),
+		claimString(accessClaims, "sub"), claimString(idClaims, "sub"),
 	)
 	a.Label = cmp.Or(
 		claimString(idClaims, "email"), claimString(openaiProfile(idClaims), "email"),
@@ -65,7 +66,9 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 	if plan := cmp.Or(claimString(idAuth, "chatgpt_plan_type"), claimString(accessAuth, "chatgpt_plan_type")); plan != "" {
 		a.Plan = usage.OpenAIPlan(plan)
 	}
-	if accountID != "" {
+	// The account id is the workspace, shared by every member: it never
+	// identifies a login on its own.
+	if accountID != "" && userID != "" {
 		proven(&a, OpenAIKey(accountID, userID))
 	} else {
 		unproven(&a, access)

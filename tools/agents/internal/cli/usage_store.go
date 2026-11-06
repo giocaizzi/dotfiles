@@ -43,13 +43,22 @@ type osStore struct {
 
 	securityBin string        // the macOS security tool; tests stub it
 	user        func() string // the current OS user name; tests stub it
+	timeout     time.Duration // per credential read; zero means secretTimeout
+}
+
+// limit is the per-read timeout.
+func (s osStore) limit() time.Duration {
+	if s.timeout > 0 {
+		return s.timeout
+	}
+	return secretTimeout
 }
 
 // newOSStore builds the store from the CLI dependencies.
 func newOSStore(d Deps) osStore {
 	home, _ := os.UserHomeDir()
 	return osStore{
-		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security",
+		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security", timeout: secretTimeout,
 		user: func() string { return currentUser(d.Getenv) },
 	}
 }
@@ -102,7 +111,7 @@ func (s osStore) Now() time.Time           { return s.now() }
 // only macOS supports it, through the security tool. Errors never carry the
 // secret.
 func (s osStore) Secret(service, account string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), secretTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.limit())
 	defer cancel()
 
 	if account == "" {
@@ -215,7 +224,7 @@ func (s osStore) OpencodeCredentials(dbPath string) ([]provider.OpencodeRow, err
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), secretTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.limit())
 	defer cancel()
 	rows, err := db.QueryContext(ctx, `SELECT id, integration_id, label, active, value FROM credential`)
 	if err != nil {
