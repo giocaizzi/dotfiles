@@ -84,6 +84,15 @@ func (s osStore) Canonical(path string) string {
 	return resolved
 }
 
+// Glob lists the paths matching a filepath.Glob pattern; nil on error.
+func (s osStore) Glob(pattern string) []string {
+	m, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil
+	}
+	return m
+}
+
 func (s osStore) Getenv(key string) string { return s.getenv(key) }
 func (s osStore) Home() string             { return s.home }
 func (s osStore) GOOS() string             { return s.goos }

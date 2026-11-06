@@ -52,7 +52,11 @@ func TestClaudeOAuth(t *testing.T) {
 				f.secrets["Claude Code-credentials\x00"] = `{"claudeAiOauth":{"accessToken":"fake-unsuffixed"}}`
 				f.secrets[cfgService+"\x00"] = claudeCredsJSON(valid)
 			},
-			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"}},
+			// The env dir reads its suffixed item; the default dir still reads the unsuffixed one.
+			want: []view{
+				{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude:cfg"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"},
+				{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-unsuffixed"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-unsuffixed", Source: "keychain"},
+			},
 		},
 		{
 			name: "linux CLAUDE_CONFIG_DIR",

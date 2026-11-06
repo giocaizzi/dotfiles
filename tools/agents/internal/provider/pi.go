@@ -30,20 +30,25 @@ func sortedKeys[V any](m map[string]V) []string {
 	return slices.SortedFunc(maps.Keys(m), cmp.Compare[string])
 }
 
-// readPi reads pi's auth.json, one entry per provider. A key starting with "!"
-// is a command that is never run.
+// readPi reads the auth.json of every pi profile, one entry per provider. A
+// key starting with "!" is a command that is never run.
 func readPi(st Store) []Account {
-	dir := st.Getenv("PI_CODING_AGENT_DIR")
-	if dir == "" {
-		dir = filepath.Join(st.Home(), ".pi", "agent")
+	profiles := piSpec().profiles(st)
+	per := make([][]Account, 0, len(profiles))
+	for _, p := range profiles {
+		per = append(per, readPiProfile(st, p))
 	}
+	return joinProfiles("pi", per)
+}
+
+func readPiProfile(st Store, p profile) []Account {
 	var entries map[string]piEntry
-	found, err := readJSON(st, filepath.Join(dir, "auth.json"), &entries)
+	found, err := readJSON(st, filepath.Join(p.dir, "auth.json"), &entries)
 	if !found {
 		return nil
 	}
 	if err != nil {
-		return []Account{unreadable("pi", "pi")}
+		return unreadableProfile(p, "pi", "")
 	}
 	var out []Account
 	for _, id := range sortedKeys(entries) {
@@ -53,7 +58,7 @@ func readPi(st Store) []Account {
 			prov = OpenAI
 		}
 		out = append(out, tenantEntry{
-			harness:   "pi",
+			harness:   p.label(),
 			provider:  prov,
 			storeKey:  id,
 			accountID: e.AccountID,

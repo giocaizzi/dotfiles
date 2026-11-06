@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -86,6 +87,22 @@ func (f *fakeStore) Exists(p string) bool {
 		}
 	}
 	return false
+}
+
+// Glob matches pattern against the files and their parent directories.
+func (f *fakeStore) Glob(pattern string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for k := range f.files {
+		for p := filepath.Dir(k); p != filepath.Dir(p); p = filepath.Dir(p) {
+			if ok, _ := filepath.Match(pattern, p); ok && !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+	}
+	slices.Sort(out)
+	return out
 }
 
 func (f *fakeStore) Getenv(k string) string { return f.env[k] }

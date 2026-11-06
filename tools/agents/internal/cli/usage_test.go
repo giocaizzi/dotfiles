@@ -35,6 +35,7 @@ func (fakeStore) Secret(string, string) (string, error) { return "", fs.ErrNotEx
 func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]; return ok }
 func (fakeStore) Getenv(string) string                  { return "" }
 func (fakeStore) Canonical(p string) string             { return p }
+func (s fakeStore) Glob(pattern string) []string        { return globFiles(s.files, pattern) }
 func (s fakeStore) Home() string                        { return s.home }
 func (fakeStore) GOOS() string                          { return "linux" }
 func (fakeStore) Now() time.Time                        { return usageNow }
@@ -405,4 +406,19 @@ func TestRunUsageEndToEnd(t *testing.T) {
 	if !strings.Contains(out.String(), "(stale, api") || !strings.Contains(out.String(), " 31%") {
 		t.Errorf("failed -live did not keep the cached snapshot as stale:\n%s", out)
 	}
+}
+
+// globFiles matches pattern against the files and their parent directories.
+func globFiles(files map[string]string, pattern string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for f := range files {
+		for p := filepath.Dir(f); p != filepath.Dir(p); p = filepath.Dir(p) {
+			if ok, _ := filepath.Match(pattern, p); ok && !seen[p] {
+				seen[p] = true
+				out = append(out, p)
+			}
+		}
+	}
+	return out
 }

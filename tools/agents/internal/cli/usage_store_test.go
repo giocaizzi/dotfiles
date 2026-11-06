@@ -243,6 +243,23 @@ func TestSecretDarwinAnyAccount(t *testing.T) {
 	}
 }
 
+func TestOSStoreGlob(t *testing.T) {
+	t.Parallel()
+	s := testStore(t)
+	for _, d := range []string{".claude-b", ".claude-a", ".other"} {
+		if err := os.Mkdir(filepath.Join(s.Home(), d), 0o700); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []string{filepath.Join(s.Home(), ".claude-a"), filepath.Join(s.Home(), ".claude-b")}
+	if diff := cmp.Diff(want, s.Glob(filepath.Join(s.Home(), ".claude-*"))); diff != "" {
+		t.Errorf("Glob (-want +got):\n%s", diff)
+	}
+	if got := s.Glob("[bad"); got != nil {
+		t.Errorf("Glob(bad pattern) = %v, want nil", got)
+	}
+}
+
 func TestOSStoreCanonical(t *testing.T) {
 	t.Parallel()
 	s := testStore(t)

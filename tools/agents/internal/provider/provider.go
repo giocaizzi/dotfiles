@@ -148,6 +148,8 @@ type Store interface {
 	OpencodeCredentials(dbPath string) ([]OpencodeRow, error)
 	// Exists reports whether a path exists.
 	Exists(path string) bool
+	// Glob returns the paths matching a filepath.Glob pattern; nil on error.
+	Glob(pattern string) []string
 	// Canonical is the path with symlinks resolved, or the cleaned path as
 	// given when that fails.
 	Canonical(path string) string

@@ -334,6 +334,9 @@ func checkClaudeProfile(t *testing.T, tt claudeProfileCase) {
 	t.Helper()
 	f := newFake("linux")
 	f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(testNow.Add(time.Hour))
+	if tt.env["CLAUDE_CONFIG_DIR"] != "" {
+		delete(f.files, f.path(".claude", ".credentials.json")) // the env dir alone, not next to a default login
+	}
 	maps.Copy(f.env, tt.env)
 	for p, content := range tt.files {
 		if !filepath.IsAbs(p) {
