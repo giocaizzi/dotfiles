@@ -52,6 +52,19 @@ type Plan struct {
 	Raw     string  `json:"raw,omitempty"`  // the provider's own plan string, e.g. "max", "plus", "business"
 }
 
+// NameTokenSharing is the plan name of a "Sign in with ChatGPT" login made for
+// the API (token sharing): ChatGPT's usage API does not answer for it.
+const NameTokenSharing = "ChatGPT sign-in (token sharing)" //nolint:gosec // a display name, not a credential
+
+// NoteSharingNotVisible is the note of a token-sharing login.
+const NoteSharingNotVisible = "usage not visible for this login type"
+
+// TokenSharingPlan is the plan of a token-sharing login: nothing is known of
+// the account behind it.
+func TokenSharingPlan() Plan {
+	return Plan{Kind: KindUnknown, Billing: BillingUnknown, Payer: PayerUnknown, Name: NameTokenSharing}
+}
+
 // LimitKind is the shape of one limit.
 type LimitKind string
 

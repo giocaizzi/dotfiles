@@ -35,7 +35,7 @@ func fullStore(t *testing.T) *fakeStore {
 
 	piAccess, _ := chatgptTokens(t, piExp, "acct-1")
 	f.files[f.path(".pi", "agent", "auth.json")] = fmt.Sprintf(
-		`{"openai":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d}}`, piAccess, piExp.UnixMilli())
+		`{"openai-codex":{"type":"oauth","access":%q,"refresh":"fake-r","expires":%d}}`, piAccess, piExp.UnixMilli())
 
 	f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(testNow.Add(time.Hour))
 	f.files[f.path(".copilot", "config.json")] = `{"loggedInUsers":["octocat"],"lastLoggedInUser":"octocat"}`
