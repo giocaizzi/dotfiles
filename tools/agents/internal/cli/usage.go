@@ -78,62 +78,58 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 
 // snapKey identifies the account of a snapshot: its stable id under the
 // provider, never the harness list, which changes when a harness logs in or
-// out. Without an id (a cache file from before ids) it falls back to the
-// provider and label.
-func snapKey(id, provider, label string) string {
-	if id != "" {
-		return provider + "\x00id\x00" + id
-	}
-	return provider + "\x00label\x00" + label
+// out.
+func snapKey(id, provider string) string {
+	return provider + "\x00" + id
 }
 
 // acctRef is the identity of a discovered account or a live snapshot.
-type acctRef struct{ id, provider, label string }
-
-// cacheIndex finds the cached snapshot of an account. A cached snapshot with
-// an id matches by id. One without (an old cache file) matches only by
-// provider and label, and only when no other current account of that provider
-// shares the label; otherwise it is dropped as unknown.
-type cacheIndex struct {
-	byKey  map[string]usg.Snapshot
-	legacy map[string]usg.Snapshot
-	shared map[string]int
+type acctRef struct {
+	id, provider, label string
+	kind                usg.Kind
 }
 
-func newCacheIndex(cached []usg.Snapshot, current []acctRef) cacheIndex {
-	c := cacheIndex{
-		byKey:  make(map[string]usg.Snapshot, len(cached)),
-		legacy: make(map[string]usg.Snapshot),
-		shared: make(map[string]int, len(current)),
-	}
+// isMetered reports plans billed per use (API key, cloud, gateway) rather than
+// by a subscription.
+func isMetered(k usg.Kind) bool {
+	return k == usg.KindAPI || k == usg.KindCloud || k == usg.KindGateway
+}
+
+// cacheIndex finds the cached snapshot of an account by id. A snapshot without
+// an id never matches. An id match is a miss when the account changed under the
+// same id: both labels set and different (switched accounts), or the auth mode
+// moved between subscription and metered.
+type cacheIndex map[string]usg.Snapshot
+
+func newCacheIndex(cached []usg.Snapshot) cacheIndex {
+	c := make(cacheIndex, len(cached))
 	for _, s := range cached {
-		k := snapKey(s.ID, s.Provider, s.Account)
-		dst := c.byKey
 		if s.ID == "" {
-			dst = c.legacy
+			continue
 		}
-		if _, dup := dst[k]; !dup {
-			dst[k] = s
+		k := snapKey(s.ID, s.Provider)
+		if _, dup := c[k]; !dup {
+			c[k] = s
 		}
-	}
-	for _, r := range current {
-		c.shared[snapKey("", r.provider, r.label)]++
 	}
 	return c
 }
 
 func (c cacheIndex) find(r acctRef) (usg.Snapshot, bool) {
-	if r.id != "" {
-		if s, ok := c.byKey[snapKey(r.id, r.provider, r.label)]; ok {
-			return s, true
-		}
-	}
-	k := snapKey("", r.provider, r.label)
-	if c.shared[k] > 1 {
+	if r.id == "" {
 		return usg.Snapshot{}, false
 	}
-	s, ok := c.legacy[k]
-	return s, ok
+	s, ok := c[snapKey(r.id, r.provider)]
+	if !ok {
+		return usg.Snapshot{}, false
+	}
+	if r.label != "" && s.Account != "" && r.label != s.Account {
+		return usg.Snapshot{}, false
+	}
+	if isMetered(r.kind) != isMetered(s.Plan.Kind) {
+		return usg.Snapshot{}, false
+	}
+	return s, true
 }
 
 func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
@@ -154,13 +150,13 @@ func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
 func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetcher) []usg.Snapshot {
 	refs := make([]acctRef, len(accounts))
 	for i, a := range accounts {
-		refs[i] = acctRef{a.ID, a.Provider, a.Label}
+		refs[i] = acctRef{a.ID, a.Provider, a.Label, a.Plan.Kind}
 	}
-	have := newCacheIndex(cached, refs)
+	have := newCacheIndex(cached)
 	var out []usg.Snapshot
 	seen := make(map[string]bool, len(accounts))
 	for i, a := range accounts {
-		key := snapKey(a.ID, a.Provider, a.Label)
+		key := snapKey(a.ID, a.Provider)
 		if seen[key] {
 			continue
 		}
@@ -198,9 +194,9 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 	refs := make([]acctRef, len(live))
 	for i, s := range live {
-		refs[i] = acctRef{s.ID, s.Provider, s.Account}
+		refs[i] = acctRef{s.ID, s.Provider, s.Account, s.Plan.Kind}
 	}
-	old := newCacheIndex(cached, refs)
+	old := newCacheIndex(cached)
 	out := make([]usg.Snapshot, len(live))
 	for i, s := range live {
 		out[i] = s

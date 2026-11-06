@@ -32,12 +32,12 @@ func sanitize(s string) string {
 }
 
 // hidden reports bidi controls and zero-width characters, which can reorder or
-// hide text on screen.
+// hide text on screen. ZWNJ and ZWJ stay: names and emoji sequences need them.
 func hidden(r rune) bool {
 	switch {
 	case r >= 0x202A && r <= 0x202E, r >= 0x2066 && r <= 0x2069, r == 0x200E, r == 0x200F:
 		return true
-	case r >= 0x200B && r <= 0x200D, r == 0x2060, r == 0xFEFF:
+	case r == 0x061C, r == 0x200B, r == 0x2060, r == 0xFEFF:
 		return true
 	}
 	return false

@@ -174,34 +174,3 @@ func assertIdentityFlow(t *testing.T, store provider.Store, want map[string]floa
 		t.Error("a token reached the output")
 	}
 }
-
-func TestSnapKeyFallsBackToLabel(t *testing.T) {
-	t.Parallel()
-	if snapKey("claude", "anthropic", "") == snapKey("opencode:r", "anthropic", "") {
-		t.Error("distinct ids collide")
-	}
-	if snapKey("", "anthropic", "a") == snapKey("", "anthropic", "b") {
-		t.Error("distinct labels collide")
-	}
-	if snapKey("x", "anthropic", "a") == snapKey("", "anthropic", "a") {
-		t.Error("an id key equals a label key")
-	}
-}
-
-func TestCachedViewIdlessSnapshotNeedsUniqueLabel(t *testing.T) {
-	t.Parallel()
-	f := testFetcher(t, nil)
-	old := usg.Snapshot{Provider: "anthropic", Account: "", Status: usg.StatusOK, Limits: []usg.Limit{{Name: "5h"}}}
-	claude := provider.Account{Provider: "anthropic", ID: "claude", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}
-	one := []provider.Account{claude}
-	two := []provider.Account{claude, {Provider: "anthropic", ID: "opencode:r", Harnesses: []string{"opencode"}, Auth: provider.AuthOAuth}}
-
-	if got := cachedView(one, []usg.Snapshot{old}, f); len(got) != 1 || len(got[0].Limits) != 1 || got[0].ID != "claude" {
-		t.Errorf("unique label: %+v", got)
-	}
-	for _, s := range cachedView(two, []usg.Snapshot{old}, f) {
-		if len(s.Limits) != 0 {
-			t.Errorf("an id-less snapshot attached to an ambiguous account: %+v", s)
-		}
-	}
-}

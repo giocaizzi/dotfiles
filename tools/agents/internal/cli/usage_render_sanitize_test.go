@@ -20,7 +20,9 @@ func TestSanitize(t *testing.T) {
 		"a\u202ab\u202bc\u202cd\u202de\u202ef": "abcdef",
 		"a\u2066b\u2067c\u2068d\u2069e":        "abcde",
 		"a\u200eb\u200fc":                      "abc",
-		"a\u200bb\u200cc\u200dd\u2060e\ufeff":  "abcde",
+		"a\u200bb\u2060c\ufeffd\u061ce":        "abcde",
+		"Ali\u200cReza":                        "Ali\u200cReza",
+		"\U0001F469\u200d\U0001F4BB":           "\U0001F469\u200d\U0001F4BB",
 	}
 	for in, want := range tests {
 		if got := sanitize(in); got != want {

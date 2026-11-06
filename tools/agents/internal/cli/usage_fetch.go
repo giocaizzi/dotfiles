@@ -278,7 +278,22 @@ func hostNote(host string) string {
 	if name, _, _ := strings.Cut(h, ":"); name == "github.com" || name == "www.github.com" {
 		return "unrecognised GitHub host form: usage not queried"
 	}
-	return "GitHub Enterprise host " + stripScheme(host) + ": usage not queried"
+	return "GitHub Enterprise host " + hostOnly(host) + ": usage not queried"
+}
+
+// hostOnly drops the scheme and any userinfo, which must never be printed.
+func hostOnly(host string) string {
+	if u, err := url.Parse(host); err == nil && u.Host != "" {
+		return u.Host
+	}
+	h := stripScheme(host)
+	if i := strings.IndexByte(h, '/'); i >= 0 {
+		h = h[:i]
+	}
+	if i := strings.LastIndexByte(h, '@'); i >= 0 {
+		h = h[i+1:]
+	}
+	return h
 }
 
 func stripScheme(host string) string {

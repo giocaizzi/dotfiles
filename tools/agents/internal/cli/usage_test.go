@@ -158,11 +158,11 @@ func TestReadUsageCacheMissingIsEmpty(t *testing.T) {
 
 func TestSnapKey(t *testing.T) {
 	t.Parallel()
-	a := snapKey("codex", "openai", "me@example.com")
-	if a == snapKey("pi:openai", "openai", "me@example.com") || a == snapKey("codex", "anthropic", "me@example.com") {
+	a := snapKey("codex", "openai")
+	if a == snapKey("pi:openai", "openai") || a == snapKey("codex", "anthropic") {
 		t.Error("snapKey collides across distinct accounts")
 	}
-	if a != snapKey("codex", "openai", "me@example.com") {
+	if a != snapKey("codex", "openai") {
 		t.Error("snapKey is not stable")
 	}
 }
@@ -221,8 +221,8 @@ func TestCachedViewListsMissingAccounts(t *testing.T) {
 func TestCachedViewHarnessAddedKeepsOneRow(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
-	cached := []usg.Snapshot{{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", Limits: []usg.Limit{{Name: "5h"}}}}
-	accts := []provider.Account{{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude", "pi"}, Auth: provider.AuthOAuth}}
+	cached := []usg.Snapshot{{ID: "claude", Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", Limits: []usg.Limit{{Name: "5h"}}}}
+	accts := []provider.Account{{ID: "claude", Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude", "pi"}, Auth: provider.AuthOAuth}}
 
 	got := cachedView(accts, cached, f)
 
@@ -241,10 +241,10 @@ func TestCachedViewDropsLoggedOutAccount(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
 	cached := []usg.Snapshot{
-		{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK},
-		{Provider: "github-copilot", Account: "octocat", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
+		{ID: "claude", Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK},
+		{ID: "copilot", Provider: "github-copilot", Account: "octocat", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
 	}
-	accts := []provider.Account{{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}}
+	accts := []provider.Account{{ID: "claude", Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}}
 
 	got := cachedView(accts, cached, f)
 
@@ -256,13 +256,13 @@ func TestCachedViewDropsLoggedOutAccount(t *testing.T) {
 func TestCachedViewDuplicates(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
-	snap := usg.Snapshot{Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK}
-	acct := provider.Account{Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}
+	snap := usg.Snapshot{ID: "claude", Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK}
+	acct := provider.Account{ID: "claude", Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude"}, Auth: provider.AuthOAuth}
 
 	if got := cachedView([]provider.Account{acct, acct}, []usg.Snapshot{snap, snap}, f); len(got) != 1 {
 		t.Errorf("cached duplicates: rows = %d, want 1", len(got))
 	}
-	gh := provider.Account{Provider: "github-copilot", Label: "octocat", Harnesses: []string{"copilot"}, Auth: provider.AuthOAuth}
+	gh := provider.Account{ID: "copilot", Provider: "github-copilot", Label: "octocat", Harnesses: []string{"copilot"}, Auth: provider.AuthOAuth}
 	if got := cachedView([]provider.Account{gh, gh}, nil, f); len(got) != 1 {
 		t.Errorf("duplicate accounts without cache: rows = %d, want 1", len(got))
 	}
@@ -271,10 +271,10 @@ func TestCachedViewDuplicates(t *testing.T) {
 func TestKeepStaleDropsUndiscoveredAndTakesHarnesses(t *testing.T) {
 	t.Parallel()
 	cached := []usg.Snapshot{
-		{Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api"},
-		{Provider: "github-copilot", Account: "gone", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
+		{ID: "claude", Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api"},
+		{ID: "copilot", Provider: "github-copilot", Account: "gone", Harnesses: []string{"copilot"}, Status: usg.StatusOK},
 	}
-	live := []usg.Snapshot{{Provider: "anthropic", Account: "a", Harnesses: []string{"claude", "pi"}, Status: usg.StatusUnavailable, Note: "HTTP 500"}}
+	live := []usg.Snapshot{{ID: "claude", Provider: "anthropic", Account: "a", Harnesses: []string{"claude", "pi"}, Status: usg.StatusUnavailable, Note: "HTTP 500"}}
 
 	got := keepStale(live, cached)
 
@@ -313,13 +313,13 @@ func TestKeepStale(t *testing.T) {
 	t.Parallel()
 	old := usageNow.Add(-time.Hour)
 	cached := []usg.Snapshot{
-		{Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", FetchedAt: old, Limits: []usg.Limit{{Name: "5h"}}},
-		{Provider: "openai", Account: "b", Harnesses: []string{"codex"}, Status: usg.StatusExpired, FetchedAt: old},
+		{ID: "anthropic", Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", FetchedAt: old, Limits: []usg.Limit{{Name: "5h"}}},
+		{ID: "openai", Provider: "openai", Account: "b", Harnesses: []string{"codex"}, Status: usg.StatusExpired, FetchedAt: old},
 	}
 	live := []usg.Snapshot{
-		{Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusUnavailable, Note: "rate limited (429)"},
-		{Provider: "openai", Account: "b", Harnesses: []string{"codex"}, Status: usg.StatusUnavailable, Note: "HTTP 500"},
-		{Provider: "github-copilot", Account: "c", Harnesses: []string{"copilot"}, Status: usg.StatusUnavailable, Note: "HTTP 500"},
+		{ID: "anthropic", Provider: "anthropic", Account: "a", Harnesses: []string{"claude"}, Status: usg.StatusUnavailable, Note: "rate limited (429)"},
+		{ID: "openai", Provider: "openai", Account: "b", Harnesses: []string{"codex"}, Status: usg.StatusUnavailable, Note: "HTTP 500"},
+		{ID: "github-copilot", Provider: "github-copilot", Account: "c", Harnesses: []string{"copilot"}, Status: usg.StatusUnavailable, Note: "HTTP 500"},
 		{Provider: "google", Account: "", Harnesses: []string{"antigravity"}, Status: usg.StatusOK},
 	}
 
