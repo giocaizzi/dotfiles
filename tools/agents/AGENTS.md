@@ -1,4 +1,4 @@
-`chezmoi-agents`: the `chezmoi agents` plugin and standalone tool of this dotfiles repo (AI harness policy, parity, prompt layer assembly, and plugin registry validation). A Go module (`github.com/giocaizzi/dotfiles/tools/agents`); repo-wide rules are in the root `AGENTS.md`, user docs in `docs/OS.md`.
+`chezmoi-agents`: the `chezmoi agents` plugin and standalone tool of this dotfiles repo (AI harness policy, parity, prompt layer assembly, plugin registry validation, and subscription usage). A Go module (`github.com/giocaizzi/dotfiles/tools/agents`); repo-wide rules are in the root `AGENTS.md`, user docs in `docs/OS.md`.
 
 ## Commands
 
@@ -7,8 +7,9 @@
 
 ## Rules
 
-- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `mcpsync`, `finding`, `term`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
+- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `mcpsync`, `finding`, `term`, `provider`, `usage`, `cache`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
 - Tests: standard `testing` plus `go-cmp`, `t.Parallel()`, `t.TempDir()`, `-race -shuffle=on`. A bug gets a failing test first.
+- Credentials are read into memory only (`provider.Credential` redacts itself); never print, log, cache or write them back, and never refresh tokens.
 - Harnesses supported: Claude Code, GitHub Copilot CLI, Codex CLI, Antigravity CLI, OpenCode, Pi.
 - System prompt profiles: `personal`, `work`, `light`.
 - Release: tag `agents-vX.Y.Z` (runbook: `docs/OS.md` → AI harnesses).
