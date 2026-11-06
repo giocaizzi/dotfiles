@@ -59,7 +59,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Shared harness preferences live in `.chezmoidata/harness-policy.toml`; native adapters preserve client-specific permission syntax and execution modes. See [shared harness policy](docs/OS.md#shared-harness-policy).
 - AI harness configs are gated on `data.harnesses` (chosen at `chezmoi init`). Read it only through `includeTemplate "harnesses" . | splitList " "`, which defaults a missing key to none. It is empty on light machines. A new harness target goes in `[harnessTargets]` (`.chezmoidata/harness.toml`), which `.chezmoiignore` ranges over. See docs/OS.md → AI harnesses.
 - `giocaizzi/harness` plugins are enabled from one list, `.chezmoidata/harness.toml` (plugin → harnesses; `harnessPersonalPlugins` stay off work machines); never hand-write them in a settings file or install script. `chezmoi-agents check` checks it against the harness repo. See docs/OS.md → Agent plugins.
-- Model tiers are manual in `.chezmoidata/models.json`; its data is refreshed only by `make models-sync`. `docs/MODELS.md` is generated: never hand-edit it. See [model tiers](docs/OS.md#model-tiers-chezmoi-agents-models).
+- `.chezmoidata/models.json` (model catalog: first-party API prices, ranks, tiers) is written by `make models-sync` (and the weekly `models-sync` workflow); hand-edit only its manual keys (`providers`, `since`, `ignore`, `pin`, `aliases`). `docs/MODELS.md` is generated: never hand-edit it. See [model tiers](docs/OS.md#model-tiers-chezmoi-agents-models).
 - Every tool a machine installs is a row of `.chezmoidata/packages.toml` (`[package.*]` via the install scripts, `[release.*]` as pinned, checksummed externals); never hand-list one in a script. Update with `chezmoi dots outdated|bump|upgrade`. See docs/OS.md → Packages.
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
@@ -106,7 +106,7 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 - [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values.
 - [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, alias registry, tools, secrets.
 - [docs/CI.md](./docs/CI.md) — `make check` targets and the CI workflow; run `make check` before pushing.
-- [docs/MODELS.md](./docs/MODELS.md) — generated model tier quicklook (costs and arena ranks).
+- [docs/MODELS.md](./docs/MODELS.md) — generated model tier quicklook (API prices, arena ranks, benchmarks).
 - Commits follow Conventional Commits.
 
 Keep docs short, factual, and updated with structural changes.

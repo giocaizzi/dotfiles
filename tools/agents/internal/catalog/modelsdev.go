@@ -15,22 +15,28 @@ type modelsDevModel struct {
 	Modalities  struct {
 		Output []string `json:"output"`
 	} `json:"modalities"`
-	Cost struct {
-		Input  float64 `json:"input"`
-		Output float64 `json:"output"`
+	Cost *struct {
+		Input      float64 `json:"input"`
+		Output     float64 `json:"output"`
+		CacheRead  float64 `json:"cache_read"`
+		CacheWrite float64 `json:"cache_write"`
 	} `json:"cost"`
+	Limit struct {
+		Context int `json:"context"`
+	} `json:"limit"`
+	Status           string `json:"status"`
 	CanonicalModelID string `json:"canonical_model_id"`
 }
 
-// ParseModelsDev reads models.dev api.json and returns the models of the
-// tracked Providers, sorted by provider then id.
-func ParseModelsDev(data []byte) ([]ProviderModel, error) {
+// ParseModelsDev reads models.dev api.json and returns the models of the given
+// provider keys, sorted by provider then id.
+func ParseModelsDev(data []byte, providers []string) ([]ProviderModel, error) {
 	var top map[string]json.RawMessage
 	if err := json.Unmarshal(data, &top); err != nil {
 		return nil, fmt.Errorf("decode models.dev: %w", err)
 	}
 	var out []ProviderModel
-	for _, provider := range Providers() {
+	for _, provider := range providers {
 		raw, ok := top[provider]
 		if !ok {
 			continue
@@ -50,16 +56,21 @@ func ParseModelsDev(data []byte) ([]ProviderModel, error) {
 			if canonical == "" {
 				canonical = provider + "/" + id
 			}
+			var price *Price
+			if m.Cost != nil {
+				price = &Price{In: m.Cost.Input, Out: m.Cost.Output, CacheRead: m.Cost.CacheRead, CacheWrite: m.Cost.CacheWrite}
+			}
 			out = append(out, ProviderModel{
 				Provider:    provider,
 				ID:          id,
 				Name:        m.Name,
 				CanonicalID: canonical,
 				ReleaseDate: m.ReleaseDate,
-				In:          m.Cost.Input,
-				Out:         m.Cost.Output,
+				Context:     m.Limit.Context,
+				Price:       price,
 				ToolCall:    m.ToolCall,
 				TextOutput:  slices.Contains(m.Modalities.Output, "text"),
+				Deprecated:  m.Status == "deprecated",
 			})
 		}
 	}

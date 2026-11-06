@@ -12,9 +12,10 @@ var (
 	separatorRun   = regexp.MustCompile(`[ ._]+`)
 )
 
-// Key normalizes a model name or id from any source so they compare equal
-// (docs/wip/models-sync.md → Matching across sources). The steps repeat until
-// nothing changes, which makes Key idempotent.
+// Key normalizes a model name or id from any source so they compare equal:
+// lowercase, drop a trailing "(...)", "_suffix" and date, then collapse runs
+// of spaces, dots and underscores into "-". The steps repeat until nothing
+// changes, which makes Key idempotent.
 func Key(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	for {

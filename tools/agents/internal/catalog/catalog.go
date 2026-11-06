@@ -1,21 +1,19 @@
-// Package catalog is the model catalog of chezmoi-agents: manual model tiers
-// plus model data synced from models.dev (costs), the LMArena leaderboard
-// dataset (ranks) and Epoch AI (external benchmarks). It is pure: callers
-// fetch the raw bytes and write the results.
+// Package catalog is the model catalog of chezmoi-agents: model tiers plus
+// model data synced from models.dev (first-party API prices), the LMArena
+// leaderboard dataset (ranks) and Epoch AI (external benchmarks). It is pure:
+// callers fetch the raw bytes and write the results.
+//
+// A model is keyed by its canonical id `<provider>/<id>`; its Provider is the
+// models.dev key of the first-party provider (the canonical id's prefix), the
+// same vocabulary as internal/provider. Prices are always that provider's API
+// per-token prices, never a harness's or a reseller's.
 package catalog
 
 // Schema is the catalog format version.
-const Schema = 1
+const Schema = 2
 
 // ArenaBoard is the LMArena text board ranks come from.
 const ArenaBoard = "text_style_control"
-
-// Provider keys (models.dev) of the tracked providers.
-const (
-	ProviderAnthropic = "anthropic"
-	ProviderOpenAI    = "openai"
-	ProviderCopilot   = "github-copilot"
-)
 
 // Arena category keys of Model.Arena that appear in more than one place.
 const (
@@ -24,11 +22,18 @@ const (
 	CatMultiTurn            = "multiTurn"
 )
 
-// Tiers are the manual tier names, in display order.
-func Tiers() []string { return []string{"lightweight", "versatile", "powerful", "extra"} }
+// Tier names.
+const (
+	TierLightweight = "lightweight"
+	TierVersatile   = "versatile"
+	TierPowerful    = "powerful"
+	TierExtra       = "extra"
+)
 
-// Providers are the models.dev provider keys the catalog tracks.
-func Providers() []string { return []string{ProviderAnthropic, ProviderOpenAI, ProviderCopilot} }
+// Tiers are the tier names, in display order.
+func Tiers() []string {
+	return []string{TierLightweight, TierVersatile, TierPowerful, TierExtra}
+}
 
 // Categories are the arena rank keys of Model.Arena, in display order.
 func Categories() []string {
@@ -44,17 +49,19 @@ type File struct {
 	Catalog Catalog `json:"modelCatalog"`
 }
 
-// Catalog is the model catalog. Tiers, Ignore, Aliases and Since are manual;
-// sync rewrites Models, Sources and SyncedAt.
+// Catalog is the model catalog. Providers, Since, Ignore, Pin and Aliases are
+// manual; sync rewrites Models, Sources, SyncedAt and Tiers (see tier.go).
 type Catalog struct {
-	Schema   int                 `json:"schema"`
-	SyncedAt string              `json:"syncedAt,omitzero"`
-	Since    string              `json:"since"`
-	Sources  SourceInfo          `json:"sources"`
-	Tiers    map[string][]string `json:"tiers"`
-	Ignore   []string            `json:"ignore,omitzero"`
-	Aliases  Aliases             `json:"aliases,omitzero"`
-	Models   map[string]Model    `json:"models"`
+	Schema    int                 `json:"schema"`
+	SyncedAt  string              `json:"syncedAt,omitzero"`
+	Since     string              `json:"since"`
+	Providers []string            `json:"providers"` // tracked first-party models.dev provider keys
+	Sources   SourceInfo          `json:"sources"`
+	Tiers     map[string][]string `json:"tiers"`
+	Ignore    []string            `json:"ignore,omitzero"`
+	Pin       map[string]string   `json:"pin,omitzero"` // canonical id -> tier, wins over the computed tier
+	Aliases   Aliases             `json:"aliases,omitzero"`
+	Models    map[string]Model    `json:"models"`
 }
 
 // SourceInfo records where the synced data came from.
@@ -75,20 +82,25 @@ type Aliases struct {
 }
 
 // Model is one model, keyed in Catalog.Models by its models.dev canonical id
-// (`<org>/<id>`, e.g. `anthropic/claude-opus-5-5`).
+// (`<provider>/<id>`, e.g. `anthropic/claude-opus-5-5`).
 type Model struct {
-	Name        string           `json:"name"`
-	ReleaseDate string           `json:"releaseDate,omitzero"`
-	Providers   map[string]Offer `json:"providers,omitzero"`
-	Arena       map[string]Rank  `json:"arena,omitzero"`
-	External    External         `json:"external,omitzero"`
+	Name        string          `json:"name"`
+	Provider    string          `json:"provider"` // first-party models.dev provider key
+	ID          string          `json:"id"`       // model id at Provider's API
+	ReleaseDate string          `json:"releaseDate,omitzero"`
+	Context     int             `json:"context,omitzero"` // context window, tokens
+	API         *Price          `json:"api,omitzero"`     // nil: no first-party API price (n/a)
+	Arena       map[string]Rank `json:"arena,omitzero"`
+	External    External        `json:"external,omitzero"`
 }
 
-// Offer is one provider serving a model: its id there and $/Mtok cost.
-type Offer struct {
-	ID  string  `json:"id"`
-	In  float64 `json:"in"`
-	Out float64 `json:"out"`
+// Price is the first-party API price in $ per million tokens; zero cache
+// prices mean the provider lists none.
+type Price struct {
+	In         float64 `json:"in"`
+	Out        float64 `json:"out"`
+	CacheRead  float64 `json:"cacheRead,omitzero"`
+	CacheWrite float64 `json:"cacheWrite,omitzero"`
 }
 
 // Rank is a model's place in one arena category; Variant is the reasoning
@@ -116,9 +128,11 @@ type ProviderModel struct {
 	Name        string
 	CanonicalID string // canonical_model_id, or Provider/ID when absent
 	ReleaseDate string
-	In, Out     float64
+	Context     int
+	Price       *Price // nil when models.dev lists no cost
 	ToolCall    bool
 	TextOutput  bool
+	Deprecated  bool // status "deprecated"
 }
 
 // ArenaRow is one row of the LMArena leaderboard dataset.
@@ -140,8 +154,7 @@ type EpochRow struct {
 	Score     float64
 }
 
-// Sources is everything one sync fetched. Epoch is nil when external data was
-// not requested; Apply then keeps the existing External values.
+// Sources is everything one sync fetched.
 type Sources struct {
 	ModelsDev []ProviderModel
 	Arena     []ArenaRow
@@ -152,7 +165,7 @@ type Sources struct {
 // Report is what a sync found that needs a human.
 type Report struct {
 	Unmatched []string // arena/epoch names of tracked orgs that matched no model
-	Untiered  []string // canonical ids in Models with no tier and not ignored
-	Stale     []string // tiered ids no provider lists any more (kept)
-	Missing   []string // tiered ids with no data at all (Validate fails on them)
+	Untiered  []string // canonical ids in Models with no tier
+	Stale     []string // pinned ids no provider lists any more (kept)
+	Missing   []string // pinned ids with no data at all (sync fails on them)
 }

@@ -1,8 +1,15 @@
 {
   "modelCatalog": {
-    "schema": 1,
+    "schema": 2,
     "syncedAt": "2026-11-06",
     "since": "2026-01-01",
+    "providers": [
+      "anthropic",
+      "google",
+      "moonshotai",
+      "openai",
+      "xai"
+    ],
     "sources": {
       "arena": {
         "publishDate": "2026-10-28",
@@ -13,53 +20,66 @@
       "extra": [
         "openai/gpt-6-astra",
         "anthropic/claude-fable-5-1",
-        "anthropic/claude-fable-5"
+        "anthropic/claude-fable-5",
+        "openai/gpt-5.5-pro",
+        "openai/gpt-5.4-pro"
       ],
       "lightweight": [
-        "openai/gpt-6-luna",
-        "openai/gpt-5.6-luna",
-        "openai/gpt-5.4-nano",
         "anthropic/claude-haiku-5-5",
-        "anthropic/claude-haiku-4-5",
+        "openai/gpt-6-luna",
         "google/gemini-3.8-flash",
         "google/gemini-3.7-flash",
-        "microsoft/mai-code-1.1-flash"
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-3.6-flash",
+        "openai/gpt-5.6-luna",
+        "moonshotai/kimi-k2.7-code",
+        "google/gemini-3.1-flash-lite",
+        "moonshotai/kimi-k2.6",
+        "xai/grok-4.3",
+        "openai/gpt-5.4-mini",
+        "openai/gpt-5.4-nano"
       ],
       "powerful": [
+        "google/gemini-4-argon",
         "openai/gpt-6.1-sol",
-        "openai/gpt-6-sol",
+        "anthropic/claude-sonnet-5-5",
+        "anthropic/claude-opus-5-5",
+        "anthropic/claude-opus-5",
         "openai/gpt-5.6-sol",
         "anthropic/claude-opus-4-8",
-        "google/gemini-4-argon",
-        "xai/grok-4.7"
+        "openai/gpt-5.5",
+        "anthropic/claude-opus-4-7",
+        "anthropic/claude-opus-4-6"
       ],
       "versatile": [
         "openai/gpt-6.1-terra",
-        "openai/gpt-5.6-terra",
-        "openai/gpt-5.3-codex",
-        "anthropic/claude-sonnet-5-5",
-        "anthropic/claude-sonnet-5",
-        "anthropic/claude-sonnet-4-6",
+        "moonshotai/kimi-k3.1-pro",
+        "openai/gpt-6-sol",
+        "xai/grok-4.7",
+        "xai/grok-4.6",
         "moonshotai/kimi-k3",
+        "openai/gpt-5.6-terra",
         "xai/grok-4.5",
-        "xai/grok-4.6"
+        "anthropic/claude-sonnet-5",
+        "google/gemini-3.5-flash",
+        "openai/gpt-5.4",
+        "google/gemini-3.1-pro-preview",
+        "anthropic/claude-sonnet-4-6",
+        "openai/gpt-5.3-codex"
       ]
     },
     "models": {
       "anthropic/claude-fable-5": {
         "name": "Claude Fable 5",
+        "provider": "anthropic",
+        "id": "claude-fable-5",
         "releaseDate": "2026-06-07",
-        "providers": {
-          "anthropic": {
-            "id": "claude-fable-5",
-            "in": 10,
-            "out": 50
-          },
-          "github-copilot": {
-            "id": "claude-fable-5",
-            "in": 10,
-            "out": 50
-          }
+        "context": 1000000,
+        "api": {
+          "in": 10,
+          "out": 50,
+          "cacheRead": 1,
+          "cacheWrite": 12.5
         },
         "arena": {
           "agent": {
@@ -117,18 +137,15 @@
       },
       "anthropic/claude-fable-5-1": {
         "name": "Claude Fable 5.1",
+        "provider": "anthropic",
+        "id": "claude-fable-5-1",
         "releaseDate": "2026-09-01",
-        "providers": {
-          "anthropic": {
-            "id": "claude-fable-5-1",
-            "in": 10,
-            "out": 50
-          },
-          "github-copilot": {
-            "id": "claude-fable-5.1",
-            "in": 10,
-            "out": 50
-          }
+        "context": 1000000,
+        "api": {
+          "in": 10,
+          "out": 50,
+          "cacheRead": 0.25,
+          "cacheWrite": 12.5
         },
         "arena": {
           "agent": {
@@ -184,84 +201,17 @@
           "eci": 166.9
         }
       },
-      "anthropic/claude-haiku-4-5": {
-        "name": "Claude Haiku 4.5 (latest)",
-        "releaseDate": "2025-10-15",
-        "providers": {
-          "anthropic": {
-            "id": "claude-haiku-4-5",
-            "in": 1,
-            "out": 5
-          },
-          "github-copilot": {
-            "id": "claude-haiku-4.5",
-            "in": 1,
-            "out": 5
-          }
-        },
-        "arena": {
-          "coding": {
-            "rank": 111,
-            "rating": 1482.037404312356,
-            "votes": 39628,
-            "variant": "20251001"
-          },
-          "hardPrompts": {
-            "rank": 132,
-            "rating": 1441.6168847412237,
-            "votes": 95132,
-            "variant": "20251001"
-          },
-          "instructionFollowing": {
-            "rank": 123,
-            "rating": 1415.2687807865582,
-            "votes": 49499,
-            "variant": "20251001"
-          },
-          "math": {
-            "rank": 163,
-            "rating": 1402.3765370163414,
-            "votes": 8584,
-            "variant": "20251001"
-          },
-          "multiTurn": {
-            "rank": 127,
-            "rating": 1425.4442099743767,
-            "votes": 26627,
-            "variant": "20251001"
-          },
-          "text": {
-            "rank": 145,
-            "rating": 1414.5032620378713,
-            "votes": 154063,
-            "variant": "20251001"
-          },
-          "webdev": {
-            "rank": 128,
-            "rating": 1330.3720212251565,
-            "votes": 28961,
-            "variant": "20251001"
-          }
-        },
-        "external": {
-          "eci": 142.82,
-          "terminalBench": 0.35505617977500004
-        }
-      },
       "anthropic/claude-haiku-5-5": {
         "name": "Claude Haiku 5.5",
+        "provider": "anthropic",
+        "id": "claude-haiku-5-5",
         "releaseDate": "2026-10-07",
-        "providers": {
-          "anthropic": {
-            "id": "claude-haiku-5-5",
-            "in": 0.1,
-            "out": 0.5
-          },
-          "github-copilot": {
-            "id": "claude-haiku-5.5",
-            "in": 0.1,
-            "out": 0.5
-          }
+        "context": 1000000,
+        "api": {
+          "in": 0.1,
+          "out": 0.5,
+          "cacheRead": 0.01,
+          "cacheWrite": 0.125
         },
         "arena": {
           "agent": {
@@ -319,13 +269,15 @@
       },
       "anthropic/claude-opus-4-6": {
         "name": "Claude Opus 4.6",
+        "provider": "anthropic",
+        "id": "claude-opus-4-6",
         "releaseDate": "2026-02-04",
-        "providers": {
-          "anthropic": {
-            "id": "claude-opus-4-6",
-            "in": 5,
-            "out": 25
-          }
+        "context": 1000000,
+        "api": {
+          "in": 5,
+          "out": 25,
+          "cacheRead": 0.5,
+          "cacheWrite": 6.25
         },
         "arena": {
           "coding": {
@@ -380,18 +332,15 @@
       },
       "anthropic/claude-opus-4-7": {
         "name": "Claude Opus 4.7",
+        "provider": "anthropic",
+        "id": "claude-opus-4-7",
         "releaseDate": "2026-04-14",
-        "providers": {
-          "anthropic": {
-            "id": "claude-opus-4-7",
-            "in": 5,
-            "out": 25
-          },
-          "github-copilot": {
-            "id": "claude-opus-4.7",
-            "in": 5,
-            "out": 25
-          }
+        "context": 1000000,
+        "api": {
+          "in": 5,
+          "out": 25,
+          "cacheRead": 0.5,
+          "cacheWrite": 6.25
         },
         "arena": {
           "coding": {
@@ -446,18 +395,15 @@
       },
       "anthropic/claude-opus-4-8": {
         "name": "Claude Opus 4.8",
+        "provider": "anthropic",
+        "id": "claude-opus-4-8",
         "releaseDate": "2026-05-28",
-        "providers": {
-          "anthropic": {
-            "id": "claude-opus-4-8",
-            "in": 5,
-            "out": 25
-          },
-          "github-copilot": {
-            "id": "claude-opus-4.8",
-            "in": 5,
-            "out": 25
-          }
+        "context": 1000000,
+        "api": {
+          "in": 5,
+          "out": 25,
+          "cacheRead": 0.5,
+          "cacheWrite": 6.25
         },
         "arena": {
           "coding": {
@@ -510,18 +456,15 @@
       },
       "anthropic/claude-opus-5": {
         "name": "Claude Opus 5",
+        "provider": "anthropic",
+        "id": "claude-opus-5",
         "releaseDate": "2026-07-24",
-        "providers": {
-          "anthropic": {
-            "id": "claude-opus-5",
-            "in": 5,
-            "out": 25
-          },
-          "github-copilot": {
-            "id": "claude-opus-5",
-            "in": 5,
-            "out": 25
-          }
+        "context": 1000000,
+        "api": {
+          "in": 5,
+          "out": 25,
+          "cacheRead": 0.5,
+          "cacheWrite": 6.25
         },
         "arena": {
           "agent": {
@@ -580,18 +523,15 @@
       },
       "anthropic/claude-opus-5-5": {
         "name": "Claude Opus 5.5",
+        "provider": "anthropic",
+        "id": "claude-opus-5-5",
         "releaseDate": "2026-09-22",
-        "providers": {
-          "anthropic": {
-            "id": "claude-opus-5-5",
-            "in": 4,
-            "out": 20
-          },
-          "github-copilot": {
-            "id": "claude-opus-5.5",
-            "in": 4,
-            "out": 20
-          }
+        "context": 1000000,
+        "api": {
+          "in": 4,
+          "out": 20,
+          "cacheRead": 0.2,
+          "cacheWrite": 5
         },
         "arena": {
           "agent": {
@@ -649,18 +589,15 @@
       },
       "anthropic/claude-sonnet-4-6": {
         "name": "Claude Sonnet 4.6",
+        "provider": "anthropic",
+        "id": "claude-sonnet-4-6",
         "releaseDate": "2026-02-17",
-        "providers": {
-          "anthropic": {
-            "id": "claude-sonnet-4-6",
-            "in": 3,
-            "out": 15
-          },
-          "github-copilot": {
-            "id": "claude-sonnet-4.6",
-            "in": 3,
-            "out": 15
-          }
+        "context": 1000000,
+        "api": {
+          "in": 3,
+          "out": 15,
+          "cacheRead": 0.3,
+          "cacheWrite": 3.75
         },
         "arena": {
           "coding": {
@@ -708,18 +645,15 @@
       },
       "anthropic/claude-sonnet-5": {
         "name": "Claude Sonnet 5",
+        "provider": "anthropic",
+        "id": "claude-sonnet-5",
         "releaseDate": "2026-06-29",
-        "providers": {
-          "anthropic": {
-            "id": "claude-sonnet-5",
-            "in": 2,
-            "out": 10
-          },
-          "github-copilot": {
-            "id": "claude-sonnet-5",
-            "in": 2,
-            "out": 10
-          }
+        "context": 1000000,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.2,
+          "cacheWrite": 2.5
         },
         "arena": {
           "agent": {
@@ -777,18 +711,15 @@
       },
       "anthropic/claude-sonnet-5-5": {
         "name": "Claude Sonnet 5.5",
+        "provider": "anthropic",
+        "id": "claude-sonnet-5-5",
         "releaseDate": "2026-09-28",
-        "providers": {
-          "anthropic": {
-            "id": "claude-sonnet-5-5",
-            "in": 2,
-            "out": 10
-          },
-          "github-copilot": {
-            "id": "claude-sonnet-5.5",
-            "in": 2,
-            "out": 10
-          }
+        "context": 1000000,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.1,
+          "cacheWrite": 2.5
         },
         "arena": {
           "agent": {
@@ -844,15 +775,150 @@
           "eci": 166.24
         }
       },
+      "google/deep-research-max-preview-04-2026": {
+        "name": "Deep Research Max Preview (Apr-21-2026)",
+        "provider": "google",
+        "id": "deep-research-max-preview-04-2026",
+        "releaseDate": "2026-04-21",
+        "context": 131072,
+        "api": {
+          "in": 2,
+          "out": 12,
+          "cacheRead": 0.2
+        }
+      },
+      "google/deep-research-preview-04-2026": {
+        "name": "Deep Research Preview (Apr-21-2026)",
+        "provider": "google",
+        "id": "deep-research-preview-04-2026",
+        "releaseDate": "2026-04-21",
+        "context": 131072,
+        "api": {
+          "in": 2,
+          "out": 12,
+          "cacheRead": 0.2
+        }
+      },
+      "google/gemini-3.1-flash-lite": {
+        "name": "Gemini 3.1 Flash Lite",
+        "provider": "google",
+        "id": "gemini-3.1-flash-lite",
+        "releaseDate": "2026-05-07",
+        "context": 1048576,
+        "api": {
+          "in": 0.25,
+          "out": 1.5,
+          "cacheRead": 0.025
+        },
+        "external": {
+          "eci": 144.91
+        }
+      },
+      "google/gemini-3.1-flash-lite-image": {
+        "name": "Nano Banana 2 Lite",
+        "provider": "google",
+        "id": "gemini-3.1-flash-lite-image",
+        "releaseDate": "2026-06-30",
+        "context": 65536,
+        "api": {
+          "in": 0.25,
+          "out": 30
+        }
+      },
+      "google/gemini-3.1-flash-live-preview": {
+        "name": "Gemini 3.1 Flash Live Preview",
+        "provider": "google",
+        "id": "gemini-3.1-flash-live-preview",
+        "releaseDate": "2026-03-26",
+        "context": 131072,
+        "api": {
+          "in": 0.75,
+          "out": 4.5
+        }
+      },
+      "google/gemini-3.1-pro-preview": {
+        "name": "Gemini 3.1 Pro Preview",
+        "provider": "google",
+        "id": "gemini-3.1-pro-preview",
+        "releaseDate": "2026-02-19",
+        "context": 1048576,
+        "api": {
+          "in": 2,
+          "out": 12,
+          "cacheRead": 0.2
+        },
+        "arena": {
+          "agent": {
+            "rank": 41,
+            "rating": -0.044409818497287236,
+            "votes": 88060
+          },
+          "coding": {
+            "rank": 33,
+            "rating": 1521.2865916228352,
+            "votes": 36254
+          },
+          "hardPrompts": {
+            "rank": 21,
+            "rating": 1507.6212335190712,
+            "votes": 86065
+          },
+          "instructionFollowing": {
+            "rank": 22,
+            "rating": 1480.2329446381484,
+            "votes": 45417
+          },
+          "math": {
+            "rank": 34,
+            "rating": 1488.3277747759466,
+            "votes": 6932
+          },
+          "multiTurn": {
+            "rank": 14,
+            "rating": 1495.97027592313,
+            "votes": 22386
+          },
+          "text": {
+            "rank": 20,
+            "rating": 1486.8999611035829,
+            "votes": 132547
+          },
+          "webdev": {
+            "rank": 80,
+            "rating": 1446.6498483953492,
+            "votes": 24129
+          }
+        },
+        "external": {
+          "terminalBench": 0.8022471910110001,
+          "metrHorizonMin": 384.147435
+        }
+      },
+      "google/gemini-3.1-pro-preview-customtools": {
+        "name": "Gemini 3.1 Pro Preview Custom Tools",
+        "provider": "google",
+        "id": "gemini-3.1-pro-preview-customtools",
+        "releaseDate": "2026-02-19",
+        "context": 1048576,
+        "api": {
+          "in": 2,
+          "out": 12,
+          "cacheRead": 0.2
+        },
+        "external": {
+          "sweBenchVerified": 0.756198347107438
+        }
+      },
       "google/gemini-3.5-flash": {
         "name": "Gemini 3.5 Flash",
+        "provider": "google",
+        "id": "gemini-3.5-flash",
         "releaseDate": "2026-05-19",
-        "providers": {
-          "github-copilot": {
-            "id": "gemini-3.5-flash",
-            "in": 1.5,
-            "out": 9
-          }
+        "context": 1048576,
+        "api": {
+          "in": 1.5,
+          "out": 9,
+          "cacheRead": 0.15
         },
         "arena": {
           "coding": {
@@ -903,15 +969,68 @@
           "sweBenchVerified": 0.7933884297520661
         }
       },
+      "google/gemini-3.5-flash-lite": {
+        "name": "Gemini 3.5 Flash Lite",
+        "provider": "google",
+        "id": "gemini-3.5-flash-lite",
+        "releaseDate": "2026-07-21",
+        "context": 1048576,
+        "api": {
+          "in": 0.3,
+          "out": 2.5,
+          "cacheRead": 0.03
+        },
+        "arena": {
+          "coding": {
+            "rank": 77,
+            "rating": 1501.7554765628456,
+            "votes": 9922
+          },
+          "hardPrompts": {
+            "rank": 76,
+            "rating": 1475.3648517489833,
+            "votes": 23729
+          },
+          "instructionFollowing": {
+            "rank": 78,
+            "rating": 1443.5748124790102,
+            "votes": 12867
+          },
+          "math": {
+            "rank": 88,
+            "rating": 1444.2367771480995,
+            "votes": 1626
+          },
+          "multiTurn": {
+            "rank": 68,
+            "rating": 1466.810370914201,
+            "votes": 5877
+          },
+          "text": {
+            "rank": 71,
+            "rating": 1455.6556795012555,
+            "votes": 35740
+          },
+          "webdev": {
+            "rank": 90,
+            "rating": 1434.0835335612885,
+            "votes": 236
+          }
+        },
+        "external": {
+          "eci": 145.59
+        }
+      },
       "google/gemini-3.6-flash": {
         "name": "Gemini 3.6 Flash",
+        "provider": "google",
+        "id": "gemini-3.6-flash",
         "releaseDate": "2026-07-21",
-        "providers": {
-          "github-copilot": {
-            "id": "gemini-3.6-flash",
-            "in": 0.75,
-            "out": 3.75
-          }
+        "context": 1048576,
+        "api": {
+          "in": 0.75,
+          "out": 3.75,
+          "cacheRead": 0.075
         },
         "arena": {
           "coding": {
@@ -963,13 +1082,14 @@
       },
       "google/gemini-3.7-flash": {
         "name": "Gemini 3.7 Flash",
+        "provider": "google",
+        "id": "gemini-3.7-flash",
         "releaseDate": "2026-08-13",
-        "providers": {
-          "github-copilot": {
-            "id": "gemini-3.7-flash",
-            "in": 0.75,
-            "out": 3.75
-          }
+        "context": 1048576,
+        "api": {
+          "in": 0.75,
+          "out": 3.75,
+          "cacheRead": 0.075
         },
         "arena": {
           "agent": {
@@ -1027,13 +1147,14 @@
       },
       "google/gemini-3.8-flash": {
         "name": "Gemini 3.8 Flash",
+        "provider": "google",
+        "id": "gemini-3.8-flash",
         "releaseDate": "2026-09-02",
-        "providers": {
-          "github-copilot": {
-            "id": "gemini-3.8-flash",
-            "in": 0.75,
-            "out": 3.75
-          }
+        "context": 1048576,
+        "api": {
+          "in": 0.75,
+          "out": 3.75,
+          "cacheRead": 0.075
         },
         "arena": {
           "agent": {
@@ -1091,13 +1212,14 @@
       },
       "google/gemini-4-argon": {
         "name": "Gemini 4 Argon",
+        "provider": "google",
+        "id": "gemini-4-argon",
         "releaseDate": "2026-10-13",
-        "providers": {
-          "github-copilot": {
-            "id": "gemini-4-argon",
-            "in": 2,
-            "out": 10
-          }
+        "context": 1048576,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.1
         },
         "arena": {
           "agent": {
@@ -1153,26 +1275,111 @@
           "eci": 166.45
         }
       },
-      "microsoft/mai-code-1.1-flash": {
-        "name": "MAI-Code-1.1-Flash",
-        "releaseDate": "2026-08-11",
-        "providers": {
-          "github-copilot": {
-            "id": "mai-code-1.1-flash",
-            "in": 0.2,
-            "out": 1.2
+      "google/gemini-flash-latest": {
+        "name": "Gemini Flash Latest",
+        "provider": "google",
+        "id": "gemini-flash-latest",
+        "releaseDate": "2026-08-13",
+        "context": 1048576,
+        "api": {
+          "in": 0.75,
+          "out": 3.75,
+          "cacheRead": 0.075
+        }
+      },
+      "google/gemini-flash-lite-latest": {
+        "name": "Gemini Flash-Lite Latest",
+        "provider": "google",
+        "id": "gemini-flash-lite-latest",
+        "releaseDate": "2026-07-21",
+        "context": 1048576,
+        "api": {
+          "in": 0.3,
+          "out": 2.5,
+          "cacheRead": 0.03
+        }
+      },
+      "google/gemma-4-26b-a4b-it": {
+        "name": "Gemma 4 26B A4B IT",
+        "provider": "google",
+        "id": "gemma-4-26b-a4b-it",
+        "releaseDate": "2026-04-02",
+        "context": 262144
+      },
+      "google/gemma-4-31b-it": {
+        "name": "Gemma 4 31B IT",
+        "provider": "google",
+        "id": "gemma-4-31b-it",
+        "releaseDate": "2026-04-02",
+        "context": 262144,
+        "external": {
+          "eci": 144.24
+        }
+      },
+      "moonshotai/kimi-k2.6": {
+        "name": "Kimi K2.6",
+        "provider": "moonshotai",
+        "id": "kimi-k2.6",
+        "releaseDate": "2026-04-20",
+        "context": 262144,
+        "api": {
+          "in": 0.95,
+          "out": 4,
+          "cacheRead": 0.16
+        },
+        "arena": {
+          "coding": {
+            "rank": 45,
+            "rating": 1516.2144674534447,
+            "votes": 11084
+          },
+          "hardPrompts": {
+            "rank": 58,
+            "rating": 1485.6640539571126,
+            "votes": 26045
+          },
+          "instructionFollowing": {
+            "rank": 57,
+            "rating": 1455.522937182142,
+            "votes": 13184
+          },
+          "math": {
+            "rank": 42,
+            "rating": 1478.5273148589313,
+            "votes": 2075
+          },
+          "multiTurn": {
+            "rank": 76,
+            "rating": 1460.9734925383211,
+            "votes": 6934
+          },
+          "text": {
+            "rank": 60,
+            "rating": 1460.9562197110456,
+            "votes": 39978
+          },
+          "webdev": {
+            "rank": 62,
+            "rating": 1509.2234110707893,
+            "votes": 10119
           }
+        },
+        "external": {
+          "eci": 151.56,
+          "sweBenchVerified": 0.7665289256198347,
+          "osworld": 0.046
         }
       },
       "moonshotai/kimi-k2.7-code": {
         "name": "Kimi K2.7 Code",
+        "provider": "moonshotai",
+        "id": "kimi-k2.7-code",
         "releaseDate": "2026-06-12",
-        "providers": {
-          "github-copilot": {
-            "id": "kimi-k2.7-code",
-            "in": 0.95,
-            "out": 4
-          }
+        "context": 262144,
+        "api": {
+          "in": 0.95,
+          "out": 4,
+          "cacheRead": 0.19
         },
         "arena": {
           "webdev": {
@@ -1187,13 +1394,15 @@
       },
       "moonshotai/kimi-k3": {
         "name": "Kimi K3",
+        "provider": "moonshotai",
+        "id": "kimi-k3",
         "releaseDate": "2026-07-16",
-        "providers": {
-          "github-copilot": {
-            "id": "kimi-k3",
-            "in": 3,
-            "out": 15
-          }
+        "context": 1048576,
+        "api": {
+          "in": 3,
+          "out": 15,
+          "cacheRead": 0.3,
+          "cacheWrite": 3
         },
         "arena": {
           "agent": {
@@ -1249,79 +1458,43 @@
           "eci": 158.51
         }
       },
-      "openai/gpt-5-mini": {
-        "name": "GPT-5 Mini",
-        "releaseDate": "2025-08-07",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5-mini",
-            "in": 0.25,
-            "out": 2
-          },
-          "openai": {
-            "id": "gpt-5-mini",
-            "in": 0.25,
-            "out": 2
-          }
+      "moonshotai/kimi-k3.1-pro": {
+        "name": "Kimi K3.1 Pro",
+        "provider": "moonshotai",
+        "id": "kimi-k3.1-pro",
+        "releaseDate": "2026-10-23",
+        "context": 1048576,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.2,
+          "cacheWrite": 2
         },
         "arena": {
-          "coding": {
-            "rank": 188,
-            "rating": 1431.6835314873376,
-            "votes": 5514,
-            "variant": "High"
+          "agent": {
+            "rank": 14,
+            "rating": 0.052922199913780096,
+            "votes": 18045,
+            "variant": "Max"
           },
-          "hardPrompts": {
-            "rank": 186,
-            "rating": 1404.036530665901,
-            "votes": 12855,
-            "variant": "High"
-          },
-          "instructionFollowing": {
-            "rank": 189,
-            "rating": 1372.4206577112952,
-            "votes": 7010,
-            "variant": "High"
-          },
-          "math": {
-            "rank": 156,
-            "rating": 1406.5977529556633,
-            "votes": 1456,
-            "variant": "High"
-          },
-          "multiTurn": {
-            "rank": 196,
-            "rating": 1372.9430287563362,
-            "votes": 4394,
-            "variant": "High"
-          },
-          "text": {
-            "rank": 180,
-            "rating": 1389.8331635529037,
-            "votes": 26793,
-            "variant": "High"
+          "webdev": {
+            "rank": 9,
+            "rating": 1694.582449167362,
+            "votes": 2671,
+            "variant": "Max"
           }
-        },
-        "external": {
-          "eci": 146.08,
-          "terminalBench": 0.34831460674200004,
-          "sweBenchVerified": 0.6466942148760331
         }
       },
       "openai/gpt-5.3-codex": {
         "name": "GPT-5.3 Codex",
+        "provider": "openai",
+        "id": "gpt-5.3-codex",
         "releaseDate": "2026-02-05",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.3-codex",
-            "in": 1.75,
-            "out": 14
-          },
-          "openai": {
-            "id": "gpt-5.3-codex",
-            "in": 1.75,
-            "out": 14
-          }
+        "context": 400000,
+        "api": {
+          "in": 1.75,
+          "out": 14,
+          "cacheRead": 0.175
         },
         "arena": {
           "webdev": {
@@ -1339,29 +1512,26 @@
       },
       "openai/gpt-5.3-codex-spark": {
         "name": "GPT-5.3 Codex Spark",
+        "provider": "openai",
+        "id": "gpt-5.3-codex-spark",
         "releaseDate": "2026-02-05",
-        "providers": {
-          "openai": {
-            "id": "gpt-5.3-codex-spark",
-            "in": 1.75,
-            "out": 14
-          }
+        "context": 128000,
+        "api": {
+          "in": 1.75,
+          "out": 14,
+          "cacheRead": 0.175
         }
       },
       "openai/gpt-5.4": {
         "name": "GPT-5.4",
+        "provider": "openai",
+        "id": "gpt-5.4",
         "releaseDate": "2026-03-05",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.4",
-            "in": 2.5,
-            "out": 15
-          },
-          "openai": {
-            "id": "gpt-5.4",
-            "in": 2.5,
-            "out": 15
-          }
+        "context": 1050000,
+        "api": {
+          "in": 2.5,
+          "out": 15,
+          "cacheRead": 0.25
         },
         "arena": {
           "coding": {
@@ -1416,18 +1586,14 @@
       },
       "openai/gpt-5.4-mini": {
         "name": "GPT-5.4 mini",
+        "provider": "openai",
+        "id": "gpt-5.4-mini",
         "releaseDate": "2026-03-17",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.4-mini",
-            "in": 0.75,
-            "out": 4.5
-          },
-          "openai": {
-            "id": "gpt-5.4-mini",
-            "in": 0.75,
-            "out": 4.5
-          }
+        "context": 400000,
+        "api": {
+          "in": 0.75,
+          "out": 4.5,
+          "cacheRead": 0.075
         },
         "arena": {
           "coding": {
@@ -1479,18 +1645,14 @@
       },
       "openai/gpt-5.4-nano": {
         "name": "GPT-5.4 nano",
+        "provider": "openai",
+        "id": "gpt-5.4-nano",
         "releaseDate": "2026-03-17",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.4-nano",
-            "in": 0.2,
-            "out": 1.25
-          },
-          "openai": {
-            "id": "gpt-5.4-nano",
-            "in": 0.2,
-            "out": 1.25
-          }
+        "context": 400000,
+        "api": {
+          "in": 0.2,
+          "out": 1.25,
+          "cacheRead": 0.02
         },
         "arena": {
           "coding": {
@@ -1536,13 +1698,13 @@
       },
       "openai/gpt-5.4-pro": {
         "name": "GPT-5.4 Pro",
+        "provider": "openai",
+        "id": "gpt-5.4-pro",
         "releaseDate": "2026-03-05",
-        "providers": {
-          "openai": {
-            "id": "gpt-5.4-pro",
-            "in": 30,
-            "out": 180
-          }
+        "context": 1050000,
+        "api": {
+          "in": 30,
+          "out": 180
         },
         "external": {
           "eci": 160.21
@@ -1550,18 +1712,14 @@
       },
       "openai/gpt-5.5": {
         "name": "GPT-5.5",
+        "provider": "openai",
+        "id": "gpt-5.5",
         "releaseDate": "2026-04-23",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.5",
-            "in": 5,
-            "out": 30
-          },
-          "openai": {
-            "id": "gpt-5.5",
-            "in": 5,
-            "out": 30
-          }
+        "context": 1050000,
+        "api": {
+          "in": 5,
+          "out": 30,
+          "cacheRead": 0.5
         },
         "arena": {
           "coding": {
@@ -1614,13 +1772,13 @@
       },
       "openai/gpt-5.5-pro": {
         "name": "GPT-5.5 Pro",
+        "provider": "openai",
+        "id": "gpt-5.5-pro",
         "releaseDate": "2026-04-23",
-        "providers": {
-          "openai": {
-            "id": "gpt-5.5-pro",
-            "in": 30,
-            "out": 180
-          }
+        "context": 1050000,
+        "api": {
+          "in": 30,
+          "out": 180
         },
         "external": {
           "eci": 162.67
@@ -1628,29 +1786,28 @@
       },
       "openai/gpt-5.6-cyber": {
         "name": "Daybreak Red",
+        "provider": "openai",
+        "id": "gpt-daybreak-red-latest",
         "releaseDate": "2026-08-07",
-        "providers": {
-          "openai": {
-            "id": "gpt-daybreak-red-latest",
-            "in": 12.5,
-            "out": 75
-          }
+        "context": 400000,
+        "api": {
+          "in": 12.5,
+          "out": 75,
+          "cacheRead": 1.25,
+          "cacheWrite": 15.625
         }
       },
       "openai/gpt-5.6-luna": {
         "name": "GPT-5.6 Luna",
+        "provider": "openai",
+        "id": "gpt-5.6-luna",
         "releaseDate": "2026-07-09",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.6-luna",
-            "in": 0.2,
-            "out": 1.2
-          },
-          "openai": {
-            "id": "gpt-5.6-luna",
-            "in": 0.2,
-            "out": 1.2
-          }
+        "context": 1050000,
+        "api": {
+          "in": 0.2,
+          "out": 1.2,
+          "cacheRead": 0.02,
+          "cacheWrite": 0.25
         },
         "arena": {
           "coding": {
@@ -1701,19 +1858,16 @@
         }
       },
       "openai/gpt-5.6-sol": {
-        "name": "GPT-5.6",
+        "name": "GPT-5.6 Sol",
+        "provider": "openai",
+        "id": "gpt-5.6-sol",
         "releaseDate": "2026-07-09",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.6-sol",
-            "in": 4,
-            "out": 20
-          },
-          "openai": {
-            "id": "gpt-5.6",
-            "in": 4,
-            "out": 20
-          }
+        "context": 1050000,
+        "api": {
+          "in": 4,
+          "out": 20,
+          "cacheRead": 0.4,
+          "cacheWrite": 5
         },
         "arena": {
           "agent": {
@@ -1772,18 +1926,15 @@
       },
       "openai/gpt-5.6-terra": {
         "name": "GPT-5.6 Terra",
+        "provider": "openai",
+        "id": "gpt-5.6-terra",
         "releaseDate": "2026-07-09",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-5.6-terra",
-            "in": 2,
-            "out": 12
-          },
-          "openai": {
-            "id": "gpt-5.6-terra",
-            "in": 2,
-            "out": 12
-          }
+        "context": 1050000,
+        "api": {
+          "in": 2,
+          "out": 12,
+          "cacheRead": 0.2,
+          "cacheWrite": 2.5
         },
         "arena": {
           "agent": {
@@ -1841,18 +1992,15 @@
       },
       "openai/gpt-6-astra": {
         "name": "GPT-6 Astra",
+        "provider": "openai",
+        "id": "gpt-6-astra",
         "releaseDate": "2026-09-04",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-6-astra",
-            "in": 10,
-            "out": 50
-          },
-          "openai": {
-            "id": "gpt-6-astra",
-            "in": 10,
-            "out": 50
-          }
+        "context": 1050000,
+        "api": {
+          "in": 10,
+          "out": 50,
+          "cacheRead": 1,
+          "cacheWrite": 12.5
         },
         "arena": {
           "agent": {
@@ -1910,18 +2058,15 @@
       },
       "openai/gpt-6-luna": {
         "name": "GPT-6 Luna",
+        "provider": "openai",
+        "id": "gpt-6-luna",
         "releaseDate": "2026-09-22",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-6-luna",
-            "in": 0.1,
-            "out": 0.5
-          },
-          "openai": {
-            "id": "gpt-6-luna",
-            "in": 0.1,
-            "out": 0.5
-          }
+        "context": 1050000,
+        "api": {
+          "in": 0.1,
+          "out": 0.5,
+          "cacheRead": 0.01,
+          "cacheWrite": 0.125
         },
         "arena": {
           "agent": {
@@ -1979,18 +2124,15 @@
       },
       "openai/gpt-6-sol": {
         "name": "GPT-6 Sol",
+        "provider": "openai",
+        "id": "gpt-6-sol",
         "releaseDate": "2026-09-22",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-6-sol",
-            "in": 2,
-            "out": 10
-          },
-          "openai": {
-            "id": "gpt-6-sol",
-            "in": 2,
-            "out": 10
-          }
+        "context": 1050000,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.2,
+          "cacheWrite": 2.5
         },
         "arena": {
           "agent": {
@@ -2048,18 +2190,15 @@
       },
       "openai/gpt-6.1-sol": {
         "name": "GPT-6.1 Sol",
+        "provider": "openai",
+        "id": "gpt-6.1-sol",
         "releaseDate": "2026-09-29",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-6.1-sol",
-            "in": 2,
-            "out": 10
-          },
-          "openai": {
-            "id": "gpt-6.1-sol",
-            "in": 2,
-            "out": 10
-          }
+        "context": 1050000,
+        "api": {
+          "in": 2,
+          "out": 10,
+          "cacheRead": 0.1,
+          "cacheWrite": 2.5
         },
         "arena": {
           "agent": {
@@ -2117,18 +2256,15 @@
       },
       "openai/gpt-6.1-terra": {
         "name": "GPT-6.1 Terra",
+        "provider": "openai",
+        "id": "gpt-6.1-terra",
         "releaseDate": "2026-10-26",
-        "providers": {
-          "github-copilot": {
-            "id": "gpt-6.1-terra",
-            "in": 1,
-            "out": 5
-          },
-          "openai": {
-            "id": "gpt-6.1-terra",
-            "in": 1,
-            "out": 5
-          }
+        "context": 1050000,
+        "api": {
+          "in": 1,
+          "out": 5,
+          "cacheRead": 0.05,
+          "cacheWrite": 1.25
         },
         "arena": {
           "agent": {
@@ -2150,24 +2286,99 @@
       },
       "openai/gpt-realtime-2.1": {
         "name": "GPT-Realtime-2.1",
+        "provider": "openai",
+        "id": "gpt-realtime-2.1",
         "releaseDate": "2026-07-06",
-        "providers": {
-          "openai": {
-            "id": "gpt-realtime-2.1",
-            "in": 4,
-            "out": 24
+        "context": 128000,
+        "api": {
+          "in": 4,
+          "out": 24,
+          "cacheRead": 0.4
+        }
+      },
+      "xai/grok-4.20-0309-non-reasoning": {
+        "name": "Grok 4.20 (Non-Reasoning)",
+        "provider": "xai",
+        "id": "grok-4.20-0309-non-reasoning",
+        "releaseDate": "2026-03-09",
+        "context": 1000000,
+        "api": {
+          "in": 1.25,
+          "out": 2.5,
+          "cacheRead": 0.2
+        }
+      },
+      "xai/grok-4.20-0309-reasoning": {
+        "name": "Grok 4.20 (Reasoning)",
+        "provider": "xai",
+        "id": "grok-4.20-0309-reasoning",
+        "releaseDate": "2026-03-09",
+        "context": 1000000,
+        "api": {
+          "in": 1.25,
+          "out": 2.5,
+          "cacheRead": 0.2
+        }
+      },
+      "xai/grok-4.3": {
+        "name": "Grok 4.3",
+        "provider": "xai",
+        "id": "grok-4.3",
+        "releaseDate": "2026-04-17",
+        "context": 1000000,
+        "api": {
+          "in": 1.25,
+          "out": 2.5,
+          "cacheRead": 0.2
+        },
+        "arena": {
+          "coding": {
+            "rank": 104,
+            "rating": 1487.6448673514037,
+            "votes": 19961
+          },
+          "hardPrompts": {
+            "rank": 109,
+            "rating": 1456.0331646567624,
+            "votes": 47647
+          },
+          "instructionFollowing": {
+            "rank": 127,
+            "rating": 1414.8499331252997,
+            "votes": 25095
+          },
+          "math": {
+            "rank": 133,
+            "rating": 1418.667911339706,
+            "votes": 3408
+          },
+          "multiTurn": {
+            "rank": 97,
+            "rating": 1446.7024158554977,
+            "votes": 12843
+          },
+          "text": {
+            "rank": 93,
+            "rating": 1441.6307836382434,
+            "votes": 71287
+          },
+          "webdev": {
+            "rank": 119,
+            "rating": 1357.5695879962777,
+            "votes": 14906
           }
         }
       },
       "xai/grok-4.5": {
         "name": "Grok 4.5",
+        "provider": "xai",
+        "id": "grok-4.5",
         "releaseDate": "2026-07-08",
-        "providers": {
-          "github-copilot": {
-            "id": "grok-4.5",
-            "in": 2,
-            "out": 6
-          }
+        "context": 500000,
+        "api": {
+          "in": 2,
+          "out": 6,
+          "cacheRead": 0.3
         },
         "arena": {
           "coding": {
@@ -2212,13 +2423,14 @@
       },
       "xai/grok-4.6": {
         "name": "Grok 4.6",
+        "provider": "xai",
+        "id": "grok-4.6",
         "releaseDate": "2026-08-12",
-        "providers": {
-          "github-copilot": {
-            "id": "grok-4.6",
-            "in": 2,
-            "out": 6
-          }
+        "context": 500000,
+        "api": {
+          "in": 2,
+          "out": 6,
+          "cacheRead": 0.5
         },
         "arena": {
           "agent": {
@@ -2276,13 +2488,14 @@
       },
       "xai/grok-4.7": {
         "name": "Grok 4.7",
+        "provider": "xai",
+        "id": "grok-4.7",
         "releaseDate": "2026-09-21",
-        "providers": {
-          "github-copilot": {
-            "id": "grok-4.7",
-            "in": 2,
-            "out": 6
-          }
+        "context": 500000,
+        "api": {
+          "in": 2,
+          "out": 6,
+          "cacheRead": 0.5
         },
         "arena": {
           "agent": {
@@ -2336,6 +2549,18 @@
         },
         "external": {
           "eci": 156.07
+        }
+      },
+      "xai/grok-build-0.1": {
+        "name": "Grok Build 0.1",
+        "provider": "xai",
+        "id": "grok-build-0.1",
+        "releaseDate": "2026-04-16",
+        "context": 256000,
+        "api": {
+          "in": 1,
+          "out": 2,
+          "cacheRead": 0.2
         }
       }
     }
