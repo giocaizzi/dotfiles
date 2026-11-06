@@ -179,7 +179,10 @@ func TestApplyAmbiguousKeyMatchesNoModel(t *testing.T) {
 	if len(non.Arena) != 0 || non.External.ECI != 0 || re.External.ECI != 0 {
 		t.Errorf("non-reasoning = %+v, reasoning ECI = %v: ambiguous key must match none", non, re.External.ECI)
 	}
-	want := []string{"arena: Grok 4.20 (ambiguous: xai/grok-4.20-0309-non-reasoning, xai/grok-4.20-0309-reasoning)"}
+	want := []string{
+		"arena: Grok 4.20 (ambiguous: xai/grok-4.20-0309-non-reasoning, xai/grok-4.20-0309-reasoning)",
+		"epoch: Grok 4.20 (ambiguous: xai/grok-4.20-0309-non-reasoning, xai/grok-4.20-0309-reasoning)",
+	}
 	if diff := cmp.Diff(want, rep.Unmatched); diff != "" {
 		t.Errorf("unmatched (-want +got):\n%s", diff)
 	}
@@ -296,6 +299,46 @@ func TestApplyUnmatchedLimitedToTrackedOrgs(t *testing.T) {
 	want := []string{"arena: Claude Mystery"} // epoch rows are never reported, low ranks neither
 	if diff := cmp.Diff(want, rep.Unmatched); diff != "" {
 		t.Errorf("unmatched (-want +got):\n%s", diff)
+	}
+}
+
+func TestApplyEpochReportsAmbiguousNamesOnce(t *testing.T) {
+	t.Parallel()
+	grok := []ProviderModel{
+		pm("xai", "grok-4.20-0309-reasoning", "Grok 4.20 (Reasoning)", "xai/grok-4.20-0309-reasoning", "2026-03-09", 2, 6),
+		pm("xai", "grok-4.20-0309-non-reasoning", "Grok 4.20 (Non-Reasoning)", "xai/grok-4.20-0309-non-reasoning", "2026-03-09", 2, 6),
+	}
+	rows := []EpochRow{
+		{Model: "Grok 4.20", Benchmark: "eci", Score: 150},
+		{Model: "Grok 4.20", Benchmark: "osworld", Score: 0.3},
+		{Model: "Grok 4.20", Benchmark: "terminalBench", Score: 0.5},
+		{Model: "Claude Opus 5.5", Benchmark: "eci", Score: 168},
+		{Model: "Legacy Model 1", Benchmark: "eci", Score: 90},
+	}
+	tests := []struct {
+		name  string
+		alias map[string]string
+		want  []string
+	}{
+		{"ambiguous name once across rows", nil, []string{
+			"epoch: Grok 4.20 (ambiguous: xai/grok-4.20-0309-non-reasoning, xai/grok-4.20-0309-reasoning)",
+		}},
+		{"alias resolves it", map[string]string{"Grok 4.20": "xai/grok-4.20-0309-reasoning"}, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			c := baseCatalog()
+			c.Providers = append(c.Providers, "xai")
+			c.Aliases.Epoch = tt.alias
+			src := arenaSrc()
+			src.ModelsDev = append(src.ModelsDev, grok...)
+			src.Epoch = rows
+			_, rep := Apply(c, src)
+			if diff := cmp.Diff(tt.want, rep.Unmatched); diff != "" {
+				t.Errorf("unmatched (-want +got):\n%s", diff)
+			}
+		})
 	}
 }
 

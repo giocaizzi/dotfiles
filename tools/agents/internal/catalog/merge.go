@@ -74,7 +74,7 @@ func Apply(c Catalog, src Sources) (Catalog, Report) {
 	out.Schema = Schema
 	out.Sources.Arena = ArenaInfo{Board: ArenaBoard, PublishDate: arenaPublishDate(c, src.Arena)}
 	rep.Unmatched = append(rep.Unmatched, applyArena(c, idx, models, fresh, src.Arena)...)
-	applyEpoch(c, idx, models, src.Epoch)
+	rep.Unmatched = append(rep.Unmatched, applyEpoch(c, idx, models, src.Epoch)...)
 	out.Models = models
 	out.Tiers = ComputeTiers(models, c.Pin)
 
@@ -276,17 +276,25 @@ func applyArena(c Catalog, idx index, models, fresh map[string]Model, rows []Are
 	return unmatched
 }
 
-// applyEpoch rebuilds Model.External. Unmatched Epoch rows are not reported:
-// Epoch's history is mostly legacy models, and aliases.epoch covers a gap.
-func applyEpoch(c Catalog, idx index, models map[string]Model, rows []EpochRow) {
+// applyEpoch rebuilds Model.External and returns one report line per distinct
+// Epoch model name whose key is ambiguous (shared by several models) and has no
+// alias; aliases.epoch resolves it. Other unmatched Epoch rows are not
+// reported: Epoch's history is mostly legacy models, and aliases.epoch covers a
+// gap.
+func applyEpoch(c Catalog, idx index, models map[string]Model, rows []EpochRow) []string {
+	var unmatched []string
 	for _, r := range rows {
-		ids, _ := idx.match(models, c.Aliases.Epoch, r.Model)
+		ids, ambiguous := idx.match(models, c.Aliases.Epoch, r.Model)
+		if len(ids) == 0 && len(ambiguous) > 0 {
+			unmatched = append(unmatched, "epoch: "+r.Model+" (ambiguous: "+strings.Join(sortedUnique(slices.Clone(ambiguous)), ", ")+")")
+		}
 		for _, id := range ids {
 			m := models[id]
 			setExternal(&m.External, r)
 			models[id] = m
 		}
 	}
+	return unmatched
 }
 
 func setExternal(e *External, r EpochRow) {
