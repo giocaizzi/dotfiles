@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,6 +22,16 @@ import (
 
 const secretTimeout = 5 * time.Second
 
+// currentUser is the OS user whose keychain item comes first: apps write
+// their items under it, and a stale item of another account can share the
+// service name.
+func currentUser(getenv func(string) string) string {
+	if u, err := user.Current(); err == nil && u.Username != "" {
+		return u.Username
+	}
+	return getenv("USER")
+}
+
 // osStore is the real provider.Store: files, the OS credential store and
 // opencode's SQLite database, all read-only and into memory.
 type osStore struct {
@@ -28,12 +39,14 @@ type osStore struct {
 	goos   string
 	home   string
 	now    func() time.Time
+
+	securityBin string // the macOS security tool; tests stub it
 }
 
 // newOSStore builds the store from the CLI dependencies.
 func newOSStore(d Deps) osStore {
 	home, _ := os.UserHomeDir()
-	return osStore{getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now}
+	return osStore{getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security"}
 }
 
 var _ provider.Store = osStore{}
@@ -67,7 +80,7 @@ func (s osStore) Secret(service, account string) (string, error) {
 		if s.goos != "darwin" {
 			return "", fmt.Errorf("credential %q: an account is required on %s", service, s.goos)
 		}
-		return securityFindPassword(ctx, service)
+		return s.securityFindPassword(ctx, service, currentUser(s.getenv))
 	}
 
 	type result struct {
@@ -90,9 +103,16 @@ func (s osStore) Secret(service, account string) (string, error) {
 	}
 }
 
-func securityFindPassword(ctx context.Context, service string) (string, error) {
-	cmd := exec.CommandContext(ctx, "/usr/bin/security", "find-generic-password", "-s", service, "-w")
-	out, err := cmd.Output()
+// securityFindPassword reads the item of the given account first (empty skips
+// that step), then any item of the service.
+func (s osStore) securityFindPassword(ctx context.Context, service, account string) (string, error) {
+	if account != "" {
+		out, err := exec.CommandContext(ctx, s.securityBin, "find-generic-password", "-s", service, "-a", account, "-w").Output()
+		if err == nil {
+			return decodeKeyringValue(strings.TrimSpace(string(out))), nil
+		}
+	}
+	out, err := exec.CommandContext(ctx, s.securityBin, "find-generic-password", "-s", service, "-w").Output()
 	if err != nil {
 		// Only the exit status is known here; stderr is never echoed.
 		return "", fmt.Errorf("credential %q: not found", service)

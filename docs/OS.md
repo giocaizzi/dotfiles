@@ -491,7 +491,7 @@ Manual keys: `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sour
 
 `chezmoi agents usage [-live] [-provider <id>]` shows, per provider account the machine is logged into, the plan and billing model, rolling windows (5 h, weekly), monthly allowances, spend and credits. Provider ids are the models.dev keys: `anthropic`, `openai`, `github-copilot`, `google`, plus API-key providers. The same account seen from several harnesses is shown once, with the harnesses listed.
 
-Accounts are found from the credentials the harnesses already store:
+Accounts are found from the credentials the harnesses already store. On macOS, a Keychain service looked up without a known account (Claude Code, Codex) reads the current user's item first and only then any item of that service, since a stale item of another account can share the name:
 
 | Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
 |---|---|---|
