@@ -1,6 +1,6 @@
 # WIP: `chezmoi agents models` (model tier list sync)
 
-Status: plan, not implemented. Data sources checked on 2026-11-06. Delete this file when the feature ships; its lasting content moves to `docs/OS.md` and `docs/MODELS.md`.
+Status: `models`, `models sync`, `models render` in implementation (PR #162); the apply-time advisory (`doctor`) is planned below and waits on the user's answers. Data sources checked on 2026-11-06. Delete this file when the feature ships; its lasting content moves to `docs/OS.md` and `docs/MODELS.md`.
 
 ## Goal
 
@@ -14,7 +14,7 @@ A `chezmoi agents models` subcommand family in `tools/agents` (chezmoi-agents) t
 4. The quicklook always shows cost: $/Mtok input/output per provider.
 5. Rankings ("best when") come from arena.ai official data. Columns: text overall, text coding, agent, webdev overall, text hard prompts, math, instruction following, multi-turn.
 6. External benchmarks are optional, behind `-external`: Epoch Capabilities Index (ECI), Terminal-Bench, SWE-bench Verified, METR time horizons, OSWorld.
-7. Not linked to `harnessPolicy.models.tiers` (scout/worker/driver/escalate); that is a separate feature.
+7. The sync commands are not linked to `harnessPolicy.models.tiers` (scout/worker/driver/escalate). The apply-time advisory (below) reads both, in a later PR.
 8. Simplest correct solution: no speculative features.
 
 ## Seed tiers
@@ -46,7 +46,8 @@ Untiered Copilot models at seed time (sync must flag them): `claude-opus-5.5`, `
 - Configs used: `text` or `text_style_control` (see open questions), `webdev`, `agent`. Each has splits `latest` and `full`; only `latest` is needed.
 - Columns: `model_name`, `organization`, `license`, `rating`, `rating_lower`, `rating_upper`, `variance`, `vote_count`, `rank`, `category`, `leaderboard_publish_date`.
 - Display names carry a reasoning-effort suffix: `Claude Opus 5.5 (High)`, `GPT-6 Astra (Max)`.
-- Categories: `overall` and `coding` confirmed in text; `overall` in webdev and agent. Also seen in text: `hard_prompts_english`, `industry_mathematical`, `english`, `non_english`, `japanese`, `exclude_ties`. The exact names for hard prompts, math, instruction following and multi-turn must be read from the data at implementation time.
+- Categories (read from the datasets-server `/statistics` endpoint on 2026-11-06): text boards have `overall`, `coding`, `hard_prompts`, `math`, `instruction_following`, `multi_turn` (plus languages, industries, `hard_prompts_english`, `exclude_ties`, ...); webdev has `overall` (plus `webdev-html`, `webdev-react`, `image_to_webdev`); agent has only `overall`. Mapping: text `overall`→`text`, `coding`→`coding`, `hard_prompts`→`hardPrompts`, `math`→`math`, `instruction_following`→`instructionFollowing`, `multi_turn`→`multiTurn`; webdev `overall`→`webdev`; agent `overall`→`agent`.
+- The agent board has different columns: `score` (0..1) instead of `rating`, `session_count` instead of `vote_count`; they fill `rating` and `votes`.
 - Sizes (latest): text about 11.1k rows, text_style_control the same, webdev about 650, agent about 58.
 - Access options:
   - JSON: `https://datasets-server.huggingface.co/rows?dataset=lmarena-ai/leaderboard-dataset&config=<config>&split=latest&offset=<n>&length=100` (max 100 per page; rows sorted by category, then rank). About 112 pages for text. Worked reliably on 2026-11-06.
@@ -64,7 +65,7 @@ Untiered Copilot models at seed time (sync must flag them): `claude-opus-5.5`, `
 | Terminal-Bench | `terminalbench_external.csv` | `Model version` | `Accuracy mean` |
 | SWE-bench Verified | `swe_bench_verified.csv` | `Model version` | `mean_score` |
 | METR time horizon | `metr_time_horizons_external.csv` | `Model version` | `Time horizon` (minutes) |
-| OSWorld | `os_world_external.csv`, `osworld_2_external.csv` | `Model version` | `Score` |
+| OSWorld | `osworld_2_external.csv` only (the current benchmark; mixing it with `os_world_external.csv` would compare two benchmarks) | `Model version` | `Score` |
 
 - `Model version` forms: `claude-sonnet-5-5_max`, `gpt-6.1-sol_max`, `gpt-5-2025-08-07_high`, `claude-sonnet-4-5-20250929`, sometimes empty (skip those rows).
 - Coverage of the newest models is thin: Terminal-Bench, SWE-bench and METR stop around GPT-5.5; only `osworld_2` has `claude-opus-5_*` and `gpt-5.6-sol_max`. ECI is current. This is why external data stays optional.
@@ -159,14 +160,15 @@ The terminal table uses the same columns and the `term` Catppuccin styles.
 
 Matching the `tools/agents` layering (pure domain packages, `cli` wiring):
 
-- `internal/models` (pure: no network, no terminal):
-  - `catalog.go`: types, `Parse`, `Marshal`, `Validate`.
+- `internal/catalog` (pure: no network; renamed from `internal/models` because the Go house rules ban a package named `models`):
+  - `catalog.go`: types; `file.go`: `Parse`, `Marshal`, `Validate`, `TierOf`, `Untiered`.
   - `key.go`: `Key` normalization and matching.
   - `modelsdev.go`, `arena.go`, `epoch.go`: parse raw bytes into rows.
   - `merge.go`: `Apply(catalog, sources) (Catalog, Report)`.
-  - `render.go`: `Markdown(catalog)` and `Table(catalog, style)`.
+  - `render.go`: `Markdown(catalog)` and `WriteTerminal(w, style, catalog)`, built on `term.Table`/`term.Width`/`term.Pad`/`term.Warn` (`internal/term/table.go`).
 - `internal/cli/models.go`: flags, file discovery, HTTP fetching (arena pages at most 4 in parallel, each retried 3 times with backoff); base URLs overridable for tests. Dispatch like `mcp` in `cli.go`, plus usage lines.
-- No new Go dependencies with the JSON arena endpoint (open question 1).
+- No new Go dependencies with the JSON arena endpoint (open question 1); `golang.org/x/sync/errgroup` moves from indirect to direct (already in `go.sum`).
+- Sync keeps in `models` every Copilot model, Anthropic and OpenAI models with `release_date >= since`, text output and `tool_call`, and every tiered model (a tiered model no provider lists any more keeps its last data and is reported as stale).
 
 ## Tests (offline)
 
@@ -198,7 +200,58 @@ New feature on a pre-1.0 tool: `agents-v0.5.0` (current 0.4.0).
 
 Implementation split: commit the `internal/models` types and signatures first; then in parallel the domain package with tests, and the CLI wiring with tests; integrate and run the first sync; then docs, Makefile, `edit.toml` and AGENTS. Done means `make check` passes at the root and in `tools/agents`.
 
+## Shared setup with the usage tool
+
+Agreed on 2026-11-06 with the driver of `chezmoi agents usage` (plan: `docs/wip/agents-usage.md` on branch `docs/agents-usage-plan`). One of each, no duplicated configuration:
+
+| Piece | Owner | Where |
+|---|---|---|
+| Provider ids | shared | models.dev provider keys (`anthropic`, `openai`, `github-copilot`, `google`, ...); no second list |
+| Provider/account/harness registry | usage tool | Go code in `internal/provider` (`Discover` reads the plan from each harness's credential at run time; no init prompt, no new `.chezmoidata` file, no `edit.toml` entry) |
+| Usage snapshots | usage tool | `internal/usage`, cache file `os.UserCacheDir()/chezmoi-agents/usage.json` written only by `chezmoi agents usage`; `internal/cache.Dir(getenv)` owned by the usage tool |
+| Model catalog | this plan | `internal/catalog`, `home/.chezmoidata/models.json` (the only `edit.toml` entry of the two), `docs/MODELS.md` |
+| Terminal helpers | split | this plan: `term.Width`, `term.Pad`, `term.Table`, `term.Warn` in `internal/term/table.go`; usage tool: `term.Bar` in `internal/term/bar.go`; `term.go` untouched, no new colours |
+| Apply hook and warning surface | this plan | one `chezmoi agents doctor` subcommand and one `run_after_agents-doctor.{sh,ps1}.tmpl`, later PR; the usage tool contributes `usage.Advisories(snaps, now) []string`, printed with `term.Warn` |
+| Shared files | both | `cli.go`: one `case` and usage lines each; `docs/OS.md`: parent section "Models and subscriptions" (created here) with one subsection each; one bullet each in the AGENTS.md files; whoever merges second rebases |
+
+## Apply-time advisory (`chezmoi agents doctor`, later PR)
+
+Requirement (2026-11-06): `chezmoi update` / `chezmoi apply` warn, never change anything, when a newer or better model or tier config is available for what this machine can actually use. Not built until the questions below are answered.
+
+What it checks, per harness selected on the machine (`includeTemplate "harnesses"`):
+
+1. Reachable models: the harness's providers (fixed for Claude Code, Codex, Antigravity and Copilot; discovered from `auth.json` for opencode and pi) intersected with the accounts `provider.Discover` finds; a model is reachable when one of those providers serves it in `models.json`.
+2. Better config: for each configured model (`harnessPolicy.models.tiers.*.model`, the `native.*` default models and Copilot agent models), the catalog tier it sits in; warn when a reachable model in the same catalog tier is newer (`releaseDate`) and ranks better on arena `text` and `coding`, or when the configured model is untiered or no reachable provider serves it any more.
+3. Stale data: `syncedAt` older than 30 days ("run `make models-sync`").
+4. Capacity: the usage tool's advisories from its cached snapshot.
+
+Output: nothing when there is nothing to say; otherwise a blue `chezmoi agents doctor` heading and one `term.Warn` line per advisory, on stderr. Always exit 0.
+
+Integration point options:
+
+| Option | How | For | Against |
+|---|---|---|---|
+| (a) `run_after_agents-doctor.{sh,ps1}.tmpl` | runs after every apply/update; body rendered only when harnesses are selected and the binary is on PATH; `chezmoi-agents doctor` offline, 2 s budget | matches the repo's `.chezmoiscripts` convention; sees account changes made outside chezmoi | runs on every apply (cheap: local files only) |
+| (b) `run_onchange_after_` keyed on hashes of `models.json` and `harness-policy.toml` | runs only when the data changes | quietest | misses account/plan changes and ageing data; never repeats a warning |
+| (c) a harness SessionStart hook (harness repo `hud`/`guard`) | warns inside the agent session | seen where models are chosen | outside this repo; needs every harness side built (parity rule) |
+| (d) no hook, manual `chezmoi agents doctor` | none | zero apply cost | nobody runs it |
+
+Recommended: (a), offline. Freshness then comes from `models.json` itself: `chezmoi update` pulls a catalog synced elsewhere, so open question 5 (a weekly sync PR) is what makes "newer model available" timely without network on apply.
+
 ## Open questions
+
+Questions 1 to 6 were answered by approving this plan with its recommendations (`pickup and implement`, 2026-11-06); the implementation follows (a) for 1 to 5 and `2026-01-01` for 6.
+
+### For the apply-time advisory (block the `doctor` PR only)
+
+7. Integration point: (a) `run_after_` script, (b) `run_onchange_after_`, (c) harness SessionStart hook, (d) manual only. Recommended (a).
+8. Network on apply: (a) offline only (local `models.json`, cached usage); (b) refresh models.dev once a day with a 2 s timeout, quiet on failure. Recommended (a), with question 5 answered (b) (weekly sync PR).
+9. Catalog tier ↔ policy tier mapping, to judge "better in the same tier": proposed scout→lightweight, worker→lightweight, driver→powerful, escalate→extra (matches today's config: gpt-6-luna, gpt-6-luna, gpt-6.1-sol, gpt-6-astra). Alternatively an explicit `tierMap` key in `models.json`. Recommended: the fixed mapping in code.
+10. Plan-level availability: models.dev lists what a provider serves, not what each subscription plan includes (e.g. Copilot Free vs Pro+). (a) provider-level reachability only; (b) a hand-kept plan → model allow-list. Recommended (a): (b) is a second, stale source.
+11. Subcommand name: `doctor` (agreed with the usage tool) or `notice`.
+12. Registry data: harness → provider facts as Go code in `internal/provider` (both drivers recommend) or a `[harnessProviders]` table in `harness.toml`.
+
+### For the sync commands
 
 1. Arena download method:
    - (a) HF `/rows` JSON, about 112 requests per sync with retries, no new dependency; the HF JSON service was unreliable on 2026-11-06 (`/filter`).
