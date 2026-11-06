@@ -1,4 +1,5 @@
 syntax on
+filetype plugin indent on
 if has('termguicolors')
   set termguicolors
 endif

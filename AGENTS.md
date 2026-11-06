@@ -37,6 +37,7 @@ dot_config/shell/{aliases.sh.tmpl, omz-aliases.zsh.tmpl, fzf.sh} → ~/.config/s
 dot_config/git/config.tmpl                         → ~/.config/git/config (all OSes)
 dot_config/oh-my-posh/theme.omp.json               → ~/.config/oh-my-posh/ (bash/zsh/pwsh)
 dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/vimfiles/vimrc symlink (Windows)
+.chezmoitemplates/vim-lsp.vim → ~/.config/vim/plugin/lsp.vim (Unix), ~/vimfiles/plugin/lsp.vim (Windows)
 dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
