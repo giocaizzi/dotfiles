@@ -32,7 +32,10 @@
 
 # yegappan/lsp: Vim9 language-server client (never installs servers; they come from
 # the package registry, see [harnessPolicy.lsp.server.*]). Pinned commit: bump by
-# changing the SHA in the URL and the checksum.
+# changing the SHA in the URL and the checksum (`chezmoi dots outdated` does not
+# see externals).
+# Not on light machines: .chezmoiignore doesn't stop an external's download.
+{{- if ne (includeTemplate "role" .) "light" }}
 {{- if eq .chezmoi.os "windows" }}
 ["vimfiles/pack/lsp/start/lsp"]
 {{- else }}
@@ -43,6 +46,7 @@
     exact = true
     stripComponents = 1
     checksum.sha256 = "3a9e9e4fb435c21d8ca4d0d4741bb0751691239678dd038a1fbc5e3b6e0c8535"
+{{- end }}
 
 # JetBrainsMono Nerd Font — Linux only (macOS: Homebrew cask, Windows: oh-my-posh user-scope install,
 # both in the install scripts). ~/.local/share/fonts is the XDG user font dir

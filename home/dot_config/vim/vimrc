@@ -1,3 +1,5 @@
+" Vim sniffs *.tf as TinyFugue unless told otherwise; the LSP policy means Terraform.
+let g:filetype_tf = 'terraform'
 syntax on
 filetype plugin indent on
 if has('termguicolors')

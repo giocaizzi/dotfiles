@@ -7,14 +7,17 @@ let s:servers = json_decode('{{ includeTemplate "lsp-servers" . | replace "'" "'
 function! s:Setup() abort
   let l:list = []
   for [l:name, l:s] in sort(items(s:servers))
-    if !executable(l:s.command[0])
+    if !executable(l:s.bin)
       continue
     endif
+    " Formatting comes only from the `format = true` server: it is the explicit
+    " documentFormatting provider, the others have the feature off (lsp-features).
     call add(l:list, #{
           \ name: l:name,
-          \ filetype: uniq(sort(values(l:s.extensions))),
+          \ filetype: l:s.filetypes,
           \ path: exepath(l:s.command[0]),
           \ args: l:s.command[1:],
+          \ features: #{documentFormatting: l:s.format ? v:true : v:false},
           \ })
   endfor
   if !empty(l:list)
