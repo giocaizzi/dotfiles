@@ -60,7 +60,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓ (not light) |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 
-Release binaries (`bws`, `gitleaks`, `actionlint`, `hadolint`, the Go toolchain, `goreleaser`, `syft`, `glab`, the `chezmoi-dots` plugin) are externals too, generated from the `[release.*]` tables of the [package registry](#packages) for this OS, architecture and role, each pinned and checksum-verified. `dotsRender` (an override-data flag set by `chezmoi dots` for previews) makes the file render empty, so previewing another OS or role never downloads its binaries.
+Release binaries (`bws`, `gitleaks`, `actionlint`, `hadolint`, the Go toolchain, `goreleaser`, `syft`, `glab`, `golangci-lint` (personal), `terraform`, `terraform-ls` and `tflint` (`terraform` answer), the `chezmoi-dots` plugin) are externals too, generated from the `[release.*]` tables of the [package registry](#packages) for this OS, architecture and role, each pinned and checksum-verified. `dotsRender` (an override-data flag set by `chezmoi dots` for previews) makes the file render empty, so previewing another OS or role never downloads its binaries.
 
 The Vim LSP client is pinned by commit SHA and checksum in the URL: bump it by hand (new SHA and checksum), since `chezmoi dots outdated` does not see externals (tracked in [issue #185](https://github.com/giocaizzi/dotfiles/issues/185)).
 
@@ -190,15 +190,15 @@ Inventory (what serves each language per consumer):
 
 | Language | VS Code | Vim | Claude Code | opencode | Copilot CLI | Codex | pi | Antigravity |
 |---|---|---|---|---|---|---|---|---|
-| Python | Python + Ruff extensions | `pyright`, `ruff` | `pyright`, `ruff` | `pyright`, `ruff` | `pyright`, `ruff` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
+| Python | Python + Ruff extensions | `pyright`, `ruff` | `pyright` | `pyright`, `ruff` | `pyright`, `ruff` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 | TypeScript/JavaScript | TypeScript 7 (`native-preview`) | `typescript` | `typescript` | `typescript` | `typescript` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 | Go | `golang.go` (gopls) | `gopls` | `gopls` | `gopls` | `gopls` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 | Shell | `bash-ide` | `bash` | `bash` | `bash` | `bash` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| Terraform | `hashicorp.terraform` (`terraform-ls`) | `terraform`, `tflint` | `terraform`, `tflint` | `terraform`, `tflint` | `terraform`, `tflint` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
+| Terraform | `hashicorp.terraform` (`terraform-ls`) | `terraform`, `tflint` | `terraform` | `terraform`, `tflint` | `terraform`, `tflint` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 | YAML | `redhat.vscode-yaml` | `yaml-ls` | `yaml-ls` | `yaml-ls` | `yaml-ls` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 | JSON | VS Code built-in | `json` | `json` | `json` | `json` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
 
-Gating: policy-named servers only where their package installs. Go (`gopls`, `golangci-lint`, `golang.go`) is personal-only; Terraform needs the `terraform` answer; light machines have no editors or agents, and Vim gets the client and the servers that install there (see [Machine roles](#machine-roles)). To add a server: a policy entry plus its package row.
+Gating: policy-named servers only where their package installs. Go (`gopls`, `golangci-lint`, `golang.go`) is personal-only; Terraform needs the `terraform` answer; light machines have no editors or agents and no Vim LSP client (the external is skipped there and the server list renders `{}`; see [Machine roles](#machine-roles)). Claude Code gives each file extension to one server (the first registered), so the Claude plugin leaves out a server whose extensions an earlier one (by name order) already covers: `ruff` and `tflint` run in the other consumers only. To add a server: a policy entry plus its package row.
 
 To change the shared setup:
 
