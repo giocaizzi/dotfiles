@@ -1,0 +1,12 @@
+{
+  "name": "dotfiles",
+  "owner": { "name": "dotfiles" },
+  "description": "Local plugins generated from the dotfiles harness policy",
+  "plugins": [
+    {
+      "name": "lsp",
+      "source": "./lsp",
+      "description": "Language servers from the dotfiles harness policy"
+    }
+  ]
+}
