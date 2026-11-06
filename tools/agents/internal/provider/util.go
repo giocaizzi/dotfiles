@@ -34,6 +34,9 @@ const noteUnreadable = "credentials unreadable"
 // openaiAuthClaim is the JWT claim OpenAI uses for ChatGPT account facts.
 const openaiAuthClaim = "https://api.openai.com/auth"
 
+// openaiProfileClaim is the JWT claim OpenAI uses for the ChatGPT user profile.
+const openaiProfileClaim = "https://api.openai.com/profile"
+
 // unknownPlan is the plan of an account whose credential does not say.
 func unknownPlan() usage.Plan {
 	return usage.Plan{Kind: usage.KindUnknown, Billing: usage.BillingUnknown, Payer: usage.PayerUnknown}
@@ -108,6 +111,12 @@ func claimExp(m map[string]any) time.Time {
 // openaiAuth returns the "https://api.openai.com/auth" object of claims.
 func openaiAuth(m map[string]any) map[string]any {
 	a, _ := m[openaiAuthClaim].(map[string]any)
+	return a
+}
+
+// openaiProfile returns the "https://api.openai.com/profile" object of claims.
+func openaiProfile(m map[string]any) map[string]any {
+	a, _ := m[openaiProfileClaim].(map[string]any)
 	return a
 }
 

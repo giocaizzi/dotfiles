@@ -5,11 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -166,25 +168,29 @@ func TestOpencodeCredentialsMissingDB(t *testing.T) {
 	}
 }
 
-// stubSecurity points securityBin at a script that mimics the security tool:
-// with -a it returns the item of that account only (the fresh one for wantAcct,
-// exit 44 otherwise); without -a it returns the stale item of another account.
-// It returns the script path.
-func stubSecurity(t *testing.T, wantAcct string) string {
+// stubSecurity returns a script that mimics the security tool. With -a it
+// prints fresh-token for wantAcct and otherwise exits acctExit; without -a it
+// prints stale-token (another account's item) when anyExit is 0, else exits
+// anyExit. Every failure writes stderrMarker to stderr, which must never reach
+// an error.
+func stubSecurity(t *testing.T, wantAcct string, acctExit, anyExit int) string {
 	t.Helper()
 	if runtime.GOOS == "windows" {
 		t.Skip("shell stub")
 	}
-	script := `#!/bin/sh
+	script := fmt.Sprintf(`#!/bin/sh
 acct=""
 while [ $# -gt 0 ]; do
   if [ "$1" = "-a" ]; then acct="$2"; fi
   shift
 done
-if [ -z "$acct" ]; then echo stale-token; exit 0; fi
-if [ "$acct" = "` + wantAcct + `" ]; then echo fresh-token; exit 0; fi
-exit 44
-`
+if [ -z "$acct" ]; then
+  if [ %[3]d -eq 0 ]; then echo stale-token; exit 0; fi
+  echo %[4]s >&2; exit %[3]d
+fi
+if [ "$acct" = "%[1]s" ]; then echo fresh-token; exit 0; fi
+echo %[4]s >&2; exit %[2]d
+`, wantAcct, acctExit, anyExit, stderrMarker)
 	path := filepath.Join(t.TempDir(), "security")
 	if err := os.WriteFile(path, []byte(script), 0o700); err != nil {
 		t.Fatal(err)
@@ -192,24 +198,47 @@ exit 44
 	return path
 }
 
-func TestSecretPrefersCurrentUserItem(t *testing.T) {
-	t.Parallel()
-	s := testStore(t)
-	s.goos = "darwin"
-	s.securityBin = stubSecurity(t, currentUser(s.getenv))
-	got, err := s.Secret("svc", "")
-	if err != nil || got != "fresh-token" {
-		t.Fatalf("Secret = %q, %v; want the current user's item", got, err)
-	}
-}
+const stderrMarker = "stub-stderr-text"
 
-func TestSecretFallsBackToAnyAccount(t *testing.T) {
+func TestSecretDarwinAnyAccount(t *testing.T) {
 	t.Parallel()
-	s := testStore(t)
-	s.goos = "darwin"
-	s.securityBin = stubSecurity(t, "someone-else")
-	got, err := s.Secret("svc", "")
-	if err != nil || got != "stale-token" {
-		t.Fatalf("Secret = %q, %v; want the service-only fallback", got, err)
+	tests := []struct {
+		name     string
+		user     string
+		wantAcct string
+		acctExit int
+		anyExit  int
+		want     string
+		wantErr  string
+	}{
+		{name: "current user's item first", user: "alice", wantAcct: "alice", acctExit: 44, want: "fresh-token"},
+		{name: "item not found falls back to any account", user: "alice", wantAcct: "bob", acctExit: 44, want: "stale-token"},
+		{name: "denied prompt does not fall back", user: "alice", wantAcct: "bob", acctExit: 128, wantErr: "not readable"},
+		{name: "auth failure does not fall back", user: "alice", wantAcct: "bob", acctExit: 51, wantErr: "not readable"},
+		// The -a lookup would fail with 128: an empty user must skip it.
+		{name: "empty user skips the account lookup", user: "", wantAcct: "bob", acctExit: 128, want: "stale-token"},
+		{name: "both lookups fail", user: "alice", wantAcct: "bob", acctExit: 44, anyExit: 44, wantErr: "not found"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			s := testStore(t)
+			s.goos = "darwin"
+			s.user = func() string { return tt.user }
+			s.securityBin = stubSecurity(t, tt.wantAcct, tt.acctExit, tt.anyExit)
+			got, err := s.Secret("svc", "")
+			if got != tt.want {
+				t.Errorf("Secret = %q, want %q", got, tt.want)
+			}
+			switch {
+			case tt.wantErr == "" && err != nil:
+				t.Errorf("Secret error = %v, want none", err)
+			case tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)):
+				t.Errorf("Secret error = %v, want %q", err, tt.wantErr)
+			}
+			if err != nil && strings.Contains(err.Error(), stderrMarker) {
+				t.Errorf("Secret error %q echoes stderr", err)
+			}
+		})
 	}
 }

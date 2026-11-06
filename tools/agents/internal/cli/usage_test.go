@@ -222,7 +222,7 @@ func TestCachedViewHarnessAddedKeepsOneRow(t *testing.T) {
 	t.Parallel()
 	f := testFetcher(t, nil)
 	cached := []usg.Snapshot{{ID: "claude", Provider: "anthropic", Account: "me@example.com", Harnesses: []string{"claude"}, Status: usg.StatusOK, Source: "api", Limits: []usg.Limit{{Name: "5h"}}}}
-	accts := []provider.Account{{ID: "claude", Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude", "pi"}, Auth: provider.AuthOAuth}}
+	accts := []provider.Account{{ID: "claude", Provider: "anthropic", Label: "me@example.com", Harnesses: []string{"claude", "pi"}, Auth: provider.AuthOAuth, IdentityKnown: true}}
 
 	got := cachedView(accts, cached, f)
 

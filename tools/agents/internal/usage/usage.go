@@ -123,6 +123,22 @@ type Snapshot struct {
 	Note      string    `json:"note,omitempty"`
 	Source    string    `json:"source,omitempty"` // "api", "agy", "codex-session", "agy-log", "cache"
 	FetchedAt time.Time `json:"fetchedAt"`
+	// IdentityUnknown is true when the account's identity is not proven, so
+	// it may be the same account as another row of its provider.
+	IdentityUnknown bool `json:"identityUnknown,omitempty"`
+	// Fingerprints identify the credentials behind the account (a truncated
+	// hash, never a token), so an offline run can bind the same credential to
+	// this account again. Never displayed.
+	Fingerprints []string `json:"fingerprints,omitempty"`
+}
+
+// Profile is the identity a provider reports for a token.
+type Profile struct {
+	AccountID string // Anthropic account uuid
+	OrgID     string // Anthropic organization uuid
+	Email     string // Anthropic account email
+	Login     string // GitHub login
+	Plan      Plan   // from the organization type; Kind "" when not reported
 }
 
 // Summary is what the models feature reads per provider id.

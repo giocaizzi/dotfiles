@@ -33,7 +33,7 @@ func TestClaudeOAuth(t *testing.T) {
 			setup: func(f *fakeStore) {
 				f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(valid)
 			},
-			want: []view{{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "file"}},
+			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "file"}},
 		},
 		{
 			name: "darwin keychain",
@@ -42,7 +42,7 @@ func TestClaudeOAuth(t *testing.T) {
 				f.secrets["Claude Code-credentials\x00"] = claudeCredsJSON(valid)
 				f.files[f.path(".claude", ".credentials.json")] = `{"claudeAiOauth":{"accessToken":"fake-file-token"}}` // ignored on darwin
 			},
-			want: []view{{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"}},
+			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"}},
 		},
 		{
 			name: "darwin CLAUDE_CONFIG_DIR suffix",
@@ -52,7 +52,7 @@ func TestClaudeOAuth(t *testing.T) {
 				f.secrets["Claude Code-credentials\x00"] = `{"claudeAiOauth":{"accessToken":"fake-unsuffixed"}}`
 				f.secrets[cfgService+"\x00"] = claudeCredsJSON(valid)
 			},
-			want: []view{{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"}},
+			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "keychain"}},
 		},
 		{
 			name: "linux CLAUDE_CONFIG_DIR",
@@ -61,7 +61,7 @@ func TestClaudeOAuth(t *testing.T) {
 				f.env["CLAUDE_CONFIG_DIR"] = "/cfg"
 				f.files["/cfg/.credentials.json"] = claudeCredsJSON(valid)
 			},
-			want: []view{{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "file"}},
+			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: valid, Source: "file"}},
 		},
 		{
 			name: "expired",
@@ -69,7 +69,7 @@ func TestClaudeOAuth(t *testing.T) {
 			setup: func(f *fakeStore) {
 				f.files[f.path(".claude", ".credentials.json")] = claudeCredsJSON(testNow.Add(-time.Hour))
 			},
-			want: []view{{Provider: Anthropic, Key: "claude-oauth", Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: testNow.Add(-time.Hour), Status: "expired", Note: "token expired, open claude to refresh", Source: "file"}},
+			want: []view{{Provider: Anthropic, Key: fingerprint(Anthropic, "fake-token-1"), Harnesses: []string{"claude"}, Auth: AuthOAuth, Token: "fake-token-1", Expires: testNow.Add(-time.Hour), Status: "expired", Note: "token expired, open claude to refresh", Source: "file"}},
 		},
 		{
 			name: "malformed",

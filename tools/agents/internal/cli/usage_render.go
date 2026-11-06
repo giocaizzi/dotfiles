@@ -79,7 +79,9 @@ func cleanAmount(a *usg.Amount) *usg.Amount {
 }
 
 // planText is the plan column: its name, or unknown (<raw>), then the account.
-func planText(s usg.Snapshot) string {
+// sibling is true when another snapshot of the same provider is shown, which an
+// account of unproven identity may be the same as.
+func planText(s usg.Snapshot, sibling bool) string {
 	var text string
 	switch {
 	case s.Plan.Name != "":
@@ -92,8 +94,13 @@ func planText(s usg.Snapshot) string {
 	default:
 		text = string(s.Plan.Kind)
 	}
-	if s.Account != "" {
+	switch {
+	case s.Account != "":
 		text += " · " + s.Account
+	case s.IdentityUnknown && sibling:
+		text += " · same account? unknown"
+	case s.IdentityUnknown:
+		text += " · identity unknown"
 	}
 	return text
 }
@@ -128,14 +135,19 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 			nameW = max(nameW, term.Width(l.Name))
 		}
 	}
+	perProvider := map[string]int{}
+	for _, s := range snaps {
+		perProvider[s.Provider]++
+	}
+	plan := func(s usg.Snapshot) string { return planText(s, perProvider[s.Provider] > 1) }
 	planWidth := 0
 	for _, s := range snaps {
-		planWidth = max(planWidth, term.Width(planText(s)))
+		planWidth = max(planWidth, term.Width(plan(s)))
 	}
 
 	for _, s := range snaps {
 		line := term.Pad(st.B+s.Provider+st.O, providerCol) +
-			term.Pad(st.M+planText(s)+st.O, planWidth+2) +
+			term.Pad(st.M+plan(s)+st.O, planWidth+2) +
 			st.D + strings.Join(s.Harnesses, ", ") + st.O
 		if s.Status == usg.StatusStale {
 			line += "  " + st.D + staleText(s, now) + st.O

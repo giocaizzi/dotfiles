@@ -27,6 +27,16 @@ type claudeCreds struct {
 	} `json:"claudeAiOauth"`
 }
 
+// claudeProfile is the non-secret account profile Claude Code keeps in its
+// global config, written from /api/oauth/profile at login.
+type claudeProfile struct {
+	OauthAccount struct {
+		AccountUUID      string `json:"accountUuid"`
+		EmailAddress     string `json:"emailAddress"`
+		OrganizationUUID string `json:"organizationUuid"`
+	} `json:"oauthAccount"`
+}
+
 func truthy(s string) bool {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "1", "true", "yes", "on":
@@ -134,6 +144,18 @@ func readClaude(st Store) []Account {
 		return nil
 	}
 	oauth.Cred = NewCredential(o.AccessToken, "")
+	var prof claudeProfile
+	cfgPath := filepath.Join(st.Home(), ".claude.json")
+	if cfgDir != "" {
+		cfgPath = filepath.Join(cfgDir, ".claude.json")
+	}
+	_, _ = readJSON(st, cfgPath, &prof) // missing or malformed counts as absent
+	if p := prof.OauthAccount; p.AccountUUID != "" {
+		proven(&oauth, AnthropicKey(p.AccountUUID, p.OrganizationUUID))
+		oauth.Label = p.EmailAddress
+	} else {
+		unproven(&oauth, o.AccessToken)
+	}
 	oauth.Plan = usage.AnthropicPlan(o.SubscriptionType, o.RateLimitTier)
 	oauth.Expires = msTime(o.ExpiresAt)
 	expiredStatus(&oauth, st.Now(), harnessClaude)
