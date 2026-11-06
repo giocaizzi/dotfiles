@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -40,13 +41,17 @@ type osStore struct {
 	home   string
 	now    func() time.Time
 
-	securityBin string // the macOS security tool; tests stub it
+	securityBin string        // the macOS security tool; tests stub it
+	user        func() string // the current OS user name; tests stub it
 }
 
 // newOSStore builds the store from the CLI dependencies.
 func newOSStore(d Deps) osStore {
 	home, _ := os.UserHomeDir()
-	return osStore{getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security"}
+	return osStore{
+		getenv: d.Getenv, goos: d.GOOS, home: home, now: time.Now, securityBin: "/usr/bin/security",
+		user: func() string { return currentUser(d.Getenv) },
+	}
 }
 
 var _ provider.Store = osStore{}
@@ -95,7 +100,11 @@ func (s osStore) Secret(service, account string) (string, error) {
 		if s.goos != "darwin" {
 			return "", fmt.Errorf("credential %q: an account is required on %s", service, s.goos)
 		}
-		return s.securityFindPassword(ctx, service, currentUser(s.getenv))
+		acct := ""
+		if s.user != nil {
+			acct = s.user()
+		}
+		return s.securityFindPassword(ctx, service, acct)
 	}
 
 	type result struct {
@@ -118,13 +127,23 @@ func (s osStore) Secret(service, account string) (string, error) {
 	}
 }
 
+// securityItemNotFound is the security tool's exit status for a missing item
+// (errSecItemNotFound).
+const securityItemNotFound = 44
+
 // securityFindPassword reads the item of the given account first (empty skips
-// that step), then any item of the service.
+// that step), then any item of the service. The service-only fallback runs only
+// when the account's item does not exist: a denied prompt or any other failure
+// must not return another account's stale item.
 func (s osStore) securityFindPassword(ctx context.Context, service, account string) (string, error) {
 	if account != "" {
 		out, err := exec.CommandContext(ctx, s.securityBin, "find-generic-password", "-s", service, "-a", account, "-w").Output()
 		if err == nil {
 			return decodeKeyringValue(strings.TrimSpace(string(out))), nil
+		}
+		if ee, ok := errors.AsType[*exec.ExitError](err); !ok || ee.ExitCode() != securityItemNotFound {
+			// Only the exit status is known here; stderr is never echoed.
+			return "", fmt.Errorf("credential %q: not readable", service)
 		}
 	}
 	out, err := exec.CommandContext(ctx, s.securityBin, "find-generic-password", "-s", service, "-w").Output()

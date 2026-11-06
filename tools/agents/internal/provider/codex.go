@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"cmp"
 	"crypto/sha256"
 	"encoding/hex"
 	"path/filepath"
@@ -51,21 +52,24 @@ func openaiOAuth(harness, access, idToken, accountID string) Account {
 	}
 	accessClaims := jwtClaims(access)
 	idClaims := jwtClaims(idToken)
-	a.Label = claimString(idClaims, "email")
-	if accountID == "" {
-		accountID = claimString(openaiAuth(accessClaims), "chatgpt_account_id")
-	}
-	if accountID == "" {
-		accountID = claimString(openaiAuth(idClaims), "chatgpt_account_id")
-	}
-	plan := claimString(openaiAuth(idClaims), "chatgpt_plan_type")
-	if plan == "" {
-		plan = claimString(openaiAuth(accessClaims), "chatgpt_plan_type")
-	}
-	if plan != "" {
+	accessAuth, idAuth := openaiAuth(accessClaims), openaiAuth(idClaims)
+	accountID = cmp.Or(accountID, claimString(accessAuth, "chatgpt_account_id"), claimString(idAuth, "chatgpt_account_id"))
+	userID := cmp.Or(
+		claimString(accessAuth, "chatgpt_user_id"), claimString(accessAuth, "user_id"),
+		claimString(idAuth, "chatgpt_user_id"), claimString(idAuth, "user_id"),
+	)
+	a.Label = cmp.Or(
+		claimString(idClaims, "email"), claimString(openaiProfile(idClaims), "email"),
+		claimString(accessClaims, "email"), claimString(openaiProfile(accessClaims), "email"),
+	)
+	if plan := cmp.Or(claimString(idAuth, "chatgpt_plan_type"), claimString(accessAuth, "chatgpt_plan_type")); plan != "" {
 		a.Plan = usage.OpenAIPlan(plan)
 	}
-	a.Key = accountID
+	if accountID != "" {
+		proven(&a, OpenAIKey(accountID, userID))
+	} else {
+		unproven(&a, access)
+	}
 	a.Expires = claimExp(accessClaims)
 	a.Cred = NewCredential(access, accountID)
 	return a

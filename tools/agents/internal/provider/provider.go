@@ -125,6 +125,14 @@ type Account struct {
 	Login     string       // GitHub login for Copilot billing; empty otherwise
 	Host      string       // GitHub host the Copilot token was issued for, e.g. "https://github.com"; empty for other providers
 	Source    string       // where it was read: "keychain", "file", "sqlite", "env"
+	// IdentityKnown is true when Key and ID name a proven account identity
+	// (token claims, a harness's local profile, or the provider's answer for
+	// the token). Accounts of different harnesses merge only on a proven
+	// identity or on the very same credential.
+	IdentityKnown bool
+	// Fingerprints identify the OAuth credentials behind the account without
+	// revealing them (see fingerprint); never displayed.
+	Fingerprints []string
 }
 
 // Store is everything Discover reads from the machine. The real one lives in

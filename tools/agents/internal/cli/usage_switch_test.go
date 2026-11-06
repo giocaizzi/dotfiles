@@ -11,7 +11,7 @@ import (
 func switchAccount(id, prov, label string, kind usg.Kind) provider.Account {
 	return provider.Account{
 		Provider: prov, ID: id, Label: label, Harnesses: []string{id},
-		Auth: provider.AuthOAuth, Plan: usg.Plan{Kind: kind},
+		Auth: provider.AuthOAuth, Plan: usg.Plan{Kind: kind}, IdentityKnown: true,
 	}
 }
 

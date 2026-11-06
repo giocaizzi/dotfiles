@@ -14,7 +14,13 @@ func Discover(st Store) []Account {
 	for _, read := range readers {
 		all = append(all, read(st)...)
 	}
+	return Merge(all)
+}
 
+// Merge merges accounts by (provider, key) with the harnesses that use them,
+// sorted by provider then label then key. It is idempotent, so accounts that
+// gained a proven identity after Discover can be merged again.
+func Merge(all []Account) []Account {
 	type groupKey struct{ provider, key string }
 	index := map[groupKey]int{}
 	var out []Account
@@ -69,5 +75,7 @@ func merge(a, b Account) Account {
 	if win.Login == "" {
 		win.Login = lose.Login
 	}
+	win.IdentityKnown = a.IdentityKnown || b.IdentityKnown
+	win.Fingerprints = unionFingerprints(a.Fingerprints, b.Fingerprints)
 	return win
 }

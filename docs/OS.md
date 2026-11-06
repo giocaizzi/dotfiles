@@ -495,12 +495,24 @@ Accounts are found from the credentials the harnesses already store. On macOS, a
 
 | Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
 |---|---|---|
-| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
+| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` (the current user's item; another account's only when that one does not exist) / `~/.claude/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
 | Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); on macOS also the Keychain item of this `CODEX_HOME` (service `Codex Auth`, account `cli|<hash of the canonical CODEX_HOME>`) when Codex stores it there (keyring mode on Linux and Windows is not read) |
 | Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
 | Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
 | opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
-| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`) |
+| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`); its ChatGPT login (`openai-codex`) counts as `openai` |
+
+Account identity is resolved per credential, whichever harness holds it, so one account seen through several harnesses is one row, and a login held by a single harness (only pi, say) gets its plan and limits on its own:
+
+| Provider | Identity | From |
+|---|---|---|
+| `openai` | ChatGPT account id + user id, email | The login's own token claims (decoded locally, also when expired); every harness's login is queried like Codex's |
+| `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, `-live` asks `api.github.com/user` with that token (`github.com` logins only) |
+| `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise `-live` asks `api.anthropic.com/api/oauth/profile` with that token |
+
+- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only row). Rows never merge on a guess.
+- **Offline:** a credential identified by an earlier `-live` keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). A new or refreshed credential waits for the next `-live`.
+- A Copilot plan with no premium allowance shows `none included`, not a full bar.
 
 Plans and billing: every account is one generic model, so new plans need no code change.
 
@@ -512,7 +524,7 @@ Plans and billing: every account is one generic model, so new plans need no code
 
 Cached vs live:
 
-- The default reads the cache, `<user cache dir>/chezmoi-agents/usage.json` (`$XDG_CACHE_HOME` honoured), and shows each snapshot's age. It holds usage numbers and plan names, no credentials.
+- The default reads the cache, `<user cache dir>/chezmoi-agents/usage.json` (`$XDG_CACHE_HOME` honoured), and shows each snapshot's age. It holds usage numbers, plan names, account ids and labels, and credential fingerprints; no credentials.
 - `-live` queries every account (10 s each, in parallel) and rewrites the cache; a failed account keeps its cached snapshot, marked stale.
 - `-provider <id>` limits the output to one provider.
 - `make usage` runs `-live`.
@@ -544,6 +556,13 @@ Runbook: an account shows "managed by org" or "not visible".
 - **Steps:** none is needed: this is expected, the numbers are not available to a seat holder or have no usage API. Check your organization's console, cloud billing or gateway.
 - **Verify:** the rows that are visible (windows, allowance) still show.
 - **Rollback:** none.
+
+Runbook: one account shows twice, or "same account? unknown".
+
+- **When:** two rows of one provider, one of them labelled `same account? unknown` or `identity unknown`.
+- **Steps:** run `chezmoi agents usage -live`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once, then `-live` again.
+- **Verify:** one row per account, with its email or login and every harness that holds it.
+- **Rollback:** none; delete the cache file to drop remembered identities.
 
 ## Source layout (`.chezmoiroot`)
 
