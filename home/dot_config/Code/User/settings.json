@@ -16,6 +16,11 @@
     "editor.autoIndent": "advanced",
     "editor.defaultFormatter": "redhat.vscode-yaml"
   },
+  // --- Go ---
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.formatOnSave": true
+  },
   // --- HTML ---
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -30,6 +35,7 @@
   // --- Python ---
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
     "editor.codeActionsOnSave": { "source.organizeImports.ruff": "explicit" }
   },
   // --- YAML ---
@@ -236,11 +242,16 @@
   // --- GitHub Pull Requests ---
   "githubPullRequests.createOnPublishBranch": "never",
   "githubPullRequests.pullBranch": "never",
+  // --- Go ---
+  // tools come from the package registry, not from the extension
+  "go.toolsManagement.autoUpdate": false,
+  "go.toolsManagement.checkForUpdates": "off",
   // --- Draw.io ---
   "hediet.vscode-drawio.appearance": "light",
   "hediet.vscode-drawio.resizeImages": null,
   "hediet.vscode-drawio.theme": "kennedy",
   // --- TypeScript ---
+  "js/ts.experimental.useTsgo": true,
   "js/ts.updateImportsOnFileMove.enabled": "always",
   // --- Jupyter ---
   "jupyter.widgetScriptSources": ["jsdelivr.com", "unpkg.com"],
