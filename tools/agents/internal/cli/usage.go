@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/cache"
@@ -49,6 +50,11 @@ func (d Deps) runUsageWith(ctx context.Context, args []string, store provider.St
 	}
 
 	accounts := provider.Discover(store)
+	if *live {
+		accounts = provider.Merge(f.resolveIdentities(ctx, accounts))
+	} else {
+		accounts = provider.Merge(bindCached(accounts, cached.Snapshots))
+	}
 
 	var snaps []usg.Snapshot
 	var meta string
@@ -87,6 +93,8 @@ func snapKey(id, provider string) string {
 type acctRef struct {
 	id, provider, label string
 	kind                usg.Kind
+	fingerprints        []string
+	unknown             bool // identity not proven: an id match also needs a shared fingerprint
 }
 
 // isMetered reports plans billed per use (API key, cloud, gateway) rather than
@@ -97,8 +105,9 @@ func isMetered(k usg.Kind) bool {
 
 // cacheIndex finds the cached snapshot of an account by id. A snapshot without
 // an id never matches. An id match is a miss when the account changed under the
-// same id: both labels set and different (switched accounts), or the auth mode
-// moved between subscription and metered.
+// same id: both labels set and different (switched accounts), the auth mode
+// moved between subscription and metered, or an unproven identity shares no
+// credential fingerprint with the snapshot.
 type cacheIndex map[string]usg.Snapshot
 
 func newCacheIndex(cached []usg.Snapshot) cacheIndex {
@@ -129,6 +138,9 @@ func (c cacheIndex) find(r acctRef) (usg.Snapshot, bool) {
 	if isMetered(r.kind) != isMetered(s.Plan.Kind) {
 		return usg.Snapshot{}, false
 	}
+	if r.unknown && !sharesFingerprint(r.fingerprints, s.Fingerprints) {
+		return usg.Snapshot{}, false
+	}
 	return s, true
 }
 
@@ -150,7 +162,7 @@ func filterProvider(snaps []usg.Snapshot, id string) []usg.Snapshot {
 func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetcher) []usg.Snapshot {
 	refs := make([]acctRef, len(accounts))
 	for i, a := range accounts {
-		refs[i] = acctRef{a.ID, a.Provider, a.Label, a.Plan.Kind}
+		refs[i] = acctRef{id: a.ID, provider: a.Provider, label: a.Label, kind: a.Plan.Kind, fingerprints: a.Fingerprints, unknown: identityUnknown(a)}
 	}
 	have := newCacheIndex(cached)
 	var out []usg.Snapshot
@@ -164,6 +176,8 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 		if s, ok := have.find(refs[i]); ok {
 			s.ID = a.ID
 			s.Harnesses = a.Harnesses
+			s.Fingerprints = a.Fingerprints
+			s.IdentityUnknown = identityUnknown(a)
 			out = append(out, s)
 			continue
 		}
@@ -175,7 +189,7 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 		case a.Status != "" && a.Status != usg.StatusOK:
 			snap, ok = f.base(a), true
 			snap.Status, snap.Note = a.Status, a.Note
-		case a.Provider == provider.OpenAI:
+		case a.Provider == provider.OpenAI && slices.Contains(a.Harnesses, "codex"):
 			snap, ok = f.codexSessionFallback(a)
 		case a.Provider == provider.Google:
 			snap, ok = f.agyLogFallback(a)
@@ -194,7 +208,7 @@ func cachedView(accounts []provider.Account, cached []usg.Snapshot, f usageFetch
 func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 	refs := make([]acctRef, len(live))
 	for i, s := range live {
-		refs[i] = acctRef{s.ID, s.Provider, s.Account, s.Plan.Kind}
+		refs[i] = acctRef{id: s.ID, provider: s.Provider, label: s.Account, kind: s.Plan.Kind, fingerprints: s.Fingerprints, unknown: s.IdentityUnknown}
 	}
 	old := newCacheIndex(cached)
 	out := make([]usg.Snapshot, len(live))
@@ -209,6 +223,8 @@ func keepStale(live, cached []usg.Snapshot) []usg.Snapshot {
 		}
 		prev.ID = s.ID
 		prev.Harnesses = s.Harnesses
+		prev.Fingerprints = s.Fingerprints
+		prev.IdentityUnknown = s.IdentityUnknown
 		prev.Status = usg.StatusStale
 		prev.Note = s.Note
 		if prev.Source == "" {

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -100,6 +101,9 @@ func (f usageFetcher) base(acct provider.Account) usg.Snapshot {
 		Plan:      acct.Plan,
 		Status:    usg.StatusOK,
 		FetchedAt: f.now(),
+
+		Fingerprints:    acct.Fingerprints,
+		IdentityUnknown: identityUnknown(acct),
 	}
 }
 
@@ -203,9 +207,12 @@ func (f usageFetcher) fetchOpenAI(ctx context.Context, acct provider.Account, sn
 		note = "unavailable: " + err.Error()
 	}
 	if note != "" {
-		if fb, ok := f.codexSessionFallback(acct); ok {
-			fb.Note = note
-			return fb
+		// The session logs are Codex's own: only a Codex login may show them.
+		if slices.Contains(acct.Harnesses, "codex") {
+			if fb, ok := f.codexSessionFallback(acct); ok {
+				fb.Note = note
+				return fb
+			}
 		}
 		return unavailable(snap, note)
 	}
