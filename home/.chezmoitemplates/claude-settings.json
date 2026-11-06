@@ -90,9 +90,9 @@
   "timeFormat": {{ .harnessPolicy.ui.timeFormat | default "24h" | quote }},
   "outputStyle": {{ .harnessPolicy.ui.outputStyle | default "Concise" | quote }},
   "voice": {
-    "enabled": {{ .harnessPolicy.voice.enabled | toJson }},
+    "enabled": {{ .harnessPolicy.voice.enabled | default false | toJson }},
     "mode": {{ .harnessPolicy.voice.mode | default "hold" | quote }},
-    "autoSubmit": {{ .harnessPolicy.voice.autoSubmit | toJson }}
+    "autoSubmit": {{ .harnessPolicy.voice.autoSubmit | default false | toJson }}
   },
   "skipWorkflowUsageWarning": true,
   "theme": {{ if hasPrefix "Catppuccin Mocha" .harnessPolicy.ui.theme }}"dark"{{ else }}"light"{{ end }},

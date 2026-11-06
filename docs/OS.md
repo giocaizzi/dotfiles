@@ -125,7 +125,7 @@ chezmoi execute-template --init \
 |---|---|---|
 | Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
 | Copilot CLI | Bell → `beep`; telemetry env injected; voice: none (no documented key) | `native.copilot.agents` keeps per-agent model/effort bindings. |
-| VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` checked via `chezmoi-agents check`. |
+| VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` are static; `chezmoi-agents check` compares its voice keys (`dictation.enabled`, `agents.voice.language`) with the policy. |
 | Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no native dictation) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
 | opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no native dictation) | LSP enabled, `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
 | pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation) | Bell via `sounds` plugin, native model and extension settings. |
@@ -135,7 +135,7 @@ These adapters preserve each client's matching rules; a shared pattern is not a 
 
 #### Voice input
 
-`[harnessPolicy.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code gets `dictation.enabled` (plus `agents.voice.language` only when `language` is set; it is empty now). `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the policy instead.
+`[harnessPolicy.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the policy (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `chezmoi-agents check` (part of `make check`) fails on drift. Claude's template reads the policy and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the policy instead.
 
 | Harness | One-time steps and use | Limits |
 |---|---|---|
@@ -158,9 +158,9 @@ Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/16
 Change the voice preference:
 
 - When: dictation should be on or off, or switch between hold and tap, or auto-submit.
-- Steps: run `dots agents/policy`, edit `[harnessPolicy.voice]`, then `chezmoi apply`.
-- Verify: in a new Claude session check `/voice` status or `~/.claude/settings.json`; check `dictation.enabled` in the VS Code settings.
-- Rollback: restore the policy file with `git restore` and apply again.
+- Steps: run `dots agents/policy` and edit `[harnessPolicy.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
+- Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
+- Rollback: `git restore` both files and apply again.
 
 To change the shared setup:
 

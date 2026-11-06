@@ -1,0 +1,109 @@
+package parity_test
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/parity"
+)
+
+const goodClaude = `{"voice": {"enabled": {{ .harnessPolicy.voice.enabled | default false | toJson }}, "mode": {{ .harnessPolicy.voice.mode | quote }}, "autoSubmit": {{ .harnessPolicy.voice.autoSubmit | default false | toJson }}}}`
+
+func writeSource(t *testing.T, vscode, claude string) string {
+	t.Helper()
+	dir := t.TempDir()
+	files := map[string]string{
+		"dot_config/Code/User/settings.json":     vscode,
+		".chezmoitemplates/claude-settings.json": claude,
+	}
+	for rel, content := range files {
+		path := filepath.Join(dir, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return dir
+}
+
+func TestCheckSourceFiles(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		enabled  bool
+		language string
+		vscode   string
+		claude   string
+		want     []string // substrings, one per expected finding
+	}{
+		{name: "dictation true vs policy false", enabled: false, vscode: `{"dictation.enabled": true}`, claude: goodClaude, want: []string{"dictation.enabled"}},
+		{name: "dictation false vs policy true", enabled: true, vscode: `{"dictation.enabled": false}`, claude: goodClaude, want: []string{"dictation.enabled"}},
+		{name: "key absent and policy true", enabled: true, vscode: `{}`, claude: goodClaude},
+		{name: "key absent and policy false", enabled: false, vscode: `{}`, claude: goodClaude, want: []string{"dictation.enabled"}},
+		{name: "language policy but key missing", enabled: true, language: "it", vscode: `{"dictation.enabled": true}`, claude: goodClaude, want: []string{"agents.voice.language"}},
+		{name: "language matches", enabled: true, language: "it", vscode: `{"agents.voice.language": "it"}`, claude: goodClaude},
+		{name: "language differs", enabled: true, language: "it", vscode: `{"agents.voice.language": "fr"}`, claude: goodClaude, want: []string{"agents.voice.language"}},
+		{name: "no policy language, key auto", enabled: true, vscode: `{"agents.voice.language": "auto"}`, claude: goodClaude},
+		{name: "no policy language, key set", enabled: true, vscode: `{"agents.voice.language": "it"}`, claude: goodClaude, want: []string{"agents.voice.language"}},
+		{
+			name:    "comments, urls and trailing commas",
+			enabled: true,
+			vscode: `{
+  // line comment
+  /* block "comment" */
+  "url": "https://example.com/a//b", // tail
+  "esc": "quote \" // not a comment",
+  "list": [1, 2,],
+  "dictation.enabled": true,
+}`,
+			claude: goodClaude,
+		},
+		{name: "claude hard-coded enabled", enabled: true, vscode: `{}`, claude: `{"voice": {"enabled": true, "mode": {{ .harnessPolicy.voice.mode }}, "autoSubmit": {{ .harnessPolicy.voice.autoSubmit }}}}`, want: []string{".harnessPolicy.voice.enabled"}},
+		{name: "claude language key", enabled: true, vscode: `{}`, claude: goodClaude + "\n" + `"language": "italian"`, want: []string{`"language"`}},
+		{name: "invalid vscode json", enabled: true, vscode: `{`, claude: goodClaude, want: []string{"cannot parse"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p := loadPolicy(t)
+			p.Voice.Enabled = tt.enabled
+			p.Voice.Language = tt.language
+			dir := writeSource(t, tt.vscode, tt.claude)
+
+			var got []string
+			for _, f := range parity.CheckSourceFiles(p, dir) {
+				got = append(got, f.String())
+			}
+			if len(got) != len(tt.want) {
+				t.Fatalf("findings = %v, want %d matching %v", got, len(tt.want), tt.want)
+			}
+			for i, sub := range tt.want {
+				if !strings.Contains(got[i], sub) {
+					t.Errorf("finding %d = %q, want substring %q", i, got[i], sub)
+				}
+			}
+		})
+	}
+}
+
+func TestCheckSourceFiles_MissingFiles(t *testing.T) {
+	t.Parallel()
+	got := parity.CheckSourceFiles(loadPolicy(t), t.TempDir())
+	if len(got) != 2 {
+		t.Errorf("findings = %v, want 2 (one per missing file)", got)
+	}
+}
+
+func TestCheckSourceFiles_RealSource(t *testing.T) {
+	t.Parallel()
+	src := filepath.Join("..", "..", "..", "..", "home")
+	if diff := cmp.Diff(0, len(parity.CheckSourceFiles(loadPolicy(t), src))); diff != "" {
+		t.Errorf("real source has findings: %v\n%s", parity.CheckSourceFiles(loadPolicy(t), src), diff)
+	}
+}

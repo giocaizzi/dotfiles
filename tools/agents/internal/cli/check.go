@@ -10,6 +10,7 @@ import (
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/finding"
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/parity"
 	"github.com/giocaizzi/dotfiles/tools/agents/internal/pluginreg"
+	"github.com/giocaizzi/dotfiles/tools/agents/internal/policy"
 )
 
 func (d Deps) runCheck(ctx context.Context, args []string) int {
@@ -52,7 +53,9 @@ func (d Deps) checkTarget(ctx context.Context, file, harnessDir string) ([]findi
 		}
 		findings := p.Validate(path)
 		findings = append(findings, parity.CheckParity(p)...)
-		return findings, []string{fmt.Sprintf("✓ policy & harness parity (%s)", path)}, nil
+		msgs := []string{fmt.Sprintf("✓ policy & harness parity (%s)", path)}
+		findings, msgs = d.appendSourceFiles(p, findings, msgs)
+		return findings, msgs, nil
 	}
 
 	return d.checkAll(ctx, harnessDir)
@@ -68,8 +71,9 @@ func (d Deps) checkAll(ctx context.Context, harnessDir string) ([]finding.Findin
 	}
 	findings := p.Validate(polPath)
 	findings = append(findings, parity.CheckParity(p)...)
-	allFindings = append(allFindings, findings...)
 	msgs = append(msgs, fmt.Sprintf("✓ policy & harness parity (%s)", polPath))
+	findings, msgs = d.appendSourceFiles(p, findings, msgs)
+	allFindings = append(allFindings, findings...)
 
 	harnessTomlPath, err := d.findHarnessToml("")
 	if err == nil {
@@ -82,6 +86,17 @@ func (d Deps) checkAll(ctx context.Context, harnessDir string) ([]finding.Findin
 	}
 
 	return allFindings, msgs, nil
+}
+
+// appendSourceFiles checks the native voice settings in the discovered chezmoi
+// source directory; a missing source directory is a finding, not a skip.
+func (d Deps) appendSourceFiles(p *policy.Policy, findings []finding.Finding, msgs []string) ([]finding.Finding, []string) {
+	srcDir, err := d.findPolicySourceDir()
+	if err != nil {
+		return append(findings, finding.New("source", "%v", err)), msgs
+	}
+	findings = append(findings, parity.CheckSourceFiles(p, srcDir)...)
+	return findings, append(msgs, fmt.Sprintf("✓ native voice settings (%s)", srcDir))
 }
 
 func isHarnessToml(path string) bool {
