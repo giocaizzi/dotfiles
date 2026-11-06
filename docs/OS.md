@@ -420,6 +420,44 @@ Workspace MCP servers are canonically configured in `.mcp.json` at the root of a
 - Auto-detects transport (`http` when `<commandOrUrl>` starts with `http://` or `https://`, otherwise `stdio`), rejects namespace collisions, ensures symlink safety, and writes with mode `0600`.
 
 
+## Models and subscriptions
+
+Which model fits which job is kept here as tiers, with synced costs and ranks beside them. Subscription usage gets its own subsection from a separate change.
+
+### Model tiers (`chezmoi-agents models`)
+
+Models are sorted by hand into four tiers (lightweight, versatile, powerful, extra) in `.chezmoidata/models.json` under `modelCatalog`. Sync adds costs from [models.dev](https://models.dev) (Anthropic, OpenAI, GitHub Copilot) and ranks from the LMArena leaderboard dataset (board `text_style_control`), plus Epoch AI benchmarks with `-external`. The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
+
+- `chezmoi agents models`: validate the file and print the tiers and untiered models.
+- `chezmoi agents models sync [-external]`: fetch every source, rewrite `models.json` and `docs/MODELS.md`; all-or-nothing, nothing is written when a source fails.
+- `chezmoi agents models render [-check]`: regenerate `docs/MODELS.md` offline; `-check` only compares and runs in `make lint`.
+
+Manual keys: `tiers`, `ignore`, `aliases`, `since`. Synced keys: `models`, `sources`, `syncedAt` (sync never touches the manual ones). Untiered is computed, not stored: every Copilot model, plus Anthropic and OpenAI models released on or after `since` that output text and support tool calls, minus the tiered and ignored ones.
+
+**Refresh the data**
+
+**When:** whenever, e.g. monthly, or when a new model ships.
+
+1. `make models-sync` (network); `tools/agents/bin/chezmoi-agents models sync -external` also refreshes the benchmarks.
+2. Review the diff of `home/.chezmoidata/models.json` and `docs/MODELS.md`; put each flagged untiered model in a tier (or in `ignore`) with `dots models`, then `chezmoi agents models render`.
+3. `make check`, ship the PR.
+
+**Verify:** `chezmoi agents models render -check` exits 0.
+
+**Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
+
+**Re-tier a model**
+
+**When:** a model moves tier, or a new one enters a tier.
+
+1. `dots models` (edits `models.json`; ids are `<org>/<id>` as in the table).
+2. `chezmoi agents models render` regenerates `docs/MODELS.md`.
+3. `make check`, ship the PR.
+
+**Verify:** `chezmoi agents models` shows the model in its tier.
+
+**Rollback:** `git checkout -- home/.chezmoidata/models.json docs/MODELS.md`.
+
 ## Source layout (`.chezmoiroot`)
 
 `.chezmoiroot` makes `home/` the source state: every source path in these docs (`dot_config/…`, `.chezmoidata/…`) is relative to it, and `chezmoi source-path` prints `~/.local/share/chezmoi/home`. The repo root holds what is never deployed (docs, `scripts/`, `tools/`, `Makefile`, agent config), so `.chezmoiignore` has no repo-meta block, and a git worktree anywhere in the repo (e.g. `.claude/worktrees/<slug>`) sits outside the source state: chezmoi never reads its `.chezmoidata`.

@@ -1,0 +1,18 @@
+{
+  "modelCatalog": {
+    "schema": 1,
+    "since": "2026-01-01",
+    "sources": {
+      "arena": {
+        "board": "text_style_control"
+      }
+    },
+    "tiers": {
+      "lightweight": ["openai/gpt-6-luna", "openai/gpt-5.6-luna", "openai/gpt-5.4-nano", "anthropic/claude-haiku-5-5", "anthropic/claude-haiku-4-5", "google/gemini-3.8-flash", "google/gemini-3.7-flash", "microsoft/mai-code-1.1-flash"],
+      "versatile": ["openai/gpt-6.1-terra", "openai/gpt-5.6-terra", "openai/gpt-5.3-codex", "anthropic/claude-sonnet-5-5", "anthropic/claude-sonnet-5", "anthropic/claude-sonnet-4-6", "moonshotai/kimi-k3", "xai/grok-4.5", "xai/grok-4.6"],
+      "powerful": ["openai/gpt-6.1-sol", "openai/gpt-6-sol", "openai/gpt-5.6-sol", "anthropic/claude-opus-4-8", "google/gemini-4-argon", "xai/grok-4.7"],
+      "extra": ["openai/gpt-6-astra", "anthropic/claude-fable-5-1", "anthropic/claude-fable-5"]
+    },
+    "models": {}
+  }
+}

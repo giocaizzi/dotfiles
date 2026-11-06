@@ -4,10 +4,11 @@
 
 - `make help`, `make check` (= `lint` + `test`), `make fmt`, `make build`, `make vuln`.
 - Run against live source: `CHEZMOI_SOURCE_DIR=<repo>/home bin/chezmoi-agents <command>`.
+- `make -C ../.. models-sync` refreshes the model catalog (network); tests never hit the network.
 
 ## Rules
 
-- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `mcpsync`, `finding`, `term`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
+- Layering: pure domain packages (`policy`, `parity`, `translate`, `pluginreg`, `mcpsync`, `catalog`, `finding`, `term`) know nothing of processes or the terminal; `cli` wires flags, discovers paths, and runs use cases; `cmd/chezmoi-agents` invokes `cli.Run`.
 - Tests: standard `testing` plus `go-cmp`, `t.Parallel()`, `t.TempDir()`, `-race -shuffle=on`. A bug gets a failing test first.
 - Harnesses supported: Claude Code, GitHub Copilot CLI, Codex CLI, Antigravity CLI, OpenCode, Pi.
 - System prompt profiles: `personal`, `work`, `light`.

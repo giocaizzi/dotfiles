@@ -53,6 +53,7 @@ chezmoi init --apply giocaizzi/dotfiles
 - [docs/SETUP.md](./docs/SETUP.md): set up a new machine, secrets.
 - [docs/OS.md](./docs/OS.md): what deploys where, machine roles, packages, editing, the `dots` plugin, encryption, Windows notes.
 - [docs/SHELL.md](./docs/SHELL.md): shell architecture, aliases, tools.
+- [docs/MODELS.md](./docs/MODELS.md): generated model tier quicklook.
 - [docs/CI.md](./docs/CI.md): `make check` and the workflows.
 - [AGENTS.md](./AGENTS.md): conventions for AI coding agents.
 - [chezmoi documentation](https://www.chezmoi.io/).
