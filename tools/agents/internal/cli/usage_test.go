@@ -37,6 +37,7 @@ func (fakeStore) Secret(string, string) (string, error) { return "", fs.ErrNotEx
 func (s fakeStore) Exists(path string) bool             { _, ok := s.files[path]; return ok }
 func (s fakeStore) Getenv(k string) string              { return s.env[k] }
 func (fakeStore) Canonical(p string) string             { return p }
+func (fakeStore) SameFile(a, b string) bool             { return a == b }
 func (s fakeStore) ListDir(dir string) []string         { return listFiles(s.files, dir) }
 func (s fakeStore) Home() string                        { return s.home }
 func (fakeStore) GOOS() string                          { return "linux" }

@@ -168,9 +168,7 @@ func renderUsage(w io.Writer, st term.Style, snaps []usg.Snapshot, meta string, 
 // warning is the text of the "!" line under a snapshot; empty when there is none.
 func warning(s usg.Snapshot) string {
 	switch {
-	case s.Status == usg.StatusOK:
-		return ""
-	case s.Status == usg.StatusStale:
+	case s.Status == usg.StatusOK, s.Status == usg.StatusStale:
 		return s.Note
 	case s.Note != "":
 		return s.Note

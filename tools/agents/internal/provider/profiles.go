@@ -128,11 +128,15 @@ func (s profileSpec) homePath(st Store, rel []string) string {
 // profiles lists the profiles of a harness: the environment directory, the
 // default directory, then up to maxGlobProfiles listed directories that hold
 // one of the harness's files. Directories are deduplicated by canonical path;
-// the environment directory wins. A listed directory that resolves to the home
-// directory or above is skipped.
+// the environment directory wins; directories that are the same file count as
+// one. A listed directory that resolves to the home directory or above is
+// skipped.
 func (s profileSpec) profiles(st Store) []profile {
 	def := s.homePath(st, s.def)
-	seen := map[string]bool{}
+	var seen []string // canonical directories taken
+	taken := func(canon string) bool {
+		return slices.ContainsFunc(seen, func(c string) bool { return c == canon || st.SameFile(c, canon) })
+	}
 	var out []profile
 
 	env := st.Getenv(s.envVar)
@@ -143,11 +147,11 @@ func (s profileSpec) profiles(st Store) []profile {
 		} else {
 			p.name = s.profileName(env)
 		}
-		seen[p.canon] = true
+		seen = append(seen, p.canon)
 		out = append(out, p)
 	}
-	if c := st.Canonical(def); !seen[c] {
-		seen[c] = true
+	if c := st.Canonical(def); !taken(c) {
+		seen = append(seen, c)
 		out = append(out, profile{harness: s.harness, dir: def, canon: c, isDefault: true, active: env == ""})
 	}
 
@@ -165,14 +169,32 @@ func (s profileSpec) profiles(st Store) []profile {
 		}
 		dir := filepath.Join(parent, n)
 		canon := st.Canonical(dir)
-		if seen[canon] || containsPath(canon, canonHome) || !s.hasMarker(st, dir) {
+		if taken(canon) || homeOrAbove(st, canon, canonHome) || !s.hasMarker(st, dir) {
 			continue
 		}
-		seen[canon] = true
+		seen = append(seen, canon)
 		listed++
 		out = append(out, profile{harness: s.harness, dir: dir, canon: canon, name: s.profileName(dir)})
 	}
 	return out
+}
+
+// homeOrAbove reports whether dir is home or one of its ancestors, by path or,
+// on a case-insensitive file system or through links, as the same directory.
+func homeOrAbove(st Store, dir, home string) bool {
+	if containsPath(dir, home) {
+		return true
+	}
+	for a := home; ; {
+		if st.SameFile(dir, a) {
+			return true
+		}
+		parent := filepath.Dir(a)
+		if parent == a {
+			return false
+		}
+		a = parent
+	}
 }
 
 // containsPath reports whether dir is path or one of its ancestors.
@@ -237,11 +259,38 @@ func (s profileSpec) join(st Store, profiles []profile, per [][]Account) []Accou
 
 // expiredNote tells the user how to open the harness on the profile.
 func (s profileSpec) expiredNote(st Store, p profile, label string) string {
-	hint := ""
-	if !p.isDefault {
-		hint = " (" + s.envVar + "=" + tildePath(p.dir, st.Home()) + ")"
+	switch {
+	case !p.isDefault:
+		return "token expired, open " + label + " (" + s.envVar + "=" + shellPath(p.dir, st.Home()) + ") to refresh"
+	case !p.envSet && st.Getenv(s.envVar) != "":
+		// The variable points at another profile: the plain command would open that one.
+		return "token expired, open " + label + " with " + s.envVar + " unset to refresh"
 	}
-	return "token expired, open " + label + hint + " to refresh"
+	return "token expired, open " + label + " to refresh"
+}
+
+// shellPath is tildePath quoted for a POSIX shell when needed. A leading "~/"
+// stays outside the quotes so the shell still expands it.
+func shellPath(path, home string) string {
+	t := tildePath(path, home)
+	if rest, ok := strings.CutPrefix(t, "~/"); ok {
+		return "~/" + shellQuote(rest)
+	}
+	if t == "~" {
+		return t
+	}
+	return shellQuote(t)
+}
+
+// shellQuote single-quotes s unless it only holds characters safe in a word.
+func shellQuote(s string) string {
+	safe := func(r rune) bool {
+		return r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("_./~@%+=:,-", r)
+	}
+	if s != "" && !strings.ContainsFunc(s, func(r rune) bool { return !safe(r) }) {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
 // tildePath writes a path under home with a leading "~".

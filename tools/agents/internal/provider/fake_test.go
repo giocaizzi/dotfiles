@@ -23,6 +23,7 @@ type fakeStore struct {
 	secrets map[string]string // service + "\x00" + account
 	env     map[string]string
 	canon   map[string]string        // Canonical mapping
+	alias   map[string]string        // canonical path -> the path SameFile treats it as
 	rows    map[string][]OpencodeRow // by database path
 	rowsErr error                    // returned for any database not in rows, instead of ErrNotExist
 }
@@ -75,6 +76,18 @@ func (f *fakeStore) Canonical(p string) string {
 		return c
 	}
 	return p
+}
+
+// SameFile compares the canonical paths, after the alias mapping.
+func (f *fakeStore) SameFile(a, b string) bool {
+	norm := func(p string) string {
+		c := f.Canonical(p)
+		if al, ok := f.alias[c]; ok {
+			return al
+		}
+		return c
+	}
+	return norm(a) == norm(b)
 }
 
 func (f *fakeStore) Exists(p string) bool {

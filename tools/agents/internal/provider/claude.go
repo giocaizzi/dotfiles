@@ -3,6 +3,7 @@ package provider
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -150,12 +151,19 @@ func readClaudeProfile(st Store, p profile) []Account {
 	if p.explicit() {
 		cfgPath = filepath.Join(p.dir, ".claude.json")
 	}
-	_, _ = readJSON(st, cfgPath, &prof) // missing or malformed counts as absent
+	tooLarge := false
+	if _, err := readJSON(st, cfgPath, &prof); errors.Is(err, ErrTooLarge) { // missing or malformed counts as absent
+		tooLarge = true
+		prof = claudeProfile{}
+	}
 	if pr := prof.OauthAccount; pr.AccountUUID != "" {
 		proven(&oauth, AnthropicKey(pr.AccountUUID, pr.OrganizationUUID))
 		oauth.Label = pr.EmailAddress
 	} else {
 		unproven(&oauth, o.AccessToken)
+		if tooLarge {
+			oauth.Note = "account profile too large (.claude.json): identity unknown"
+		}
 	}
 	oauth.Plan = usage.AnthropicPlan(o.SubscriptionType, o.RateLimitTier)
 	oauth.Expires = msTime(o.ExpiresAt)

@@ -66,44 +66,39 @@ func newOSStore(d Deps) osStore {
 
 var _ provider.Store = osStore{}
 
-// maxCredentialFile caps what ReadFile reads: credential and profile files are
-// a few KiB.
-const maxCredentialFile = 1 << 20
+// maxReadFile caps what ReadFile reads. Credential files are a few KiB, but
+// Claude Code's .claude.json grows with every project it has seen.
+const maxReadFile = 64 << 20
 
-var (
-	errNotRegular = errors.New("not a regular file")
-	errTooLarge   = errors.New("file too large")
-)
+var errNotRegular = errors.New("not a regular file")
 
-// ReadFile reads a regular file of at most maxCredentialFile bytes. A FIFO or
-// device is never opened; errors carry no file content.
+// ReadFile reads a regular file of at most maxReadFile bytes. A FIFO or device
+// is opened without blocking and rejected; errors carry no file content.
 func (s osStore) ReadFile(path string) ([]byte, error) {
-	path = filepath.Clean(path)
-	fi, err := os.Stat(path)
-	if err != nil {
-		return nil, fmt.Errorf("read file: %w", err)
-	}
-	if !fi.Mode().IsRegular() {
-		return nil, fmt.Errorf("read file: %w", errNotRegular)
-	}
-	f, err := os.Open(path)
+	return readRegular(path)
+}
+
+// readRegular opens path without blocking, requires a regular file and reads
+// it up to maxReadFile bytes. A longer file returns provider.ErrTooLarge.
+func readRegular(path string) ([]byte, error) {
+	f, err := openNoBlock(filepath.Clean(path))
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
 	defer f.Close()
-	// The path may have been swapped between Stat and Open.
-	if fi, err = f.Stat(); err != nil {
+	fi, err := f.Stat()
+	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
 	if !fi.Mode().IsRegular() {
 		return nil, fmt.Errorf("read file: %w", errNotRegular)
 	}
-	b, err := io.ReadAll(io.LimitReader(f, maxCredentialFile+1))
+	b, err := io.ReadAll(io.LimitReader(f, maxReadFile+1))
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
-	if len(b) > maxCredentialFile {
-		return nil, fmt.Errorf("read file: %w", errTooLarge)
+	if len(b) > maxReadFile {
+		return nil, fmt.Errorf("read file: %w", provider.ErrTooLarge)
 	}
 	return b, nil
 }
@@ -111,6 +106,17 @@ func (s osStore) ReadFile(path string) ([]byte, error) {
 func (s osStore) Exists(path string) bool {
 	_, err := os.Stat(filepath.Clean(path))
 	return err == nil
+}
+
+// SameFile reports whether two paths are the same file or directory; false when
+// either cannot be read.
+func (s osStore) SameFile(a, b string) bool {
+	fa, err := os.Stat(filepath.Clean(a))
+	if err != nil {
+		return false
+	}
+	fb, err := os.Stat(filepath.Clean(b))
+	return err == nil && os.SameFile(fa, fb)
 }
 
 // Canonical resolves symlinks in the absolute path; when that fails it returns
