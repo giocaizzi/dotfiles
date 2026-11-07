@@ -87,8 +87,24 @@ denyWrite = [
     "**/.ssh/**"
 ]
 
+# Lease pushes are allowed only to feature branches: the allow pattern covers any
+# branch and the deny patterns below take it back for main and master. The guard
+# hook and the server ruleset stay the real protection; these patterns do not see
+# `git -C`, refspec or reordered forms.
+allowCommandPatterns = [
+    "git push --force-with-lease origin *"
+]
+
 denyCommandPatterns = [
-    "gh pr merge * --admin*"
+    "gh pr merge * --admin*",
+    "git push --force-with-lease origin main",
+    "git push --force-with-lease origin main *",
+    "git push --force-with-lease origin master",
+    "git push --force-with-lease origin master *",
+    "git push * HEAD:main",
+    "git push * HEAD:main *",
+    "git push * HEAD:master",
+    "git push * HEAD:master *"
 ]
 
 denyCommandExact = [

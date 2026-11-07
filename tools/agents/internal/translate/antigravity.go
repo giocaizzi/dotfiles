@@ -45,14 +45,32 @@ func AntigravityPermissions(p *policy.Policy) AntigravityPermissionsOutput {
 		"mcp(*)",
 	}
 
+	for _, pat := range p.Permissions.AllowCommandPatterns {
+		if prefix := strings.TrimSuffix(pat, " *"); !strings.Contains(prefix, "*") {
+			allow = append(allow, fmt.Sprintf("command(%s)", prefix))
+		}
+	}
+
 	deny := make([]string, 0, len(p.Permissions.DenyCommandPatterns)+
 		len(p.Permissions.DenyCommandExact)+
 		len(p.Permissions.DenyCommandPrefixes)*2+
 		len(p.Permissions.DenyRead)+
 		len(p.Permissions.DenyWrite))
 
+	seen := map[string]bool{}
 	for _, pat := range p.Permissions.DenyCommandPatterns {
-		deny = append(deny, fmt.Sprintf("command(%s)", pat))
+		if !strings.HasPrefix(pat, "git push ") {
+			deny = append(deny, fmt.Sprintf("command(%s)", pat))
+			continue
+		}
+		// command() matches a token prefix and treats * as a literal: a trailing
+		// " *" becomes the prefix, an inner * cannot be expressed and is skipped.
+		prefix := strings.TrimSuffix(pat, " *")
+		if strings.Contains(prefix, "*") || seen[prefix] {
+			continue
+		}
+		seen[prefix] = true
+		deny = append(deny, fmt.Sprintf("command(%s)", prefix))
 	}
 	for _, cmd := range p.Permissions.DenyCommandExact {
 		deny = append(deny, fmt.Sprintf("command(%s)", cmd))

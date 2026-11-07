@@ -96,6 +96,7 @@ func (p Policy) validatePatterns(where string) []finding.Finding {
 		}
 	}
 	check(p.Permissions.AllowCommands, "permissions.allowCommands")
+	check(p.Permissions.AllowCommandPatterns, "permissions.allowCommandPatterns")
 	check(p.Permissions.AllowedUrls, "permissions.allowedUrls")
 	check(p.Permissions.DenyRead, "permissions.denyRead")
 	check(p.Permissions.DenyWrite, "permissions.denyWrite")

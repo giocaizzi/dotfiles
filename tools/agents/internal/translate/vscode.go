@@ -10,6 +10,9 @@ func VSCodeSettings(p *policy.Policy) map[string]any {
 	for _, cmd := range p.Permissions.AllowCommands {
 		terminalAutoApprove[cmd] = true
 	}
+	for _, cmd := range p.Permissions.AllowCommandPatterns {
+		terminalAutoApprove[cmd] = true
+	}
 	for _, cmd := range p.Permissions.DenyCommandExact {
 		terminalAutoApprove[cmd] = false
 	}

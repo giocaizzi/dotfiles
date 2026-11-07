@@ -45,6 +45,7 @@
 {{- $policy := .harnessPolicy.permissions -}}
 {{- $managedPermissions := list -}}
 {{- $managedPolicies := list -}}
+{{- range $policy.allowCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "allow") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "allow") }}{{ end -}}
 {{- range $policy.denyRead }}{{ $managedPermissions = append $managedPermissions (dict "action" "read" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "read:%s" .) "effect" "deny") }}{{ end -}}
 {{- range $policy.denyWrite }}{{ $managedPermissions = append $managedPermissions (dict "action" "edit" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "edit:%s" .) "effect" "deny") }}{{ end -}}
 {{- range $policy.denyCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "deny") }}{{ end -}}
@@ -53,6 +54,7 @@
 {{- range $policy.askCommandPrefixes }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "ask") }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" (printf "%s *" .) "effect" "ask") }}{{ end -}}
 {{- $permissions := list -}}
 {{- range (get $current "permissions" | default list) }}{{ $existing := . }}{{ $managed := false }}{{ range $managedPermissions }}{{ if deepEqual $existing . }}{{ $managed = true }}{{ end }}{{ end }}{{ if not $managed }}{{ $permissions = append $permissions $existing }}{{ end }}{{ end -}}
+{{- range $policy.allowCommandPatterns }}{{ $permissions = append $permissions (dict "action" "shell" "resource" . "effect" "allow") }}{{ end -}}
 {{- range $policy.askCommandPrefixes }}{{ $permissions = append $permissions (dict "action" "shell" "resource" . "effect" "ask") }}{{ $permissions = append $permissions (dict "action" "shell" "resource" (printf "%s *" .) "effect" "ask") }}{{ end -}}
 {{- $_ := set $current "permissions" $permissions -}}
 {{- $policies := list -}}
