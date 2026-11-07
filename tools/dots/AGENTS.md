@@ -3,7 +3,7 @@
 ## Commands
 
 - `make help`, `make check` (= `lint` + `test`), `make fmt`, `make build`, `make vuln`. Tools are pinned modules run with `go tool`; `golangci-lint` has its own `golangci-lint.mod`. Never `go install` a tool.
-- Run the plugin against the live source: `CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR=<repo>/home bin/chezmoi-dots <command>` (chezmoi sets these when it runs the plugin).
+- Run the plugin against the live source: `CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR=<repo>/home bin/chezmoi-dots <command>` (chezmoi sets these when it runs the plugin). Against a worktree, run the binary like this or `chezmoi --source <worktree>/home dots <command>`: plain `chezmoi dots` overwrites `CHEZMOI_SOURCE_DIR` with the configured source, the main checkout.
 
 ## Rules
 
