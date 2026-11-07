@@ -49,8 +49,11 @@ plugin reads, never guesses:
 | `CHEZMOI_EXECUTABLE` | the chezmoi binary to call back (same version as the caller) |
 | `CHEZMOI_OS`, `CHEZMOI_ARCH` | this machine |
 
-Run directly (tests, `go run`), the plugin falls back to `chezmoi` on `PATH` and asks it
-(`chezmoi source-path`, `chezmoi dump-config`).
+Run directly (tests, `go run`, CI), the plugin falls back to `chezmoi` on `PATH`. Every
+command finds the source dir through one function: `CHEZMOI_SOURCE_DIR` when set (a repo
+root is followed through its `.chezmoiroot`, as chezmoi does), otherwise
+`chezmoi source-path`; `chezmoi dump-config` gives the working tree. Commands that read
+chezmoi data (`chezmoi data`, `bump` included) still need chezmoi on `PATH`.
 
 ## Layout
 
