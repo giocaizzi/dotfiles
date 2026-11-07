@@ -29,7 +29,7 @@
 
 # Skills
 
-Reusable rules live as skills (plugins `go`, `python`, `javascript`, `dev-tools`, `foundations`, `infra`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. Skills are named without harness syntax; invoke one as `/name` in Claude Code, Copilot CLI and opencode, `$plugin:name` in Codex (e.g. `$dev-tools:wt`), `/skill:name` in pi.
+Reusable rules live as skills (plugins `python`, `javascript`, `dev-tools`, `foundations`, `infra`), not here or in project files. Loading the matching skill before acting is mandatory: do not improvise these workflows. Skills are named without harness syntax; invoke one as `/name` in Claude Code, Copilot CLI and opencode, `$plugin:name` in Codex (e.g. `$dev-tools:wt`), `/skill:name` in pi.
 
 | Situation | Load |
 |---|---|
@@ -45,7 +45,6 @@ Reusable rules live as skills (plugins `go`, `python`, `javascript`, `dev-tools`
 | Credentials, tokens, `.env`, `bw`/`bws` | `secrets-handling` |
 | Heavy builds, emulators, full test suites, parallel agents | `host-hygiene` |
 | Spawning subagents, choosing model or effort | `subagent-orchestration`; agent `scout` for lookups, `escalate` after the driver failed twice |
-| Go code or tests | `go-development`, `go-testing` |
 | Python code or tests, FastAPI, SQLAlchemy | `python-development`, `python-testing`, `fastapi`, `sqlalchemy` |
 | JS/TS, React, Next.js | `javascript-typescript`, `react`, `nextjs` |
 | Domain design, system design, API contracts, architecture checks | `domain-driven-design`, `system-design`, `api-design`, `architecture-fitness`, `design-patterns`; agent `api-reviewer` for API security review |
