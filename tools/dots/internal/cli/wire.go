@@ -2,8 +2,11 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/giocaizzi/dotfiles/tools/dots/internal/chez"
@@ -32,12 +35,39 @@ func (d Deps) chezmoi() (*chez.Client, []string) {
 	return chez.New(d.Runner, bin, global...), append([]string{bin}, global...)
 }
 
+// sourceDir is the source state root. chezmoi sets CHEZMOI_SOURCE_DIR when it runs
+// the plugin, already resolved through .chezmoiroot; set by hand it may name the repo
+// root, so .chezmoiroot is applied as chezmoi does. Without it, chezmoi is asked.
+func (d Deps) sourceDir(ctx context.Context, cz *chez.Client) (string, error) {
+	v := d.Getenv("CHEZMOI_SOURCE_DIR")
+	if v == "" {
+		src, err := cz.SourcePath(ctx, "", nil)
+		if err != nil {
+			return "", fmt.Errorf("find the chezmoi source dir: %w", err)
+		}
+		return src, nil
+	}
+	src, err := filepath.Abs(v)
+	if err != nil {
+		return "", fmt.Errorf("resolve CHEZMOI_SOURCE_DIR %s: %w", v, err)
+	}
+	root, err := os.ReadFile(filepath.Join(src, ".chezmoiroot")) //nolint:gosec // the user's own source dir
+	switch {
+	case err == nil:
+		return filepath.Join(src, strings.TrimSpace(string(root))), nil
+	case errors.Is(err, fs.ErrNotExist):
+		return src, nil
+	default:
+		return "", fmt.Errorf("read %s: %w", filepath.Join(src, ".chezmoiroot"), err)
+	}
+}
+
 // service builds the edit/view use case. style picks the colours of its output.
 func (d Deps) service(ctx context.Context, style term.Style) (*edit.Service, error) {
 	cz, _ := d.chezmoi()
-	src, err := cz.SourcePath(ctx, "", nil)
+	src, err := d.sourceDir(ctx, cz)
 	if err != nil {
-		return nil, fmt.Errorf("find the chezmoi source dir: %w", err)
+		return nil, err
 	}
 	data, err := cz.Data(ctx, nil)
 	if err != nil {

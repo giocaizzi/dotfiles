@@ -30,9 +30,9 @@ func (d Deps) lint(ctx context.Context, args []string) error {
 		checks = lint.Checks()
 	}
 	cz, _ := d.chezmoi()
-	src, err := cz.SourcePath(ctx, "", nil)
+	src, err := d.sourceDir(ctx, cz)
 	if err != nil {
-		return fmt.Errorf("find the chezmoi source dir: %w", err)
+		return err
 	}
 	scratch, err := os.MkdirTemp("", "dots-lint-")
 	if err != nil {
@@ -73,9 +73,9 @@ func (d Deps) finder() release.Finder {
 
 func (d Deps) releases(ctx context.Context) (string, []pkgreg.Release, error) {
 	cz, _ := d.chezmoi()
-	src, err := cz.SourcePath(ctx, "", nil)
+	src, err := d.sourceDir(ctx, cz)
 	if err != nil {
-		return "", nil, fmt.Errorf("find the chezmoi source dir: %w", err)
+		return "", nil, err
 	}
 	data, err := cz.Data(ctx, nil)
 	if err != nil {
