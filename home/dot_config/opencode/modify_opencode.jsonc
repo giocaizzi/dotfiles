@@ -45,7 +45,8 @@
 {{- $policy := .harnessPolicy.permissions -}}
 {{- $managedPermissions := list -}}
 {{- $managedPolicies := list -}}
-{{- range $policy.allowCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "allow") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "allow") }}{{ end -}}
+{{- /* policies only hard-deny (opencode docs), so the allow goes to permissions alone */ -}}
+{{- range $policy.allowCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "allow") }}{{ end -}}
 {{- range $policy.denyRead }}{{ $managedPermissions = append $managedPermissions (dict "action" "read" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "read:%s" .) "effect" "deny") }}{{ end -}}
 {{- range $policy.denyWrite }}{{ $managedPermissions = append $managedPermissions (dict "action" "edit" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "edit:%s" .) "effect" "deny") }}{{ end -}}
 {{- range $policy.denyCommandPatterns }}{{ $managedPermissions = append $managedPermissions (dict "action" "shell" "resource" . "effect" "deny") }}{{ $managedPolicies = append $managedPolicies (dict "action" "tool.use" "resource" (printf "shell:%s" .) "effect" "deny") }}{{ end -}}

@@ -150,7 +150,7 @@ These adapters preserve each client's matching rules; a shared pattern is not a 
 |---|---|---|
 | Claude Code | `Bash(<pattern>)` in `allow` and `deny` (deny, then ask, then allow) | Forms the pattern does not match |
 | Antigravity | `command(<pattern>)` matches an exact token prefix and `*` is literal, so a `git push` pattern drops a trailing ` *` and renders as that prefix | Patterns with an inner `*` (`HEAD:main`, `HEAD:master`) are skipped; `command(*)` already allows everything, so the allow entry is for parity |
-| opencode | `shell` permission (allow, before the ask entries) and `tool.use` policies (allow before the denies), last match wins | Forms the pattern does not match |
+| opencode | `shell` permission allow (last match wins, placed before the ask entries); the denies are hard `tool.use` policies, which only deny | Forms the pattern does not match |
 | Codex | `~/.codex/rules/harness-policy.rules` (`dot_codex/rules/harness-policy.rules.tmpl`, Starlark `prefix_rule`; allow → `allow`, deny → `forbidden`; most restrictive wins). `default.rules`, where the TUI saves its approvals, is not managed. Only these patterns are rendered, not the other deny lists | No wildcards: a trailing ` *` is dropped, patterns with an inner `*` are skipped |
 | VS Code | None: `settings.json` is static, so these patterns are not rendered (the policy translator in `tools/agents` maps them to `chat.tools.terminal.autoApprove` for its tests only) | Everything |
 | Copilot CLI, pi | None: no command-permission rendering, so these lists do not reach them and the guard hook is their protection | Everything |
