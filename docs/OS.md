@@ -142,6 +142,19 @@ chezmoi execute-template --init \
 
 These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
 
+#### Command patterns
+
+`[harnessPolicy.permissions]` keeps command rules as lists: `allowCommands` (VS Code auto-approve), `allowCommandPatterns` (allow), `denyCommandPatterns`, `denyCommandExact`, `denyCommandPrefixes` (deny) and `askCommandPrefixes` (ask). The lease-push rule is `allowCommandPatterns = ["git push --force-with-lease origin *"]` plus `denyCommandPatterns` for `main` and `master` (`git push --force-with-lease origin main`, `… master`, `git push * HEAD:main`, `… HEAD:master`, each also with trailing arguments): lease pushes are allowed only to feature branches. The guard hook and the server ruleset stay the real protection: no pattern sees `git -C <dir> push`, a refspec such as `feat/x:main` or reordered arguments.
+
+| Harness | Rendering of `allowCommandPatterns` and the new deny patterns | Cannot express |
+|---|---|---|
+| Claude Code | `Bash(<pattern>)` in `allow` and `deny` (deny, then ask, then allow) | Forms the pattern does not match |
+| Antigravity | `command(<pattern>)` matches an exact token prefix and `*` is literal, so a `git push` pattern drops a trailing ` *` and renders as that prefix | Patterns with an inner `*` (`HEAD:main`, `HEAD:master`) are skipped; `command(*)` already allows everything, so the allow entry is for parity |
+| opencode | `shell` permission allow (last match wins, placed before the ask entries); the denies are hard `tool.use` policies, which only deny | Forms the pattern does not match |
+| Codex | `~/.codex/rules/harness-policy.rules` (`dot_codex/rules/harness-policy.rules.tmpl`, Starlark `prefix_rule`; allow → `allow`, deny → `forbidden`; most restrictive wins). `default.rules`, where the TUI saves its approvals, is not managed. Only these patterns are rendered, not the other deny lists | No wildcards: a trailing ` *` is dropped, patterns with an inner `*` are skipped |
+| VS Code | None: `settings.json` is static, so these patterns are not rendered (the policy translator in `tools/agents` maps them to `chat.tools.terminal.autoApprove` for its tests only) | Everything |
+| Copilot CLI, pi | None: no command-permission rendering, so these lists do not reach them and the guard hook is their protection | Everything |
+
 #### Voice input
 
 `[harnessPolicy.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the policy (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `chezmoi-agents check` (part of `make check`) fails on drift. Claude's template reads the policy and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the policy instead.

@@ -29,14 +29,15 @@ type Autonomy struct {
 
 // Permissions defines allowed, forbidden and sensitive resources across all harnesses.
 type Permissions struct {
-	AllowCommands       []string `json:"allowCommands"       toml:"allowCommands"`
-	AllowedUrls         []string `json:"allowedUrls"         toml:"allowedUrls"`
-	DenyRead            []string `json:"denyRead"            toml:"denyRead"`
-	DenyWrite           []string `json:"denyWrite"           toml:"denyWrite"`
-	DenyCommandPatterns []string `json:"denyCommandPatterns" toml:"denyCommandPatterns"`
-	DenyCommandExact    []string `json:"denyCommandExact"    toml:"denyCommandExact"`
-	DenyCommandPrefixes []string `json:"denyCommandPrefixes" toml:"denyCommandPrefixes"`
-	AskCommandPrefixes  []string `json:"askCommandPrefixes"  toml:"askCommandPrefixes"`
+	AllowCommands        []string `json:"allowCommands"        toml:"allowCommands"`
+	AllowedUrls          []string `json:"allowedUrls"          toml:"allowedUrls"`
+	AllowCommandPatterns []string `json:"allowCommandPatterns" toml:"allowCommandPatterns"`
+	DenyRead             []string `json:"denyRead"             toml:"denyRead"`
+	DenyWrite            []string `json:"denyWrite"            toml:"denyWrite"`
+	DenyCommandPatterns  []string `json:"denyCommandPatterns"  toml:"denyCommandPatterns"`
+	DenyCommandExact     []string `json:"denyCommandExact"     toml:"denyCommandExact"`
+	DenyCommandPrefixes  []string `json:"denyCommandPrefixes"  toml:"denyCommandPrefixes"`
+	AskCommandPrefixes   []string `json:"askCommandPrefixes"   toml:"askCommandPrefixes"`
 }
 
 // Models holds model tier mappings across agents.

@@ -41,11 +41,15 @@ func (c ClaudePermissionsOutput) ToMap() map[string]any {
 
 // ClaudePermissions translates policy permissions into Claude's native schema.
 func ClaudePermissions(p *policy.Policy, goos string) ClaudePermissionsOutput {
-	allow := []string{
+	allow := make([]string, 0, 4+len(p.Permissions.AllowCommandPatterns))
+	allow = append(allow,
 		"WebSearch",
 		"WebFetch",
 		"Bash",
 		"Bash(gh pr merge * --auto*)",
+	)
+	for _, pat := range p.Permissions.AllowCommandPatterns {
+		allow = append(allow, fmt.Sprintf("Bash(%s)", pat))
 	}
 
 	deny := make([]string, 0, len(p.Permissions.DenyCommandPatterns)+

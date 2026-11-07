@@ -1,6 +1,14 @@
 {{- $p := .harnessPolicy.permissions -}}
 {{- $deny := list -}}
-{{- range $p.denyCommandPatterns }}{{ $deny = append $deny (printf "command(%s)" .) }}{{ end -}}
+{{- $seen := dict -}}
+{{- /* command() matches an exact token prefix and `*` is literal: a `git push` pattern with no `*`
+        but a trailing " *" renders as that prefix, one with an inner `*` is skipped; other patterns render as written. */ -}}
+{{- range $p.denyCommandPatterns -}}
+{{- if hasPrefix "git push " . -}}
+{{- $t := trimSuffix " *" . -}}
+{{- if not (or (contains "*" $t) (hasKey $seen $t)) }}{{ $_ := set $seen $t true }}{{ $deny = append $deny (printf "command(%s)" $t) }}{{ end -}}
+{{- else }}{{ $deny = append $deny (printf "command(%s)" .) }}{{ end -}}
+{{- end -}}
 {{- range $p.denyCommandExact }}{{ $deny = append $deny (printf "command(%s)" .) }}{{ end -}}
 {{- range $p.denyCommandPrefixes -}}
 {{- if not (contains " " .) }}{{ $deny = append $deny (printf "command(%s)" .) }}{{ end -}}
@@ -8,6 +16,11 @@
 {{- end -}}
 {{- range $p.denyRead }}{{ $deny = append $deny (printf "read_file(%s)" .) }}{{ end -}}
 {{- range $p.denyWrite }}{{ $deny = append $deny (printf "write_file(%s)" .) }}{{ end -}}
+{{- $allow := list "command(*)" "command(gh pr merge * --auto*)" "read_url(*)" "execute_url(*)" "mcp(*)" -}}
+{{- range $p.allowCommandPatterns -}}
+{{- $t := trimSuffix " *" . -}}
+{{- if not (contains "*" $t) }}{{ $allow = append $allow (printf "command(%s)" $t) }}{{ end -}}
+{{- end -}}
 {{- $ask := list -}}
 {{- range $p.askCommandPrefixes }}{{ $ask = append $ask (printf "command(%s)" .) }}{{ $ask = append $ask (printf "command(%s *)" .) }}{{ end -}}
-{{- dict "allow" (list "command(*)" "command(gh pr merge * --auto*)" "read_url(*)" "execute_url(*)" "mcp(*)") "deny" $deny "ask" $ask | toJson -}}
+{{- dict "allow" $allow "deny" $deny "ask" $ask | toJson -}}
