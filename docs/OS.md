@@ -502,9 +502,9 @@ Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: t
 
 ```sh
 claude plugin marketplace add giocaizzi/harness
-claude plugin install guard@giocaizzi-harness   # likewise hud, sounds, python, api, javascript, dev-tools
+claude plugin install guard@giocaizzi-harness   # likewise hud, sounds, python, go, foundations, infra, javascript, dev-tools
 copilot plugin marketplace add giocaizzi/harness
-copilot plugin install guard@giocaizzi-harness  # likewise hud, python, api, javascript, dev-tools
+copilot plugin install guard@giocaizzi-harness  # likewise hud, python, go, foundations, infra, javascript, dev-tools
 ```
 
 Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode and pi take the whole checkout, so they still get them. `chezmoi-agents check` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
@@ -516,7 +516,7 @@ Managed settings per harness:
 
 - Claude Code: marketplace and `enabledPlugins` (`.chezmoitemplates/claude-settings.json`).
 - Claude Code status line: `hud`'s `hooks/statusline.mjs claude`, run from the marketplace clone (`~/.claude/plugins/marketplaces/giocaizzi-harness`, a path that does not change with the plugin version); `node` 22+ and a Nerd Font are required. The agent-panel rows (`subagentStatusLine`) run the same script with `subagent`: each subagent's model and effort. It replaces the old `statusline-command.sh`; delete `~/.claude/statusline-command.sh` once on each machine.
-- Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `hud`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/hud`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting. `subagents.agents` pins the harness agents to their tiers, keyed `<plugin>:<agent>`: `dev-tools:scout` GPT-6 Luna at `low` (tier 1), `api:api-reviewer` GPT-6.1 Sol at `medium` (tier 3, driver), `dev-tools:escalate` GPT-6 Astra at `medium` (tier 4), `dev-tools:reviewer` and `dev-tools:worker` GPT-6 Luna at `medium` (routine tier; a safety-path reviewer cannot be raised per spawn on Copilot) (as Claude's `effort`). A model the account lacks falls back to an available one, so Astra runs as Luna until the account gets it.
+- Copilot CLI: marketplace, `enabledPlugins` and `statusLine` (`.chezmoitemplates/copilot-settings.json`). The status line runs `hud`'s `hooks/statusline.mjs` (`ctx N% · cache N%`) from `~/.copilot/installed-plugins/giocaizzi-harness/hud`; Copilot expands `~` itself on every OS, and `node` 22+ must be on PATH. Copilot CLI has no prompt-cache TTL or auto-compact setting. `subagents.agents` pins the harness agents to their tiers, keyed `<plugin>:<agent>`: `dev-tools:scout` GPT-6 Luna at `low` (tier 1), `foundations:api-reviewer` GPT-6.1 Sol at `medium` (tier 3, driver), `dev-tools:escalate` GPT-6 Astra at `medium` (tier 4), `dev-tools:reviewer` and `dev-tools:worker` GPT-6 Luna at `medium` (routine tier; a safety-path reviewer cannot be raised per spawn on Copilot) (as Claude's `effort`). A model the account lacks falls back to an available one, so Astra runs as Luna until the account gets it.
 - Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
 - VS Code Copilot (`dot_config/Code/User/settings.json`, all OSes): `chat.plugins.marketplaces` lists `giocaizzi/harness` and `chat.useHooks` enables the `guard` hooks. Plugins are installed from `@agentPlugins` in the Extensions view (or picked up from Copilot CLI's installs); VS Code has no status-line hook.
 
