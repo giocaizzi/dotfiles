@@ -24,6 +24,10 @@ jobs:
         with:
           go-version-file: tools/dots/go.mod
       - run: make -C tools/dots build
+      # bump reads the release table with `chezmoi data`; same pin as ci.yml.
+      - run: |
+          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Bump
         env:
           CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
