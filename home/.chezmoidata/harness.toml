@@ -11,11 +11,12 @@
 harnessPersonalPlugins = ["go"]
 
 [harnessPlugins]
-api = ["claude", "copilot", "codex", "antigravity", "pi"]
 dev-tools = ["claude", "copilot", "codex", "antigravity", "pi"]
+foundations = ["claude", "copilot", "codex", "antigravity", "pi"]
 go = ["claude", "copilot", "codex", "antigravity", "pi"]
 guard = ["claude", "copilot", "codex", "antigravity", "pi"]
 hud = ["claude", "copilot", "antigravity", "pi"]
+infra = ["claude", "copilot", "codex", "antigravity", "pi"]
 javascript = ["claude", "copilot", "codex", "antigravity", "pi"]
 python = ["claude", "copilot", "codex", "antigravity", "pi"]
 sounds = ["claude", "codex", "antigravity", "pi"]

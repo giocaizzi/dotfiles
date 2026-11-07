@@ -259,7 +259,7 @@ disableClaudeAiConnectors = true
 model = "gpt-6-luna"
 effortLevel = "low"
 
-[harnessPolicy.native.copilot.agents."api:api-reviewer"]
+[harnessPolicy.native.copilot.agents."foundations:api-reviewer"]
 model = "gpt-6.1-sol"
 effortLevel = "medium"
 
