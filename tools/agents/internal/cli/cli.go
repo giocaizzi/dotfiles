@@ -82,6 +82,8 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		return d.runUsage(ctx, rest)
 	case "doctor":
 		return d.runDoctor(ctx, rest)
+	case "plugins":
+		return d.runPlugins(ctx, rest)
 	case "version", "--version", "-v":
 		v := d.Version
 		if v == "" {
@@ -89,7 +91,7 @@ func (d Deps) Run(ctx context.Context, args []string) int {
 		}
 		fmt.Fprintf(d.Stdout, "chezmoi-agents %s\n", v)
 		return 0
-	case "help", "--help", "-h":
+	case helpCmd, helpFlag, "-h":
 		st := term.NewStyle(d.Stdout, d.Getenv)
 		fmt.Fprint(d.Stdout, usage(st))
 		return 0
@@ -126,6 +128,7 @@ func usage(s term.Style) string {
 	p("  %schezmoi agents%s %smodels render%s %s[-check] [-file <path>] [-doc <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %susage%s %s[-live] [-provider <id>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sdoctor%s %s[-live] [-q] [-json] [-harness <list>]%s\n", m, o, m, o, d, o)
+	p("  %schezmoi agents%s %splugins%s %s[list│update│prune] [-n] [-f] [-file <path>] [-harness-dir <path>]%s\n", m, o, m, o, d, o)
 	p("  %schezmoi agents%s %sversion%s %s│%s %shelp%s\n\n", m, o, m, o, d, o, m, o)
 
 	p("%sCOMMANDS%s\n", b, o)
@@ -139,6 +142,7 @@ func usage(s term.Style) string {
 	p("  %s%-13s%s %s%-30s%s %s\n", m, "models render", o, d, "[-check]", o, "Regenerate docs/MODELS.md offline")
 	p("  %s%-13s%s %s%-30s%s %s\n", m, "usage", o, d, "[-live] [-provider <id>]", o, "Show subscription usage per provider account (cached; -live refreshes)")
 	p("  %s%-13s%s %s%-30s%s %s\n", m, "doctor", o, d, "[-live] [-q] [-harness <list>]", o, "Advise on configured models, accounts and capacity (cached; -live refreshes)")
+	p("  %s%-13s%s %s%-30s%s %s\n", m, "plugins", o, d, "[list|update|prune]", o, "Inspect, update, or prune plugins across harnesses")
 	p("  %s%-13s%s %-30s %s\n", m, "version", o, "", "Print chezmoi-agents version information")
 	p("  %s%-13s%s %-30s %s\n\n", m, "help", o, "", "Display this help message")
 

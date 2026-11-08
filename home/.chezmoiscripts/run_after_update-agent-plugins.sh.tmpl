@@ -1,0 +1,29 @@
+{{- /* Runs on Unix machines with a harness selected and the chezmoi-agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | trim -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "chezmoi-agents" -}}
+{{- if and (ne .chezmoi.os "windows") $sel $r -}}
+#!/usr/bin/env bash
+# `chezmoi agents plugins update` after apply: ensures plugins on installed harnesses stay in sync.
+# Throttled by a 24h stamp file unless forced; non-fatal; warns on failure.
+# Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
+exe={{ joinPath .chezmoi.homeDir $r.dest | quote }}
+[ -x "$exe" ] || exit 0
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi"
+stamp="$cache_dir/agent-plugins-update.stamp"
+
+# Throttle to once every 24 hours (86400s)
+if [ -f "$stamp" ]; then
+	now=$(date +%s 2>/dev/null || true)
+	last=$(date -r "$stamp" +%s 2>/dev/null || stat -c %Y "$stamp" 2>/dev/null || true)
+	if [ -n "$now" ] && [ -n "$last" ] && [ $((now - last)) -lt 86400 ]; then
+		exit 0
+	fi
+fi
+
+mkdir -p "$cache_dir" 2>/dev/null || true
+if "$exe" plugins update >/dev/null 2>&1; then
+	touch "$stamp" 2>/dev/null || true
+fi
+exit 0
+{{ end -}}
