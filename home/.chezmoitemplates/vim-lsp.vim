@@ -1,5 +1,5 @@
-" Language servers for yegappan/lsp. Rendered from [harnessPolicy.lsp.server.*]
-" (.chezmoidata/harness-policy.toml): edit the servers there, not here.
+" Language servers for yegappan/lsp. Rendered from [agents.lsp.server.*]
+" (.chezmoidata/agents.toml): edit the servers there, not here.
 " Installed as plugin/lsp.vim, so it loads before pack/*/start; the plugin fires
 " `User LspSetup` once when it enables itself (on VimEnter).
 let s:servers = json_decode('{{ includeTemplate "lsp-servers" . | replace "'" "''" }}')

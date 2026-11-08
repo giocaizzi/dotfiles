@@ -5,7 +5,7 @@
 # ==============================================================================
 
 # --- D1: Runtime & Autonomy ---
-[harnessPolicy.autonomy]
+[agents.autonomy]
 executionMode = "auto"             # "auto" | "on-request" | "prompt"
 sandboxMode = "unrestricted"       # "workspace-write" | "unrestricted"
 allowNonWorkspaceAccess = true
@@ -15,7 +15,7 @@ askTimeout = "60s"
 mode = "auto"
 
 # --- D2: Permissions & Security (Universal ACL) ---
-[harnessPolicy.permissions]
+[agents.permissions]
 allowCommands = [
     "git *",
     "gh *",
@@ -125,28 +125,28 @@ askCommandPrefixes = [
 ]
 
 # --- D3: Models & Reasoning Tiers ---
-[harnessPolicy.models]
+[agents.models]
 defaultEffortLevel = "medium"      # "low" | "medium" | "high"
 showThinkingSummaries = true
 
-[harnessPolicy.models.tiers.scout]
+[agents.models.tiers.scout]
 model = "gpt-6-luna"
 effort = "low"
 
-[harnessPolicy.models.tiers.worker]
+[agents.models.tiers.worker]
 model = "gpt-6-luna"
 effort = "medium"
 
-[harnessPolicy.models.tiers.driver]
+[agents.models.tiers.driver]
 model = "gpt-6.1-sol"
 effort = "medium"
 
-[harnessPolicy.models.tiers.escalate]
+[agents.models.tiers.escalate]
 model = "gpt-6-astra"
 effort = "medium"
 
 # --- D4: Context & Compaction ---
-[harnessPolicy.context]
+[agents.context]
 autoCompact = true
 autoCompactWindow = 500000
 promptCacheTtl = "1h"
@@ -155,7 +155,7 @@ maxTurnTokens = 32000
 maxTokens = 200000
 
 # --- D5: UI, TUI & Notifications ---
-[harnessPolicy.ui]
+[agents.ui]
 terminalBell = true
 theme = "Catppuccin Mocha"
 tuiMode = "fullscreen"
@@ -165,11 +165,11 @@ showTurnDuration = true
 progressBar = true
 timeFormat = "24h"
 
-[harnessPolicy.notifications]
+[agents.notifications]
 terminalBell = true
 
 # --- D6: Telemetry & Observability (Dual-Tier Everywhere) ---
-[harnessPolicy.telemetry]
+[agents.telemetry]
 enabled = true
 dualTier = true
 protocol = "http/protobuf"
@@ -182,7 +182,7 @@ services = { claude = "claude-code", copilot = "copilot-cli", vscode = "vscode-c
 hooksBridge = true
 
 # --- D7: Language Server Protocol (LSP) ---
-# One [harnessPolicy.lsp.server.<name>] per language server, rendered into every
+# One [agents.lsp.server.<name>] per language server, rendered into every
 # harness and editor that takes custom servers (.chezmoitemplates/lsp-servers):
 #   package    = its row in packages.toml; the server is configured only where that
 #                package installs (this machine's role, OS and answers)
@@ -192,104 +192,104 @@ hooksBridge = true
 #   format     = true: editors format on save with it
 # A name equal to an opencode built-in (pyright, typescript, gopls, bash, yaml-ls,
 # terraform) replaces that built-in. enabled = false turns LSP off in every consumer.
-[harnessPolicy.lsp]
+[agents.lsp]
 enabled = true
 
-[harnessPolicy.lsp.server.pyright]
+[agents.lsp.server.pyright]
 package = "pyright"
 command = ["pyright-langserver", "--stdio"]
 extensions = { ".py" = "python", ".pyi" = "python" }
 
-[harnessPolicy.lsp.server.ruff]
+[agents.lsp.server.ruff]
 package = "ruff"
 command = ["ruff", "server"]
 extensions = { ".py" = "python", ".pyi" = "python" }
 format = true
 
 # TypeScript 7's compiler is its own language server (tsc --lsp; TS 7 has no tsserver).
-[harnessPolicy.lsp.server.typescript]
+[agents.lsp.server.typescript]
 package = "typescript"
 command = ["tsc", "--lsp", "--stdio"]
 extensions = { ".ts" = "typescript", ".mts" = "typescript", ".cts" = "typescript", ".tsx" = "typescriptreact", ".js" = "javascript", ".mjs" = "javascript", ".cjs" = "javascript", ".jsx" = "javascriptreact" }
 format = true
 
-[harnessPolicy.lsp.server.gopls]
+[agents.lsp.server.gopls]
 package = "gopls"
 command = ["gopls"]
 extensions = { ".go" = "go" }
 format = true
 
 # Lints with shellcheck and formats with shfmt when they are on PATH.
-[harnessPolicy.lsp.server.bash]
+[agents.lsp.server.bash]
 package = "bash-language-server"
 command = ["bash-language-server", "start"]
 extensions = { ".sh" = "shellscript", ".bash" = "shellscript" }
 filetypes = ["sh", "bash"]
 format = true
 
-[harnessPolicy.lsp.server.yaml-ls]
+[agents.lsp.server.yaml-ls]
 package = "yaml-language-server"
 command = ["yaml-language-server", "--stdio"]
 extensions = { ".yaml" = "yaml", ".yml" = "yaml" }
 
-[harnessPolicy.lsp.server.json]
+[agents.lsp.server.json]
 package = "vscode-langservers-extracted"
 command = ["vscode-json-language-server", "--stdio"]
 extensions = { ".json" = "json", ".jsonc" = "jsonc" }
 
-[harnessPolicy.lsp.server.terraform]
+[agents.lsp.server.terraform]
 package = "terraform-ls"
 command = ["terraform-ls", "serve"]
 extensions = { ".tf" = "terraform", ".tfvars" = "terraform-vars" }
 format = true
 
-[harnessPolicy.lsp.server.tflint]
+[agents.lsp.server.tflint]
 package = "tflint"
 command = ["tflint", "--langserver"]
 extensions = { ".tf" = "terraform", ".tfvars" = "terraform-vars" }
 
 # --- D8: Native Overrides & Escapes ---
-[harnessPolicy.native.claude]
+[agents.native.claude]
 defaultMode = "auto"
 skipAutoPermissionPrompt = true
 cleanupPeriodDays = 365
 disableClaudeAiConnectors = true
 
-[harnessPolicy.native.copilot.agents."dev-tools:scout"]
+[agents.native.copilot.agents."dev-tools:scout"]
 model = "gpt-6-luna"
 effortLevel = "low"
 
-[harnessPolicy.native.copilot.agents."foundations:api-reviewer"]
+[agents.native.copilot.agents."foundations:api-reviewer"]
 model = "gpt-6.1-sol"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."dev-tools:escalate"]
+[agents.native.copilot.agents."dev-tools:escalate"]
 model = "gpt-6-astra"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."dev-tools:driver"]
+[agents.native.copilot.agents."dev-tools:driver"]
 model = "gpt-6.1-sol"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."dev-tools:reviewer"]
+[agents.native.copilot.agents."dev-tools:reviewer"]
 model = "gpt-6-luna"
 effortLevel = "medium"
 
-[harnessPolicy.native.copilot.agents."dev-tools:worker"]
+[agents.native.copilot.agents."dev-tools:worker"]
 model = "gpt-6-luna"
 effortLevel = "medium"
 
-[harnessPolicy.native.antigravity]
+[agents.native.antigravity]
 agentMode = "auto"
 toolPermission = "always-proceed"
 enableTerminalSandbox = false
 allowNonWorkspaceAccess = true
 
-[harnessPolicy.native.codex]
+[agents.native.codex]
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
 
-[harnessPolicy.native.pi]
+[agents.native.pi]
 defaultProvider = "openai"
 defaultModel = "gpt-5.6-terra"
 defaultThinkingLevel = "medium"
@@ -297,13 +297,13 @@ packages = [
     "../../.local/share/giocaizzi-harness"
 ]
 
-[harnessPolicy.native.opencode]
+[agents.native.opencode]
 defaultModel = "gpt-5.5"
 sandbox = false
 
 # --- D9: Voice input (dictation) ---
 # Claude Code: rendered from this table. VS Code: settings.json is static, edit it to match (chezmoi-agents check fails on drift). Others: docs/OS.md#voice-input.
-[harnessPolicy.voice]
+[agents.voice]
 enabled = true
 mode = "hold"        # "hold" (push-to-talk) | "tap" (toggle)
 autoSubmit = false   # send the prompt when recording stops

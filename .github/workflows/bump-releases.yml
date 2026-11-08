@@ -22,8 +22,8 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-go@v7
         with:
-          go-version-file: tools/dots/go.mod
-      - run: make -C tools/dots build
+          go-version: '1.24'
+      - run: go install github.com/giocaizzi/chezmoi-dots/cmd/chezmoi-dots@latest
       # bump reads the release table with `chezmoi data`; same pin as ci.yml.
       - run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
@@ -31,7 +31,7 @@ jobs:
       - name: Bump
         env:
           CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
-        run: tools/dots/bin/chezmoi-dots bump
+        run: chezmoi-dots bump
       - name: Open the PR
         env:
           GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}

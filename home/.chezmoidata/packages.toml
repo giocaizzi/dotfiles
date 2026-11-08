@@ -370,11 +370,11 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 "linux/arm64" = "60d0512085a8c1be7c5ef51aa7e4ee28213444cea0376b3260707d90489199ea"
 
 [release.chezmoi-dots]
-# The `chezmoi dots` plugin of this repo (tools/dots), released by .github/workflows/release-dots.yml
-# on a dots-vX.Y.Z tag. A bare binary per platform.
-version = "0.6.0"
+# The `chezmoi dots` companion plugin, released by github.com/giocaizzi/chezmoi-dots
+# A bare binary per platform.
+version = "0.1.0"
 versionCmd = ["{dest}", "version"]
-url = "https://github.com/giocaizzi/dotfiles/releases/download/dots-v{version}/chezmoi-dots_{version}_{target}"
+url = "https://github.com/giocaizzi/chezmoi-dots/releases/download/v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
 exe = true
 
@@ -384,21 +384,19 @@ exe = true
 "linux/amd64" = "linux_amd64"
 "linux/arm64" = "linux_arm64"
 "windows/amd64" = "windows_amd64.exe"
-"windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "9e8dbc691f5497881ce2847baae9d0fb240e2319f1861d51699eff22f8f6ffd7"
-"darwin/arm64" = "77782481d43d410790fe105b722600e10ec4a15fd43214604d7dd8d06fdd239a"
-"linux/amd64" = "33613d39b51a7d40abdc8e8970bc74b40ddaf3ad90e7e64ea2f165ba1534670e"
-"linux/arm64" = "6a195a7c887129a7319e038ebe6e0b30441bfaa27275b5a2128585a129597cd8"
-"windows/amd64" = "884290151fbf784c6b30bd681f73777f2f5c06f0659b5d7f0bd0b1b0f5935dc5"
-"windows/arm64" = "a8fe116fd8086ae332144d1c63bddcc94c5bd586ad2b8b584dbcee39cc81aafe"
+"darwin/amd64" = "ba585d6b138d58ec1fa7c9b7016ca686b9dd463f2c2a5b297320086883720cd7"
+"darwin/arm64" = "9703f431d5dcb567630262a5bd92ebd5de98cabfd0b21e0800d98cba12ef73a0"
+"linux/amd64" = "8418e6737ff72fd583e16b1d6af7d0600241082d0d9e906a0ded4a49c9227b0d"
+"linux/arm64" = "93153eb398421882bd41653fb1ed7d2dd83d0313f5ba05b614afca501fbecc78"
+"windows/amd64" = "4cc3bb0ed3a519e44d1a722161ca9c3afecb0a329da713aed50e9b58afa3c9f1"
 
 [release.chezmoi-agents]
-# The `chezmoi-agents` policy and parity engine (tools/agents), released by .github/workflows/release-agents.yml
-# on an agents-vX.Y.Z tag. A bare binary per platform.
-version = "0.9.0"
-url = "https://github.com/giocaizzi/dotfiles/releases/download/agents-v{version}/chezmoi-agents_{version}_{target}"
+# The `chezmoi-agents` policy and parity engine, released by github.com/giocaizzi/agents
+# A bare binary per platform.
+version = "0.1.1"
+url = "https://github.com/giocaizzi/agents/releases/download/v{version}/chezmoi-agents_{version}_{target}"
 type = "file"
 exe = true
 
@@ -408,15 +406,34 @@ exe = true
 "linux/amd64" = "linux_amd64"
 "linux/arm64" = "linux_arm64"
 "windows/amd64" = "windows_amd64.exe"
-"windows/arm64" = "windows_arm64.exe"
 
 [release.chezmoi-agents.sha256]
-"darwin/amd64" = "98e17c2c99a1979309ee1e551216bfff7055da8513bd5cdaf54765340a6dcfb6"
-"darwin/arm64" = "9139b5cbb06dacbcae4e4f5ca4c5cbaee83fe1a0f85b3794e0b49c4dd8b8aaa3"
-"linux/amd64" = "6169b339e3032c55370283dfeda4202630c57fd408583194ac90d5258da2f7d9"
-"linux/arm64" = "955774cadade28a3119cc4594834477e601fa9a915aaf0870931b4c3e1e73c02"
-"windows/amd64" = "c0d914a3f690854da81ddeef22894b724f8cbff574a61766900e4d431f2b2e77"
-"windows/arm64" = "1f8be4b274e510a147aa1c0fe781d6c70a54d3230d5e767af315d05dee2ae82a"
+"darwin/amd64" = "c27899ab02d6a9953c169bdd4e1bdd6aaef347db316e9ff52d7496ee0d91d39c"
+"darwin/arm64" = "57e7ff4685b380ed99b6a439ba4d14524493501d9dbdb761db0ce232d371cb40"
+"linux/amd64" = "dc1b2ee305df16137104c389e9867b250adb036ac6f2aee3560fb59f24b68e3b"
+"linux/arm64" = "c2590a434d4a44e3fa3ec9cecab7a144fc650790cafc1d73867a680c238416f8"
+"windows/amd64" = "4fe8628ba1c8780f997238e771456fdc2cc85a73ffcbbd2d56db64bd88b87bb0"
+
+[release.agents]
+# Universal AI Agent Harness Manager standalone CLI, released by github.com/giocaizzi/agents
+version = "0.1.1"
+url = "https://github.com/giocaizzi/agents/releases/download/v{version}/agents_{version}_{target}"
+type = "file"
+exe = true
+
+[release.agents.target]
+"darwin/amd64" = "darwin_amd64"
+"darwin/arm64" = "darwin_arm64"
+"linux/amd64" = "linux_amd64"
+"linux/arm64" = "linux_arm64"
+"windows/amd64" = "windows_amd64.exe"
+
+[release.agents.sha256]
+"darwin/amd64" = "c27899ab02d6a9953c169bdd4e1bdd6aaef347db316e9ff52d7496ee0d91d39c"
+"darwin/arm64" = "57e7ff4685b380ed99b6a439ba4d14524493501d9dbdb761db0ce232d371cb40"
+"linux/amd64" = "dc1b2ee305df16137104c389e9867b250adb036ac6f2aee3560fb59f24b68e3b"
+"linux/arm64" = "c2590a434d4a44e3fa3ec9cecab7a144fc650790cafc1d73867a680c238416f8"
+"windows/amd64" = "4fe8628ba1c8780f997238e771456fdc2cc85a73ffcbbd2d56db64bd88b87bb0"
 
 [release.golangci-lint]
 roles = ["personal"]

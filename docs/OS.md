@@ -128,7 +128,7 @@ chezmoi execute-template --init \
 
 ### Shared harness policy
 
-`.chezmoidata/harness-policy.toml` holds declarative cross-harness configurations across 9 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, voice input (dictation), and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
+`.chezmoidata/agents.toml` holds declarative cross-harness configurations across 9 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, voice input (dictation), and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
 
 | Harness | Shared policy adapter | Native settings and limits |
 |---|---|---|
@@ -144,20 +144,20 @@ These adapters preserve each client's matching rules; a shared pattern is not a 
 
 #### Command patterns
 
-`[harnessPolicy.permissions]` keeps command rules as lists: `allowCommands` (VS Code auto-approve), `allowCommandPatterns` (allow), `denyCommandPatterns`, `denyCommandExact`, `denyCommandPrefixes` (deny) and `askCommandPrefixes` (ask). The lease-push rule is `allowCommandPatterns = ["git push --force-with-lease origin *"]` plus `denyCommandPatterns` for `main` and `master` (`git push --force-with-lease origin main`, `… master`, `git push * HEAD:main`, `… HEAD:master`, each also with trailing arguments): lease pushes are allowed only to feature branches. The guard hook and the server ruleset stay the real protection: no pattern sees `git -C <dir> push`, a refspec such as `feat/x:main` or reordered arguments.
+`[agents.permissions]` keeps command rules as lists: `allowCommands` (VS Code auto-approve), `allowCommandPatterns` (allow), `denyCommandPatterns`, `denyCommandExact`, `denyCommandPrefixes` (deny) and `askCommandPrefixes` (ask). The lease-push rule is `allowCommandPatterns = ["git push --force-with-lease origin *"]` plus `denyCommandPatterns` for `main` and `master` (`git push --force-with-lease origin main`, `… master`, `git push * HEAD:main`, `… HEAD:master`, each also with trailing arguments): lease pushes are allowed only to feature branches. The guard hook and the server ruleset stay the real protection: no pattern sees `git -C <dir> push`, a refspec such as `feat/x:main` or reordered arguments.
 
 | Harness | Rendering of `allowCommandPatterns` and the new deny patterns | Cannot express |
 |---|---|---|
 | Claude Code | `Bash(<pattern>)` in `allow` and `deny` (deny, then ask, then allow) | Forms the pattern does not match |
 | Antigravity | `command(<pattern>)` matches an exact token prefix and `*` is literal, so a `git push` pattern drops a trailing ` *` and renders as that prefix | Patterns with an inner `*` (`HEAD:main`, `HEAD:master`) are skipped; `command(*)` already allows everything, so the allow entry is for parity |
 | opencode | `shell` permission allow (last match wins, placed before the ask entries); the denies are hard `tool.use` policies, which only deny | Forms the pattern does not match |
-| Codex | `~/.codex/rules/harness-policy.rules` (`dot_codex/rules/harness-policy.rules.tmpl`, Starlark `prefix_rule`; allow → `allow`, deny → `forbidden`; most restrictive wins). `default.rules`, where the TUI saves its approvals, is not managed. Only these patterns are rendered, not the other deny lists | No wildcards: a trailing ` *` is dropped, patterns with an inner `*` are skipped |
-| VS Code | None: `settings.json` is static, so these patterns are not rendered (the policy translator in `tools/agents` maps them to `chat.tools.terminal.autoApprove` for its tests only) | Everything |
+| Codex | `~/.codex/rules/agents.rules` (`dot_codex/rules/agents.rules.tmpl`, Starlark `prefix_rule`; allow → `allow`, deny → `forbidden`; most restrictive wins). `default.rules`, where the TUI saves its approvals, is not managed. Only these patterns are rendered, not the other deny lists | No wildcards: a trailing ` *` is dropped, patterns with an inner `*` are skipped |
+| VS Code | None: `settings.json` is static, so these patterns are not rendered (the translator in `giocaizzi/agents` maps them to `chat.tools.terminal.autoApprove` for its tests only) | Everything |
 | Copilot CLI, pi | None: no command-permission rendering, so these lists do not reach them and the guard hook is their protection | Everything |
 
 #### Voice input
 
-`[harnessPolicy.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the policy (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `chezmoi-agents check` (part of `make check`) fails on drift. Claude's template reads the policy and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the policy instead.
+`[agents.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the configuration (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `chezmoi-agents check` (part of `make check`) fails on drift. Claude's template reads the configuration and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the configuration instead.
 
 | Harness | One-time steps and use | Limits |
 |---|---|---|
@@ -180,13 +180,13 @@ Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/16
 Change the voice preference:
 
 - When: dictation should be on or off, or switch between hold and tap, or auto-submit.
-- Steps: run `dots agents/policy` and edit `[harnessPolicy.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
+- Steps: run `dots agents/config` and edit `[agents.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
 - Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
 - Rollback: `git restore` both files and apply again.
 
 #### Language servers
 
-Each server is a `[harnessPolicy.lsp.server.<name>]` entry in the policy: `package` (its row in `packages.toml`), `command` (argv), `extensions` (`".ext"` → language id), `filetypes` (Vim filetypes, only where they differ from the language ids) and `format` (the editor formats on save with it). Servers: `pyright`, `ruff` (format), `typescript` (TypeScript 7's own `tsc --lsp --stdio`; format), `gopls` (format), `bash` (`bash-language-server start`, which runs shellcheck and shfmt when on `PATH`; format), `yaml-ls`, `json` (`vscode-json-language-server`), `terraform` (`terraform-ls serve`; format) and `tflint` (`tflint --langserver`). `[harnessPolicy.lsp] enabled = false` turns LSP off everywhere: opencode `"lsp": false`, Copilot CLI loses the policy-named entries, Claude Code gets `lsp@dotfiles` false and an empty `.lsp.json`, Vim registers nothing.
+Each server is a `[agents.lsp.server.<name>]` entry in the configuration: `package` (its row in `packages.toml`), `command` (argv), `extensions` (`".ext"` → language id), `filetypes` (Vim filetypes, only where they differ from the language ids) and `format` (the editor formats on save with it). Servers: `pyright`, `ruff` (format), `typescript` (TypeScript 7's own `tsc --lsp --stdio`; format), `gopls` (format), `bash` (`bash-language-server start`, which runs shellcheck and shfmt when on `PATH`; format), `yaml-ls`, `json` (`vscode-json-language-server`), `terraform` (`terraform-ls serve`; format) and `tflint` (`tflint --langserver`). `[agents.lsp] enabled = false` turns LSP off everywhere: opencode `"lsp": false`, Copilot CLI loses the configuration-named entries, Claude Code gets `lsp@dotfiles` false and an empty `.lsp.json`, Vim registers nothing.
 
 `.chezmoitemplates/lsp-servers` returns the servers that apply to this machine: its package is selected for the role and the `requires` answer, and installs on this OS (a package manager entry, or a [release] with a target for this platform); `{}` when LSP is off. It also gives each server's `bin` (for presence checks) and, on Windows, wraps npm servers in `cmd /c` (their `.cmd` shims need a shell, per the Node docs). Every consumer reads it:
 
@@ -260,7 +260,7 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `chezmoi dots` opens the part you mean and shows what the edit changes on every machine type. `dots` is an alias for `chezmoi dots` on full machines; `chezmoi dots help` prints the full usage. It is [a chezmoi plugin](#the-chezmoi-dots-plugin) (Go, `tools/dots`), the same on macOS, Linux and Windows. On a terminal the output uses the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
+Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `chezmoi dots` opens the part you mean and shows what the edit changes on every machine type. `dots` is an alias for `chezmoi dots` on full machines; `chezmoi dots help` prints the full usage. It is [a chezmoi plugin](#the-chezmoi-dots-plugin) (Go, [giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)), the same on macOS, Linux and Windows. On a terminal the output uses the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
 
 ### Edit
 
@@ -377,7 +377,7 @@ Releases move only with a bump. `upgrade` still ends with the release-only check
 
 ## The chezmoi-dots plugin
 
-`chezmoi dots` is a [chezmoi plugin](https://www.chezmoi.io/user-guide/command-overview/#plugins): chezmoi runs the `chezmoi-dots` executable found on `PATH` for `chezmoi dots ...`, with the chezmoi environment set (`CHEZMOI_SOURCE_DIR`, `CHEZMOI_EXECUTABLE`, ...). The code is the Go module `tools/dots`: pure packages for the registries, the configuration matrix, the composition tree and the package updates, behind small ports; adapters for chezmoi (`chezmoi data`, `dump`, `managed`, `cat`, ... as the stable interface), the editor, git and the terminal; tests use hand-written fakes plus an end-to-end test against a real chezmoi. [tools/dots/DESIGN.md](../tools/dots/DESIGN.md) has the architecture.
+`chezmoi dots` is a [chezmoi plugin](https://www.chezmoi.io/user-guide/command-overview/#plugins): chezmoi runs the `chezmoi-dots` executable found on `PATH` for `chezmoi dots ...`, with the chezmoi environment set (`CHEZMOI_SOURCE_DIR`, `CHEZMOI_EXECUTABLE`, ...). The plugin lives independently at [github.com/giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots).
 
 | Command | Does |
 |---|---|
@@ -388,21 +388,10 @@ Releases move only with a bump. `upgrade` still ends with the release-only check
 
 **Install it**
 
-**When:** a new machine, or while no release is pinned yet.
-
-1. `chezmoi apply` installs the pinned release (`[release.chezmoi-dots]` in `packages.toml`) into `~/.local/bin`; nothing else to do.
-2. To run a local build instead: `make -C tools/dots install` (builds and copies it to `~/.local/bin`).
+1. `chezmoi apply` installs the pinned release (`[release.chezmoi-dots]` in `packages.toml`) into `~/.local/bin`.
+2. Standalone install: `go install github.com/giocaizzi/chezmoi-dots/cmd/chezmoi-dots@latest`.
 
 **Verify:** `chezmoi dots version`.
-
-**Release it**
-
-**When:** the plugin changed in a way worth shipping.
-
-1. Tag the merge commit on `main`: `git tag dots-vX.Y.Z && git push origin dots-vX.Y.Z`. The `release-dots` workflow builds static binaries for the six platforms, writes `checksums.txt`, attests them and creates the GitHub release.
-2. Pin it: `chezmoi dots bump chezmoi-dots` rewrites the version and the six checksums of `[release.chezmoi-dots]` in `packages.toml` (the weekly `bump-releases` PR does it too); review, ship the PR, `chezmoi apply` installs it.
-
-**Verify:** the release lists six binaries and `checksums.txt`; `chezmoi dots outdated` is clean after the bump.
 
 **Rollback:** delete the release and tag, and revert the pin.
 
@@ -553,7 +542,7 @@ Manual keys: `providers`, `since`, `ignore`, `pin`, `aliases`. Synced keys: `mod
 
 `providers` are models.dev provider keys (today `anthropic`, `google`, `moonshotai`, `openai`, `xai`), the same ids as the usage tool. Every price is the first-party provider's API price per million tokens (input, output, cache read; cache write is stored), whichever harness runs the model; a model with no first-party price shows `n/a`. Each model records `provider`, `id` (the provider's API id; the canonical id `<provider>/<id>` is built from it), `name`, `releaseDate`, `context`, `api`.
 
-**Tier rule.** The rule is deterministic; its constants live in `tools/agents/internal/catalog/tier.go`.
+**Tier rule.** The rule is deterministic; its constants live in the `giocaizzi/agents` catalog.
 
 1. Blended price `p = (3·in + out) / 4`, in $ per million tokens (first-party API price).
 2. Price bands: lightweight `p < 2.5`, versatile `p < 7`, powerful `p < 15`, extra `p >= 15`.
@@ -565,7 +554,7 @@ Manual keys: `providers`, `since`, `ignore`, `pin`, `aliases`. Synced keys: `mod
 
 Untiered models are those the rule leaves out (above). The catalog holds the models listed by their first-party provider (the provider key is the prefix of the canonical id `<provider>/<id>`) released on or after `since` that output text, support tool calls and are not deprecated, minus `ignore`.
 
-Agent roles pin an explicit model per role in `harnessPolicy.models.tiers` (`.chezmoidata/harness-policy.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). `chezmoi agents doctor` ([Doctor](#doctor-chezmoi-agents-doctor)) checks them against the catalog and flags drift after a re-tier.
+Agent roles pin an explicit model per role in `agents.models.tiers` (`.chezmoidata/agents.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). `chezmoi agents doctor` ([Doctor](#doctor-chezmoi-agents-doctor)) checks them against the catalog and flags drift after a re-tier.
 
 `chezmoi agents models` and `render -check` (`make lint`) fail when the stored `tiers` differ from the rule, so `tiers` is never hand-edited. Pinned ids are left out of that check, so a new pin passes `dots models` and takes effect at the next sync. `syncedAt` only moves when the synced data changes, so the weekly workflow opens a PR only on real changes.
 
@@ -675,7 +664,7 @@ Runbook: check capacity before fanning out agents.
 - **When:** before starting several parallel agents or a long run.
 - **Steps:** `make usage` (or `chezmoi agents usage -live`); read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
 - **Verify:** every account you use shows a bar and a reset time, with a fresh age.
-- **Troubleshooting:** every HTTP account shows "unavailable: timeout" while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) is blocking the freshly built `tools/agents/bin/chezmoi-agents`; allow it there (any version).
+- **Troubleshooting:** every HTTP account shows "unavailable: timeout" while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) is blocking `chezmoi-agents`; allow it there (any version).
 - **Rollback:** nothing to undo; delete the cache file to forget old snapshots.
 
 Runbook: an account shows "token expired" or "unauthorized".
@@ -705,7 +694,7 @@ Runbook: one account shows twice, or "same account? unknown".
 
 | Flag | Effect |
 |---|---|
-| (none) | Offline: reads `.chezmoidata/models.json` (the catalog), `.chezmoidata/harness-policy.toml` and the usage cache `usage.json`. No network, no credential read |
+| (none) | Offline: reads `.chezmoidata/models.json` (the catalog), `.chezmoidata/agents.toml` and the usage cache `usage.json`. No network, no credential read |
 | `-live` | Refreshes usage like `usage -live` (2 s per provider, failures degrade quietly) and rewrites the cache, the only file the doctor writes |
 | `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet. Otherwise a short head: at most 5 lines (warnings first, then suggestions, no info lines), then `… N more: run chezmoi agents doctor` |
 | `-json` | Prints `{"findings":[...]}`; a finding has `level`, `kind`, `harness`, `role`, `text`, `fix`, `current`, `suggested`, `reason`, `billing` |
@@ -713,7 +702,7 @@ Runbook: one account shows twice, or "same account? unknown".
 
 Budget: 2 s offline, 6 s live; on overrun it prints nothing and exits 0. Exit 0 when it ran, 1 when `models.json` or the policy cannot be read, 2 on a flag error.
 
-**Models it checks:** the role models in `harnessPolicy.models.tiers` (scout, worker, driver, escalate) for every selected harness; Copilot's `native.copilot.agents."dev-tools:<role>"`, which overrides them for `copilot`; and the default model of Codex (`native.codex.model`), pi (`native.pi.defaultModel`, `defaultProvider`) and opencode (`native.opencode.defaultModel`). A role maps to a fixed tier: scout and worker lightweight, driver powerful, escalate extra. A default model is compared within its own tier.
+**Models it checks:** the role models in `agents.models.tiers` (scout, worker, driver, escalate) for every selected harness; Copilot's `native.copilot.agents."dev-tools:<role>"`, which overrides them for `copilot`; and the default model of Codex (`native.codex.model`), pi (`native.pi.defaultModel`, `defaultProvider`) and opencode (`native.opencode.defaultModel`). A role maps to a fixed tier: scout and worker lightweight, driver powerful, escalate extra. A default model is compared within its own tier.
 
 **Availability:** a model counts as available to a harness when its first-party provider serves it and the harness can use that provider with an account the usage tool found.
 
@@ -748,13 +737,13 @@ Runbook: a doctor warning.
 
 - **When:** `chezmoi agents doctor` (or the hook after an apply) prints a `!` warning or a `↑` suggestion.
 - **Steps**, by kind:
-    - *Unknown or drifted model:* edit the policy key the line names (in parentheses, or after `edit`) in `harness-policy.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
-    - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`harnessPolicy.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
+    - *Unknown or drifted model:* edit the key the line names (in parentheses, or after `edit`) in `agents.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
+    - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`agents.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
     - *Stale catalog:* merge the weekly models-sync PR, or run `make models-sync` and ship it (see [Refresh the data](#model-tiers-chezmoi-agents-models)).
     - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage -live`.
     - *No account:* log in to the named harness, then `chezmoi agents usage -live`.
 - **Verify:** `chezmoi agents doctor -live` no longer prints the warning.
-- **Rollback:** the doctor changes nothing; `git checkout -- home/.chezmoidata/harness-policy.toml` undoes a policy edit.
+- **Rollback:** the doctor changes nothing; `git checkout -- home/.chezmoidata/agents.toml` undoes a policy edit.
 
 ## Source layout (`.chezmoiroot`)
 

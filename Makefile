@@ -1,6 +1,6 @@
 # Repo checks. The registries, the config template and every rendered script, alias file
-# and settings template are linted by the chezmoi-dots plugin (tools/dots, `chezmoi dots
-# lint`), built here and run against this checkout; it needs chezmoi to render.
+# and settings template are linted by the chezmoi-dots plugin (`chezmoi dots lint`),
+# run against this checkout; it needs chezmoi to render.
 ifeq ($(OS),Windows_NT)
 # Git for Windows provides the POSIX shell required by the recipes, but does not add it to PATH.
 # make cannot take a SHELL path with spaces (C:/Program Files): it finds sh.exe on PATH instead.
@@ -13,7 +13,8 @@ endif
 SHELLCHECK_EXCLUDES ?=
 # The source state (.chezmoiroot); chezmoi --source . resolves it on its own.
 SRC := home
-DOTS := CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR="$(CURDIR)/$(SRC)" tools/dots/bin/chezmoi-dots
+DOTS := CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR="$(CURDIR)/$(SRC)" chezmoi dots
+AGENTS := chezmoi-agents
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
 RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
 SH   := $(RC)
@@ -21,38 +22,28 @@ ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help dots agents models-sync lint test test-syntax check check-fast aliases-audit usage
+.PHONY: help models-sync lint test test-syntax check check-fast aliases-audit usage
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
 
-dots: ## Build the chezmoi-dots plugin into tools/dots/bin/
-	@$(MAKE) --no-print-directory -C tools/dots build
+models-sync: ## Refresh model data and docs/MODELS.md (network)
+	$(AGENTS) models sync
 
-agents: ## Build chezmoi-agents into tools/agents/bin/
-	@$(MAKE) --no-print-directory -C tools/agents build
+usage: ## Show subscription usage per provider account (live, needs the network)
+	@$(AGENTS) usage -live
 
-models-sync: agents ## Refresh model data and docs/MODELS.md (network)
-	tools/agents/bin/chezmoi-agents models sync
-
-usage: agents ## Show subscription usage per provider account (live, needs the network)
-	@tools/agents/bin/chezmoi-agents usage -live
-
-lint: dots agents ## shellcheck, validate JSON, lint registries, templates, policy, and plugins
+lint: ## shellcheck, validate JSON, lint registries, templates, and agents config
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
-	tools/agents/bin/chezmoi-agents check
-	tools/agents/bin/chezmoi-agents models render -check
-	$(MAKE) -C tools/dots lint
-	$(MAKE) -C tools/agents lint
+	$(AGENTS) check -file "$(SRC)/.chezmoidata/agents.toml"
+	$(AGENTS) models render -check
 
-aliases-audit: dots ## List live shell aliases the registry does not account for
+aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
 
-test: test-syntax ## Syntax-check bash and zsh files, test the plugins
-	$(MAKE) -C tools/dots test
-	$(MAKE) -C tools/agents test
+test: test-syntax ## Syntax-check bash and zsh files
 
 test-syntax: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
@@ -66,5 +57,5 @@ test-syntax: ## Syntax-check bash and zsh files
 
 check: lint test ## lint + test
 
-# The guard plugin's stop hook prefers check-fast: no race detector, no plugin tests.
-check-fast: lint test-syntax ## lint + syntax checks, without the plugin tests
+# The guard plugin's stop hook prefers check-fast: no plugin tests.
+check-fast: lint test-syntax ## lint + syntax checks

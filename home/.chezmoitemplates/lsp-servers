@@ -1,12 +1,12 @@
-{{- /* Language servers for this machine ([harnessPolicy.lsp.server.*] in
-  .chezmoidata/harness-policy.toml). Called as
+{{- /* Language servers for this machine ([agents.lsp.server.*] in
+  .chezmoidata/agents.toml). Called as
     includeTemplate "lsp-servers" . | fromJson
   Returns {"<name>": {"command": [...], "bin": "...", "extensions": {".ext": "languageId"},
   "filetypes": [...], "format": bool}} for each server whose package
   (.chezmoidata/packages.toml) installs here: selected for this machine's role and
   `requires` answer, and installed on this OS (uv and npm everywhere, brew and cask on
   macOS, apt on Linux, winget on Windows, script on the OSes it lists, or a [release]
-  with a target for this platform). Empty when harnessPolicy.lsp.enabled is false.
+  with a target for this platform). Empty when agents.lsp.enabled is false.
     command   = argv to spawn; on Windows an npm package's command is a .cmd shim,
                 which a process spawn without a shell cannot start, so it runs
                 through cmd /c (Node docs: "Spawning .bat and .cmd files on Windows")
@@ -15,7 +15,7 @@
 {{- $os := .chezmoi.os -}}
 {{- $role := includeTemplate "role" . -}}
 {{- $releases := includeTemplate "releases" . | fromJson -}}
-{{- $lsp := .harnessPolicy.lsp | default dict -}}
+{{- $lsp := .agents.lsp | default dict -}}
 {{- $out := dict -}}
 {{- if get $lsp "enabled" -}}
 {{-   range $name, $s := get $lsp "server" | default dict -}}

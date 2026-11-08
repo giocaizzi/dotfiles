@@ -19,49 +19,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # The chezmoi-dots plugin (tools/dots): lint and tests on every OS it ships for. The
-  # end-to-end tests drive a real chezmoi, so it is installed first.
-  dots:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        working-directory: tools/dots
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: tools/dots/go.mod
-      - if: runner.os != 'Windows'
-        run: |
-          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          iex "&{$(irm 'https://get.chezmoi.io/ps1')} -b '$env:USERPROFILE\bin' -t v2.70.0"
-          "$env:USERPROFILE\bin" >> $env:GITHUB_PATH
-      - if: runner.os != 'Windows'
-        run: make check
-      # Windows runners have no make: the same two steps by hand.
-      - if: runner.os == 'Windows'
-        run: go test -race -shuffle=on ./...
-
-  dots-vuln:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: tools/dots/go.mod
-      - run: make -C tools/dots vuln
-
-  # Required status check: aggregates the jobs above, runs make check.
+  # Required status check: aggregates checks and runs make check.
   check:
-    needs: [gitleaks, dots, dots-vuln]
+    needs: [gitleaks]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -71,7 +31,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
         with:
-          go-version-file: tools/dots/go.mod
+          go-version: '1.24'
+      - run: |
+          go install github.com/giocaizzi/chezmoi-dots/cmd/chezmoi-dots@latest
+          go install github.com/giocaizzi/agents/cmd/agents@latest
+          ln -sf $(go env GOPATH)/bin/agents $(go env GOPATH)/bin/chezmoi-agents
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - run: sudo apt-get install -y --no-install-recommends zsh
       # make lint renders the script templates with chezmoi.
       - run: |
