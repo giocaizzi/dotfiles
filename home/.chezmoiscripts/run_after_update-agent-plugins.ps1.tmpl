@@ -1,6 +1,6 @@
-{{- /* Runs on Windows machines with a harness selected and the chezmoi-agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- /* Runs on Windows machines with a harness selected and the agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
 {{- $sel := includeTemplate "harnesses" . | trim -}}
-{{- $r := get (includeTemplate "releases" . | fromJson) "chezmoi-agents" -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
 {{- if and (eq .chezmoi.os "windows") $sel $r -}}
 # `chezmoi agents plugins update` after apply: ensures plugins on installed harnesses stay in sync.
 # Throttled by a 24h stamp file unless forced; non-fatal.

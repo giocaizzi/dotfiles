@@ -46,7 +46,7 @@ jobs:
           git diff --quiet -- home/.chezmoidata/models.json docs/MODELS.md && { echo "The model catalog is up to date."; exit 0; }
           branch=chore/models-sync
           title="chore(agents): refresh the model catalog"
-          body="Prices, ranks, benchmarks and tiers from \`chezmoi agents models sync\`. See docs/OS.md#model-tiers-chezmoi-agents-models."
+          body="Prices, ranks, benchmarks and tiers from \`agents models sync\`. See docs/OS.md#model-tiers-agents-models."
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Checkout keeps no credential; only this step gets the token, for git through gh.

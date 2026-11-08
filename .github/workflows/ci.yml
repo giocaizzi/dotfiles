@@ -34,9 +34,8 @@ jobs:
           mkdir -p "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           gh release download -R giocaizzi/chezmoi-dots -p "chezmoi-dots_*_linux_amd64" -O "$HOME/.local/bin/chezmoi-dots" --clobber
-          gh release download -R giocaizzi/agents -p "chezmoi-agents_*_linux_amd64" -O "$HOME/.local/bin/chezmoi-agents" --clobber
           gh release download -R giocaizzi/agents -p "agents_*_linux_amd64" -O "$HOME/.local/bin/agents" --clobber
-          chmod +x "$HOME/.local/bin/chezmoi-dots" "$HOME/.local/bin/chezmoi-agents" "$HOME/.local/bin/agents"
+          chmod +x "$HOME/.local/bin/chezmoi-dots" "$HOME/.local/bin/agents"
         env:
           GH_TOKEN: ${{ github.token }}
       - run: sudo apt-get install -y --no-install-recommends zsh

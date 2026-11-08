@@ -1,12 +1,12 @@
-{{- /* Runs on Windows machines with a harness selected and the chezmoi-agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- /* Runs on Windows machines with a harness selected and the agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
 {{- $sel := includeTemplate "harnesses" . | trim -}}
-{{- $r := get (includeTemplate "releases" . | fromJson) "chezmoi-agents" -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
 {{- if and (eq .chezmoi.os "windows") $sel $r -}}
 # `chezmoi agents doctor -q` after every apply and update: warns when a newer or better model or
 # config is available. Warns only; reads the model catalog and the cached usage (no network, no
 # credentials); prints nothing when there is nothing to say; never fails the apply. A binary
 # without the doctor command is skipped silently (its error goes to $null).
-# Runbook: docs/OS.md#doctor-chezmoi-agents-doctor.
+# Runbook: docs/OS.md#doctor-agents-doctor.
 # Single-quoted literals: an apostrophe in the home path is doubled.
 $exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
 if (-not (Test-Path -LiteralPath $exe)) { exit 0 }
