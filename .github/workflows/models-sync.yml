@@ -43,16 +43,16 @@ jobs:
           GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
         run: |
           set -eu
-          git diff --quiet -- home/.chezmoidata/models.json docs/MODELS.md && { echo "The model catalog is up to date."; exit 0; }
+          git diff --quiet -- docs/MODELS.md && { echo "The model catalog is up to date."; exit 0; }
           branch=chore/models-sync
           title="chore(agents): refresh the model catalog"
-          body="Prices, ranks, benchmarks and tiers from \`agents models sync\`. See docs/OS.md#model-tiers-agents-models."
+          body="Prices, ranks, benchmarks and tiers rendered to docs/MODELS.md from \`agents models sync\`. See docs/OS.md#model-tiers-agents-models."
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # Checkout keeps no credential; only this step gets the token, for git through gh.
           gh auth setup-git
           git switch -c "$branch"
-          git add home/.chezmoidata/models.json docs/MODELS.md
+          git add docs/MODELS.md
           git commit -m "$title"
           git push --force origin "$branch"
           gh pr create --base main --head "$branch" --title "$title" --body "$body" \

@@ -79,12 +79,6 @@ desc = "giocaizzi/harness plugins per harness"
 source = ".chezmoidata/harness.toml"
 check = ["agents", "check", "-file", "{file}"]
 
-[edit.models]
-desc = "Model catalog (synced; manual keys: providers, since, ignore, pin, aliases)"
-source = ".chezmoidata/models.json"
-note = "Pins and ignores apply at the next sync: make models-sync (a new pin passes the check before it)"
-check = ["agents", "models", "-file", "{file}"]
-
 [edit."claude/settings"]
 desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
 source = ".chezmoitemplates/claude-settings.json"
