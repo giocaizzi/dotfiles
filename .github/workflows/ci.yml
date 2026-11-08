@@ -29,19 +29,20 @@ jobs:
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
         run: exit 1
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version: '1.24'
-      - run: |
-          go install github.com/giocaizzi/chezmoi-dots/cmd/chezmoi-dots@latest
-          go install github.com/giocaizzi/agents/cmd/agents@latest
-          ln -sf $(go env GOPATH)/bin/agents $(go env GOPATH)/bin/chezmoi-agents
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - name: Install plugins and tools
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          gh release download -R giocaizzi/chezmoi-dots -p "chezmoi-dots_*_linux_amd64" -O "$HOME/.local/bin/chezmoi-dots" --clobber
+          gh release download -R giocaizzi/agents -p "chezmoi-agents_*_linux_amd64" -O "$HOME/.local/bin/chezmoi-agents" --clobber
+          gh release download -R giocaizzi/agents -p "agents_*_linux_amd64" -O "$HOME/.local/bin/agents" --clobber
+          chmod +x "$HOME/.local/bin/chezmoi-dots" "$HOME/.local/bin/chezmoi-agents" "$HOME/.local/bin/agents"
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: sudo apt-get install -y --no-install-recommends zsh
       # make lint renders the script templates with chezmoi.
       - run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make check
         env:
           GH_TOKEN: ${{ github.token }}  # the plugins check reads giocaizzi/harness plugins/
