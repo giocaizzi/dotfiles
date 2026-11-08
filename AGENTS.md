@@ -67,8 +67,8 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
 - Worktrees can live anywhere, `.claude/worktrees/` included: they sit outside `home/`, so chezmoi never reads their `.chezmoidata`. See docs/OS.md → Source layout.
-- `chezmoi agents usage` shows subscription usage per provider account from harness credentials (memory only, never printed); see docs/OS.md → Models and subscriptions.
-- `chezmoi agents doctor` warns offline when a newer or better model or config is available; the `run_after_agents-doctor.*` scripts run it after every apply on machines with a harness; see docs/OS.md → Models and subscriptions → Doctor.
+- `agents usage` (or `chezmoi agents usage`) shows subscription usage per provider account from harness credentials (memory only, never printed); see docs/OS.md → Models and subscriptions.
+- `agents doctor` (or `chezmoi agents doctor`) warns offline when a newer or better model or config is available; the `run_after_agents-doctor.*` scripts run it after every apply on machines with a harness; see docs/OS.md → Models and subscriptions → Doctor.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 
