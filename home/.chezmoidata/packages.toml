@@ -372,7 +372,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.chezmoi-dots]
 # The `chezmoi dots` companion plugin, released by github.com/giocaizzi/chezmoi-dots
 # A bare binary per platform.
-version = "0.1.2"
+version = "0.1.3"
 versionCmd = ["{dest}", "version"]
 url = "https://github.com/giocaizzi/chezmoi-dots/releases/download/v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
@@ -386,15 +386,15 @@ exe = true
 "windows/amd64" = "windows_amd64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "83e146359c517913128828c6573ea2700b8b72f50a6434d37d5dcd420e67192f"
-"darwin/arm64" = "ed15fc155fba41f24f943f1e8e143170968da1773efd52975597e4f2a8204ba0"
-"linux/amd64" = "c2e9f9c7fb1a094978b855fb0675bc2d5b61f598c6eb4678e61027fcb5f72dee"
-"linux/arm64" = "2212514a948361c28b0bf7e09013e882175b012585515f67d4b55366e695fc22"
-"windows/amd64" = "51d1331455392dde1608704d039937690efd7fd5ae94c6d8db99fca1e8d1a3aa"
+"darwin/amd64" = "d36db31e2d43c6d47b513c7a953ad3e11679bca987cc6536f3b91acbbd736605"
+"darwin/arm64" = "7e67aaed5d6a681b93249c4684901fe123bbe54a1f1ddfcdac724e9c11479753"
+"linux/amd64" = "5f7a976ecdca4ad2e138d22998d7e589fb6f1a7007fea2e7c49b3cd832231d28"
+"linux/arm64" = "26708af0adf1e810ad3768020417b9369a18d44f45991e4ba8f8b03c9a98b256"
+"windows/amd64" = "da6e8f41e468dcde3961f77bd08f74c5085b932010e5977694f3804109fd2fdb"
 
 [release.agents]
 # Universal AI Agent Harness Manager standalone CLI, released by github.com/giocaizzi/agents
-version = "0.1.4"
+version = "0.1.5"
 url = "https://github.com/giocaizzi/agents/releases/download/v{version}/agents_{version}_{target}"
 type = "file"
 exe = true
@@ -407,11 +407,11 @@ exe = true
 "windows/amd64" = "windows_amd64.exe"
 
 [release.agents.sha256]
-"darwin/amd64" = "51599a95fe6012c8fb6bbf802321d949b4d084633d99e8fe2b5b5601df3fcf45"
-"darwin/arm64" = "7c0f9f2d193c20561202bc56b77c408a100f5dcdf4ebd02564c9b6a41015f238"
-"linux/amd64" = "8f7aa6fa5c165dedd0e9d23f3fe5caf568ef6c559394ac63ff4ff85d3480af3c"
-"linux/arm64" = "73212d0dfb775ea5a69f2aacad04973bc6b18576388e9308db60cfd35cec2095"
-"windows/amd64" = "3799cc4e61259a53fa570c542db478a17bda20ab5e62fae31f811cf4c8096f45"
+"darwin/amd64" = "d1c4d6d74b8f02f5c5049a5d02e4312d9a51a823ae6c261fe8d9eb457df64255"
+"darwin/arm64" = "c4b3a6bb13010e7873897e2b2e6f6ac23c1c36079fc88d47a3b7580388c056e2"
+"linux/amd64" = "be746061653fbaab2886b08ca989b8981fc5c6dbcf977849e7d932c534ad8aa9"
+"linux/arm64" = "184b6e67aee0ae1e50e91b4485703b2200217204e0f91f4946d73f03df1f4c78"
+"windows/amd64" = "550e5cb57c17e8b41d0ba04a30118733ea696298cb75cfee8dabfd6c53416525"
 
 [release.golangci-lint]
 roles = ["personal"]
