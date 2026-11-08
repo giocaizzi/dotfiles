@@ -14,7 +14,7 @@ SHELLCHECK_EXCLUDES ?=
 # The source state (.chezmoiroot); chezmoi --source . resolves it on its own.
 SRC := home
 DOTS := CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR="$(CURDIR)/$(SRC)" chezmoi-dots
-AGENTS := chezmoi-agents
+AGENTS := agents
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
 RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
 SH   := $(RC)

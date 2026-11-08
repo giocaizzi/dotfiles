@@ -9,7 +9,7 @@ make help    # list targets
 make check   # lint + test; run before pushing
 ```
 
-Needs `go`, `chezmoi`, `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS). `pwsh` is optional locally (the PowerShell alias parse is skipped without it) and present on CI runners. `make` runs `chezmoi dots lint` ([giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)) and `chezmoi-agents check` ([giocaizzi/agents](https://github.com/giocaizzi/agents)) against this checkout.
+Needs `go`, `chezmoi`, `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS). `pwsh` is optional locally (the PowerShell alias parse is skipped without it) and present on CI runners. `make` runs `chezmoi dots lint` ([giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)) and `agents check` ([giocaizzi/agents](https://github.com/giocaizzi/agents)) against this checkout.
 On Windows, `make` uses Git for Windows' POSIX shell; zsh syntax checks run when
 zsh is installed and are otherwise skipped because zsh is not a Windows dependency.
 ShellCheck also ignores working-tree CRLF diagnostics on Windows; tracked shell
@@ -17,7 +17,7 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `lint` | `shellcheck` on the bash rc files; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `chezmoi-agents check` on agents config; `chezmoi-agents models render -check` |
+| `lint` | `shellcheck` on the bash rc files; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config; `agents models render -check` |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test` | `test-syntax` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
@@ -46,4 +46,4 @@ On every PR and push to `main`:
 
 A red `check`: open the run, read the failing step, reproduce with `make check`, fix, push. A gitleaks hit: rotate the secret first, then remove it from the change (encrypted file or `bws`, see [OS.md](./OS.md)).
 
-Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries ([OS.md](./OS.md#packages)); `models-sync` opens the weekly PR that refreshes the model catalog ([OS.md](./OS.md#model-tiers-chezmoi-agents-models)); both need a `BUMP_TOKEN` secret for CI to run on their PR. Their checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.
+Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries ([OS.md](./OS.md#packages)); `models-sync` opens the weekly PR that refreshes the model catalog ([OS.md](./OS.md#model-tiers-agents-models)); both need a `BUMP_TOKEN` secret for CI to run on their PR. Their checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.

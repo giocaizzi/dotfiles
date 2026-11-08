@@ -20,25 +20,25 @@
 [edit."agents/core"]
 desc = "Agent instructions, core layer (public, every machine)"
 source = ".chezmoitemplates/agents/core.md"
-check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/env"]
 desc = "Agent instructions, CLI environment layer (public, per role and OS)"
 source = ".chezmoitemplates/agents/env.md"
-check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/personal"]
 desc = "Agent instructions, personal layer (encrypted, personal machines)"
 source = ".chezmoitemplates/agents/personal.md.age"
-check = ["chezmoi-agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
 diff = "first"
 
 [edit."agents/work"]
 desc = "Agent instructions, work layer (encrypted, work machines)"
 source = ".chezmoitemplates/agents/work.md.age"
-check = ["chezmoi-agents", "prompt", "-profile", "work", "-check", "-file", "{file}"]
+check = ["agents", "prompt", "-profile", "work", "-check", "-file", "{file}"]
 diff = "first"
 
 # --- Shell (docs/SHELL.md#alias-registry) ---
@@ -68,7 +68,7 @@ check = ["ssh", "-G", "-F", "{file}", "localhost"]
 [edit."agents/config"]
 desc = "Universal AI agents harness configuration"
 source = ".chezmoidata/agents.toml"
-check = ["chezmoi-agents", "check", "-file", "{file}"]
+check = ["agents", "check", "-file", "{file}"]
 
 [edit.mcp]
 desc = "MCP servers by layer: user, personal, ops workspace"
@@ -77,13 +77,13 @@ source = ".chezmoidata/mcp.toml"
 [edit.plugins]
 desc = "giocaizzi/harness plugins per harness"
 source = ".chezmoidata/harness.toml"
-check = ["chezmoi-agents", "check", "-file", "{file}"]
+check = ["agents", "check", "-file", "{file}"]
 
 [edit.models]
 desc = "Model catalog (synced; manual keys: providers, since, ignore, pin, aliases)"
 source = ".chezmoidata/models.json"
 note = "Pins and ignores apply at the next sync: make models-sync (a new pin passes the check before it)"
-check = ["chezmoi-agents", "models", "-file", "{file}"]
+check = ["agents", "models", "-file", "{file}"]
 
 [edit."claude/settings"]
 desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
