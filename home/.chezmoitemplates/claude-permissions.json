@@ -1,4 +1,4 @@
-{{- $p := .harnessPolicy.permissions -}}
+{{- $p := .agents.permissions -}}
 {{- $deny := list -}}
 {{- range $p.denyCommandPatterns }}{{ $deny = append $deny (printf "Bash(%s)" .) }}{{ end -}}
 {{- range $p.denyRead }}{{ $deny = append $deny (printf "Read(%s)" .) }}{{ end -}}
@@ -12,4 +12,4 @@
 {{- range $p.allowCommandPatterns }}{{ $allow = append $allow (printf "Bash(%s)" .) }}{{ end -}}
 {{- $ask := list -}}
 {{- range $p.askCommandPrefixes }}{{ $ask = append $ask (printf "Bash(%s)" .) }}{{ $ask = append $ask (printf "Bash(%s *)" .) }}{{ end -}}
-{{- dict "allow" $allow "deny" $deny "ask" $ask "defaultMode" .harnessPolicy.native.claude.defaultMode | toJson -}}
+{{- dict "allow" $allow "deny" $deny "ask" $ask "defaultMode" .agents.native.claude.defaultMode | toJson -}}

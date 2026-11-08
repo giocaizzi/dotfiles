@@ -9,8 +9,8 @@
 {{- /* User-scope MCP servers come from .chezmoidata/mcp.toml (.chezmoitemplates/mcp-user.json); the
        ~/ops workspace (ops/dot_codex/config.toml) is trusted so Codex loads it
        (personal machines only, like ops/). */ -}}
-{{- $bell := or .harnessPolicy.ui.terminalBell .harnessPolicy.notifications.terminalBell -}}
-{{- $native := .harnessPolicy.native.codex -}}
+{{- $bell := or .agents.ui.terminalBell .agents.notifications.terminalBell -}}
+{{- $native := .agents.native.codex -}}
 {{- $tui := get $current "tui" | default dict -}}
 {{- $users := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson -}}
 {{- $mcp := get $current "mcp_servers" | default dict -}}

@@ -1,4 +1,4 @@
-{{- $p := .harnessPolicy.permissions -}}
+{{- $p := .agents.permissions -}}
 {{- $deny := list -}}
 {{- $seen := dict -}}
 {{- /* command() matches an exact token prefix and `*` is literal: a `git push` pattern with no `*`

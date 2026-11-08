@@ -39,7 +39,7 @@
     "pyright-lsp@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": false,
     "gopls-lsp@claude-plugins-official": false,
-    "lsp@dotfiles": {{ .harnessPolicy.lsp.enabled | default false | toJson }}
+    "lsp@dotfiles": {{ .agents.lsp.enabled | default false | toJson }}
   },
   "extraKnownMarketplaces": {
     "dotfiles": {
@@ -82,29 +82,29 @@
       }
     }
   },
-  "effortLevel": {{ .harnessPolicy.models.defaultEffortLevel | default "medium" | quote }},
-  "promptCacheTtl": {{ .harnessPolicy.context.promptCacheTtl | default "1h" | quote }},
-  "subagentPromptCacheTtl": {{ .harnessPolicy.context.subagentPromptCacheTtl | default "1h" | quote }},
-  "autoCompactWindow": {{ .harnessPolicy.context.autoCompactWindow | default 500000 }},
-  "tui": {{ .harnessPolicy.ui.tuiMode | default "fullscreen" | quote }},
-  "terminalProgressBarEnabled": {{ .harnessPolicy.ui.progressBar | default true }},
-  "preferredNotifChannel": {{ ternary "terminal_bell" "notifications_disabled" (or .harnessPolicy.ui.terminalBell .harnessPolicy.notifications.terminalBell) | quote }},
-  "showThinkingSummaries": {{ .harnessPolicy.models.showThinkingSummaries | default true }},
-  "viewMode": {{ .harnessPolicy.ui.viewMode | default "focus" | quote }},
-  "showTurnDuration": {{ .harnessPolicy.ui.showTurnDuration | default true }},
+  "effortLevel": {{ .agents.models.defaultEffortLevel | default "medium" | quote }},
+  "promptCacheTtl": {{ .agents.context.promptCacheTtl | default "1h" | quote }},
+  "subagentPromptCacheTtl": {{ .agents.context.subagentPromptCacheTtl | default "1h" | quote }},
+  "autoCompactWindow": {{ .agents.context.autoCompactWindow | default 500000 }},
+  "tui": {{ .agents.ui.tuiMode | default "fullscreen" | quote }},
+  "terminalProgressBarEnabled": {{ .agents.ui.progressBar | default true }},
+  "preferredNotifChannel": {{ ternary "terminal_bell" "notifications_disabled" (or .agents.ui.terminalBell .agents.notifications.terminalBell) | quote }},
+  "showThinkingSummaries": {{ .agents.models.showThinkingSummaries | default true }},
+  "viewMode": {{ .agents.ui.viewMode | default "focus" | quote }},
+  "showTurnDuration": {{ .agents.ui.showTurnDuration | default true }},
   "terminalTitleFromRename": true,
-  "timeFormat": {{ .harnessPolicy.ui.timeFormat | default "24h" | quote }},
-  "outputStyle": {{ .harnessPolicy.ui.outputStyle | default "Concise" | quote }},
+  "timeFormat": {{ .agents.ui.timeFormat | default "24h" | quote }},
+  "outputStyle": {{ .agents.ui.outputStyle | default "Concise" | quote }},
   "voice": {
-    "enabled": {{ .harnessPolicy.voice.enabled | default false | toJson }},
-    "mode": {{ .harnessPolicy.voice.mode | default "hold" | quote }},
-    "autoSubmit": {{ .harnessPolicy.voice.autoSubmit | default false | toJson }}
+    "enabled": {{ .agents.voice.enabled | default false | toJson }},
+    "mode": {{ .agents.voice.mode | default "hold" | quote }},
+    "autoSubmit": {{ .agents.voice.autoSubmit | default false | toJson }}
   },
   "skipWorkflowUsageWarning": true,
-  "theme": {{ if hasPrefix "Catppuccin Mocha" .harnessPolicy.ui.theme }}"dark"{{ else }}"light"{{ end }},
+  "theme": {{ if hasPrefix "Catppuccin Mocha" .agents.ui.theme }}"dark"{{ else }}"light"{{ end }},
   "remoteControlAtStartup": false,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": {{ .harnessPolicy.native.claude.skipAutoPermissionPrompt | toJson }},
-  "askUserQuestionTimeout": {{ .harnessPolicy.autonomy.askTimeout | default "60s" | quote }}
+  "skipAutoPermissionPrompt": {{ .agents.native.claude.skipAutoPermissionPrompt | toJson }},
+  "askUserQuestionTimeout": {{ .agents.autonomy.askTimeout | default "60s" | quote }}
 }

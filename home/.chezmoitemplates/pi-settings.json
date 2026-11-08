@@ -1,4 +1,4 @@
-{{- $native := .harnessPolicy.native.pi -}}
+{{- $native := .agents.native.pi -}}
 {
   "defaultProvider": {{ $native.defaultProvider | toJson }},
   "defaultModel": {{ $native.defaultModel | toJson }},

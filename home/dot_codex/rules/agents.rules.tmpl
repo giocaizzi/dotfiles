@@ -1,12 +1,12 @@
-{{- /* Codex command rules from the shared policy (.chezmoidata/harness-policy.toml): the rules in
+{{- /* Codex command rules from the shared policy (.chezmoidata/agents.toml): the rules in
         ~/.codex/rules/ are merged, the most restrictive match wins (forbidden > prompt > allow). The TUI
         writes its own allow-list to default.rules, which is not managed. A pattern is an exact token
         prefix with no wildcards: a trailing " *" is dropped, a pattern with an inner `*` is skipped and
         patterns that collapse to the same prefix render once. Only the lease-push patterns are rendered
         for Codex; the other deny lists are not. */ -}}
-{{- $p := .harnessPolicy.permissions -}}
+{{- $p := .agents.permissions -}}
 {{- $seen := dict -}}
-# Managed by chezmoi from harnessPolicy.permissions: do not edit.
+# Managed by chezmoi from agents.permissions: do not edit.
 {{ range $p.allowCommandPatterns }}{{ $t := trimSuffix " *" . }}{{ if not (contains "*" $t) -}}
 prefix_rule(
     pattern = {{ splitList " " $t | toJson }},

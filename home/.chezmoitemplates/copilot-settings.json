@@ -12,7 +12,7 @@
     "type": "command",
     "command": "node ~/.copilot/installed-plugins/giocaizzi-harness/hud/hooks/statusline.mjs"
   },
-  "subagents": { "agents": {{ .harnessPolicy.native.copilot.agents | toJson }} },
+  "subagents": { "agents": {{ .agents.native.copilot.agents | toJson }} },
   "inlineImages": false,
   "showReasoning": false,
   "footer": {
@@ -32,8 +32,8 @@
     "showPullRequest": true,
     "showCustom": true
   },
-  "allowedUrls": {{ .harnessPolicy.permissions.allowedUrls | toJson }},
-  "beep": {{ (or .harnessPolicy.ui.terminalBell .harnessPolicy.notifications.terminalBell) | toJson }},
+  "allowedUrls": {{ .agents.permissions.allowedUrls | toJson }},
+  "beep": {{ (or .agents.ui.terminalBell .agents.notifications.terminalBell) | toJson }},
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false
