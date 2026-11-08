@@ -37,9 +37,11 @@ fi
 {{- end }}
 {{- if has "antigravity" $harnesses }}
 
-# Antigravity: plugins from marketplace / checkout, agents and guard hooks.
+# Antigravity: plugins from checkout, agents and guard hooks.
 if command -v agy >/dev/null 2>&1; then
-	agy plugin import claude >/dev/null 2>&1 || true
+	for p in {{ $c := list }}{{ range $p, $h := .harnessPlugins }}{{ if and (has "antigravity" $h) (not (and (get $ "work") (has $p $.harnessPersonalPlugins))) }}{{ $c = append $c $p }}{{ end }}{{ end }}{{ join " " $c }}; do
+		agy plugin install "$HARNESS/plugins/$p" >/dev/null 2>&1 || true
+	done
 	node "$HARNESS/scripts/install.mjs" antigravity
 fi
 {{- end }}

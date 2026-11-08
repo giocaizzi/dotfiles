@@ -36,10 +36,12 @@ if ((& $has 'pi') -and -not ((pi list 2>$null) -match [regex]::Escape($Harness))
 {{- end }}
 {{- if has "antigravity" $harnesses }}
 
-# Antigravity: plugins from marketplace / checkout, agents and guard hooks.
+# Antigravity: plugins from checkout, agents and guard hooks.
 if (& $has 'agy') {
-	try { & agy plugin import claude *>$null } catch {}
-	node $Install antigravity
+    foreach ($p in @({{ $c := list }}{{ range $p, $h := .harnessPlugins }}{{ if and (has "antigravity" $h) (not (and (get $ "work") (has $p $.harnessPersonalPlugins))) }}{{ $c = append $c (squote $p) }}{{ end }}{{ end }}{{ join ", " $c }})) {
+        try { & agy plugin install (Join-Path $Harness "plugins\$p") *>$null } catch {}
+    }
+    node $Install antigravity
 }
 {{- end }}
 exit 0

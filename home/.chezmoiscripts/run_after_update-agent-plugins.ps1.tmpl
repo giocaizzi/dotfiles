@@ -1,0 +1,27 @@
+{{- /* Runs on Windows machines with a harness selected and the chezmoi-agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | trim -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "chezmoi-agents" -}}
+{{- if and (eq .chezmoi.os "windows") $sel $r -}}
+# `chezmoi agents plugins update` after apply: ensures plugins on installed harnesses stay in sync.
+# Throttled by a 24h stamp file unless forced; non-fatal.
+# Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
+$exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
+if (-not (Test-Path -LiteralPath $exe)) { exit 0 }
+
+$cacheDir = Join-Path $HOME '.cache\chezmoi'
+$stamp = Join-Path $cacheDir 'agent-plugins-update.stamp'
+
+if (Test-Path -LiteralPath $stamp) {
+    $last = (Get-Item -LiteralPath $stamp).LastWriteTime
+    if ((Get-Date) - $last -lt (New-TimeSpan -Days 1)) {
+        exit 0
+    }
+}
+
+New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+try {
+    & $exe plugins update *>$null
+    Set-Content -Path $stamp -Value (Get-Date).ToString("o")
+} catch { }
+exit 0
+{{ end -}}
