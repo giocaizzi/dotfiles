@@ -129,6 +129,16 @@ askCommandPrefixes = [
 defaultEffortLevel = "medium"      # "low" | "medium" | "high"
 showThinkingSummaries = true
 
+[agents.models.catalog]
+providers = [
+    "anthropic",
+    "google",
+    "moonshotai",
+    "openai",
+    "xai"
+]
+since = "2026-01-01"
+
 [agents.models.tiers.scout]
 model = "gpt-6-luna"
 effort = "low"

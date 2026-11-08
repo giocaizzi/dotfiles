@@ -8,3 +8,7 @@ CLAUDE.local.md
 .opencode/plans/
 .pi/npm/
 .pi/git/
+
+# Model catalog benchmark cache (manual sync preferences live in agents.toml [agents.models.catalog])
+home/.chezmoidata/models.json
+*.models.json
