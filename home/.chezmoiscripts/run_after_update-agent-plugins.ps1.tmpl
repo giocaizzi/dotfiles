@@ -6,6 +6,7 @@
 # Throttled by a 24h stamp file unless forced; non-fatal.
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 $exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
+$harnessDir = '{{ joinPath .chezmoi.homeDir ".local/share/giocaizzi-harness" | replace "'" "''" }}'
 if (-not (Test-Path -LiteralPath $exe)) { exit 0 }
 
 $cacheDir = Join-Path $HOME '.cache\chezmoi'
@@ -20,7 +21,7 @@ if (Test-Path -LiteralPath $stamp) {
 
 New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
 try {
-    & $exe plugins update *>$null
+    & $exe plugins update -harness-dir $harnessDir *>$null
     Set-Content -Path $stamp -Value (Get-Date).ToString("o")
 } catch { }
 exit 0
