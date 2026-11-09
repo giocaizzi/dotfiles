@@ -116,7 +116,7 @@ why = "the chezmoi-dots plugin is installed on full machines only"
 
 # --- Projects ---
 [alias.openclaw]
-posix = "$HOME/Documents/github/rp5-homeserver/services/openclaw/openclaw.sh"
+posix = "$HOME/Documents/giocaizzi/rp5-homeserver/services/openclaw/openclaw.sh"
 shells = ["posix"]
 os = ["darwin"]
 machines = ["personal"]
