@@ -7,6 +7,7 @@
 # Throttled by a 24h stamp file unless forced; non-fatal; warns on failure.
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 exe={{ joinPath .chezmoi.homeDir $r.dest | quote }}
+harness_dir={{ joinPath .chezmoi.homeDir ".local/share/giocaizzi-harness" | quote }}
 [ -x "$exe" ] || exit 0
 
 cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/chezmoi"
@@ -22,7 +23,7 @@ if [ -f "$stamp" ]; then
 fi
 
 mkdir -p "$cache_dir" 2>/dev/null || true
-if "$exe" plugins update >/dev/null 2>&1; then
+if "$exe" plugins update -harness-dir "$harness_dir" >/dev/null 2>&1; then
 	touch "$stamp" 2>/dev/null || true
 fi
 exit 0

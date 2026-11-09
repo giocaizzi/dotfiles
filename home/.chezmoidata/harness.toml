@@ -7,6 +7,10 @@
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 # ----------------------------------------------------------------------------
 
+# The shared external lives at ~/.local/share/giocaizzi-harness. agents plugins
+# uses this registry to resolve that managed checkout before developer checkouts.
+harnessRegistry = "giocaizzi/harness"
+
 # Plugins for personal work only: work machines get them disabled.
 harnessPersonalPlugins = ["go"]
 
