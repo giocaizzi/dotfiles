@@ -300,7 +300,7 @@ sandbox_mode = "workspace-write"
 
 [agents.native.pi]
 defaultProvider = "openai"
-defaultModel = "gpt-5.6-terra"
+defaultModel = "gpt-6.1-sol"
 defaultThinkingLevel = "medium"
 packages = [
     "../../.local/share/giocaizzi-harness"
