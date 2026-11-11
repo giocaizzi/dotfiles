@@ -132,7 +132,7 @@ notify-on-command-finish-after = 5s
 # the system sound (system); all clear on focus or input. No custom audio.
 # Claude Code rings the bell when it is idle or waits on a prompt
 # (preferredNotifChannel = terminal_bell), so its tab is marked.
-bell-features = system,attention,title,border,no-audio
+bell-features = system,attention,title,border
 
 # --- Keybindings ---
 # Quick terminal (global: works even when Ghostty is not focused)
