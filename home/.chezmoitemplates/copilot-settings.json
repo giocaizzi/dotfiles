@@ -34,6 +34,7 @@
   },
   "allowedUrls": {{ .agents.permissions.allowedUrls | toJson }},
   "beep": {{ (or .agents.ui.terminalBell .agents.notifications.terminalBell) | toJson }},
+  "voice": { "enabled": {{ .agents.voice.enabled | default false | toJson }} },
   "ide": {
     "autoConnect": false,
     "openDiffOnEdit": false
