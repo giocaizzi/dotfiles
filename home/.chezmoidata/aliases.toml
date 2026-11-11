@@ -115,12 +115,6 @@ machines = ["personal", "work"]
 why = "the chezmoi-dots plugin is installed on full machines only"
 
 # --- Projects ---
-[alias.openclaw]
-posix = "$HOME/Documents/giocaizzi/rp5-homeserver/services/openclaw/openclaw.sh"
-shells = ["posix"]
-os = ["darwin"]
-machines = ["personal"]
-why = "local rp5-homeserver script, only on the personal Mac"
 
 # --- Refused commands ---
 [aliasBlock.pipx]

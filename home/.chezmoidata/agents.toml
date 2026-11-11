@@ -39,7 +39,6 @@ allowedUrls = [
     "https://docs.anthropic.com/**",
     "https://*.openai.com/**",
     "https://*.google.com/**",
-    "https://unifiedharnessprotocol.org/**"
 ]
 
 denyRead = [
