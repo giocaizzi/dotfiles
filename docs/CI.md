@@ -46,4 +46,4 @@ On every PR and push to `main`:
 
 A red `check`: open the run, read the failing step, reproduce with `make check`, fix, push. A gitleaks hit: rotate the secret first, then remove it from the change (encrypted file or `bws`, see [OS.md](./OS.md)).
 
-Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries ([OS.md](./OS.md#packages)); `models-sync` opens the weekly PR that refreshes the model catalog ([OS.md](./OS.md#model-tiers-agents-models)); both need a `BUMP_TOKEN` secret for CI to run on their PR. Their checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.
+Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries ([OS.md](./OS.md#packages)); it needs a `BUMP_TOKEN` secret for CI to run on its PR. Its checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.

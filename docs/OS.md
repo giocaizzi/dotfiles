@@ -555,11 +555,10 @@ Which model fits which job is kept here as tiers, with synced costs and ranks be
 
 ### Model tiers (`agents models`)
 
-Models are grouped into four tiers (lightweight, versatile, powerful, extra). Sync computes the tiers; nobody assigns them by hand. It also adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers`, ranks from the LMArena leaderboard dataset (board `text_style_control`) and Epoch AI benchmarks. The benchmark dataset is cached locally in `~/.cache/agents/models.json` (untracked, git-ignored), while manual sync preferences (`providers`, `since`, `pins`, `ignore`, `aliases`) are configured in `.chezmoidata/agents.toml` (`[agents.models.catalog]`). The generated quicklook is [MODELS.md](./MODELS.md): one table per tier, the untiered models and the best model per arena category. Every table has the same columns: model, provider, id (the canonical id `<provider>/<id>`, the key `pins` and `ignore` use), $in, $out, $cache, context, arena ranks, benchmarks. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY).
+Models are grouped into four tiers (lightweight, versatile, powerful, extra). Sync computes the tiers; nobody assigns them by hand. It also adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers`, ranks from the LMArena leaderboard dataset (board `text_style_control`) and Epoch AI benchmarks. The benchmark dataset is cached locally in `~/.cache/agents/models.json` (untracked, git-ignored), while manual sync preferences (`providers`, `since`, `pins`, `ignore`, `aliases`) are configured in `.chezmoidata/agents.toml` (`[agents.models.catalog]`). Nothing is committed: `chezmoi agents models` shows the tiers in the terminal, with the canonical id `<provider>/<id>` that `pins` and `ignore` use. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY). Command reference: [agents CLI reference](https://github.com/giocaizzi/agents/blob/main/docs/cli.md).
 
-- `chezmoi agents models`: validate the catalog and print the tiers and untiered models.
-- `chezmoi agents models sync [-file] [-doc]`: fetch every source (Epoch AI always, since its Epoch Capabilities Index, ECI, drives the rule), recompute the tiers, rewrite the benchmark cache (`~/.cache/agents/models.json`) and `docs/MODELS.md`; all-or-nothing, nothing is written when a source fails.
-- `chezmoi agents models render [-check]`: regenerate `docs/MODELS.md` offline, without recomputing tiers; `-check` only compares and runs in `make lint`.
+- `chezmoi agents models [-file]`: show the tiers, costs and rankings as terminal tables.
+- `chezmoi agents models sync [-file]`: fetch every source (Epoch AI always, since its Epoch Capabilities Index, ECI, drives the rule), recompute the tiers and rewrite the benchmark cache (`~/.cache/agents/models.json`) only; all-or-nothing, nothing is written when a source fails.
 
 Manual keys: `providers`, `since`, `ignore`, `pins`, `aliases` (in `.chezmoidata/agents.toml` under `[agents.models.catalog]`). Synced keys: `models`, `tiers`, `sources`, `syncedAt` (saved to local cache `models.json`).
 
@@ -579,44 +578,43 @@ Untiered models are those the rule leaves out (above). The catalog holds the mod
 
 Agent roles pin an explicit model per role in `agents.models.tiers` (`.chezmoidata/agents.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). `agents doctor` ([Doctor](#doctor-agents-doctor)) checks them against the catalog and flags drift after a re-tier.
 
-`chezmoi agents models render -check` (`make lint`) verifies that `docs/MODELS.md` matches the benchmark cache. Pinned ids are left out of that check, so a new pin passes and takes effect at the next sync. The weekly workflow opens a PR only when `docs/MODELS.md` changes.
+Pins and `ignore` take effect at the next sync.
 
 **Refresh the data**
 
-**When:** weekly, automatically: the `models-sync` workflow (Mondays) runs `models sync` and opens or updates the PR `chore(agents): refresh the model catalog` when `docs/MODELS.md` changed; review and merge it like any PR (it needs the `BUMP_TOKEN` secret for CI to run, see [CI.md](./CI.md)). Run it on demand with `gh workflow run models-sync` (or Actions → models-sync → Run workflow), or locally:
+**When:** the doctor warns that the catalog is stale (older than 30 days), or before choosing models. Run it on each machine; the cache is local.
 
-1. `make models-sync` (network).
-2. Review the diff of `docs/MODELS.md`, including tier moves. The sync warns `unmatched source names:`; an `arena: <name> (ambiguous: …)` or `epoch: <name> (ambiguous: …)` entry is a source name shared by several models, which then gets no rank or benchmark: map it to one canonical id in `aliases.arena` or `aliases.epoch` in `.chezmoidata/agents.toml`.
-3. `make check`, ship the PR.
+1. `chezmoi agents models sync` (network).
+2. `chezmoi agents models` and review the tiers, including tier moves. The sync warns `unmatched source names:`; an `arena: <name> (ambiguous: …)` or `epoch: <name> (ambiguous: …)` entry is a source name shared by several models, which then gets no rank or benchmark: map it to one canonical id in `aliases.arena` or `aliases.epoch` in `.chezmoidata/agents.toml`.
+3. If you changed `aliases`: `make check`, commit.
 
-**Verify:** `chezmoi agents models render -check` exits 0.
+**Verify:** `chezmoi agents models` shows the new `syncedAt`, and `chezmoi agents doctor` no longer warns about a stale catalog.
 
-**Rollback:** `git checkout -- docs/MODELS.md`.
+**Rollback:** nothing is committed; fix the configuration and sync again.
 
 **Track a new provider**
 
 **When:** a provider whose models should appear in the catalog.
 
 1. `dots agents/config`: add its models.dev key to `[agents.models.catalog.providers]`.
-2. `make models-sync` (network); tiers are automatic.
-3. Review the diff of `docs/MODELS.md`.
-4. `make check`, ship the PR.
+2. `chezmoi agents models sync` (network); tiers are automatic.
+3. `make check`, commit the configuration change.
 
-**Verify:** `chezmoi agents models render -check` exits 0 and the provider's models appear in `docs/MODELS.md`.
+**Verify:** the provider's models appear in `chezmoi agents models`.
 
-**Rollback:** `git checkout -- docs/MODELS.md`.
+**Rollback:** revert the configuration change and sync again.
 
 **Pin or ignore a model**
 
 **When:** the rule puts a model in the wrong tier (pin it), or a model is noise (ignore it).
 
 1. `dots agents/config`: add `"<provider>/<id> = "<tier>"` to `[agents.models.catalog.pins]`, or the id to `ignore` (ids as in the table).
-2. `make models-sync` (network): `chezmoi agents models render` does not recompute tiers.
-3. `make check`, ship the PR.
+2. `chezmoi agents models sync` (network): only a sync recomputes tiers.
+3. `make check`, commit the configuration change.
 
 **Verify:** `chezmoi agents models` shows the model in its tier (or no longer lists it).
 
-**Rollback:** `git checkout -- docs/MODELS.md`.
+**Rollback:** revert the configuration change and sync again.
 
 ### Subscription usage (`agents usage`)
 
@@ -746,7 +744,7 @@ Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption abo
     - paid by a flat plan you pay yourself, the stronger model may be suggested (`within your flat plan` when headroom is at least 10%);
     - paid by metered billing or a seat paid by an organization (team, enterprise), only a cheaper model is suggested (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
     - paid by an unknown plan or with hidden data, the advice is ranking-only, with no capacity claims.
-3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync` or the weekly models-sync PR.
+3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync`.
 4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
 5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then chezmoi agents usage -live`.
 
@@ -762,7 +760,7 @@ Runbook: a doctor warning.
 - **Steps**, by kind:
     - *Unknown or drifted model:* edit the key the line names (in parentheses, or after `edit`) in `agents.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
     - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`agents.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
-    - *Stale catalog:* merge the weekly models-sync PR, or run `make models-sync` and ship it (see [Refresh the data](#model-tiers-agents-models)).
+    - *Stale catalog:* run `chezmoi agents models sync` (see [Refresh the data](#model-tiers-agents-models)).
     - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage -live`.
     - *No account:* log in to the named harness, then `chezmoi agents usage -live`.
 - **Verify:** `chezmoi agents doctor -live` no longer prints the warning.
