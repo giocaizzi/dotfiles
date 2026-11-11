@@ -69,7 +69,7 @@ check() { # check <description> <expected: 0|1> <actual exit>
 	fi
 }
 calls() { # number of lines in the stub log matching $1
-	grep -c "$1" "$STUB_LOG" 2>/dev/null || true
+	grep -c -e "$1" -- "$STUB_LOG" 2>/dev/null || true
 }
 
 ORIG_PATH="$PATH"
@@ -200,7 +200,7 @@ new_repo
 commit a.txt PRIVATE_MARKER
 STUB_VISIBILITY=private GITLEAKS_PRIVATE_CONFIG="$PRIV" push origin main
 check "private marker passes on a private remote" 0 $?
-check "no private pass on a private remote" 0 "$(calls -- '--config')"
+check "no private pass on a private remote" 0 "$(calls '--config')"
 
 new_repo
 commit a.txt PRIVATE_MARKER
