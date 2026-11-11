@@ -618,7 +618,7 @@ Pins and `ignore` take effect at the next sync.
 
 ### Subscription usage (`agents usage`)
 
-`chezmoi agents usage [-live] [-provider <id>]` shows, per provider account the machine is logged into, the plan and billing model, rolling windows (5 h, weekly), monthly allowances, spend and credits. Provider ids are the models.dev keys: `anthropic`, `openai`, `github-copilot`, `google`, plus API-key providers. The same account seen from several harnesses is shown once, with the harnesses listed.
+`chezmoi agents usage [-provider <id>]` always queries every account live and shows, per provider account the machine is logged into, the plan and billing model, rolling windows (5 h, weekly), monthly allowances, spend and credits. Provider ids are the models.dev keys: `anthropic`, `openai`, `github-copilot`, `google`, plus API-key providers. The same account seen from several harnesses is shown once, with the harnesses listed.
 
 Accounts are found from the credentials the harnesses already store. On macOS, a Keychain service looked up without a known account (Claude Code, Codex) reads the current user's item first and only then any item of that service, since a stale item of another account can share the name:
 
@@ -650,13 +650,13 @@ Account identity is resolved per credential, whichever harness holds it, so one 
 
 | Provider | Identity | From |
 |---|---|---|
-| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id` or `user_id`), email; a workspace id alone is not an identity, and neither is `sub` (pi salts it per client) | The login's own token claims (decoded locally, also when expired); otherwise `-live` reads `account_id` and `user_id` from the answer of `chatgpt.com/backend-api/wham/usage` for that token (the usage request itself, no other host), so the row merges with the Codex login of the same account or shows its own plan and limits. That answer has no email: a login proven only this way shows its plan without an address. Every harness's login is queried like Codex's, except a token-sharing login (Sign in with ChatGPT for the API, scope `chatgpt.tokens.use.direct`, e.g. pi's `openai`): chatgpt.com's usage API rejects it and its token names no account, so it is never sent there and never merged; it shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type` |
-| `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, `-live` asks `api.github.com/user` with that token (`github.com` logins only) |
-| `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise `-live` asks `api.anthropic.com/api/oauth/profile` with that token |
+| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id` or `user_id`), email; a workspace id alone is not an identity, and neither is `sub` (pi salts it per client) | The login's own token claims (decoded locally, also when expired); otherwise the live query reads `account_id` and `user_id` from the answer of `chatgpt.com/backend-api/wham/usage` for that token (the usage request itself, no other host), so the row merges with the Codex login of the same account or shows its own plan and limits. That answer has no email: a login proven only this way shows its plan without an address. Every harness's login is queried like Codex's, except a token-sharing login (Sign in with ChatGPT for the API, scope `chatgpt.tokens.use.direct`, e.g. pi's `openai`): chatgpt.com's usage API rejects it and its token names no account, so it is never sent there and never merged; it shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type` |
+| `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, the live lookup asks `api.github.com/user` with that token (`github.com` logins only) |
+| `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise the live lookup asks `api.anthropic.com/api/oauth/profile` with that token |
 
-- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only subscription row). Rows never merge on a guess. An expired token is never sent, so it is proven only from claims or from the cache of an earlier `-live`; its row says which harness to open.
+- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only subscription row). Rows never merge on a guess. An expired token is never sent, so it is proven only from claims or from the cache of an earlier run; its row says which harness to open.
 - **Inactive:** an opencode credential that is not its integration's active one is noted `(inactive)`, only when every credential of the row is inactive.
-- **Offline and expired:** a credential identified by an earlier `-live` keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). Under `-live` the cached identity is re-attached only to credentials that were not sent (expired, not queryable), never to one whose lookup was just sent and failed (401, 403, 429, 5xx, unusable answer, timeout). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows "no data yet" until the next `-live`.
+- **Offline and expired:** a credential identified by an earlier run keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). The cached identity is re-attached only to credentials that were not sent (expired, not queryable), never to one whose lookup was just sent and failed (401, 403, 429, 5xx, unusable answer, timeout). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows no cached data until its own lookup succeeds.
 - A Copilot plan with no premium allowance shows `none included`, not a full bar.
 
 Plans and billing: every account is one generic model, so new plans need no code change.
@@ -667,12 +667,10 @@ Plans and billing: every account is one generic model, so new plans need no code
 - **Data a seat holder cannot see:** shown as "managed by org", never a guess.
 - **Cloud, gateway and API-key modes:** shown as "not visible" (usage lives in your cloud console or gateway) or "no usage API".
 
-Cached vs live:
+Live and the cache:
 
-- The default reads the cache, `<user cache dir>/agents/usage.json` (`$XDG_CACHE_HOME` honoured), and shows each snapshot's age. It holds usage numbers, plan names, account ids and labels, and credential fingerprints; no credentials.
-- `-live` queries every account (10 s each, in parallel) and rewrites the cache; a failed account keeps its cached snapshot, marked stale.
-- `-provider <id>` limits the output to one provider.
-- `make usage` runs `-live`.
+- Every run queries every account (10 s each, in parallel) and rewrites the cache, `<user cache dir>/agents/usage.json` (`$XDG_CACHE_HOME` honoured). A failed account keeps its cached snapshot, marked stale with the error and its age; the others still show. The cache holds usage numbers, plan names, account ids and labels, and credential fingerprints; no credentials. `agents doctor` only reads it.
+- `-provider <id>` limits the output to one provider; every provider is still queried, so the cache stays whole.
 
 Security:
 
@@ -683,7 +681,7 @@ Security:
 Runbook: check capacity before fanning out agents.
 
 - **When:** before starting several parallel agents or a long run.
-- **Steps:** `make usage` (or `chezmoi agents usage -live`); read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
+- **Steps:** `chezmoi agents usage`; read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
 - **Verify:** every account you use shows a bar and a reset time, with a fresh age.
 - **Troubleshooting:** every HTTP account shows "unavailable: timeout" while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) is blocking `agents`; allow it there (any version).
 - **Rollback:** nothing to undo; delete the cache file to forget old snapshots.
@@ -691,7 +689,7 @@ Runbook: check capacity before fanning out agents.
 Runbook: an account shows "token expired" or "unauthorized".
 
 - **When:** `usage` lists an account as expired, or 401 / 403.
-- **Steps:** open the harness named on that row once (it refreshes its own login; log in again if it asks), then `chezmoi agents usage -live`.
+- **Steps:** open the harness named on that row once (it refreshes its own login; log in again if it asks), then `chezmoi agents usage`.
 - **Verify:** the account shows bars instead of the warning.
 - **Rollback:** none; nothing is written besides the cache.
 
@@ -705,23 +703,22 @@ Runbook: an account shows "managed by org" or "not visible".
 Runbook: one account shows twice, or "same account? unknown".
 
 - **When:** two rows of one provider, one of them labelled `same account? unknown` or `identity unknown`.
-- **Steps:** run `chezmoi agents usage -live`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then `-live` again. A pi `openai` login (Sign in with ChatGPT, token sharing) shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type`; it never merges, because its token carries no account or user identity (the user id is salted per client) and chatgpt.com's usage API rejects it, so it is never sent there. Its plan and limits are those of the ChatGPT account you see in Codex.
+- **Steps:** run `chezmoi agents usage`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then run it again. A pi `openai` login (Sign in with ChatGPT, token sharing) shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type`; it never merges, because its token carries no account or user identity (the user id is salted per client) and chatgpt.com's usage API rejects it, so it is never sent there. Its plan and limits are those of the ChatGPT account you see in Codex.
 - **Verify:** one row per account, with its email or login and every harness that holds it.
 - **Rollback:** none; delete the cache file to drop remembered identities.
 
 ### Doctor (`agents doctor`)
 
-`chezmoi agents doctor [-live] [-q] [-json] [-harness <list>]` warns when a newer or better model or config is available for what you have. It never changes anything.
+`chezmoi agents doctor [-q] [-json] [-harness <list>]` warns when a newer or better model or config is available for what you have. It never changes anything.
 
 | Flag | Effect |
 |---|---|
-| (none) | Offline: reads the model catalog cache (`~/.cache/agents/models.json` or `.chezmoidata`), `.chezmoidata/agents.toml` and the usage cache `usage.json`. No network, no credential read |
-| `-live` | Refreshes usage like `usage -live` (2 s per provider, failures degrade quietly) and rewrites the cache, the only file the doctor writes |
+| (none) | Offline: reads the model catalog cache (`~/.cache/agents/models.json` or `.chezmoidata`), `.chezmoidata/agents.toml` and the usage cache `usage.json`, which only `chezmoi agents usage` writes. No network, no credential read, nothing written |
 | `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet. Otherwise a short head: at most 5 lines (warnings first, then suggestions, no info lines), then `… N more: run chezmoi agents doctor` |
 | `-json` | Prints `{"findings":[...]}`; a finding has `level`, `kind`, `harness`, `role`, `text`, `fix`, `current`, `suggested`, `reason`, `billing` |
 | `-harness <list>` | Comma-separated harnesses to check; defaults to the harnesses in the usage cache |
 
-Budget: 2 s offline, 6 s live; on overrun it prints nothing and exits 0. Exit 0 when it ran, 1 on an unexpected error, 2 on a flag error.
+Budget: 2 s; on overrun it prints nothing and exits 0. Exit 0 when it ran, 1 on an unexpected error, 2 on a flag error.
 
 **Models it checks:** the role models in `agents.models.tiers` (scout, worker, driver, escalate) for every selected harness; Copilot's `native.copilot.agents."dev-tools:<role>"`, which overrides them for `copilot`; and the default model of Codex (`native.codex.model`), pi (`native.pi.defaultModel`, `defaultProvider`) and opencode (`native.opencode.defaultModel`). A role maps to a fixed tier: scout and worker lightweight, driver powerful, escalate extra. A default model is compared within its own tier.
 
@@ -745,8 +742,8 @@ Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption abo
     - paid by metered billing or a seat paid by an organization (team, enterprise), only a cheaper model is suggested (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
     - paid by an unknown plan or with hidden data, the advice is ranking-only, with no capacity claims.
 3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync`.
-4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the cache; `-live` for fresh); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
-5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then chezmoi agents usage -live`.
+4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the usage cache; run `chezmoi agents usage` for fresh numbers); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
+5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then agents usage`.
 
 Without a usage cache the account, capacity and suggestion checks are skipped, with one info line.
 
@@ -761,9 +758,9 @@ Runbook: a doctor warning.
     - *Unknown or drifted model:* edit the key the line names (in parentheses, or after `edit`) in `agents.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
     - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`agents.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
     - *Stale catalog:* run `chezmoi agents models sync` (see [Refresh the data](#model-tiers-agents-models)).
-    - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage -live`.
-    - *No account:* log in to the named harness, then `chezmoi agents usage -live`.
-- **Verify:** `chezmoi agents doctor -live` no longer prints the warning.
+    - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage`.
+    - *No account:* log in to the named harness, then `chezmoi agents usage`.
+- **Verify:** after `chezmoi agents usage`, `chezmoi agents doctor` no longer prints the warning.
 - **Rollback:** the doctor changes nothing; `git checkout -- home/.chezmoidata/agents.toml` undoes a policy edit.
 
 ## Source layout (`.chezmoiroot`)
