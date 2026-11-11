@@ -30,6 +30,31 @@
     clone.args = ["--depth", "1"]
     pull.args = ["--ff-only"]
 
+# Markdown preview and Mermaid syntax — native Vim packages. Previm includes
+# Mermaid rendering assets; mermaid.vim supplies syntax and indentation for
+# standalone diagram files and Markdown fenced blocks.
+{{- if eq .chezmoi.os "windows" }}
+["vimfiles/pack/markdown/start/previm"]
+{{- else }}
+[".config/vim/pack/markdown/start/previm"]
+{{- end }}
+    type = "git-repo"
+    url = "https://github.com/previm/previm.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+
+{{- if eq .chezmoi.os "windows" }}
+["vimfiles/pack/markdown/start/mermaid"]
+{{- else }}
+[".config/vim/pack/markdown/start/mermaid"]
+{{- end }}
+    type = "git-repo"
+    url = "https://github.com/mracos/mermaid.vim.git"
+    refreshPeriod = "168h"
+    clone.args = ["--depth", "1"]
+    pull.args = ["--ff-only"]
+
 # yegappan/lsp: Vim9 language-server client (never installs servers; they come from
 # the package registry, see [agents.lsp.server.*]). Pinned commit: bump by
 # changing the SHA in the URL and the checksum (`chezmoi dots outdated` does not

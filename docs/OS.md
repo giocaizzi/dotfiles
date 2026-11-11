@@ -21,6 +21,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
 | `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
 | `dot_config/vim/vimrc`                               | `~/.config/vim/vimrc`                                       | same                                           | `~/vimfiles/vimrc` (symlink)                                                       |
+| Vim native packages (`catppuccin`, `previm`, `mermaid`) | `~/.config/vim/pack/`                                  | same                                           | `~/vimfiles/pack/`                                                                 |
 | `dot_config/git/{ignore,commit-template}`            | `~/.config/git/`                                            | same                                           | same                                                                               |
 | `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
 | `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
@@ -57,6 +58,8 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 | `~/vimfiles/pack/catppuccin/start/catppuccin/`         | `github.com/catppuccin/vim`               |  —    |  —    |   ✓     |
 | `~/.config/vim/pack/lsp/start/lsp/`                    | `github.com/yegappan/lsp` (pinned commit archive) |  ✓ (not light) |  ✓ (not light) |   —     |
 | `~/vimfiles/pack/lsp/start/lsp/`                       | `github.com/yegappan/lsp` (pinned commit archive) |  —    |  —    |   ✓ (not light) |
+| `~/.config/vim/pack/markdown/start/{previm,mermaid}/` | `github.com/previm/previm`, `github.com/mracos/mermaid.vim` | ✓ | ✓ | — |
+| `~/vimfiles/pack/markdown/start/{previm,mermaid}/`    | `github.com/previm/previm`, `github.com/mracos/mermaid.vim` | — | — | ✓ |
 | `~/.local/share/fonts/JetBrainsMonoNerdFont/`          | Nerd Fonts `JetBrainsMono.tar.xz` release |  —    |  ✓ (not light) |   —     |
 | `~/.oh-my-zsh/`                                        | `github.com/ohmyzsh/ohmyzsh`              |  ✓    |  —    |   —     |
 
@@ -65,6 +68,12 @@ Release binaries (`bws`, `gitleaks`, `actionlint`, `hadolint`, the Go toolchain,
 The Vim LSP client is pinned by commit SHA and checksum in the URL: bump it by hand (new SHA and checksum), since `chezmoi dots outdated` does not see externals (tracked in [issue #185](https://github.com/giocaizzi/dotfiles/issues/185)).
 
 **When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), official installer scripts (uv), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
+
+### Vim Markdown previews
+
+Open a Markdown preview in the default browser with `:PrevimOpen`; it refreshes after each buffer update. Previm renders fenced `mermaid` blocks without Node or another converter, while `mermaid.vim` provides syntax and indentation for Markdown fences and `.mmd` / `.mermaid` files. `:PrevimRefresh` forces an update and `:PrevimWipeCache` removes generated previews.
+
+Previews are created under the user's cache directory (`%LOCALAPPDATA%\vim\previm` on Windows, `~/Library/Caches/vim/previm` on macOS, and `$XDG_CACHE_HOME/vim/previm` or `~/.cache/vim/previm` on Linux). They require `start`, `open`, or `xdg-open` respectively; headless systems retain syntax support but cannot open a browser preview.
 
 ## Asymmetries (by design)
 

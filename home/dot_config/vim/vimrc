@@ -1,5 +1,9 @@
 " Vim sniffs *.tf as TinyFugue unless told otherwise; the LSP policy means Terraform.
 let g:filetype_tf = 'terraform'
+let g:markdown_fenced_languages = get(g:, 'markdown_fenced_languages', [])
+if index(g:markdown_fenced_languages, 'mermaid') < 0
+  call add(g:markdown_fenced_languages, 'mermaid')
+endif
 syntax on
 filetype plugin indent on
 if has('termguicolors')
@@ -9,6 +13,20 @@ set background=dark
 silent! colorscheme catppuccin_mocha
 set langmenu=en_US.UTF-8
 language en_US.UTF-8
+
+" Previm opens Markdown previews on demand with :PrevimOpen. It includes
+" Mermaid rendering; mermaid.vim provides editing support for .mmd and
+" .mermaid files. Keep generated previews out of the managed package tree.
+if has('win32')
+  let g:previm_custom_preview_base_dir = (empty($LOCALAPPDATA) ? $HOME . '\AppData\Local' : $LOCALAPPDATA) . '\vim\previm'
+  let g:previm_open_cmd = 'start ""'
+elseif has('macunix') && executable('open')
+  let g:previm_custom_preview_base_dir = $HOME . '/Library/Caches/vim/previm'
+  let g:previm_open_cmd = 'open'
+elseif executable('xdg-open')
+  let g:previm_custom_preview_base_dir = (empty($XDG_CACHE_HOME) ? $HOME . '/.cache' : $XDG_CACHE_HOME) . '/vim/previm'
+  let g:previm_open_cmd = 'xdg-open'
+endif
 
 " XDG: Vim 9.1+ reads this file from $XDG_CONFIG_HOME/vim, but viminfo still
 " defaults to $HOME — keep it in $XDG_STATE_HOME on Unix.
