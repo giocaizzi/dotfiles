@@ -52,7 +52,7 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 
 ## Working in this repo
 
-- No branch protection or rules is active in this repo, you can commit and push directly to `main` as this is a configuration repo.
+- No branch protection or rules is active in this repo: a single agent commits and pushes straight to `main` after every commit, as this is a configuration repo; parallel agents each use their own worktree (see the worktrees line below) and merge back to `main`.
 - `home/.chezmoiignore` partitions per-OS paths with three symmetric blocks: `ne darwin`, `ne linux`, `ne windows`. Symlink-target-only sources (`dot_config/windows-terminal`, `dot_config/powershell/profile.ps1`) are ignored unconditionally.
 - Every alias lives in the alias registry (`.chezmoidata/aliases.toml`, personal ones in `.aliases.private.toml.age`); never hand-write one in a shell file. `make lint` validates it, `make aliases-audit` (`chezmoi dots audit aliases`) lists live aliases it does not cover. See docs/SHELL.md → Alias registry.
 - Editing goes through `chezmoi dots` (alias `dots`; standalone plugin from `giocaizzi/chezmoi-dots` installed via release): a new editable component is an entry in `.chezmoidata/edit.toml` (name, source or local folder, optional `check` as an argv list with `{file}`), never new edit code or a shortcut; `chezmoi dots lint registry` requires one for every `.chezmoidata` file and encrypted file. A new `[data]` answer or harness in `.chezmoi.toml.tmpl` needs no second list: the configuration matrix is built from that template. See docs/OS.md → Editing your dotfiles.
