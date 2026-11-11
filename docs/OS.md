@@ -31,8 +31,15 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/readline/inputrc`                        | `~/.config/readline/inputrc` (via `$INPUTRC`)               | same                                           | same (Git Bash)                                                                    |
 | `dot_config/tmux/tmux.conf`                          | `~/.config/tmux/tmux.conf`                                  | same                                           | `~/.config/tmux/tmux.conf` (deployed); `~/.psmux.conf` symlinks to the canonical source for PSMux |
 | `private_dot_ssh/encrypted_private_config.age`       | `~/.ssh/config` (decrypted, owner-only)                     | same                                           | same                                                                               |
+| `dot_config/git/hooks/` (`pre-push` secret scan + one dispatcher per other client hook) | `~/.config/git/hooks/`                 | same                                           | same (run by Git for Windows' sh)                                                  |
+| `core.hooksPath` in `dot_config/git/config.tmpl`     | `~/.config/git/hooks`                                       | same                                           | same                                                                               |
+| `dot_config/gitleaks/encrypted_private-names.toml.age` (personal machines only) | `~/.config/gitleaks/private-names.toml` (decrypted; private-name patterns for the push scan) | same | same |
 
 \* Symlink-target-only sources — never deployed as regular files anywhere (listed in `.chezmoiignore` unconditionally); only referenced via `{{ .chezmoi.sourceDir }}/...` from the Windows-specific symlinks.
+
+## Global git hooks
+
+`core.hooksPath` points every repo at `~/.config/git/hooks` on all machine roles. `pre-push` runs `gitleaks` over the pushed commits and blocks on a finding (and when `gitleaks` is missing); where `GITLEAKS_PRIVATE_CONFIG` names a readable file (personal machines, set in `.profile` and the PowerShell profile) and the remote is public (unknown counts as public), a second pass with that config runs. Every other client hook is a dispatcher that runs the repo's own `.git/hooks/<name>`, so existing hooks keep working. A repo that sets its own `core.hooksPath` (husky, lefthook) skips these global hooks. `make test-git-hooks` (part of `make check`) tests them.
 
 ## Bootstrap scripts (`.chezmoiscripts/`)
 

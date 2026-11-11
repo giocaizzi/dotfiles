@@ -12,6 +12,10 @@
 $secretsFile = Join-Path $HOME ".config\powershell\secrets.ps1"
 if (Test-Path $secretsFile) { . $secretsFile }
 
+# Private-name patterns for the global pre-push scan: the file exists on personal machines only
+$privateNames = Join-Path $HOME '.config\gitleaks\private-names.toml'
+if (Test-Path $privateNames) { $env:GITLEAKS_PRIVATE_CONFIG = $privateNames }
+
 $env:EDITOR     = 'vim'
 $env:VISUAL     = 'vim'
 $env:POSH_THEME = Join-Path $HOME '.config\oh-my-posh\theme.omp.json'

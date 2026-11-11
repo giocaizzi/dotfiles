@@ -54,6 +54,10 @@ source = ".aliases.private.toml.age"
 check = ["chezmoi", "dots", "lint", "aliases", "templates"]
 note = "Aliases applied: open a new shell, or source ~/.config/shell/aliases.sh (PowerShell: ~/.config/powershell/aliases.ps1)"
 
+[edit."gitleaks/private-names"]
+desc = "Private-name patterns for the push scan (encrypted, personal machines)"
+source = "dot_config/gitleaks/encrypted_private-names.toml.age"
+
 [edit."ssh/config"]
 desc = "~/.ssh/config, hosts every full machine uses (encrypted)"
 source = "private_dot_ssh/encrypted_private_config.age"

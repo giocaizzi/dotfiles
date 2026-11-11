@@ -1,0 +1,3 @@
+#!/bin/sh
+# Global dispatcher: runs the repo's own pre-applypatch hook (core.hooksPath replaces .git/hooks).
+exec "$(dirname "$0")/run-repo-hook.sh" pre-applypatch "$@"

@@ -21,6 +21,11 @@ if [ -f "$XDG_CONFIG_HOME/shell/secrets.sh" ]; then
 	. "$XDG_CONFIG_HOME/shell/secrets.sh"
 fi
 
+# Private-name patterns for the global pre-push scan: the file exists on personal machines only
+if [ -r "$XDG_CONFIG_HOME/gitleaks/private-names.toml" ]; then
+	export GITLEAKS_PRIVATE_CONFIG="$XDG_CONFIG_HOME/gitleaks/private-names.toml"
+fi
+
 export EDITOR='vim'
 export VISUAL='vim'
 

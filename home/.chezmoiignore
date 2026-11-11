@@ -112,6 +112,12 @@ ops
 .local/bin/gofmt
 {{ end }}
 
+# Private-name patterns for the push scan (age-encrypted): personal machines only,
+# never light (no age key) or work machines.
+{{ if or (get . "light") (get . "work") }}
+.config/gitleaks
+{{ end }}
+
 # Personal-email override only where personal remotes are configured (work machines)
 {{ if not (or (get . "githubUser") (get . "personalGitRemote")) }}
 .config/git/personal

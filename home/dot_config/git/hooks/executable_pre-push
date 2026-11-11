@@ -1,0 +1,55 @@
+#!/bin/sh
+# Global pre-push: secret scan of the pushed commits, then the repo's own hook.
+# Deployed by chezmoi to ~/.config/git/hooks (core.hooksPath). Runbook: docs/OS.md.
+remote_name=$1
+remote_url=$2
+
+stdin_file=$(mktemp "${TMPDIR:-/tmp}/pre-push.XXXXXX") || exit 1
+trap 'rm -f "$stdin_file"' EXIT
+cat > "$stdin_file"
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+	echo "pre-push: gitleaks is not installed, so the push cannot be scanned (brew install gitleaks, or https://github.com/gitleaks/gitleaks)" >&2
+	exit 1
+fi
+
+public=
+# is_public: looked up once; unknown or failed counts as public.
+is_public() {
+	if [ -z "$public" ]; then
+		vis=$(gh repo view "$remote_url" --json visibility -q .visibility 2>/dev/null) || vis=
+		case $vis in
+		[Pp][Rr][Ii][Vv][Aa][Tt][Ee] | [Ii][Nn][Tt][Ee][Rr][Nn][Aa][Ll]) public=no ;;
+		*) public=yes ;;
+		esac
+	fi
+	[ "$public" = yes ]
+}
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	[ -n "$local_sha" ] || continue
+	case $local_sha in *[!0]*) ;; *) continue ;; esac # delete
+	case $remote_sha in
+	*[!0]*) range="$remote_sha..$local_sha" ;;
+	*) range="$local_sha --not --remotes=$remote_name" ;;
+	esac
+
+	if ! gitleaks git --no-banner --redact --log-opts "$range" >&2; then
+		echo "pre-push: gitleaks found a secret in the commits pushed to $remote_ref (from $local_ref). Fix the commits (amend or rewrite them) and push again; if it was ever shared, rotate it." >&2
+		exit 1
+	fi
+
+	if [ -n "${GITLEAKS_PRIVATE_CONFIG:-}" ] && [ -r "$GITLEAKS_PRIVATE_CONFIG" ] && is_public; then
+		if ! gitleaks git --no-banner --redact --config "$GITLEAKS_PRIVATE_CONFIG" --log-opts "$range" >&2; then
+			echo "pre-push: the commits pushed to $remote_ref name something that must not reach a public repo. Fix the commits and push again." >&2
+			exit 1
+		fi
+	fi
+done < "$stdin_file"
+
+hook="$(git rev-parse --git-common-dir)/hooks/pre-push"
+if [ -f "$hook" ] && [ -x "$hook" ]; then
+	"$hook" "$@" < "$stdin_file"
+	exit $?
+fi
+exit 0

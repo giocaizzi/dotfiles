@@ -27,6 +27,9 @@
 {{- end }}
 {{- end }}
 
+[core]
+	hooksPath = {{ .chezmoi.homeDir }}/.config/git/hooks
+
 [commit]
 	template = {{ .chezmoi.homeDir }}/.config/git/commit-template
 
