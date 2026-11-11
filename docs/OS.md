@@ -149,12 +149,12 @@ chezmoi execute-template --init \
 | Harness | Shared policy adapter | Native settings and limits |
 |---|---|---|
 | Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`); LSP → the local `lsp@dotfiles` plugin (`~/.claude/dotfiles-plugins`, rendered from the policy; the official LSP plugins are off) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
-| Copilot CLI | Bell → `beep`; telemetry env injected; voice: none (no documented key); LSP servers → `~/.copilot/lsp-config.json` (`modify_private_lsp-config.json`; merged per policy-named server, other entries and keys stay) | `native.copilot.agents` keeps per-agent model/effort bindings. |
+| Copilot CLI | Bell → `beep`; telemetry env injected; voice → `voice.enabled` (only `enabled`: the other documented voice keys pick the model and microphone and stay local); LSP servers → `~/.copilot/lsp-config.json` (`modify_private_lsp-config.json`; merged per policy-named server, other entries and keys stay) | `native.copilot.agents` keeps per-agent model/effort bindings; `agents check` fails if the template stops reading `voice.enabled` from the configuration. |
 | VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` are static; `agents check` compares its voice keys (`dictation.enabled`, `agents.voice.language`) with the policy. |
-| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no native dictation) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
-| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no native dictation) | LSP servers from the policy (merged per policy-named server: override the built-ins of the same name, other keys and entries stay; `lsp` is false when LSP is off), `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
-| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation) | Bell via `sounds` plugin, native model and extension settings. |
-| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: none (no documented key) | Managed via `antigravity-settings.json`. |
+| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (the CLI has no dictation; see [Voice input](#voice-input)) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
+| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no dictation found) | LSP servers from the policy (merged per policy-named server: override the built-ins of the same name, other keys and entries stay; `lsp` is false when LSP is off), `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
+| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation; community packages exist) | Bell via `sounds` plugin, native model and extension settings. |
+| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: not managed (native `/voice` dictation, no documented settings key) | Managed via `antigravity-settings.json`. |
 
 These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
 
@@ -173,15 +173,17 @@ These adapters preserve each client's matching rules; a shared pattern is not a 
 
 #### Voice input
 
-`[agents.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), VS Code's `settings.json` is static: it is edited by hand to match the configuration (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `agents check` (part of `make check`) fails on drift. Claude's template reads the configuration and the check fails if it stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` wins on every apply: a `/voice off` lasts until the next `chezmoi apply`; change the configuration instead.
+`[agents.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), Copilot CLI `voice.enabled` (the only field it honors), VS Code's `settings.json` is static: it is edited by hand to match the configuration (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `agents check` (part of `make check`) fails on drift. The Claude and Copilot templates read the configuration, and the check fails if either stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` and Copilot `voice.enabled` win on every apply: turning voice off inside the CLI lasts until the next `chezmoi apply`; change the configuration instead. Where audio goes: Copilot CLI and VS Code transcribe on the machine; Claude Code and Antigravity send audio to their vendor.
 
 | Harness | One-time steps and use | Limits |
 |---|---|---|
 | Claude Code | `/voice` or the managed setting; hold Space to record, Esc cancels | claude.ai sign-in only (no API key or Bedrock); audio goes to Anthropic; no SSH sessions. macOS: mic prompt for the terminal app, reset with `tccutil reset Microphone com.mitchellh.ghostty`. Linux: falls back to `arecord` or SoX. WSL: needs WSLg and `sox libsox-fmt-pulse` |
-| Copilot CLI | Run `/voice` once per machine (downloads runtime and model, multilingual default); hold Space or Ctrl+X V | Local transcription; macOS Apple Silicon, Linux x64, Windows x64/ARM64 |
+| Copilot CLI | Enabled by the managed `voice.enabled`; run `/voice` once per machine to download the speech runtime and model (multilingual by default, English and Spanish models too; it runs on ONNX Runtime through Foundry Local); hold Space to talk, or Ctrl+X V to toggle | Local transcription: audio does not leave the machine; macOS Apple Silicon, Linux x64, Windows x64/ARM64 (no Intel Mac); no mode or auto-submit setting |
 | VS Code | Cmd/Ctrl+I in chat; hold for push-to-talk | Local on desktop |
-| Antigravity | `/logout` and sign in once, then F5 | Not for business or enterprise accounts; docs cover macOS and Windows |
-| Codex, opencode, pi | None: use the OS dictation | No native dictation |
+| Antigravity | `/logout` and sign in once (dictation needs a newer sign-in permission), then F5, `/voice dictate` or `/record`; Enter or F5 inserts the transcript, Esc discards it. `/voice live` or F6 is a spoken conversation. Over SSH run `agy mic-serve` locally and set `ANTIGRAVITY_MIC` on the remote | Cloud: audio goes to Google's transcription service; no speech model is kept on disk, only an audio encoder (`~/.gemini/antigravity-cli/bin/webm_encoder`). Voice mode streams to Gemini Live. Not for business or enterprise accounts; interactive sessions only. No documented settings key, so not managed |
+| Codex | None in the CLI: use the OS dictation. The Codex desktop app has its own dictation | The TUI's hold-to-talk transcription was removed in 0.118 |
+| opencode | None: use the OS dictation | No dictation in opencode 2.2.5 |
+| pi | None built in: use the OS dictation | Community packages add it, some with local models; none is wired here yet |
 
 OS dictation fallback (types into the focused terminal):
 
@@ -191,13 +193,15 @@ OS dictation fallback (types into the focused terminal):
 | Windows | Voice typing, Win+H (online) |
 | Linux | None built in (gap) |
 
-Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/163). Docs checked 2026-11-06.
+Which policy fields each harness honors, where its audio goes, which speech model it uses (none is shared across harnesses) and what `agents check` verifies: [agents voice parity](https://github.com/giocaizzi/agents/blob/main/docs/voice.md).
+
+Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/163). Docs checked 2026-11-11.
 
 Change the voice preference:
 
 - When: dictation should be on or off, or switch between hold and tap, or auto-submit.
-- Steps: run `dots agents/config` and edit `[agents.voice]`; edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
-- Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
+- Steps: run `dots agents/config` and edit `[agents.voice]` (Claude Code and Copilot CLI follow it on apply); edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
+- Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; `voice.enabled` in `~/.copilot/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
 - Rollback: `git restore` both files and apply again.
 
 #### Language servers
