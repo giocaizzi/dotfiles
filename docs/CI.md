@@ -17,7 +17,7 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `lint` | `shellcheck` on the bash rc files; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config; `agents models render -check` |
+| `lint` | `shellcheck` on the bash rc files; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test` | `test-syntax` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |

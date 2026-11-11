@@ -24,16 +24,10 @@ HOOK_FILES := $(wildcard $(SRC)/dot_config/git/hooks/executable_*)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help models-sync lint test test-syntax test-git-hooks check check-fast aliases-audit usage
+.PHONY: help lint test test-syntax test-git-hooks check check-fast aliases-audit
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
-
-models-sync: ## Refresh model data and docs/MODELS.md (network)
-	$(AGENTS) models sync
-
-usage: ## Show subscription usage per provider account (live, needs the network)
-	@$(AGENTS) usage -live
 
 lint: ## shellcheck, validate JSON, lint registries, templates, and agents config
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
@@ -42,7 +36,6 @@ lint: ## shellcheck, validate JSON, lint registries, templates, and agents confi
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
 	$(AGENTS) check -file "$(SRC)/.chezmoidata/agents.toml"
-	$(AGENTS) models render -check
 
 aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
