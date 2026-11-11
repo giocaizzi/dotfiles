@@ -311,9 +311,9 @@ defaultModel = "gpt-5.5"
 sandbox = false
 
 # --- D9: Voice input (dictation) ---
-# Claude Code: rendered from this table. VS Code: settings.json is static, edit it to match (agents check fails on drift). Others: docs/OS.md#voice-input.
+# Claude Code and Copilot CLI: rendered from this table. VS Code: settings.json is static, edit it to match (agents check fails on drift). Others: docs/OS.md#voice-input.
 [agents.voice]
-enabled = true
-mode = "hold"        # "hold" (push-to-talk) | "tap" (toggle)
-autoSubmit = false   # send the prompt when recording stops
+enabled = true       # Claude Code, Copilot CLI, VS Code
+mode = "hold"        # Claude Code only: "hold" (push-to-talk) | "tap" (toggle)
+autoSubmit = false   # Claude Code only: send the prompt when recording stops
 language = ""   # BCP 47, VS Code only (agents.voice.language); "" = VS Code default "auto"
