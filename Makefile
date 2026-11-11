@@ -19,10 +19,12 @@ AGENTS := agents
 RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
 SH   := $(RC)
 ZSH  := $(addprefix $(SRC)/,dot_zshrc dot_zprofile)
+# The global git hooks deployed to ~/.config/git/hooks (POSIX sh).
+HOOK_FILES := $(wildcard $(SRC)/dot_config/git/hooks/executable_*)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help models-sync lint test test-syntax check check-fast aliases-audit usage
+.PHONY: help models-sync lint test test-syntax test-git-hooks check check-fast aliases-audit usage
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -35,6 +37,8 @@ usage: ## Show subscription usage per provider account (live, needs the network)
 
 lint: ## shellcheck, validate JSON, lint registries, templates, and agents config
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
+	shellcheck -s sh $(HOOK_FILES)
+	shellcheck -s bash tests/git-hooks.sh
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	$(DOTS) lint
 	$(AGENTS) check -file "$(SRC)/.chezmoidata/agents.toml"
@@ -43,7 +47,10 @@ lint: ## shellcheck, validate JSON, lint registries, templates, and agents confi
 aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
 
-test: test-syntax ## Syntax-check bash and zsh files
+test: test-syntax test-git-hooks ## Syntax-check bash and zsh files, test the global git hooks
+
+test-git-hooks: ## Test the global git hooks (stub gitleaks, throwaway repos)
+	bash tests/git-hooks.sh
 
 test-syntax: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done
