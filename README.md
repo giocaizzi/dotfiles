@@ -47,7 +47,7 @@ chezmoi init --apply giocaizzi/dotfiles
 | `chezmoi status` / `chezmoi diff` | what an apply would change |
 | `chezmoi add <file>` | start managing a file (`--encrypt` for secrets) |
 
-`main` only accepts pull requests: `chezmoi cd`, branch, change, PR.
+See [Editing your dotfiles](./docs/OS.md#editing-your-dotfiles) for how edits are validated, applied, and pushed.
 
 ## Documentation
 

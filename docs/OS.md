@@ -278,7 +278,9 @@ Every source edit, in order:
 2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (owner-only), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux or, on Windows, Windows Terminal, a side pane (`chezmoi dots live`) re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor.
 3. **Check:** the entry's check, when it has one (`chezmoi dots lint aliases templates`, `ssh -G`, ...).
 4. **Render after** and report the changed targets per configuration: a list, `same as <configuration>` for an identical list, or `nothing`. A configuration that no longer renders fails the edit; one that already failed before is only reported.
-5. **This machine only:** `chezmoi diff` of its changed targets (one diff when the entry says they render the same text), `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date), the entry's note (e.g. open a new shell after an alias change), and `git status` of the source as a reminder to ship a PR (e.g. `/ship`). A changed script is listed: it runs on the next full `chezmoi apply`.
+5. **This machine only:** `chezmoi diff` of its changed targets (one diff when the entry says they render the same text), `apply now? [y/N]` (yes applies only those targets; skipped when they are already up to date), and the entry's note (e.g. open a new shell after an alias change). The current `dots` release prints source status with a PR reminder. The dotfiles repository supports direct pushes to `main`. A changed script is listed and runs on the next full `chezmoi apply`.
+
+`chezmoi init` configures native chezmoi edits to stage, commit, and push source changes automatically. Commit and push changes made with `dots` separately.
 
 A failed check or render applies nothing; the source keeps the edit, so run the command again to fix it. The diff and the live pane show decrypted text: do not run them where the screen is shared or recorded.
 
