@@ -81,6 +81,7 @@
         },
         {
           "type": "python",
+          "min_width": 80,
           "style": "plain",
           "foreground": "#cdd6f4",
           "template": " <#6c7086>[</>\ue235 {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }}<#6c7086>]</>",
@@ -97,6 +98,7 @@
       "segments": [
         {
           "type": "sysinfo",
+          "min_width": 100,
           "style": "plain",
           "foreground": "#cdd6f4",
           "template": "<#6c7086>[</>\uefc5 {{ div ((sub .PhysicalTotalMemory .PhysicalFreeMemory)|float64) 1073741824.0 }}/{{ div .PhysicalTotalMemory 1073741824.0 }}GB<#6c7086>]</>",
@@ -109,6 +111,7 @@
         },
         {
           "type": "battery",
+          "min_width": 100,
           "style": "plain",
           "foreground": "#cdd6f4",
           "template": "{{ if not .Error }} <#6c7086>[</>{{ if ge .Percentage 88 }}\uf240{{ else if ge .Percentage 63 }}\uf241{{ else if ge .Percentage 38 }}\uf242{{ else if ge .Percentage 13 }}\uf243{{ else }}\uf244{{ end }} {{ .Percentage }}%{{ if eq \"Charging\" .State.String }} \uf1e6{{ end }}<#6c7086>]</>{{ end }}",
@@ -122,6 +125,7 @@
         },
         {
           "type": "time",
+          "min_width": 100,
           "style": "plain",
           "foreground": "#cdd6f4",
           "template": " <#6c7086>[</>\uf017 {{ .CurrentDate | date .Format }}<#6c7086>]</>",
@@ -139,6 +143,7 @@
       "segments": [
         {
           "type": "path",
+          "min_width": 80,
           "style": "plain",
           "foreground": "#cba6f7",
           "template": "<#89b4fa>\u251c</><#6c7086>[</>\uf07c {{ .Path }}<#6c7086>]</>",
@@ -148,7 +153,19 @@
           }
         },
         {
+          "type": "path",
+          "max_width": 79,
+          "style": "plain",
+          "foreground": "#cba6f7",
+          "template": "<#89b4fa>\u251c</><#6c7086>[</>\uf07c {{ .Path }}<#6c7086>]</>",
+          "properties": {
+            "cache_duration": "none",
+            "style": "folder"
+          }
+        },
+        {
           "type": "executiontime",
+          "min_width": 80,
           "style": "plain",
           "foreground": "#cdd6f4",
           "template": " <#6c7086>[</>\uf520 {{ .FormattedMs }}<#6c7086>]</>",
