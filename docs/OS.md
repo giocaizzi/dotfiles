@@ -153,7 +153,7 @@ chezmoi execute-template --init \
 | VS Code Copilot | AutoApprove (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`), autopilot enabled, subagent invocation, Catppuccin theme; voice → `dictation.enabled`, `agents.voice.language` | Editor settings in `home/dot_config/Code/User/settings.json` are static; `agents check` compares its voice keys (`dictation.enabled`, `agents.voice.language`) with the policy. |
 | Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no dictation; `/voice` is a realtime conversation, see [Voice input](#voice-input)) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
 | opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no dictation found) | LSP servers from the policy (merged per policy-named server: override the built-ins of the same name, other keys and entries stay; `lsp` is false when LSP is off), `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
-| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: none (no native dictation; community packages exist) | Bell via `sounds` plugin, native model and extension settings. |
+| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: not implemented | Bell via `sounds` plugin, native model and extension settings. |
 | Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: not managed (native `/voice` dictation, no documented settings key) | Managed via `antigravity-settings.json`. |
 
 These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
@@ -183,7 +183,7 @@ These adapters preserve each client's matching rules; a shared pattern is not a 
 | Antigravity | `/logout` and sign in once (dictation needs a newer sign-in permission), then F5, `/voice dictate` or `/record`; Enter or F5 inserts the transcript, Esc discards it. `/voice live` or F6 is a spoken conversation. Over SSH run `agy mic-serve` locally and set `ANTIGRAVITY_MIC` on the remote | Cloud: audio goes to Google's transcription service; no speech model is kept on disk, only an audio encoder (`~/.gemini/antigravity-cli/bin/webm_encoder`). Voice mode streams to Gemini Live. Not for business or enterprise accounts; interactive sessions only. No documented settings key, so not managed |
 | Codex | None in the CLI: use the OS dictation. The Codex desktop app has its own dictation | `/voice` in the CLI is a realtime spoken conversation (cloud), not dictation into the prompt |
 | opencode | None: use the OS dictation | No dictation in opencode 2.2.5 |
-| pi | None built in: use the OS dictation | Community packages add it, some with local models; none is wired here yet |
+| pi | Not implemented; manual fallback: the OS dictation | — |
 
 OS dictation fallback (types into the focused terminal):
 
