@@ -36,7 +36,7 @@
         },
         {
           "type": "gcp",
-          "min_width": 70,
+          "min_width": 100,
           "style": "plain",
           "foreground": "#f9e2af",
           "template": "{{ if .Project }} <#6c7086>[</>\uf0c2 {{ .Project }}<#6c7086>]</>{{ end }}",
@@ -46,7 +46,7 @@
         },
         {
           "type": "az",
-          "min_width": 70,
+          "min_width": 100,
           "style": "plain",
           "foreground": "#89b4fa",
           "template": "{{ if .Name }} <#6c7086>[</>\uebd8 {{ .Name }}<#6c7086>]</>{{ end }}",
@@ -56,7 +56,7 @@
         },
         {
           "type": "azd",
-          "min_width": 70,
+          "min_width": 100,
           "style": "plain",
           "foreground": "#89b4fa",
           "template": "{{ if .DefaultEnvironment }} <#6c7086>[</>\uebd8 azd {{ .DefaultEnvironment }}<#6c7086>]</>{{ end }}",
@@ -66,7 +66,7 @@
         },
         {
           "type": "aws",
-          "min_width": 70,
+          "min_width": 100,
           "style": "plain",
           "foreground": "#fab387",
           "template": "{{ if .Profile }} <#6c7086>[</>\uf270 {{ .Profile }}{{ if .Region }}@{{ .Region }}{{ end }}<#6c7086>]</>{{ end }}",
@@ -76,7 +76,7 @@
         },
         {
           "type": "kubectl",
-          "min_width": 70,
+          "min_width": 100,
           "style": "plain",
           "foreground": "#89b4fa",
           "template": "{{ if .Context }} <#6c7086>[</>\ue81d {{ .Context }}{{ if .Namespace }}::{{ .Namespace }}{{ end }}<#6c7086>]</>{{ end }}",
