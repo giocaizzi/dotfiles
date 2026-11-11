@@ -3,7 +3,9 @@
 # there (`agents check` checks), listing the harnesses whose config here
 # enables it. Claude Code and Copilot CLI enable them in their settings
 # (.chezmoitemplates/{claude,copilot}-settings.json), Codex in
-# run_onchange_after_install-harness.*; opencode and pi take the whole checkout.
+# run_onchange_after_install-harness.*. opencode gets every plugin as copies
+# from the checkout's scripts/install.mjs (re-run after a pull); pi loads the
+# whole checkout as a package. Both are listed under every plugin.
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 # ----------------------------------------------------------------------------
 
@@ -15,15 +17,15 @@ harnessRegistry = "giocaizzi/harness"
 harnessPersonalPlugins = ["go"]
 
 [harnessPlugins]
-dev-tools = ["claude", "copilot", "codex", "antigravity", "pi"]
-foundations = ["claude", "copilot", "codex", "antigravity", "pi"]
-go = ["claude", "copilot", "codex", "antigravity", "pi"]
-guard = ["claude", "copilot", "codex", "antigravity", "pi"]
-hud = ["claude", "copilot", "antigravity", "pi"]
-infra = ["claude", "copilot", "codex", "antigravity", "pi"]
-javascript = ["claude", "copilot", "codex", "antigravity", "pi"]
-python = ["claude", "copilot", "codex", "antigravity", "pi"]
-sounds = ["claude", "codex", "antigravity", "pi"]
+dev-tools = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+foundations = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+go = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+guard = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+hud = ["claude", "copilot", "antigravity", "opencode", "pi"]
+infra = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+javascript = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+python = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
+sounds = ["claude", "codex", "antigravity", "opencode", "pi"]
 
 # Targets each harness owns: .chezmoiignore skips them where the harness is not selected
 # (light machines select none). Shared targets stay explicit there: ~/.copilot (also
