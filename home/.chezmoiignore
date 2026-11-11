@@ -61,6 +61,7 @@ Library
 {{ if ne .chezmoi.os "windows" }}
 AppData
 .config/powershell
+.psmux.conf
 vimfiles
 {{ end }}
 
@@ -123,5 +124,4 @@ ops
 # native Unix.
 {{ if eq .chezmoi.os "windows" }}
 .config/vim
-.config/tmux
 {{ end }}

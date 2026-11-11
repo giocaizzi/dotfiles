@@ -75,6 +75,10 @@ roles = ["personal", "work", "light"]
 brew = true
 apt = true
 
+[package.psmux]
+roles = ["personal", "work", "light"]
+winget = "marlocarlo.psmux"
+
 [package.jq]
 agents = true
 roles = ["personal", "work", "light"]

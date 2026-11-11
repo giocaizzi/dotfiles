@@ -40,7 +40,7 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 | `.aliases.private.toml.age`              | Personal aliases, same schema, age-encrypted; read on non-light machines with the age key | all |
 | `.chezmoitemplates/aliases`              | Selector: merges both registries, filters by shell, OS and machine role | all                 |
 | `dot_config/readline/inputrc`            | Readline: ↑/↓ prefix history search, case-insensitive coloured completion | Unix + Git Bash   |
-| `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status)            | Unix                |
+| `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status); PSMux reads the same config through `~/.psmux.conf` | Unix + PSMux (Windows) |
 
 ## Alias registry
 
@@ -127,6 +127,7 @@ the file.
 | readline      |  ✓   |  —  |     —      | `~/.config/readline/inputrc` via `$INPUTRC`: ↑/↓ prefix history search, case-insensitive completion |
 | `less`        |  ✓   |  ✓  |     —      | `PAGER`/`LESS`/`MANPAGER` in `.profile` (colour, quit if one screen, smart-case search) |
 | `tmux`        |  ✓   |  ✓  |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves |
+| `PSMux`       |  —   |  —  |     ✓      | `~/.psmux.conf` symlinks to the canonical `dot_config/tmux/tmux.conf` source (also deployed at `~/.config/tmux/tmux.conf`); run `psmux` to load it |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
 | `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
 
