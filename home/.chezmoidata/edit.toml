@@ -134,7 +134,7 @@ source = "dot_config/oh-my-posh/theme.omp.json"
 
 [edit.tmux]
 desc = "tmux config"
-source = "dot_config/tmux/tmux.conf"
+source = "dot_config/tmux/tmux.conf.tmpl"
 
 [edit.vim]
 desc = "vimrc"

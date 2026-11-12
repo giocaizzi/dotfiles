@@ -33,7 +33,11 @@ set -g status-style "bg=default,fg=default"
 set -g status-interval 5
 set -g status-left "#[fg=colour4]└#[fg=colour8] [#[fg=default]󰆍 #S#[fg=colour8]] "
 set -g status-right-length 200
+{{- if eq .chezmoi.os "windows" }}
+set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colour8][#[fg=default]󰍛 #{window_panes}#[fg=colour8]]#(powershell.exe -NoProfile -File {{ replace "\\" "/" .chezmoi.homeDir }}/.config/tmux/status-right.ps1) #[fg=colour8][#[fg=default]󰥔 %H:%M#[fg=colour8]] "
+{{- else }}
 set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colour8][#[fg=default]󰍛 #{window_panes}#[fg=colour8]]#(sh ~/.config/tmux/status-right.sh) #[fg=colour8][#[fg=default]󰥔 %H:%M#[fg=colour8]] "
+{{- end }}
 setw -g window-status-format "#[fg=colour8] #I:#W#{?window_activity_flag,#[fg=colour3,bold]+,}#{?window_bell_flag,#[fg=colour1,bold]!,}#[fg=colour8] "
 setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_activity_flag,#[fg=colour3,bold]+,}#{?window_bell_flag,#[fg=colour1,bold]!,}#[fg=colour8] "
 set -g pane-border-style "fg=colour8"
