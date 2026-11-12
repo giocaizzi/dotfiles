@@ -15,6 +15,7 @@
   "subagents": { "agents": {{ .agents.native.copilot.agents | toJson }} },
   "inlineImages": false,
   "showReasoning": false,
+  "theme": "default",
   "footer": {
     "showModelEffort": true,
     "showDirectory": true,

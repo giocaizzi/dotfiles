@@ -3,6 +3,8 @@
 
 set -g default-terminal "tmux-256color"
 set -as terminal-features ",*:RGB"
+# Claude Code limits itself to 256 colours when $TMUX is set; this env var (process env only) lifts it.
+set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1
 set -g mouse on
 set -g history-limit 50000
 set -g escape-time 10

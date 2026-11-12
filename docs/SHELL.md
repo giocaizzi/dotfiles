@@ -40,7 +40,7 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 | `.aliases.private.toml.age`              | Personal aliases, same schema, age-encrypted; read on non-light machines with the age key | all |
 | `.chezmoitemplates/aliases`              | Selector: merges both registries, filters by shell, OS and machine role | all                 |
 | `dot_config/readline/inputrc`            | Readline: ↑/↓ prefix history search, case-insensitive coloured completion | Unix + Git Bash   |
-| `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status); PSMux reads the same config through `~/.psmux.conf` | Unix + PSMux (Windows) |
+| `dot_config/tmux/tmux.conf`              | tmux (prefix `C-b`; `h/j/k/l` pane moves; Catppuccin status; sets `CLAUDE_CODE_TMUX_TRUECOLOR` for new panes, as Claude Code clamps to 256 colours under `$TMUX`); PSMux reads the same config through `~/.psmux.conf` | Unix + PSMux (Windows) |
 
 ## Alias registry
 
