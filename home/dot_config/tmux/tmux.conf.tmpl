@@ -1,8 +1,10 @@
 # tmux >= 3.1 reads this XDG path natively.
 # Prefix stays C-b: Ghostty already uses ctrl+a (splits) and ctrl+h/j/k/l.
 
-set -g default-terminal "tmux-256color"
-set -as terminal-features ",*:RGB"
+# psmux advises xterm-256color on Windows.
+set -g default-terminal "{{ if eq .chezmoi.os "windows" }}xterm-256color{{ else }}tmux-256color{{ end }}"
+# Fixed index: a reload (prefix r) sets it again instead of appending another copy.
+set -s terminal-features[100] "*:RGB"
 # Claude Code limits itself to 256 colours when $TMUX is set; this env var (process env only) lifts it.
 set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1
 set -g mouse on
