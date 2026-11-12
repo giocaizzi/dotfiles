@@ -11,6 +11,12 @@ set -g mouse on
 set -g history-limit 50000
 set -g escape-time 10
 set -g focus-events on
+{{- if ne .chezmoi.os "windows" }}
+# Claude Code (terminal-config docs): Shift+Enter newline and desktop notifications reaching the outer terminal.
+set -g allow-passthrough on
+set -s extended-keys on
+set -s terminal-features[101] "xterm*:extkeys"
+{{- end }}
 set -g base-index 1
 setw -g pane-base-index 1
 set -g renumber-windows on
