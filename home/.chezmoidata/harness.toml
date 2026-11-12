@@ -28,8 +28,8 @@ python = ["claude", "copilot", "codex", "antigravity", "opencode", "pi"]
 sounds = ["claude", "codex", "antigravity", "opencode", "pi"]
 
 # Targets each harness owns: .chezmoiignore skips them where the harness is not selected
-# (light machines select none). Shared targets stay explicit there: ~/.copilot (also
-# VS Code's instructions and MCP servers) and ops/.mcp.json (claude or copilot).
+# (light machines select none). Shared targets stay explicit there: ~/.copilot (copilot or
+# vscode, whose Copilot harness reads it) and ops/.mcp.json (claude or copilot).
 [harnessTargets]
 antigravity = [".gemini", "ops/.agents/mcp_config.json"]
 claude = [".claude"]
@@ -38,10 +38,7 @@ opencode = [".config/opencode", "ops/opencode.json"]
 pi = [".pi", "ops/.pi"]
 vscode = [
     ".config/Code",
-    ".config/Code - Insiders",
     "Library/Application Support/Code",
-    "Library/Application Support/Code - Insiders",
     "AppData/Roaming/Code",
-    "AppData/Roaming/Code - Insiders",
     "ops/.vscode",
 ]

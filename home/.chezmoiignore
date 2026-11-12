@@ -47,12 +47,11 @@ Library
 {{ end }}
 
 # --- not Linux ---
-# VS Code (Code, Code - Insiders) and Ghostty live under ~/.config on Linux.
+# VS Code and Ghostty live under ~/.config on Linux.
 # On macOS they live under Library; on Windows under AppData.
 {{ if ne .chezmoi.os "linux" }}
 .config/ghostty
 .config/Code
-.config/Code - Insiders
 {{ end }}
 
 # --- not Windows ---
@@ -91,16 +90,10 @@ ops
 {{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
 ops/.mcp.json
 {{ end }}
-{{ if not (has "copilot" $harnesses) }}
-{{   if has "vscode" $harnesses }}
-# VS Code's Copilot harness reads the global instructions and the user MCP servers
-# from ~/.copilot, not from VS Code's own files.
-.copilot/*
-!.copilot/copilot-instructions.md
-!.copilot/mcp-config.json
-{{   else }}
+# VS Code's Copilot harness runs Copilot CLI's runtime and reads ~/.copilot, so
+# vscode gets the same files as copilot (configs only; chezmoi installs no CLI).
+{{ if not (or (has "copilot" $harnesses) (has "vscode" $harnesses)) }}
 .copilot
-{{   end }}
 {{ end }}
 # ~/ops holds personal servers: personal machines only (work PCs get no
 # personal account, like the personal vault and telemetry).

@@ -3,3 +3,13 @@
 .config/shell/aliases.private.sh
 # Agent instructions: the private layers moved to .chezmoitemplates/agents/; no harness read ~/.config/agents.
 .config/agents
+# VS Code Insiders is no longer configured: remove the symlinks chezmoi made to the stable
+# settings and keybindings, only where the vscode harness made them (the rest of its data stays).
+{{ if has "vscode" (includeTemplate "harnesses" . | splitList " ") }}
+Library/Application Support/Code - Insiders/User/settings.json
+Library/Application Support/Code - Insiders/User/keybindings.json
+.config/Code - Insiders/User/settings.json
+.config/Code - Insiders/User/keybindings.json
+AppData/Roaming/Code - Insiders/User/settings.json
+AppData/Roaming/Code - Insiders/User/keybindings.json
+{{ end }}

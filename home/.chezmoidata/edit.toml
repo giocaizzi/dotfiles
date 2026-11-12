@@ -105,11 +105,11 @@ source = ".chezmoitemplates/pi-settings.json"
 
 # --- Apps ---
 [edit."vscode/settings"]
-desc = "VS Code and Insiders settings.json (symlinked on macOS and Windows)"
+desc = "VS Code settings.json (symlinked on macOS and Windows)"
 source = "dot_config/Code/User/settings.json"
 
 [edit."vscode/keybindings"]
-desc = "VS Code and Insiders keybindings.json"
+desc = "VS Code keybindings.json"
 source = "dot_config/Code/User/keybindings.json"
 
 [edit."vscode/extensions"]
