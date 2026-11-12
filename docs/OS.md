@@ -488,7 +488,7 @@ Procedures:
 
 ## Agent instructions
 
-Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. The text is composed of layers, in this order:
+Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. Copilot CLI and VS Code (Copilot harness) both read `~/.copilot/copilot-instructions.md` natively, so VS Code needs no `chat.instructionsFilesLocations` entry: with `~/.copilot` listed there, VS Code offers to migrate the file into `~/.copilot/instructions/*.instructions.md`, and Copilot CLI then loads the instructions twice. Decline that migration. The text is composed of layers, in this order:
 
 | Layer | Source | Public | Machines |
 |---|---|---|---|

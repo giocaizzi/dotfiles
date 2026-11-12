@@ -94,10 +94,6 @@
   "chat.customAgentInSubagent.enabled": true,
   "chat.editing.alwaysSaveWithGeneratedChanges": true,
   "chat.experimental.useSkillAdherencePrompt": true,
-  // additional custom instructions
-  "chat.instructionsFilesLocations": {
-    "~/.copilot": true
-  },
   "chat.mcp.gallery.enabled": true,
   "chat.mcp.serverSampling": {
     "Azure MCP Server Provider: Azure MCP": {
