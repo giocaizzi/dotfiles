@@ -140,13 +140,14 @@ Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.
 | `default-terminal`: `tmux-256color` | PSMux advises `xterm-256color` on Windows | Unix / Windows |
 | `terminal-features[100] "*:RGB"` at a fixed index | `set -as` appended a copy on every reload | all (no effect in PSMux, which reads only `progressbar`) |
 | `set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1` | Claude Code clamps to 256 colours whenever `$TMUX` is set; only the process environment lifts it, not `settings.json` | all |
-| `allow-passthrough on`, `extkeys` feature | Claude Code docs: notifications reach the outer terminal, Shift+Enter inserts a newline | Unix only (PSMux does not forward passthrough) |
+| `extkeys` feature, no `allow-passthrough` | Shift+Enter inserts a newline (Claude Code docs). Passthrough is not needed: the bell is a plain BEL that tmux handles itself; passthrough only serves the ghostty or iterm2 notification channels, and this setup uses `terminal_bell` | Unix only (PSMux does not forward passthrough) |
 | Copilot `theme: default` (not `github`) | `github` sets the background with OSC 11: tmux repaints every cell opaque, PSMux ignores it; `default` follows the terminal palette and opacity | all |
-| Bells only: `bell-action any`, `monitor-bell on`, red `!` | the agents ring the bell when they wait on you | all |
+| Bells only: `bell-action any`, `monitor-bell on`, `visual-bell off` | a bell in a background window flags it (red `!`, tab in reverse video, the default `window-status-bell-style`) and still reaches the outer terminal (Ghostty `bell-features`, Windows Terminal `bellStyle`) | all |
+| Claude Code bells: `preferredNotifChannel: terminal_bell`, sounds plugin `notify: true` | Claude rings on a permission prompt and after 60 s idle; the sounds plugin rings when a turn of at least `notifyAfterSeconds` (default 60) ends (`pluginConfigs`, merged into `~/.claude/settings.json`) | all |
 | No activity monitoring | agents and the HUD redraw constantly, so every background window was always flagged | all |
 | `window-status-bell-style` left at the default `reverse` | the belling tab is highlighted as well as marked; the same default in tmux and PSMux | all |
 | No custom mouse bindings | `copy-selection-no-clear` keeps the pane in copy mode and the keyboard stops reaching the app; use Shift (Option in Ghostty) while dragging for a selection that stays | all |
-| Window-list formats without commas inside `#{?...}` | a comma inside `#[fg=colour1,bold]` splits the conditional and the marker vanished | all |
+| Commas inside `#{?...}` escaped as `#,` (`#[fg=colour1#,bold]`) | the tmux manual requires it; an unescaped comma split the conditional and the marker vanished. PSMux uses the same escape in its own defaults | all |
 
 Status bar (`status-right.sh`, macOS): RAM is Activity Monitor's "Memory Used" (anonymous minus purgeable, wired, compressed), disk reads `/System/Volumes/Data` (`/` is the read-only system volume).
 

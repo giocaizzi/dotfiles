@@ -12,8 +12,8 @@ set -g history-limit 50000
 set -g escape-time 10
 set -g focus-events on
 {{- if ne .chezmoi.os "windows" }}
-# Claude Code (terminal-config docs): Shift+Enter newline and desktop notifications reaching the outer terminal.
-set -g allow-passthrough on
+# Claude Code (terminal-config docs): Shift+Enter inserts a newline. No allow-passthrough: the bell is a plain BEL
+# that tmux handles itself; passthrough only serves the ghostty/iterm2 notification channels (docs/SHELL.md, tmux).
 set -s terminal-features[101] "xterm*:extkeys"
 {{- end }}
 set -g base-index 1
@@ -46,8 +46,8 @@ set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colou
 {{- else }}
 set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colour8][#[fg=default]󰍛 #{window_panes}#[fg=colour8]]#(sh ~/.config/tmux/status-right.sh) #[fg=colour8][#[fg=default]󰥔 %H:%M#[fg=colour8]] "
 {{- end }}
-setw -g window-status-format "#[fg=colour8] #I:#W#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
-setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
+setw -g window-status-format "#[fg=colour8] #I:#W#{?window_bell_flag,#[fg=colour1#,bold]!,}#[fg=colour8] "
+setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_bell_flag,#[fg=colour1#,bold]!,}#[fg=colour8] "
 set -g pane-border-style "fg=colour8"
 set -g pane-active-border-style "fg=colour4"
 set -g message-style "bg=default,fg=colour3"
