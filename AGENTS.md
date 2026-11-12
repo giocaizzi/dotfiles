@@ -15,8 +15,7 @@ dot_config/Code/User/{settings,keybindings}.json
     → ~/.config/Code/User/         (Linux, direct)
     → Library/.../Code/User/        (macOS, symlinks)
     → AppData/Roaming/Code/User/    (Windows, symlinks)
-    (Code - Insiders symlinks point at the same files)
-
+    (VS Code's agent chat reads ~/.copilot, so the vscode harness also gets the ~/.copilot files)
 
 dot_config/ghostty/config
     → ~/.config/ghostty/   (Linux, direct)

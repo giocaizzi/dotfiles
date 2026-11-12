@@ -17,9 +17,10 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `lint` | `shellcheck` on the bash rc files; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config |
+| `lint` | `shellcheck` on the bash rc files, the global git hooks and `tests/git-hooks.sh`; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
-| `test` | `test-syntax` |
+| `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |
+| `test` | `test-syntax` + `test-git-hooks` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
 | `check` | `lint` + `test` |
 | `check-fast` | `lint` + `test-syntax`: the agent stop hook (guard plugin) runs it instead of `check`; run `make check` before pushing |
