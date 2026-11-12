@@ -144,7 +144,7 @@ Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.
 | Copilot `theme: default` (not `github`) | `github` sets the background with OSC 11: tmux repaints every cell opaque, PSMux ignores it; `default` follows the terminal palette and opacity | all |
 | Bells only: `bell-action any`, `monitor-bell on`, red `!` | the agents ring the bell when they wait on you | all |
 | No activity monitoring | agents and the HUD redraw constantly, so every background window was always flagged | all |
-| `window-status-bell-style none` | the default `reverse` paints the whole tab | all |
+| `window-status-bell-style` left at the default `reverse` | the belling tab is highlighted as well as marked; the same default in tmux and PSMux | all |
 | No custom mouse bindings | `copy-selection-no-clear` keeps the pane in copy mode and the keyboard stops reaching the app; use Shift (Option in Ghostty) while dragging for a selection that stays | all |
 | Window-list formats without commas inside `#{?...}` | a comma inside `#[fg=colour1,bold]` splits the conditional and the marker vanished | all |
 
