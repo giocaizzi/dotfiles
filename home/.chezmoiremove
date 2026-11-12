@@ -13,3 +13,8 @@ Library/Application Support/Code - Insiders/User/keybindings.json
 AppData/Roaming/Code - Insiders/User/settings.json
 AppData/Roaming/Code - Insiders/User/keybindings.json
 {{ end }}
+# VS Code's Copilot harness reads ~/ops/.mcp.json: remove the VS Code-only ~/ops file chezmoi
+# rendered, only where the vscode harness made it (personal machines: ~/ops is not on work ones).
+{{ if and (has "vscode" (includeTemplate "harnesses" . | splitList " ")) (not (get . "work")) }}
+ops/.vscode/mcp.json
+{{ end }}

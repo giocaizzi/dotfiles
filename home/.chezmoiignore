@@ -87,7 +87,7 @@ ops
 {{     $targets | join "\n" }}
 {{   end }}
 {{ end }}
-{{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses)) }}
+{{ if not (or (has "claude" $harnesses) (has "copilot" $harnesses) (has "vscode" $harnesses)) }}
 ops/.mcp.json
 {{ end }}
 # VS Code's Copilot harness runs Copilot CLI's runtime and reads ~/.copilot, so
