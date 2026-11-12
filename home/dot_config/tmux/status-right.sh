@@ -34,14 +34,14 @@ esac
 if [ -n "$memory" ]; then
   memory_value=${memory%:*}
   memory_percent=${memory##*:}
-  memory_color=#cdd6f4
-  [ "$memory_percent" -ge 80 ] 2>/dev/null && memory_color=#f9e2af
-  printf ' #[fg=#6c7086][#[fg=%s]󰍛 %s#[fg=#6c7086]]' "$memory_color" "$memory_value"
+  memory_color=default
+  [ "$memory_percent" -ge 80 ] 2>/dev/null && memory_color=colour3
+  printf ' #[fg=colour8][#[fg=%s]󰍛 %s#[fg=colour8]]' "$memory_color" "$memory_value"
 fi
 
 if [ -n "$battery" ]; then
   battery_percent=${battery%%%}
-  battery_color=#cdd6f4
-  [ "$battery_percent" -lt 20 ] 2>/dev/null && battery_color=#f38ba8
-  printf ' #[fg=#6c7086][#[fg=%s]󰁹 %s#[fg=#6c7086]]' "$battery_color" "$battery"
+  battery_color=default
+  [ "$battery_percent" -lt 20 ] 2>/dev/null && battery_color=colour1
+  printf ' #[fg=colour8][#[fg=%s]󰁹 %s#[fg=colour8]]' "$battery_color" "$battery"
 fi
