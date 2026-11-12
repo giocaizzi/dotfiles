@@ -131,6 +131,29 @@ the file.
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
 | `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
 
+## tmux
+
+Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.psmux.conf`). Reload with `prefix r`; the status script re-runs by itself. Options that apply only to new panes (`default-terminal`, `set-environment`) need a new pane, and Claude Code or Copilot must be restarted to pick up changes.
+
+| Choice | Why | OS |
+|---|---|---|
+| `default-terminal`: `tmux-256color` | PSMux advises `xterm-256color` on Windows | Unix / Windows |
+| `terminal-features[100] "*:RGB"` at a fixed index | `set -as` appended a copy on every reload | all (no effect in PSMux, which reads only `progressbar`) |
+| `set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1` | Claude Code clamps to 256 colours whenever `$TMUX` is set; only the process environment lifts it, not `settings.json` | all |
+| `allow-passthrough on`, `extkeys` feature | Claude Code docs: notifications reach the outer terminal, Shift+Enter inserts a newline | Unix only (PSMux does not forward passthrough) |
+| Copilot `theme: default` (not `github`) | `github` sets the background with OSC 11: tmux repaints every cell opaque, PSMux ignores it; `default` follows the terminal palette and opacity | all |
+| Bells only: `bell-action any`, `monitor-bell on`, red `!` | the agents ring the bell when they wait on you | all |
+| No activity monitoring | agents and the HUD redraw constantly, so every background window was always flagged | all |
+| `window-status-bell-style none` | the default `reverse` paints the whole tab | all |
+| No custom mouse bindings | `copy-selection-no-clear` keeps the pane in copy mode and the keyboard stops reaching the app; use Shift (Option in Ghostty) while dragging for a selection that stays | all |
+| Window-list formats without commas inside `#{?...}` | a comma inside `#[fg=colour1,bold]` splits the conditional and the marker vanished | all |
+
+Status bar (`status-right.sh`, macOS): RAM is Activity Monitor's "Memory Used" (anonymous minus purgeable, wired, compressed), disk reads `/System/Volumes/Data` (`/` is the read-only system volume).
+
+Claude Code `tui` is `fullscreen`. If clicks and flicker-free redraws disappear in tmux, the renderer fell back to classic after failed starts (a start counts as failed if the session ends within 10 seconds without `/exit` or Ctrl+C); run `/tui fullscreen` in the session to reset it. The failure count is local state and not part of the dotfiles.
+
+Not verified on Windows: PSMux accepting the indexed `terminal-features` and the `#[bold]` styles, and a forwarded bell flashing the Windows Terminal taskbar.
+
 ## Secrets
 
 | OS      | File                               | Permissions        |

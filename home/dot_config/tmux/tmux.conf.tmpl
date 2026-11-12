@@ -20,15 +20,12 @@ set -g base-index 1
 setw -g pane-base-index 1
 set -g renumber-windows on
 
-# Keep bells audible through the outer terminal; show activity without ringing.
+# Bells only: forward them to the outer terminal and flag the belling window. Activity monitoring stays off,
+# since agents redraw constantly and every background window would always be flagged (docs/SHELL.md, tmux).
 set -g bell-action any
 set -g visual-bell off
-set -g visual-activity on
-set -g activity-action other
 setw -g monitor-bell on
-setw -g monitor-activity on
-# The default "reverse" style paints the whole tab and the marker as blocks; keep only the coloured marker.
-setw -g window-status-activity-style none
+# The default "reverse" style paints the whole tab as a block; keep only the coloured marker.
 setw -g window-status-bell-style none
 
 # Pane navigation (prefix + h/j/k/l) and splits in the current directory
@@ -50,8 +47,8 @@ set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colou
 {{- else }}
 set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colour8][#[fg=default]󰍛 #{window_panes}#[fg=colour8]]#(sh ~/.config/tmux/status-right.sh) #[fg=colour8][#[fg=default]󰥔 %H:%M#[fg=colour8]] "
 {{- end }}
-setw -g window-status-format "#[fg=colour8] #I:#W#{?window_activity_flag,#[fg=colour3]#[bold]+#[nobold]#[fg=colour8],}#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
-setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_activity_flag,#[fg=colour3]#[bold]+#[nobold]#[fg=colour8],}#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
+setw -g window-status-format "#[fg=colour8] #I:#W#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
+setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_bell_flag,#[fg=colour1]#[bold]!#[nobold]#[fg=colour8],}#[fg=colour8] "
 set -g pane-border-style "fg=colour8"
 set -g pane-active-border-style "fg=colour4"
 set -g message-style "bg=default,fg=colour3"
