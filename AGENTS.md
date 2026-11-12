@@ -17,8 +17,6 @@ dot_config/Code/User/{settings,keybindings}.json
     → AppData/Roaming/Code/User/    (Windows, symlinks)
     (Code - Insiders symlinks point at the same files)
 
-.chezmoitemplates/vscode-mcp.json  → Code and Code - Insiders User/mcp.json on every OS
-    (rendered per role, not symlinked)
 
 dot_config/ghostty/config
     → ~/.config/ghostty/   (Linux, direct)

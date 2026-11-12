@@ -93,9 +93,11 @@ ops/.mcp.json
 {{ end }}
 {{ if not (has "copilot" $harnesses) }}
 {{   if has "vscode" $harnesses }}
-# VS Code reads the global instructions from ~/.copilot/copilot-instructions.md
+# VS Code's Copilot harness reads the global instructions and the user MCP servers
+# from ~/.copilot, not from VS Code's own files.
 .copilot/*
 !.copilot/copilot-instructions.md
+!.copilot/mcp-config.json
 {{   else }}
 .copilot
 {{   end }}

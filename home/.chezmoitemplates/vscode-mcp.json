@@ -1,6 +1,0 @@
-{{- /* VS Code (and Insiders) user mcp.json, rendered whole on every OS: this role's user-scope
-       servers (.chezmoitemplates/mcp-user.json). Rendered, not symlinked, so add HTTP servers in
-       .chezmoidata/mcp.toml and stdio servers here (set $out "<name>" (dict ...)), not in VS Code. */ -}}
-{{- $out := dict -}}
-{{- range $n, $u := includeTemplate "mcp-servers.json" (includeTemplate "mcp-user.json" . | fromJson) | fromJson }}{{ $_ := set $out $n (dict "type" "http" "url" $u) }}{{ end -}}
-{{- dict "servers" $out "inputs" list | toPrettyJson }}
