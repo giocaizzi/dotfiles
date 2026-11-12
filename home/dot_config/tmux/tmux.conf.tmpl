@@ -14,7 +14,6 @@ set -g focus-events on
 {{- if ne .chezmoi.os "windows" }}
 # Claude Code (terminal-config docs): Shift+Enter newline and desktop notifications reaching the outer terminal.
 set -g allow-passthrough on
-set -s extended-keys on
 set -s terminal-features[101] "xterm*:extkeys"
 {{- end }}
 set -g base-index 1
