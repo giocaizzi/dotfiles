@@ -88,11 +88,6 @@
   },
   // --- Chat ---
   "chat.agent.maxRequests": 1000,
-  // additional custom agents
-  "chat.agentFilesLocations": {},
-  "chat.autopilot.enabled": true,
-  "chat.customAgentInSubagent.enabled": true,
-  "chat.editing.alwaysSaveWithGeneratedChanges": true,
   "chat.experimental.useSkillAdherencePrompt": true,
   "chat.mcp.gallery.enabled": true,
   "chat.mcp.serverSampling": {
@@ -102,7 +97,6 @@
   },
   "chat.plugins.enabled": true,
   "chat.plugins.marketplaces": ["giocaizzi/harness"],
-  "chat.promptFilesRecommendations": {},
   // let a subagent spawn its own (the harness driver fans out to workers)
   "chat.subagents.allowInvocationsFromSubagents": true,
   "chat.tools.terminal.autoApprove": {
@@ -248,12 +242,8 @@
   "git.confirmSync": false,
   "git.enableSmartCommit": true,
   "git.replaceTagsWhenPull": true,
-  "github.copilot.chat.anthropic.contextEditing.enabled": true,
   // --- GitHub Copilot ---
   "github.copilot.chat.codesearch.enabled": true,
-  "github.copilot.chat.copilotMemory.enabled": true,
-  "github.copilot.chat.customAgents.showOrganizationAndEnterpriseAgents": true,
-  "github.copilot.chat.generateTests.codeLens": true,
   "github.copilot.chat.githubMcpServer.enabled": true,
   "github.copilot.chat.switchAgent.enabled": true,
   "github.copilot.enable": {
