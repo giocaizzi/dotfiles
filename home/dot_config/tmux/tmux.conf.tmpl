@@ -27,6 +27,9 @@ set -g visual-activity on
 set -g activity-action other
 setw -g monitor-bell on
 setw -g monitor-activity on
+# The default "reverse" style paints the whole tab and the marker as blocks; keep only the coloured marker.
+setw -g window-status-activity-style none
+setw -g window-status-bell-style none
 
 # Pane navigation (prefix + h/j/k/l) and splits in the current directory
 bind h select-pane -L
