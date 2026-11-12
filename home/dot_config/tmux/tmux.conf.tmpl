@@ -8,6 +8,11 @@ set -s terminal-features[100] "*:RGB"
 # Claude Code limits itself to 256 colours when $TMUX is set; this env var (process env only) lifts it.
 set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1
 set -g mouse on
+{{- if ne .chezmoi.os "windows" }}
+# Keep the mouse selection highlighted after the drag: copy it, but do not leave copy mode.
+bind -T copy-mode MouseDragEnd1Pane send -X copy-selection-no-clear
+bind -T copy-mode-vi MouseDragEnd1Pane send -X copy-selection-no-clear
+{{- end }}
 set -g history-limit 50000
 set -g escape-time 10
 set -g focus-events on
