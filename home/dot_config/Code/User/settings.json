@@ -90,15 +90,8 @@
   "chat.agent.maxRequests": 1000,
   "chat.experimental.useSkillAdherencePrompt": true,
   "chat.mcp.gallery.enabled": true,
-  "chat.mcp.serverSampling": {
-    "Azure MCP Server Provider: Azure MCP": {
-      "allowedDuringChat": true
-    }
-  },
   "chat.plugins.enabled": true,
   "chat.plugins.marketplaces": ["giocaizzi/harness"],
-  // let a subagent spawn its own (the harness driver fans out to workers)
-  "chat.subagents.allowInvocationsFromSubagents": true,
   "chat.tools.terminal.autoApprove": {
     "chezmoi": true,
     "cp": true,
@@ -192,8 +185,6 @@
   },
   "chat.unifiedAgentsBar.enabled": true,
   "chat.useAgentSkills": true,
-  "chat.useHooks": true,
-  "chat.useNestedAgentsMdFiles": true,
   "chat.viewSessions.orientation": "stacked",
   // --- Claude Code ---
   "claudeCode.preferredLocation": "panel",
