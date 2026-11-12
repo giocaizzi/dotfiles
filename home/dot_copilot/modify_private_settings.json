@@ -4,6 +4,8 @@
        approved in Copilot survive alongside the managed baseline. */ -}}
 {{- $current := dict -}}
 {{- if .chezmoi.stdin }}{{ $current = fromJson .chezmoi.stdin }}{{ end -}}
+{{- /* hud no longer draws a Copilot status line: drop the one a past apply left behind. */ -}}
+{{- $_ := unset $current "statusLine" -}}
 {{- $managed := includeTemplate "copilot-settings.json" . | fromJson -}}
 {{- $urls := concat (get $current "allowedUrls" | default list) $managed.allowedUrls | uniq -}}
 {{- mergeOverwrite $current $managed | setValueAtPath "allowedUrls" $urls | toPrettyJson }}
