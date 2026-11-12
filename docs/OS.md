@@ -515,7 +515,7 @@ Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: t
 claude plugin marketplace add giocaizzi/harness
 claude plugin install guard@giocaizzi-harness   # likewise hud, sounds, python, go, foundations, infra, javascript, dev-tools
 copilot plugin marketplace add giocaizzi/harness
-copilot plugin install guard@giocaizzi-harness  # likewise hud, python, go, foundations, infra, javascript, dev-tools
+copilot plugin install guard@giocaizzi-harness  # likewise python, go, foundations, infra, javascript, dev-tools
 ```
 
 Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode (`scripts/install.mjs` copies every plugin) and pi (the checkout as a package) take the whole checkout, so they still get them; both are listed under every plugin so `agents plugins` shows their real state. `agents check` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
