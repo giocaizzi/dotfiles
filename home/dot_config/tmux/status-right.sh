@@ -9,7 +9,8 @@ case "$(uname -s)" in
   Darwin)
     page_size=$(sysctl -n hw.pagesize 2>/dev/null)
     total_bytes=$(sysctl -n hw.memsize 2>/dev/null)
-    used_pages=$(vm_stat 2>/dev/null | awk '/Pages active|Pages wired down|Pages occupied by compressor/ { gsub(/\./, "", $NF); pages += $NF } END { print pages }')
+    # Activity Monitor's "Memory Used": app (anonymous - purgeable) + wired + compressed.
+    used_pages=$(vm_stat 2>/dev/null | awk '/^Anonymous pages|^Pages wired down|^Pages occupied by compressor/ { gsub(/\./, "", $NF); pages += $NF } /^Pages purgeable/ { gsub(/\./, "", $NF); pages -= $NF } END { print pages }')
     if [ -n "$page_size" ] && [ -n "$total_bytes" ] && [ -n "$used_pages" ]; then
       used_bytes=$((used_pages * page_size))
       memory="$(((used_bytes + 536870912) / 1073741824))/$(((total_bytes + 536870912) / 1073741824))GB:$((used_bytes * 100 / total_bytes))"
