@@ -89,7 +89,7 @@
   "tui": {{ .agents.ui.tuiMode | default "fullscreen" | quote }},
   "terminalProgressBarEnabled": {{ .agents.ui.progressBar | default true }},
   "preferredNotifChannel": {{ ternary "terminal_bell" "notifications_disabled" (or .agents.ui.terminalBell .agents.notifications.terminalBell) | quote }},
-  "pluginConfigs": { "sounds@giocaizzi-harness": { "options": { "notify": true } } },
+  "pluginConfigs": { "sounds@giocaizzi-harness": { "options": { "notify": true, "notifyAfterSeconds": 0 } } },
   "showThinkingSummaries": {{ .agents.models.showThinkingSummaries | default true }},
   "viewMode": {{ .agents.ui.viewMode | default "focus" | quote }},
   "showTurnDuration": {{ .agents.ui.showTurnDuration | default true }},
