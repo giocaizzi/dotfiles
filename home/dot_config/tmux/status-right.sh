@@ -14,7 +14,7 @@ case "$(uname -s)" in
       used_bytes=$((used_pages * page_size))
       memory="$(((used_bytes + 536870912) / 1073741824))/$(((total_bytes + 536870912) / 1073741824))GB:$((used_bytes * 100 / total_bytes))"
     fi
-    cpu=$(top -l 1 -n 0 2>/dev/null | awk '/^CPU usage:/ { user = $3; sub(/%/, "", user); system = $5; sub(/%/, "", system); printf "%d", user + system; exit }')
+    cpu=$(top -l 1 -n 0 2>/dev/null | awk '/^CPU usage:/ { user = $3; sub(/%/, "", user); sys = $5; sub(/%/, "", sys); printf "%d", user + sys; exit }')
     battery=$(pmset -g batt 2>/dev/null | awk 'match($0, /[0-9]+%/) { print substr($0, RSTART, RLENGTH); exit }')
     # / is the read-only system volume; user data lives on the Data volume.
     disk=$(df -Pk /System/Volumes/Data 2>/dev/null | awk 'NR == 2 && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ && $2 > 0 { used = $3 * 1024; total = $2 * 1024; printf "%d/%dGB:%d", (used + 536870912) / 1073741824, (total + 536870912) / 1073741824, used * 100 / total }')
