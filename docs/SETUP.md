@@ -43,7 +43,7 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
    | Git user name (text) / PERSONAL git email (text) | your name / personal email | your name / personal email (used only for personal repos) | your name / personal email |
    | Light setup (choice yes/no) — shell, git, vim, prompt only | no | no | **yes** |
    | Work computer (choice yes/no) — work git identity, no personal telemetry | no | **yes** → WORK git email (default for every repo) + PERSONAL GitHub username + extra personal remote globs ([add later](./OS.md#adding-personal-remotes)) | no |
-   | AI harnesses (multiple choice: claude, copilot, vscode, codex, opencode, pi, antigravity; [details](./OS.md#ai-harnesses)) | the ones you use | the ones you use | not asked |
+   | AI harnesses (multiple choice: claude, copilot, vscode, codex, opencode, pi, antigravity; [details](./OS.md#ai-harnesses); [agent configuration](./OS.md#ai-agent-configuration)) | the ones you use | the ones you use | not asked |
    | Bitwarden Secrets Manager project ID (text) | `personal` ID | `work` ID | not asked |
 
    The token is not an init answer: it sits in the OS keyring (step 4). To change answers later, `chezmoi init --prompt` (asks everything again).
@@ -55,6 +55,8 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
    ```
 
    Open a new shell (Windows: a new PowerShell window). Light machines are done after step 5.
+
+   On machines with a harness selected, the first apply installs the `agents` binary and then runs `agents apply` to write the harness files; a server that needs a secret is skipped until that secret is exported, so after opening the new shell run `chezmoi apply` once more (see [AI agent configuration](./OS.md#agents-apply)).
 
 ## Secrets
 
