@@ -14,14 +14,22 @@ if [ ! -x "$exe" ]; then
 	echo "agents apply: $exe not installed yet, skipped (the next chezmoi apply runs it)" >&2
 	exit 0
 fi
-"$exe" check
+# Quiet when nothing needs attention: the output is shown only for warnings or errors
+# (check) and for any target that is not unchanged (apply).
+out=$("$exe" check 2>&1)
 rc=$?
+if [ "$rc" -ne 0 ] || printf '%s\n' "$out" | grep -q '^!'; then
+	printf '%s\n' "$out" >&2
+fi
 if [ "$rc" -ne 0 ]; then
 	echo "warning: agents check failed (exit $rc); agents apply skipped, fix the config and run chezmoi apply again" >&2
 	exit 0
 fi
-"$exe" apply
+out=$("$exe" apply 2>&1)
 rc=$?
+if [ "$rc" -ne 0 ] || printf '%s\n' "$out" | grep -Eq '^(create|update|drift|refused|error|warning)'; then
+	printf '%s\n' "$out"
+fi
 if [ "$rc" -ne 0 ]; then
 	echo "warning: agents apply failed (exit $rc); run it by hand to see why" >&2
 fi
