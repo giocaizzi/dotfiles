@@ -14,9 +14,11 @@ SHELLCHECK_EXCLUDES ?=
 # The source state (.chezmoiroot); chezmoi --source . resolves it on its own.
 SRC := home
 DOTS := CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR="$(CURDIR)/$(SRC)" chezmoi-dots
-# Where `make tools` installs the pinned CLIs the checks run (CI puts it on PATH).
-TOOLS_DIR ?= $(HOME)/.local/bin
-TOOLS_PLATFORM ?= linux/amd64
+# Where `make tools` installs the pinned CLIs the checks run: a repo-local, gitignored dir by
+# default, never ~/.local/bin (override TOOLS_DIR to install there; CI does). TOOLS_PLATFORM
+# (os/arch: darwin|linux / amd64|arm64) defaults to this machine's.
+TOOLS_DIR ?= $(CURDIR)/.tools/bin
+TOOLS_PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')/$(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 AGENTS := agents
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
 RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
@@ -34,7 +36,7 @@ help: ## List targets
 
 # CI tools at the versions the repo pins: agents and chezmoi-dots from [release.*] in the package
 # registry (checksum-verified), chezmoi from .github/tools.toml (its installer verifies it).
-tools: ## Install the pinned chezmoi, chezmoi-dots and agents into TOOLS_DIR (linux/amd64)
+tools: ## Install the pinned chezmoi, chezmoi-dots and agents into TOOLS_DIR (default .tools/bin) for TOOLS_PLATFORM
 	@set -eu; \
 	toml() { awk -v sec="$$2" -v key="$$3" '/^\[/ { s = $$0; gsub(/[][ ]/, "", s); next } \
 		s == sec { k = $$1; gsub(/"/, "", k); if (k == key) { v = $$3; gsub(/"/, "", v); print v; exit } }' "$$1"; }; \
@@ -46,9 +48,12 @@ tools: ## Install the pinned chezmoi, chezmoi-dots and agents into TOOLS_DIR (li
 		v=$$(toml $$reg release.$$n version); \
 		t=$$(toml $$reg release.$$n.target $(TOOLS_PLATFORM)); \
 		sum=$$(toml $$reg release.$$n.sha256 $(TOOLS_PLATFORM)); \
+		case "$$sum" in ""|*[!0-9a-f]*) echo "no valid sha256 for $$n on $(TOOLS_PLATFORM) in $$reg" >&2; exit 1;; esac; \
+		[ $${#sum} -eq 64 ] || { echo "no valid sha256 for $$n on $(TOOLS_PLATFORM) in $$reg" >&2; exit 1; }; \
 		url=$$(toml $$reg release.$$n url | sed -e "s/{version}/$$v/g" -e "s/{target}/$$t/g"); \
 		curl -fsSL "$$url" -o "$(TOOLS_DIR)/$$n.part"; \
-		echo "$$sum  $(TOOLS_DIR)/$$n.part" | { sha256sum -c - 2>/dev/null || shasum -a 256 -c -; }; \
+		got=$$(sha256sum "$(TOOLS_DIR)/$$n.part" 2>/dev/null || shasum -a 256 "$(TOOLS_DIR)/$$n.part"); got=$${got%% *}; \
+		[ "$$got" = "$$sum" ] || { echo "sha256 mismatch for $$n: got $$got, want $$sum" >&2; exit 1; }; \
 		chmod +x "$(TOOLS_DIR)/$$n.part"; mv "$(TOOLS_DIR)/$$n.part" "$(TOOLS_DIR)/$$n"; \
 		echo "installed $$n $$v"; \
 	done

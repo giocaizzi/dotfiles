@@ -12,3 +12,6 @@ CLAUDE.local.md
 # Model catalog benchmark cache
 home/.chezmoidata/models.json
 *.models.json
+
+# make tools: pinned CLIs installed for the checks
+.tools/
