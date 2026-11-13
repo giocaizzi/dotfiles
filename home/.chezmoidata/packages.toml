@@ -376,7 +376,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.chezmoi-dots]
 # The `chezmoi dots` companion plugin, released by github.com/giocaizzi/chezmoi-dots
 # A bare binary per platform.
-version = "0.2.0"
+version = "0.3.0"
 versionCmd = ["{dest}", "version"]
 url = "https://github.com/giocaizzi/chezmoi-dots/releases/download/v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
@@ -390,11 +390,11 @@ exe = true
 "windows/amd64" = "windows_amd64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "49f9fa7c3977b0ebbfd673784c220018b872d9ac7b5d5542cf1dc654af883d8e"
-"darwin/arm64" = "4ecdd2ef2da494578a551fa2c4ffca6e0505e636a68aaf669c073cefabd12bc2"
-"linux/amd64" = "862751ae8a2263016eba6363c695d49109c159a55597da5e20ac014b7db15072"
-"linux/arm64" = "556167003b06f6e24b5042ddf6389dc78ff82cb12221c7531eebc50c3a3a1e30"
-"windows/amd64" = "9473d0ac3c35be4b4d9ec7e7a92ae5bead34ba838a4795a5aa6c60d39c09dcec"
+"darwin/amd64" = "ffa09d6b8556263fbd7c99d79d08701103d050efa575064843efa91b1be33b9a"
+"darwin/arm64" = "0952f2063f117aab719896cc9495ed191502594d7215cdc16a3c986da480e46e"
+"linux/amd64" = "7dfe8eab323370d3accb69a84497cd2c889405d0b92c2e5942f3a407bfc7cd7e"
+"linux/arm64" = "a05a9202cd8aa18bab6b1aa297b00944bb5ae2a141363153a3c6470094f84604"
+"windows/amd64" = "05aaf032d6d728d97f273abad4a7917504539e1ba7275165de62f663e470d303"
 
 [release.agents]
 # Universal AI Agent Harness Manager standalone CLI, released by github.com/giocaizzi/agents

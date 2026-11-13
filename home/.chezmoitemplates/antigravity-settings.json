@@ -1,3 +1,0 @@
-{{- $settings := deepCopy .agents.native.antigravity -}}
-{{- $_ := set $settings "permissions" (includeTemplate "antigravity-permissions.json" . | fromJson) -}}
-{{- $settings | toPrettyJson }}
