@@ -79,15 +79,20 @@ vimfiles
 
 # --- AI agents (data.harnesses, chosen by `chezmoi init`; none on light machines) ---
 # `agents apply` (run_onchange_after_zz-agents-apply.*) writes every harness file from
-# ~/.config/agents: its config and instruction layers need a harness. The other role's
-# private layer is skipped.
+# the agents directory: its config and instruction layers need a harness. That is
+# ~/.config/agents on Unix and %APPDATA%\agents (AppData/Roaming/agents) on Windows, where
+# the `agents` CLI reads it; each is ignored on the other side (the "not Windows" block
+# above and the Windows block below). The other role's private layer is skipped.
 {{ if not (includeTemplate "harnesses" . | trim) }}
 .config/agents
+AppData/Roaming/agents
 {{ end }}
 {{ if get . "work" }}
 .config/agents/instructions/personal.md
+AppData/Roaming/agents/instructions/personal.md
 {{ else }}
 .config/agents/instructions/work.md
+AppData/Roaming/agents/instructions/work.md
 {{ end }}
 
 # Links to the Go toolchain release ([release.go] in .chezmoidata/packages.toml):
@@ -113,6 +118,8 @@ vimfiles
 # the XDG path. The .config/shell snippets and POSIX rc files (.profile, .bashrc,
 # .bash_profile) ARE kept so Git Bash and WSL users get the same aliases/PATH as
 # native Unix.
+# `agents` reads %APPDATA%\agents there, so ~/.config/agents is Unix only.
 {{ if eq .chezmoi.os "windows" }}
 .config/vim
+.config/agents
 {{ end }}
