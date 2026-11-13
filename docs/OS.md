@@ -501,7 +501,7 @@ Every change to the agent setup is an edit of the config or of a layer, then a c
 ### Add or change an instruction layer
 
 1. Change a layer: `dots agents/<core|env|personal|work>`.
-2. Add a layer: create `home/dot_config/agents/instructions/<name>.md`, declare it with `[instructions.layers.<name>]` and list it in the `instructions` of the profiles that use it (`dots agents/config`); add the file to the hash list of both `run_after_zz-agents-apply.*` scripts and an entry for it in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one). A private layer is committed age-encrypted (`chezmoi add --encrypt`), and `.chezmoiignore` must skip it on the other role.
+2. Add a layer: create `home/dot_config/agents/instructions/<name>.md`, declare it with `[instructions.layers.<name>]` and list it in the `instructions` of the profiles that use it (`dots agents/config`); add an entry for it in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one). On Windows add the same file under `home/AppData/Roaming/agents/instructions/` (a symlink template to the Unix source, or a decrypt template for a private layer). A private layer is committed age-encrypted (`chezmoi add --encrypt`), and `.chezmoiignore` must skip it on the other role: one line for `.config/agents/instructions/<name>.md` and a second for `AppData/Roaming/agents/instructions/<name>.md`.
 3. `agents prompt matrix` and `agents prompt check`, then `agents prompt show -profile <p> -harness <h>` for the composed text.
 4. `chezmoi apply`.
 
