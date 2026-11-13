@@ -66,22 +66,34 @@ lint: ## shellcheck, validate JSON, lint registries, templates, and agents confi
 	@$(MAKE) --no-print-directory lint-agents
 	$(DOTS) lint
 
-# Render the agents config template and validate it with the agents CLI. The layers come from the
-# rendered config; each is the plain source layer, or an empty stand-in where the source is
-# encrypted (*.age). Skipped when agents is not installed.
+# Render the agents config template and validate it with the agents CLI, hermetically: explicit
+# chezmoi data (no chezmoi config, a temp HOME/XDG) for both profiles with every harness selected.
+# The layers come from the rendered config; each is the plain source layer, or an empty stand-in
+# where the source is encrypted (*.age). Skipped when agents is not installed.
+HARNESSES := claude copilot vscode codex opencode pi antigravity
+
 lint-agents:
 	@if ! command -v $(AGENTS) >/dev/null 2>&1; then \
 		echo "Skipping agents config check: $(AGENTS) is not installed."; exit 0; \
 	fi; \
-	t=$$(mktemp -d) && mkdir -p "$$t/agents/instructions" && \
-	chezmoi --source "$(CURDIR)" execute-template < $(SRC)/.chezmoitemplates/agents-config.toml > "$$t/config.toml" && \
-	for l in $$($(AGENTS) config show -json -file "$$t/config.toml" | jq -r '.instructions.layers | keys[]'); do \
-		src="$(SRC)/dot_config/agents/instructions/$$l.md"; \
-		if [ -f "$$src" ]; then cp "$$src" "$$t/agents/instructions/"; else : > "$$t/agents/instructions/$$l.md"; fi; \
-	done && \
-	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) check -file "$$t/config.toml" && \
-	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) prompt check -file "$$t/config.toml" >/dev/null; \
-	rc=$$?; rm -r "$$t"; exit $$rc
+	t=$$(mktemp -d) && mkdir -p "$$t/agents/instructions" "$$t/home" && \
+	export HOME="$$t/home" XDG_CONFIG_HOME="$$t" APPDATA="$$t" && \
+	hs=$$(echo $(HARNESSES) | tr ' ' ','); \
+	rc=0; \
+	for w in true false; do \
+		p=$$([ $$w = true ] && echo work || echo personal); \
+		data="{\"work\":$$w,\"light\":false,\"harnesses\":$$(echo $(HARNESSES) | jq -R -c 'split(" ")')}"; \
+		chezmoi --config "$$t/chezmoi.toml" --source "$(CURDIR)" execute-template --override-data "$$data" \
+			< $(SRC)/.chezmoitemplates/agents-config.toml > "$$t/config-$$p.toml" || { rc=1; break; }; \
+		for l in $$($(AGENTS) config show -json -file "$$t/config-$$p.toml" | jq -r '.instructions.layers | keys[]'); do \
+			src="$(SRC)/dot_config/agents/instructions/$$l.md"; \
+			if [ -f "$$src" ]; then cp "$$src" "$$t/agents/instructions/"; else : > "$$t/agents/instructions/$$l.md"; fi; \
+		done; \
+		echo "agents check ($$p)"; \
+		$(AGENTS) check -file "$$t/config-$$p.toml" -profile $$p -harnesses "$$hs" && \
+		$(AGENTS) prompt check -file "$$t/config-$$p.toml" -profile $$p -harnesses "$$hs" >/dev/null || { rc=1; break; }; \
+	done; \
+	rm -r "$$t"; exit $$rc
 
 aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
