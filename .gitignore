@@ -9,5 +9,6 @@ CLAUDE.local.md
 .pi/npm/
 .pi/git/
 
-# Model catalog benchmark cachehome/.chezmoidata/models.json
+# Model catalog benchmark cache
+home/.chezmoidata/models.json
 *.models.json
