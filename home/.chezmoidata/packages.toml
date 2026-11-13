@@ -398,7 +398,7 @@ exe = true
 
 [release.agents]
 # Universal AI Agent Harness Manager standalone CLI, released by github.com/giocaizzi/agents
-version = "0.2.1"
+version = "0.3.0"
 url = "https://github.com/giocaizzi/agents/releases/download/v{version}/agents_{version}_{target}"
 type = "file"
 exe = true
@@ -411,11 +411,11 @@ exe = true
 "windows/amd64" = "windows_amd64.exe"
 
 [release.agents.sha256]
-"darwin/amd64" = "a244aa2da562be96e0c3681db361e4fb8ab5f44d9b4537102cc623b495259e63"
-"darwin/arm64" = "aa80f49a6f9956780cd9159c394490ff581e0a2e4b05b5fa57b72212a7ca8880"
-"linux/amd64" = "19a14712abe830e17f76c89850f61bfadc59d32f39943f1d4da296e343719a47"
-"linux/arm64" = "b62af3118f0a012417c0c878c5d5f0d95a109531b1c27521c34cf5d9df59eac4"
-"windows/amd64" = "5a9875f2b28bb640a953da1b0433e966bcf577d1f735a70c6ec6d878e3b6a629"
+"darwin/amd64" = "79497257027faffbced3d4e525c6e1e2af4bbb435375d4b0bfb1c6fec3233d70"
+"darwin/arm64" = "320f21114b9c9eb1c2ebf5df49ff444c51cddb0f2d8e960c8d021a391c2c1d78"
+"linux/amd64" = "995105280b689f9c1789de4bed48864928563c3ed7a0882e46c03cec79e3d541"
+"linux/arm64" = "9c19bba0da0fe9ad92a6574ab2880e076ee7238f0be1b007af15d9c98a68ddb4"
+"windows/amd64" = "149ff8b770c42bcaa87ebe33e771db7d53b852ebf25a94b7ef2fd375c20a772e"
 
 [release.golangci-lint]
 roles = ["personal"]
