@@ -9,6 +9,5 @@ CLAUDE.local.md
 .pi/npm/
 .pi/git/
 
-# Model catalog benchmark cache (manual sync preferences live in agents.toml [agents.models.catalog])
-home/.chezmoidata/models.json
+# Model catalog benchmark cachehome/.chezmoidata/models.json
 *.models.json

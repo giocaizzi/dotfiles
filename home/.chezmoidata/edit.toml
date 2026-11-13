@@ -17,28 +17,26 @@
 # ----------------------------------------------------------------------------
 
 # --- Agent instructions (docs/OS.md#agent-instructions) ---
+# `agents prompt check` validates a whole config, not one layer file, so no entry has a check;
+# `make lint` and the apply script run it.
 [edit."agents/core"]
 desc = "Agent instructions, core layer (public, every machine)"
-source = ".chezmoitemplates/agents/core.md"
-check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+source = "dot_config/agents/instructions/core.md"
 diff = "first"
 
 [edit."agents/env"]
 desc = "Agent instructions, CLI environment layer (public, per role and OS)"
-source = ".chezmoitemplates/agents/env.md"
-check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+source = "dot_config/agents/instructions/env.md"
 diff = "first"
 
 [edit."agents/personal"]
 desc = "Agent instructions, personal layer (encrypted, personal machines)"
-source = ".chezmoitemplates/agents/personal.md.age"
-check = ["agents", "prompt", "-profile", "personal", "-check", "-file", "{file}"]
+source = "dot_config/agents/instructions/encrypted_private_personal.md.age"
 diff = "first"
 
 [edit."agents/work"]
 desc = "Agent instructions, work layer (encrypted, work machines)"
-source = ".chezmoitemplates/agents/work.md.age"
-check = ["agents", "prompt", "-profile", "work", "-check", "-file", "{file}"]
+source = "dot_config/agents/instructions/encrypted_private_work.md.age"
 diff = "first"
 
 # --- Shell (docs/SHELL.md#alias-registry) ---
@@ -69,39 +67,11 @@ local = ".ssh/config.d"
 check = ["ssh", "-G", "-F", "{file}", "localhost"]
 
 # --- AI harnesses (docs/OS.md#ai-harnesses) ---
+# No check: checks run as an argv without a shell, so rendering the template and piping it to
+# `agents check -file -` cannot be expressed; `make lint` and the apply script validate it.
 [edit."agents/config"]
-desc = "Universal AI agents harness configuration"
-source = ".chezmoidata/agents.toml"
-check = ["agents", "check", "-file", "{file}"]
-
-[edit.mcp]
-desc = "MCP servers by layer: user, personal, ops workspace"
-source = ".chezmoidata/mcp.toml"
-
-[edit.plugins]
-desc = "giocaizzi/harness plugins per harness"
-source = ".chezmoidata/harness.toml"
-check = ["agents", "check", "-file", "{file}"]
-
-[edit."claude/settings"]
-desc = "Claude Code managed settings (merged into ~/.claude/settings.json)"
-source = ".chezmoitemplates/claude-settings.json"
-
-[edit."copilot/settings"]
-desc = "Copilot CLI managed settings (merged into ~/.copilot/settings.json)"
-source = ".chezmoitemplates/copilot-settings.json"
-
-[edit."antigravity/settings"]
-desc = "Antigravity CLI managed settings (merged into ~/.gemini/antigravity-cli/settings.json)"
-source = ".chezmoitemplates/antigravity-settings.json"
-
-[edit."antigravity/mcp"]
-desc = "Antigravity CLI MCP servers (~/.gemini/config/mcp_config.json)"
-source = "dot_gemini/config/modify_private_mcp_config.json"
-
-[edit."pi/settings"]
-desc = "Pi agent managed settings (merged into ~/.pi/agent/settings.json)"
-source = ".chezmoitemplates/pi-settings.json"
+desc = "Universal AI agents harness configuration (rendered to ~/.config/agents/config.toml)"
+source = ".chezmoitemplates/agents-config.toml"
 
 # --- Apps ---
 [edit."vscode/settings"]

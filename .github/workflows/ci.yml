@@ -43,5 +43,3 @@ jobs:
       - run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
       - run: make check
-        env:
-          GH_TOKEN: ${{ github.token }}  # the plugins check reads giocaizzi/harness plugins/

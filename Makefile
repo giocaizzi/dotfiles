@@ -24,7 +24,7 @@ HOOK_FILES := $(wildcard $(SRC)/dot_config/git/hooks/executable_*)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint test test-syntax test-git-hooks check check-fast aliases-audit
+.PHONY: help lint lint-agents test test-syntax test-git-hooks check check-fast aliases-audit
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -34,8 +34,22 @@ lint: ## shellcheck, validate JSON, lint registries, templates, and agents confi
 	shellcheck -s sh $(HOOK_FILES)
 	shellcheck -s bash tests/git-hooks.sh
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
+	@$(MAKE) --no-print-directory lint-agents
 	$(DOTS) lint
-	$(AGENTS) check -file "$(SRC)/.chezmoidata/agents.toml"
+
+# Render the agents config template and validate it with the agents CLI against the plain layers
+# (empty stand-ins for the encrypted ones). Skipped when agents is not installed.
+lint-agents:
+	@if ! command -v $(AGENTS) >/dev/null 2>&1; then \
+		echo "Skipping agents config check: $(AGENTS) is not installed."; exit 0; \
+	fi; \
+	t=$$(mktemp -d) && mkdir -p "$$t/agents/instructions" && \
+	cp $(SRC)/dot_config/agents/instructions/core.md $(SRC)/dot_config/agents/instructions/env.md "$$t/agents/instructions/" && \
+	touch "$$t/agents/instructions/personal.md" "$$t/agents/instructions/work.md" && \
+	chezmoi --source "$(CURDIR)" execute-template < $(SRC)/.chezmoitemplates/agents-config.toml > "$$t/config.toml" && \
+	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) check -file "$$t/config.toml" && \
+	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) prompt check -file "$$t/config.toml" >/dev/null; \
+	rc=$$?; rm -r "$$t"; exit $$rc
 
 aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
