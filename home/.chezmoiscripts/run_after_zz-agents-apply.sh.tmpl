@@ -1,0 +1,29 @@
+{{- /* Runs on Unix machines with a harness selected and the agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | trim -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
+{{- if and (ne .chezmoi.os "windows") $sel $r -}}
+#!/usr/bin/env bash
+# After every chezmoi apply: `agents check` on the deployed config (~/.config/agents),
+# then `agents apply`, which writes every harness's settings, MCP files, rules, LSP plugin
+# and instruction file (config rendered by chezmoi, instruction layers deployed by it).
+# Never fails the apply: a missing binary is skipped, a failed check skips the agents
+# apply with a warning, and agents' own failure is a warning.
+# Runbook: docs/OS.md#agents-apply.
+exe={{ joinPath .chezmoi.homeDir $r.dest | quote }}
+if [ ! -x "$exe" ]; then
+	echo "agents apply: $exe not installed yet, skipped (the next chezmoi apply runs it)" >&2
+	exit 0
+fi
+"$exe" check
+rc=$?
+if [ "$rc" -ne 0 ]; then
+	echo "warning: agents check failed (exit $rc); agents apply skipped, fix the config and run chezmoi apply again" >&2
+	exit 0
+fi
+"$exe" apply
+rc=$?
+if [ "$rc" -ne 0 ]; then
+	echo "warning: agents apply failed (exit $rc); run it by hand to see why" >&2
+fi
+exit 0
+{{ end -}}

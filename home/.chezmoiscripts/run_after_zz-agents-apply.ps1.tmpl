@@ -2,24 +2,25 @@
 {{- $sel := includeTemplate "harnesses" . | trim -}}
 {{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
 {{- if and (eq .chezmoi.os "windows") $sel $r -}}
-# `agents apply`: writes every harness's settings, MCP files, rules, LSP plugin and instruction
-# file from ~/.config/agents (config rendered by chezmoi, instruction layers deployed by it).
-# Re-runs when any of them or the agents version changes:
-# config: {{ includeTemplate "agents-config.toml" . | sha256sum }}
-# agents: {{ $r.url }} {{ $r.sha256 }}
-{{- range $f := list "core.md" "env.md" "encrypted_private_personal.md.age" "encrypted_private_work.md.age" }}
-# {{ $f }}: {{ include (print "dot_config/agents/instructions/" $f) | sha256sum }}
-{{- end }}
-# Never fails the apply: a missing binary is skipped, agents' own failure is a warning.
+# After every chezmoi apply: `agents check` on the deployed config (~/.config/agents),
+# then `agents apply`, which writes every harness's settings, MCP files, rules, LSP plugin
+# and instruction file (config rendered by chezmoi, instruction layers deployed by it).
+# Never fails the apply: a missing binary is skipped, a failed check skips the agents
+# apply with a warning, and agents' own failure is a warning.
 # Runbook: docs/OS.md#agents-apply.
 # Single-quoted literals: an apostrophe in the home path is doubled.
 $exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
 if (-not (Test-Path -LiteralPath $exe)) {
-    Write-Warning "agents apply: $exe not installed yet, skipped (run chezmoi apply again)"
+    Write-Warning "agents apply: $exe not installed yet, skipped (the next chezmoi apply runs it)"
     exit 0
 }
 # The output has non-ASCII glyphs: switch the console to UTF-8 (no console: no switch).
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch { }
+& $exe check
+if ($LASTEXITCODE -ne 0) {
+    Write-Warning "agents check failed (exit $LASTEXITCODE); agents apply skipped, fix the config and run chezmoi apply again"
+    exit 0
+}
 & $exe apply
 if ($LASTEXITCODE -ne 0) { Write-Warning "agents apply failed (exit $LASTEXITCODE); run it by hand to see why" }
 exit 0
