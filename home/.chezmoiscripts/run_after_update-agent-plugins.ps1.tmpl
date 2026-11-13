@@ -2,27 +2,12 @@
 {{- $sel := includeTemplate "harnesses" . | trim -}}
 {{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
 {{- if and (eq .chezmoi.os "windows") $sel $r -}}
-# `chezmoi agents plugins update` after apply: ensures plugins on installed harnesses stay in sync.
-# Throttled by a 24h stamp file unless forced; non-fatal.
+# `agents plugins update` after apply: agents owns the plugin registry checkout and throttles
+# the pull itself (24h). Non-fatal; warns on failure.
 # Runbook: docs/OS.md#agent-plugins-giocaizzi-harness.
 $exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
-$harnessDir = '{{ joinPath .chezmoi.homeDir ".local/share/giocaizzi-harness" | replace "'" "''" }}'
 if (-not (Test-Path -LiteralPath $exe)) { exit 0 }
-
-$cacheDir = Join-Path $HOME '.cache\chezmoi'
-$stamp = Join-Path $cacheDir 'agent-plugins-update.stamp'
-
-if (Test-Path -LiteralPath $stamp) {
-    $last = (Get-Item -LiteralPath $stamp).LastWriteTime
-    if ((Get-Date) - $last -lt (New-TimeSpan -Days 1)) {
-        exit 0
-    }
-}
-
-New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
-try {
-    & $exe plugins update -harness-dir $harnessDir *>$null
-    Set-Content -Path $stamp -Value (Get-Date).ToString("o")
-} catch { }
+& $exe plugins update *>$null
+if ($LASTEXITCODE -ne 0) { Write-Warning "agents plugins update failed" }
 exit 0
 {{ end -}}

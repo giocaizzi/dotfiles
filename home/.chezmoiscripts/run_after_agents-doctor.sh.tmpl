@@ -10,6 +10,6 @@
 # Runbook: docs/OS.md#doctor-agents-doctor.
 exe={{ joinPath .chezmoi.homeDir $r.dest | quote }}
 [ -x "$exe" ] || exit 0
-"$exe" doctor -q -harness {{ $sel | replace " " "," | quote }} 2>/dev/null || true
+"$exe" doctor -q 2>/dev/null || true
 exit 0
 {{ end -}}
