@@ -1,0 +1,4 @@
+# CI-only tool pins that the package registry does not carry (chezmoi is installed on
+# machines by their bootstrap, not pinned there). Read by `make tools`; see docs/CI.md.
+[tools]
+chezmoi = "2.70.0"

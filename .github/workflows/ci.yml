@@ -29,17 +29,8 @@ jobs:
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
         run: exit 1
       - uses: actions/checkout@v7
-      - name: Install plugins and tools
-        run: |
-          mkdir -p "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          gh release download -R giocaizzi/chezmoi-dots -p "chezmoi-dots_*_linux_amd64" -O "$HOME/.local/bin/chezmoi-dots" --clobber
-          gh release download -R giocaizzi/agents -p "agents_*_linux_amd64" -O "$HOME/.local/bin/agents" --clobber
-          chmod +x "$HOME/.local/bin/chezmoi-dots" "$HOME/.local/bin/agents"
-        env:
-          GH_TOKEN: ${{ github.token }}
       - run: sudo apt-get install -y --no-install-recommends zsh
-      # make lint renders the script templates with chezmoi.
-      - run: |
-          sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "$HOME/.local/bin" -t v2.70.0
+      # Pinned chezmoi, chezmoi-dots and agents (docs/CI.md); make lint renders templates with chezmoi.
+      - run: make tools
+      - run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - run: make check

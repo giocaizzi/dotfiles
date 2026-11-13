@@ -17,7 +17,8 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `lint` | `shellcheck` on the bash rc files, the global git hooks and `tests/git-hooks.sh`; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` on agents config |
+| `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `~/.local/bin`), as CI does (below) |
+| `lint` | `shellcheck` on the bash rc files, the global git hooks and `tests/git-hooks.sh`; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` and `agents prompt check` on the rendered agents config (layers listed by `agents config show`; encrypted ones are empty stand-ins) |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |
 | `test` | `test-syntax` + `test-git-hooks` |
@@ -42,7 +43,16 @@ Skipped by the JSON check: JSON containing `{{` (rendered by `templates`) and `d
 On every PR and push to `main`:
 
 1. `gitleaks` scans the git history for secrets.
-2. `check` (the required check) installs `chezmoi`, `chezmoi-dots` and `agents`, and runs `make check`.
+2. `check` (the required check) runs `make tools`, then `make check`.
+
+### Pinned tools
+
+`make tools` installs exactly the pinned versions, so CI never follows `latest`:
+
+- `agents` and `chezmoi-dots`: version, URL and linux/amd64 sha256 from `[release.*]` in `home/.chezmoidata/packages.toml` (the same rows machines install; `chezmoi dots bump` moves them). The download is checked against the sha256 and fails on a mismatch.
+- `chezmoi`: machines get it from their bootstrap, so the registry has no row. Its CI version is `[tools] chezmoi` in `.github/tools.toml`, installed with the official installer (which verifies its own checksum). Bump it by hand.
+
+`chezmoi dots` is run as `chezmoi-dots` with `CHEZMOI_SOURCE_DIR` set (the `DOTS` variable in the `Makefile`): chezmoi's plugin dispatch ignores `--source` placed before `dots` and always uses the default source directory, so it cannot target a CI checkout or a worktree.
 
 A red `check`: open the run, read the failing step, reproduce with `make check`, fix, push. A gitleaks hit: rotate the secret first, then remove it from the change (encrypted file or `bws`, see [OS.md](./OS.md)).
 

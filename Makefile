@@ -14,6 +14,9 @@ SHELLCHECK_EXCLUDES ?=
 # The source state (.chezmoiroot); chezmoi --source . resolves it on its own.
 SRC := home
 DOTS := CHEZMOI_EXECUTABLE=chezmoi CHEZMOI_SOURCE_DIR="$(CURDIR)/$(SRC)" chezmoi-dots
+# Where `make tools` installs the pinned CLIs the checks run (CI puts it on PATH).
+TOOLS_DIR ?= $(HOME)/.local/bin
+TOOLS_PLATFORM ?= linux/amd64
 AGENTS := agents
 # rc files have no shebang and source runtime paths shellcheck cannot follow.
 RC   := $(addprefix $(SRC)/,dot_bashrc dot_bash_profile dot_profile)
@@ -24,10 +27,31 @@ HOOK_FILES := $(wildcard $(SRC)/dot_config/git/hooks/executable_*)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help lint lint-agents test test-syntax test-git-hooks check check-fast aliases-audit
+.PHONY: help tools lint lint-agents test test-syntax test-git-hooks check check-fast aliases-audit
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
+
+# CI tools at the versions the repo pins: agents and chezmoi-dots from [release.*] in the package
+# registry (checksum-verified), chezmoi from .github/tools.toml (its installer verifies it).
+tools: ## Install the pinned chezmoi, chezmoi-dots and agents into TOOLS_DIR (linux/amd64)
+	@set -eu; \
+	toml() { awk -v sec="$$2" -v key="$$3" '/^\[/ { s = $$0; gsub(/[][ ]/, "", s); next } \
+		s == sec { k = $$1; gsub(/"/, "", k); if (k == key) { v = $$3; gsub(/"/, "", v); print v; exit } }' "$$1"; }; \
+	reg=$(SRC)/.chezmoidata/packages.toml; \
+	mkdir -p "$(TOOLS_DIR)"; \
+	cv=$$(toml .github/tools.toml tools chezmoi); \
+	curl -fsSL https://get.chezmoi.io | sh -s -- -b "$(TOOLS_DIR)" -t "v$$cv"; \
+	for n in chezmoi-dots agents; do \
+		v=$$(toml $$reg release.$$n version); \
+		t=$$(toml $$reg release.$$n.target $(TOOLS_PLATFORM)); \
+		sum=$$(toml $$reg release.$$n.sha256 $(TOOLS_PLATFORM)); \
+		url=$$(toml $$reg release.$$n url | sed -e "s/{version}/$$v/g" -e "s/{target}/$$t/g"); \
+		curl -fsSL "$$url" -o "$(TOOLS_DIR)/$$n.part"; \
+		echo "$$sum  $(TOOLS_DIR)/$$n.part" | { sha256sum -c - 2>/dev/null || shasum -a 256 -c -; }; \
+		chmod +x "$(TOOLS_DIR)/$$n.part"; mv "$(TOOLS_DIR)/$$n.part" "$(TOOLS_DIR)/$$n"; \
+		echo "installed $$n $$v"; \
+	done
 
 lint: ## shellcheck, validate JSON, lint registries, templates, and agents config
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
@@ -37,16 +61,19 @@ lint: ## shellcheck, validate JSON, lint registries, templates, and agents confi
 	@$(MAKE) --no-print-directory lint-agents
 	$(DOTS) lint
 
-# Render the agents config template and validate it with the agents CLI against the plain layers
-# (empty stand-ins for the encrypted ones). Skipped when agents is not installed.
+# Render the agents config template and validate it with the agents CLI. The layers come from the
+# rendered config; each is the plain source layer, or an empty stand-in where the source is
+# encrypted (*.age). Skipped when agents is not installed.
 lint-agents:
 	@if ! command -v $(AGENTS) >/dev/null 2>&1; then \
 		echo "Skipping agents config check: $(AGENTS) is not installed."; exit 0; \
 	fi; \
 	t=$$(mktemp -d) && mkdir -p "$$t/agents/instructions" && \
-	cp $(SRC)/dot_config/agents/instructions/core.md $(SRC)/dot_config/agents/instructions/env.md "$$t/agents/instructions/" && \
-	touch "$$t/agents/instructions/personal.md" "$$t/agents/instructions/work.md" && \
 	chezmoi --source "$(CURDIR)" execute-template < $(SRC)/.chezmoitemplates/agents-config.toml > "$$t/config.toml" && \
+	for l in $$($(AGENTS) config show -json -file "$$t/config.toml" | jq -r '.instructions.layers | keys[]'); do \
+		src="$(SRC)/dot_config/agents/instructions/$$l.md"; \
+		if [ -f "$$src" ]; then cp "$$src" "$$t/agents/instructions/"; else : > "$$t/agents/instructions/$$l.md"; fi; \
+	done && \
 	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) check -file "$$t/config.toml" && \
 	XDG_CONFIG_HOME="$$t" APPDATA="$$t" $(AGENTS) prompt check -file "$$t/config.toml" >/dev/null; \
 	rc=$$?; rm -r "$$t"; exit $$rc
