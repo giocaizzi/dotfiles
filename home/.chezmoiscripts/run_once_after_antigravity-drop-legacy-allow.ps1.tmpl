@@ -1,0 +1,17 @@
+{{- /* Runs once on Windows machines with antigravity selected: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (has "antigravity" $sel) -}}
+# One-time migration: the old templates allowed `git push --force-with-lease origin` for
+# Antigravity. agents no longer writes that rule (the denies that keep it off main and
+# master use a wildcard command() cannot express) and never removes entries it did not
+# write, so drop exactly that stale allow.
+$ErrorActionPreference = 'Stop'
+$settings = if ($env:ANTIGRAVITY_SETTINGS) { $env:ANTIGRAVITY_SETTINGS } else { Join-Path $HOME '.gemini/antigravity-cli/settings.json' }
+$legacy = 'command(git push --force-with-lease origin)'
+if (-not (Test-Path $settings)) { exit 0 }
+$doc = Get-Content -Raw $settings | ConvertFrom-Json
+if (-not $doc.permissions -or -not $doc.permissions.allow -or -not ($doc.permissions.allow -contains $legacy)) { exit 0 }
+$doc.permissions.allow = @($doc.permissions.allow | Where-Object { $_ -ne $legacy })
+[IO.File]::WriteAllText($settings, ($doc | ConvertTo-Json -Depth 32))
+Write-Host "antigravity: removed the legacy allow rule $legacy"
+{{- end }}

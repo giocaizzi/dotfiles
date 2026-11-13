@@ -439,6 +439,10 @@ url = "https://mcp.notion.com/mcp"
 # and harness, never here.
 [profiles.personal.mcp.workspaces.ops]
 path = "~/ops"
+# ~/ops is not a git repository, so its files may hold the expanded private URL
+# parts (written 0600); without this Codex, pi and Antigravity, which cannot expand
+# variables in a project file, would lose every server here.
+expand_env = true
 
 [profiles.personal.mcp.workspaces.ops.servers]
 firefly = { url = "https://mcp-connector-firefly.${MCP_CONNECTOR_ACCOUNT}.workers.dev/mcp" }
