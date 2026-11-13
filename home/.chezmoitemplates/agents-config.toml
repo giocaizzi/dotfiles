@@ -213,6 +213,9 @@ auto_submit = false
 # Enabled per profile (profiles.personal); the endpoint is a machine fact.
 [telemetry]
 enabled = false
+# Export only where it did before; VS Code settings are a public symlinked file
+# that cannot hold the private collector endpoint.
+harnesses = ["claude", "codex"]
 {{- if $otel }}
 endpoint = {{ $otel | toJson }}
 {{- end }}
