@@ -78,7 +78,7 @@ vimfiles
 {{ end }}
 
 # --- AI agents (data.harnesses, chosen by `chezmoi init`; none on light machines) ---
-# `agents apply` (run_onchange_after_zz-agents-apply.*) writes every harness file from
+# `agents apply` (run_after_zz-agents-apply.*) writes every harness file from
 # the agents directory: its config and instruction layers need a harness. That is
 # ~/.config/agents on Unix and %APPDATA%\agents (AppData/Roaming/agents) on Windows, where
 # the `agents` CLI reads it; each is ignored on the other side (the "not Windows" block
