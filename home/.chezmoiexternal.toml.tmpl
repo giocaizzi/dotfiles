@@ -107,19 +107,6 @@
 {{-   end }}
 {{- end }}
 
-# giocaizzi/harness checkout for the harnesses that install it from a clone (opencode,
-# pi, Codex agents, Antigravity): .chezmoiscripts/run_onchange_after_install-harness.* runs its installer.
-# Machines with any of the four selected (data.harnesses; light machines select none).
-{{- $harnesses := includeTemplate "harnesses" . | splitList " " }}
-{{- if or (has "codex" $harnesses) (has "opencode" $harnesses) (has "pi" $harnesses) (has "antigravity" $harnesses) }}
-[".local/share/giocaizzi-harness"]
-    type = "git-repo"
-    url = "https://github.com/giocaizzi/harness.git"
-    refreshPeriod = "24h"
-    clone.args = ["--depth", "1"]
-    pull.args = ["--ff-only"]
-{{- end }}
-
 # Oh My Zsh — macOS only (zsh is the macOS default shell; Linux uses bash,
 # Windows uses PowerShell — both ignored in .chezmoiignore).
 # dot_zshrc sources `$HOME/.oh-my-zsh/oh-my-zsh.sh`.

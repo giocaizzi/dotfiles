@@ -1,0 +1,24 @@
+{{- /* Runs once on Windows machines with pi selected: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (has "pi" $sel) -}}
+# One-time migration: the pi package list held a relative path to the plugin checkout
+# the dotfiles used to clone. agents now adds the registry checkout itself and never
+# removes list elements it did not write, so drop exactly that stale element.
+$ErrorActionPreference = 'Stop'
+$settings = if ($env:PI_SETTINGS) { $env:PI_SETTINGS } else { Join-Path $HOME '.pi/agent/settings.json' }
+$legacy = '../../.local/share/giocaizzi-harness'
+if (-not (Test-Path -LiteralPath $settings)) { exit 0 }
+# Text edit, so nothing else in the file is reformatted: remove the one array element
+# (with its separating comma and line) and write only when it was there. An empty or
+# unparseable file is left alone with a warning.
+$text = Get-Content -Raw -LiteralPath $settings
+if ([string]::IsNullOrWhiteSpace($text)) { Write-Warning "$settings is empty, skipped"; exit 0 }
+try { $null = $text | ConvertFrom-Json } catch { Write-Warning "$settings is not valid JSON, skipped"; exit 0 }
+$q = [regex]::Escape((ConvertTo-Json $legacy))
+$new = [regex]::Replace($text, "(?m)^[ \t]*$q,[ \t]*\r?\n", '', 1)
+if ($new -eq $text) { $new = [regex]::Replace($text, ",[ \t]*\r?\n[ \t]*$q(?=[ \t]*\r?\n[ \t]*\])", '', 1) }
+if ($new -eq $text) { exit 0 }
+try { $null = $new | ConvertFrom-Json } catch { Write-Warning "removing the legacy entry would break $settings, skipped"; exit 0 }
+[IO.File]::WriteAllText($settings, $new)
+Write-Host "pi: removed the legacy package path $legacy"
+{{- end }}

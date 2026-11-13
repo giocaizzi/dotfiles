@@ -1,0 +1,33 @@
+{{- /* Runs on Windows machines with a harness selected and the agents release: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | trim -}}
+{{- $r := get (includeTemplate "releases" . | fromJson) "agents" -}}
+{{- if and (eq .chezmoi.os "windows") $sel $r -}}
+# After every chezmoi apply: `agents check` on the deployed config (%APPDATA%\agents),
+# then `agents apply`, which writes every harness's settings, MCP files, rules, LSP plugin
+# and instruction file (config rendered by chezmoi, instruction layers deployed by it).
+# Never fails the apply: a missing binary is skipped, a failed check skips the agents
+# apply with a warning, and agents' own failure is a warning.
+# Runbook: docs/OS.md#agents-apply.
+# Single-quoted literals: an apostrophe in the home path is doubled.
+$exe = '{{ joinPath .chezmoi.homeDir $r.dest | replace "'" "''" }}'
+if (-not (Test-Path -LiteralPath $exe)) {
+    Write-Warning "agents apply: $exe not installed yet, skipped (the next chezmoi apply runs it)"
+    exit 0
+}
+# The output has non-ASCII glyphs: switch the console to UTF-8 (no console: no switch).
+try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch { }
+# Quiet when nothing needs attention: the output is shown only for warnings or errors
+# (check) and for any target that is not unchanged (apply).
+$out = (& $exe check 2>&1 | ForEach-Object { "$_" }) -join "`n"
+$rc = $LASTEXITCODE
+if ($rc -ne 0 -or $out -match '(?m)^!') { Write-Host $out }
+if ($rc -ne 0) {
+    Write-Warning "agents check failed (exit $rc); agents apply skipped, fix the config and run chezmoi apply again"
+    exit 0
+}
+$out = (& $exe apply 2>&1 | ForEach-Object { "$_" }) -join "`n"
+$rc = $LASTEXITCODE
+if ($rc -ne 0 -or $out -match '(?m)^(create|update|drift|refused|error|warning)') { Write-Host $out }
+if ($rc -ne 0) { Write-Warning "agents apply failed (exit $rc); run it by hand to see why" }
+exit 0
+{{ end -}}

@@ -1,0 +1,25 @@
+{{- /* Runs once on Windows machines with antigravity selected: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (has "antigravity" $sel) -}}
+# One-time migration: the old templates allowed `git push --force-with-lease origin` for
+# Antigravity. agents no longer writes that rule (the denies that keep it off main and
+# master use a wildcard command() cannot express) and never removes entries it did not
+# write, so drop exactly that stale allow.
+$ErrorActionPreference = 'Stop'
+$settings = if ($env:ANTIGRAVITY_SETTINGS) { $env:ANTIGRAVITY_SETTINGS } else { Join-Path $HOME '.gemini/antigravity-cli/settings.json' }
+$legacy = 'command(git push --force-with-lease origin)'
+if (-not (Test-Path -LiteralPath $settings)) { exit 0 }
+# Text edit, so nothing else in the file is reformatted: remove the one array element
+# (with its separating comma and line) and write only when it was there. An empty or
+# unparseable file is left alone with a warning.
+$text = Get-Content -Raw -LiteralPath $settings
+if ([string]::IsNullOrWhiteSpace($text)) { Write-Warning "$settings is empty, skipped"; exit 0 }
+try { $null = $text | ConvertFrom-Json } catch { Write-Warning "$settings is not valid JSON, skipped"; exit 0 }
+$q = [regex]::Escape((ConvertTo-Json $legacy))
+$new = [regex]::Replace($text, "(?m)^[ \t]*$q,[ \t]*\r?\n", '', 1)
+if ($new -eq $text) { $new = [regex]::Replace($text, ",[ \t]*\r?\n[ \t]*$q(?=[ \t]*\r?\n[ \t]*\])", '', 1) }
+if ($new -eq $text) { exit 0 }
+try { $null = $new | ConvertFrom-Json } catch { Write-Warning "removing the legacy entry would break $settings, skipped"; exit 0 }
+[IO.File]::WriteAllText($settings, $new)
+Write-Host "antigravity: removed the legacy allow rule $legacy"
+{{- end }}

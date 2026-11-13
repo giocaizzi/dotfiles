@@ -39,9 +39,9 @@ dot_config/vim/vimrc                               → ~/.config/vim/ (Unix), ~/
 dot_config/readline/inputrc                        → ~/.config/readline/ (via $INPUTRC; Unix + Git Bash)
 dot_config/tmux/tmux.conf                          → ~/.config/tmux/ (Unix)
 dot_config/git/personal.tmpl                       → ~/.config/git/personal (work machines only)
-.chezmoitemplates/agents-instructions.md (layers in .chezmoitemplates/agents/: core + env + age-encrypted
-    personal/work) → global instructions of every AI harness; edit with `dots agents/<layer>` (docs/OS.md → Agent instructions)
-.chezmoitemplates/{claude,copilot,antigravity}-settings.json   → merged into ~/.claude, ~/.copilot, ~/.gemini/antigravity-cli settings.json by modify_ templates
+.chezmoitemplates/agents-config.toml       → ~/.config/agents/config.toml (via dot_config/agents/private_config.toml.tmpl; on Windows via AppData/Roaming/agents/private_config.toml.tmpl); edit with `dots agents/config`
+dot_config/agents/instructions/{core,env}.md + age-encrypted personal/work → ~/.config/agents/instructions/ (layers; Windows: AppData/Roaming/agents/instructions/); edit with `dots agents/<layer>`
+    (`agents apply`, run by a script after chezmoi apply, writes every harness's files from these; docs/OS.md → AI agent configuration)
 private_dot_ssh/encrypted_private_config.age       → ~/.ssh/config (age-encrypted in the repo); edit with `dots ssh/config` (machine-only hosts: `dots ~/.ssh/config.d/<name>`, unmanaged)
 ```
 
@@ -56,17 +56,12 @@ Shell rc files (`dot_profile`, `dot_bashrc`, `dot_zshrc`, `dot_config/powershell
 - Add a new cross-OS app: place the canonical file under `dot_config/<xdg-path>/`. On Linux it deploys directly. For macOS/Windows, add `symlink_*.tmpl` files under `Library/...` / `AppData/...` pointing at `{{ .chezmoi.sourceDir }}/dot_config/<xdg-path>/...`.
 - Bootstrap scripts in `.chezmoiscripts/` use `run_once_` for setup and `run_onchange_` for package installs. `.sh.tmpl` for Unix, `.ps1.tmpl` for Windows; every script wraps its body in its own condition (OS, harness) and renders empty, so chezmoi skips it, where it does not apply. Scripts never appear in `.chezmoiignore`. `make lint` renders each script per OS, role and harness selection (`chezmoi dots lint templates`, needs chezmoi) and shellchecks the output.
 - Per-machine behaviour comes from `chezmoi init` flags, `light` and `work` (plus the `terraform` answer, which gates its tools through `requires` in the package registry), read in templates as `get . "light"` / `get . "work"` (missing = false). Gate role-specific config on them; keep platform workarounds on `.chezmoi.os`. See docs/OS.md → Machine roles.
-- Shared harness preferences live in `.chezmoidata/agents.toml`; native adapters preserve client-specific permission syntax and execution modes. See [AI harnesses](docs/OS.md#ai-harnesses).
-- AI harness configs are gated on `data.harnesses` (chosen at `chezmoi init`). Read it only through `includeTemplate "harnesses" . | splitList " "`, which defaults a missing key to none. It is empty on light machines. A new harness target goes in `[harnessTargets]` (`.chezmoidata/harness.toml`), which `.chezmoiignore` ranges over. See docs/OS.md → AI harnesses.
-- `giocaizzi/harness` plugins are enabled from one list, `.chezmoidata/harness.toml` (plugin → harnesses; `harnessPersonalPlugins` stay off work machines); never hand-write them in a settings file or install script. `agents check` checks it against the harness repo. See docs/OS.md → Agent plugins.
-- Model catalog preferences (`providers`, `since`, `pin`, `ignore`, `aliases`) live in `.chezmoidata/agents.toml` (`[agents.models.catalog]`); benchmark data is cached locally in `~/.cache/agents/models.json` (git-ignored), refreshed by `chezmoi agents models sync` and shown by `chezmoi agents models`; nothing about it is committed. See [model tiers](docs/OS.md#model-tiers-agents-models).
+- Agent harness configuration is the standalone `agents` CLI's: chezmoi only renders its config (`.chezmoitemplates/agents-config.toml`: machine facts plus the user's choices) and deploys the instruction layers; `agents apply` (`run_after_zz-agents-apply.*`) writes the harness files. Edit the config with `dots agents/config`, never a harness file; harness selection (`data.harnesses`) is read only through `includeTemplate "harnesses" . | splitList " "`. Key reference: [agents docs](https://github.com/giocaizzi/agents/tree/main/docs); procedures: [Runbook: agent configuration](docs/OS.md#runbook-agent-configuration).
 - Every tool a machine installs is a row of `.chezmoidata/packages.toml` (`[package.*]` via the install scripts, `[release.*]` as pinned, checksummed externals); never hand-list one in a script; `requires = "<answer>"` limits a row to machines whose init answer is true. Update with `chezmoi dots outdated|bump|upgrade`. See docs/OS.md → Packages.
 - The repo's own agent skill lives in `.agents/skills/` (Codex, Copilot, VS Code, opencode, pi); `.claude/skills/` holds a symlink to it, since Claude Code reads only that. Neither is deployed: chezmoi skips source entries that start with a plain `.`.
-- Files an app also writes (Claude Code, Copilot settings) are `modify_` templates that merge managed keys into the live file; never replace them wholesale.
 - The repo is public: secret files go in encrypted (`chezmoi add --encrypt`), per-machine values in prompts (local config), never in plain source.
 - Worktrees can live anywhere, `.claude/worktrees/` included: they sit outside `home/`, so chezmoi never reads their `.chezmoidata`. See docs/OS.md → Source layout.
-- `agents usage` (or `chezmoi agents usage`) shows subscription usage per provider account from harness credentials (memory only, never printed); see docs/OS.md → Models and subscriptions.
-- `agents doctor` (or `chezmoi agents doctor`) warns offline when a newer or better model or config is available; the `run_after_agents-doctor.*` scripts run it after every apply on machines with a harness; see docs/OS.md → Models and subscriptions → Doctor.
+- `agents usage` shows subscription usage per provider account (credentials read in memory only, never printed); `agents doctor` warns offline about model or config drift and runs after every apply on machines with a harness. See docs/OS.md → Models and subscriptions.
 - Python tooling is uv only (no pyenv/pipx); a `pipx` shell function refuses.
 - Externals are declared in `.chezmoiexternal.toml.tmpl` — chezmoi clones/fetches each on `apply`, auto-refreshes per `refreshPeriod`. Use them for **drop-in-place** upstreams (vim/zsh plugins, themes) where install reduces to "put this repo at this path". Use install scripts when there's a build step, PATH/Registry wiring, or package-manager registration. Use symlinks for canonical per-OS configs.
 
@@ -89,8 +84,7 @@ All tools use [**Catppuccin**](https://github.com/catppuccin) (Mocha dark / Latt
 
 **Sources of truth (edit these, then `chezmoi apply`):**
 - `dot_config/oh-my-posh/theme.omp.json` — oh-my-posh prompt. Same convention as the Claude status line: every part `[icon value]` (dim overlay0 brackets, one Nerd Font icon, value coloured by role), one space apart, rows led by `┌`/`├`/`└`. Segment settings go under `properties` (oh-my-posh ignores an `options` key).
-- `.chezmoitemplates/claude-settings.json` `statusLine` — Claude Code statusline, drawn by `hud`'s `hooks/statusline.mjs` (harness repo)
-- `.chezmoitemplates/claude-settings.json` — Claude Code theme (merged into `~/.claude/settings.json` by `dot_claude/modify_settings.json`, which keeps keys Claude Code writes itself) (`"theme": "dark"`)
+- `.chezmoitemplates/agents-config.toml` `[harness.claude.settings]` — Claude Code statusline (drawn by `hud`'s `hooks/statusline.mjs`, harness repo) and theme (`"theme": "dark"`), written by `agents apply`
 - `dot_config/ghostty/config` — `theme = dark:Catppuccin Mocha,light:Catppuccin Latte`
 - `dot_config/windows-terminal/settings.json` — schemes + `"colorScheme": "Catppuccin Mocha"`
 - `dot_config/tmux/tmux.conf` — status line and borders
@@ -104,7 +98,7 @@ When adding a new tool: use the Mocha/Latte hex values above. Never introduce ne
 
 - [README.md](./README.md) — what this is, quickstart, everyday commands.
 - [docs/SETUP.md](./docs/SETUP.md) — set up a new machine, secrets.
-- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values.
+- [docs/OS.md](./docs/OS.md) — source → destination matrix per OS, machine roles, Bitwarden, encryption, managed-Windows workarounds, hardcoded-by-design values, the AI agent configuration and its [runbook](./docs/OS.md#runbook-agent-configuration).
 - [docs/SHELL.md](./docs/SHELL.md) — shell architecture, snippets, alias registry, tools, secrets.
 - Commits follow Conventional Commits.
 

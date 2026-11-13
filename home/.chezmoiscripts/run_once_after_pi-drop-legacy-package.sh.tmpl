@@ -1,0 +1,19 @@
+{{- /* Runs once on Unix machines with pi selected: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (ne .chezmoi.os "windows") (has "pi" $sel) -}}
+#!/usr/bin/env bash
+# One-time migration: the pi package list held a relative path to the plugin checkout
+# the dotfiles used to clone. agents now adds the registry checkout itself and never
+# removes list elements it did not write, so drop exactly that stale element.
+set -euo pipefail
+settings="${PI_SETTINGS:-$HOME/.pi/agent/settings.json}"
+legacy="../../.local/share/giocaizzi-harness"
+[ -f "$settings" ] || exit 0
+command -v jq >/dev/null 2>&1 || { echo "pi legacy package: jq not found, skipped" >&2; exit 0; }
+jq -e --arg p "$legacy" '(.packages // []) | index($p) != null' "$settings" >/dev/null || exit 0
+tmp="$(mktemp "${settings}.XXXXXX")"
+jq --arg p "$legacy" '.packages |= map(select(. != $p))' "$settings" > "$tmp"
+chmod 600 "$tmp"
+mv "$tmp" "$settings"
+echo "pi: removed the legacy package path $legacy"
+{{- end }}
