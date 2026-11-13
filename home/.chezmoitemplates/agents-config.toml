@@ -39,7 +39,6 @@ allow_non_workspace_access = true
 subagent_depth = 2
 allow_subagent_invocations = true
 ask_timeout = "60s"
-mode = "auto"
 
 [permissions]
 allow_commands = [
@@ -141,7 +140,16 @@ ask_command_prefixes = [
     "bw",
 ]
 
+# Shown where a harness can show why a rule matched (Codex rule justifications).
+[permissions.reasons]
+"git push --force-with-lease origin *" = "Lease pushes are allowed to feature branches."
+"git push --force-with-lease origin main" = "Never push to main or master; open a pull request."
+"git push --force-with-lease origin main *" = "Never push to main or master; open a pull request."
+"git push --force-with-lease origin master" = "Never push to main or master; open a pull request."
+"git push --force-with-lease origin master *" = "Never push to main or master; open a pull request."
+
 [models]
+default = "main"
 default_effort_level = "medium"
 show_thinking_summaries = true
 
@@ -150,6 +158,10 @@ providers = ["anthropic", "google", "moonshotai", "openai", "xai"]
 since = "2026-01-01"
 
 # Free-named tiers; models.assign is the only join between agent ids and tiers.
+# main: the main session's model where a harness takes it from the default tier.
+[models.tiers.main]
+opencode = "gpt-5.5"
+
 [models.tiers.light]
 copilot = "gpt-6-luna"
 effort = "low"
@@ -391,10 +403,6 @@ sandbox_mode = "workspace-write"
 default_provider = "openai"
 default_model = "gpt-6.1-sol"
 default_thinking_level = "medium"
-
-[harness.opencode]
-default_model = "gpt-5.5"
-sandbox = false
 
 # Windows only: Claude Code runs PowerShell.
 [os.windows.harness.claude.settings]
