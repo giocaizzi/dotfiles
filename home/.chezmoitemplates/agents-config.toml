@@ -33,8 +33,12 @@ profile = {{ ternary "work" "personal" $work | quote }}
 harnesses = {{ $harnesses | toJson }}
 
 [autonomy]
-execution_mode = "auto"
-sandbox_mode = "unrestricted"
+# execution_mode (ask, auto, full) is left unset: the typed harness settings below
+# (claude, codex, antigravity) already carry today's native modes, and a shared
+# "auto" would newly write Copilot CLI's defaultPermissionMode and warn for VS Code.
+# off: nothing is written for the boolean sandboxes; the typed codex and antigravity
+# sandbox settings below win.
+sandbox_mode = "off"
 allow_non_workspace_access = true
 subagent_depth = 2
 allow_subagent_invocations = true
