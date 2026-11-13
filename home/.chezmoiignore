@@ -95,6 +95,14 @@ AppData/Roaming/agents/instructions/personal.md
 AppData/Roaming/agents/instructions/work.md
 {{ end }}
 
+# VS Code user settings and keybindings (every OS): only where `vscode` is a selected
+# harness, so never on light machines (they select none).
+{{ if not (has "vscode" (includeTemplate "harnesses" . | splitList " ")) }}
+.config/Code
+Library/Application Support/Code
+AppData/Roaming/Code
+{{ end }}
+
 # Links to the Go toolchain release ([release.go] in .chezmoidata/packages.toml):
 # only where that release is installed (Linux personal machines).
 {{ if not (hasKey (includeTemplate "releases" . | fromJson) "go") }}
