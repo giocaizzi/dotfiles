@@ -362,7 +362,7 @@ Nothing private is in it: account names and client ids appear as `${VAR}` refere
 The script never fails the chezmoi apply: a missing binary is skipped with a note (the first apply after a fresh install may skip it if the package install has not put `agents` in place yet; the next `chezmoi apply` runs it), a failed `agents check` prints its findings, warns and skips `agents apply`, and a failed `agents apply` is a warning.
 
 - **Preview:** `agents apply -n` prints the diff of each target and writes nothing; `agents render -harness claude` lists the managed keys of one harness.
-- **Run by hand:** `agents apply`. The script re-runs on its own only when an input changes.
+- **Run by hand:** `agents apply`. The script runs after every `chezmoi apply` (agents is idempotent: unchanged targets are not rewritten). It prints `agents check` output only for warnings or errors and `agents apply` output only when a target changed or failed.
 - **Check:** `agents check` validates the config; `agents check -live` also reports native files that differ from what apply would write.
 - **Skip for one run:** `chezmoi apply --exclude=scripts` (skips every script; the apply script runs at the next `chezmoi apply`).
 - **Roll back:** there is no automatic undo. Revert the config change in git and apply again; a key that leaves the config is removed from the live file.
