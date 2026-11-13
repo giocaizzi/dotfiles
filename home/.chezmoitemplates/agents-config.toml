@@ -6,7 +6,8 @@
        agents config, edited here and written to the harness files by `agents apply`.
        Reference: https://github.com/giocaizzi/agents docs/config.md. */ -}}
 {{- $os := .chezmoi.os -}}
-{{- $work := get . "work" -}}
+{{- /* work is a bool from chezmoi init, but absent (an empty string) in a bare render. */ -}}
+{{- $work := get . "work" | default false | toString | eq "true" -}}
 {{- $pm := dict "darwin" "`brew`" "linux" "`apt` (or pinned release binaries in `~/.local/bin`, chezmoi externals)" "windows" "`winget`" | dig $os "`brew`" -}}
 {{- $install := dict "darwin" "brew install" "linux" "apt install" "windows" "winget install" | dig $os "brew install" -}}
 {{- /* The tools marked agents = true in the package registry that this machine's OS
