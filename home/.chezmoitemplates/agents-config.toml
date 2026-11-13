@@ -165,7 +165,7 @@ since = "2026-01-01"
 # Free-named tiers; models.assign is the only join between agent ids and tiers.
 # main: the main session's model where a harness takes it from the default tier.
 [models.tiers.main]
-opencode = "gpt-5.5"
+opencode = "openai/gpt-5.5"
 
 [models.tiers.light]
 copilot = "gpt-6-luna"
