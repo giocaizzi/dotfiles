@@ -16,18 +16,42 @@ if (-not (Test-Path -LiteralPath $exe)) {
 }
 # The output has non-ASCII glyphs: switch the console to UTF-8 (no console: no switch).
 try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } catch { }
-# Quiet when nothing needs attention: the output is shown only for warnings or errors
-# (check) and for any target that is not unchanged (apply).
-$out = (& $exe check 2>&1 | ForEach-Object { "$_" }) -join "`n"
+# Quiet unless something is new: warnings (check lines starting "!", apply lines starting
+# "warning:") are compared with the set saved by the last successful run, and only new ones
+# are printed, plus the targets apply changed and one summary line. A pure no-op prints
+# nothing. A failure prints the full output.
+$stateDir = Join-Path $env:LOCALAPPDATA 'chezmoi'
+$state = Join-Path $stateDir 'agents-warnings.txt'
+$out = @(& $exe check 2>&1 | ForEach-Object { "$_" })
 $rc = $LASTEXITCODE
-if ($rc -ne 0 -or $out -match '(?m)^!') { Write-Host $out }
 if ($rc -ne 0) {
+    Write-Host ($out -join "`n")
     Write-Warning "agents check failed (exit $rc); agents apply skipped, fix the config and run chezmoi apply again"
     exit 0
 }
-$out = (& $exe apply 2>&1 | ForEach-Object { "$_" }) -join "`n"
+$aout = @(& $exe apply 2>&1 | ForEach-Object { "$_" })
 $rc = $LASTEXITCODE
-if ($rc -ne 0 -or $out -match '(?m)^(create|update|drift|refused|error|warning)') { Write-Host $out }
-if ($rc -ne 0) { Write-Warning "agents apply failed (exit $rc); run it by hand to see why" }
+if ($rc -ne 0) {
+    Write-Host ($aout -join "`n")
+    Write-Warning "agents apply failed (exit $rc); run it by hand to see why"
+    exit 0
+}
+$warns = @(@($out | Where-Object { $_ -match '^!' }) + @($aout | Where-Object { $_ -match '^warning:' }) | Sort-Object -Unique)
+$changes = @($aout | Where-Object { $_ -match '^(create|update|drift|refused|error)' })
+$known = @()
+if (Test-Path -LiteralPath $state) { $known = @(Get-Content -LiteralPath $state) }
+$new = @($warns | Where-Object { $known -notcontains $_ })
+if ($new.Count -gt 0 -or $changes.Count -gt 0) {
+    $new | ForEach-Object { Write-Host $_ }
+    $changes | ForEach-Object { Write-Host $_ }
+    $nupd = @($changes | Where-Object { $_ -match '^update' }).Count
+    $ncre = @($changes | Where-Object { $_ -match '^create' }).Count
+    $nknown = $warns.Count - $new.Count
+    Write-Host "agents: $nupd updated, $ncre created, $nknown known warnings, $($new.Count) new (agents check for details)"
+}
+try {
+    New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+    Set-Content -LiteralPath $state -Value $warns -Encoding UTF8
+} catch { }
 exit 0
 {{ end -}}

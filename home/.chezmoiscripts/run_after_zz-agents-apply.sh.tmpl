@@ -14,24 +14,44 @@ if [ ! -x "$exe" ]; then
 	echo "agents apply: $exe not installed yet, skipped (the next chezmoi apply runs it)" >&2
 	exit 0
 fi
-# Quiet when nothing needs attention: the output is shown only for warnings or errors
-# (check) and for any target that is not unchanged (apply).
+# Quiet unless something is new: warnings (check lines starting "!", apply lines starting
+# "warning:") are compared with the set saved by the last successful run, and only new ones
+# are printed, plus the targets apply changed and one summary line. A pure no-op prints
+# nothing. A failure prints the full output.
+state="${XDG_STATE_HOME:-$HOME/.local/state}/chezmoi/agents-warnings.txt"
 out=$("$exe" check 2>&1)
 rc=$?
-if [ "$rc" -ne 0 ] || printf '%s\n' "$out" | grep -q '^!'; then
-	printf '%s\n' "$out" >&2
-fi
 if [ "$rc" -ne 0 ]; then
+	printf '%s\n' "$out" >&2
 	echo "warning: agents check failed (exit $rc); agents apply skipped, fix the config and run chezmoi apply again" >&2
 	exit 0
 fi
-out=$("$exe" apply 2>&1)
+warns=$(printf '%s\n' "$out" | grep '^!')
+aout=$("$exe" apply 2>&1)
 rc=$?
-if [ "$rc" -ne 0 ] || printf '%s\n' "$out" | grep -Eq '^(create|update|drift|refused|error|warning)'; then
-	printf '%s\n' "$out"
-fi
 if [ "$rc" -ne 0 ]; then
+	printf '%s\n' "$aout"
 	echo "warning: agents apply failed (exit $rc); run it by hand to see why" >&2
+	exit 0
 fi
+warns=$(printf '%s\n%s\n' "$warns" "$(printf '%s\n' "$aout" | grep '^warning:')" | sed '/^$/d' | sort -u)
+changes=$(printf '%s\n' "$aout" | grep -E '^(create|update|drift|refused|error)')
+new=$warns
+if [ -f "$state" ]; then
+	new=$(printf '%s\n' "$warns" | grep -vxFf "$state")
+fi
+new=$(printf '%s\n' "$new" | sed '/^$/d')
+if [ -n "$new" ] || [ -n "$changes" ]; then
+	[ -n "$new" ] && printf '%s\n' "$new"
+	[ -n "$changes" ] && printf '%s\n' "$changes"
+	nupd=$(printf '%s\n' "$changes" | grep -c '^update')
+	ncre=$(printf '%s\n' "$changes" | grep -c '^create')
+	nknown=0
+	[ -n "$warns" ] && nknown=$(printf '%s\n' "$warns" | grep -c .)
+	nnew=0
+	[ -n "$new" ] && nnew=$(printf '%s\n' "$new" | grep -c .)
+	echo "agents: $nupd updated, $ncre created, $((nknown - nnew)) known warnings, $nnew new (agents check for details)"
+fi
+mkdir -p "$(dirname "$state")" && printf '%s\n' "$warns" | sed '/^$/d' >"$state"
 exit 0
 {{ end -}}
