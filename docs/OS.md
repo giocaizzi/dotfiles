@@ -488,7 +488,7 @@ Every change to the agent setup is an edit of the config or of a layer, then a c
 
 ### Change the agents config
 
-1. `dots agents/config` opens `.chezmoitemplates/agents-config.toml`, runs the entry's check before saving, shows what the edit changes on every OS and role, and offers to apply. By hand: edit the file, then `make check`.
+1. `dots agents/config` opens `.chezmoitemplates/agents-config.toml`, shows what the edit changes on every OS and role, and offers to apply. The entry has no check (a template cannot be piped to `agents check` without a shell on every OS): `make lint` renders it and runs `agents check`, and the apply script checks the rendered file before `agents apply`. By hand: edit the file, then `make check`.
 2. Preview on this machine: `chezmoi apply --exclude=scripts` deploys the config only; `agents apply -n` prints the diff each harness file would get.
 3. `chezmoi apply`: deploys the config, then the script runs `agents apply` because the config hash changed.
 

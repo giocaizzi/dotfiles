@@ -32,9 +32,8 @@ files remain LF through `.gitattributes`.
 | `registry` | the edit registry: every entry has a `desc`, an existing `source` or a home-relative `local` folder, a `check` that is a command list, and only known keys; every `.chezmoidata` file and every encrypted file has an entry |
 | `aliases` | the alias registry (the encrypted part too where the age key exists): known keys, every alias names its shells, a one-shell alias says why, known OS and role values |
 | `packages` | the package and release tables, including a sha256 for every release target and a well-formed `versionCmd` |
-| `plugins` | `.chezmoidata/harness.toml` lists exactly the `plugins/` directories of `giocaizzi/harness`: main through `gh api` (CI passes `GH_TOKEN`), or a local checkout with `--harness-dir <path>`; every `harnessPersonalPlugins` entry is one of them |
 | `matrix` | the configuration matrix built from `.chezmoi.toml.tmpl` lists the harnesses it offers |
-| `templates` | renders every script template, `aliases.sh`, `omz-aliases.zsh`, `aliases.ps1` and the settings templates per OS × role × harness selection; `shellcheck` the shell output, `zsh -n`, parse `aliases.ps1` with `pwsh` (and Windows PowerShell 5.1 on Windows), `jq empty` the JSON (each where installed) |
+| `templates` | renders every script template, `aliases.sh`, `omz-aliases.zsh`, and `aliases.ps1` per OS × role × harness selection; `shellcheck` the shell output, `zsh -n`, parse `aliases.ps1` with `pwsh` (and Windows PowerShell 5.1 on Windows), `jq empty` the JSON (each where installed) |
 
 Skipped by the JSON check: JSON containing `{{` (rendered by `templates`) and `dot_config/Code/User/settings.json` (JSONC). No `shfmt`: existing scripts mix tab and space indents.
 
