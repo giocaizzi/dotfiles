@@ -1,5 +1,0 @@
-{
-  "name": "lsp",
-  "description": "Language servers from the dotfiles harness policy",
-  "author": { "name": "dotfiles" }
-}
