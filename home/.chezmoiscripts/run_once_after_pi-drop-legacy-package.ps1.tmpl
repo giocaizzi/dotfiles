@@ -1,0 +1,16 @@
+{{- /* Runs once on Windows machines with pi selected: elsewhere it renders empty and chezmoi skips it. */ -}}
+{{- $sel := includeTemplate "harnesses" . | splitList " " -}}
+{{- if and (eq .chezmoi.os "windows") (has "pi" $sel) -}}
+# One-time migration: the pi package list held a relative path to the plugin checkout
+# the dotfiles used to clone. agents now adds the registry checkout itself and never
+# removes list elements it did not write, so drop exactly that stale element.
+$ErrorActionPreference = 'Stop'
+$settings = if ($env:PI_SETTINGS) { $env:PI_SETTINGS } else { Join-Path $HOME '.pi/agent/settings.json' }
+$legacy = '../../.local/share/giocaizzi-harness'
+if (-not (Test-Path $settings)) { exit 0 }
+$doc = Get-Content -Raw $settings | ConvertFrom-Json
+if (-not $doc.packages -or -not ($doc.packages -contains $legacy)) { exit 0 }
+$doc.packages = @($doc.packages | Where-Object { $_ -ne $legacy })
+[IO.File]::WriteAllText($settings, ($doc | ConvertTo-Json -Depth 32))
+Write-Host "pi: removed the legacy package path $legacy"
+{{- end }}
