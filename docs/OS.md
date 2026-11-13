@@ -7,7 +7,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | Canonical source (in repo)                          | macOS                                                       | Linux                                          | Windows                                                                            |
 | ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
-| `dot_config/agents/instructions/` (layers) and `.chezmoitemplates/agents-config.toml` (the config) | `~/.config/agents/instructions/`, `~/.config/agents/config.toml` (rendered, owner-only); [`agents apply`](#agents-apply) then writes every harness file from them (`~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, `~/ops`; [AI agent configuration](#ai-agent-configuration)) | same | same |
+| `dot_config/agents/instructions/` (layers) and `.chezmoitemplates/agents-config.toml` (the config) | `~/.config/agents/instructions/`, `~/.config/agents/config.toml` (rendered, owner-only); [`agents apply`](#agents-apply) then writes every harness file from them (`~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, `~/ops`; [AI agent configuration](#ai-agent-configuration)) | same | `%APPDATA%\agents\instructions\` and `%APPDATA%\agents\config.toml` (`AppData/Roaming/agents/`, where `agents` reads them on Windows; the same sources, and `dot_config/agents` is not deployed there) |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
@@ -107,9 +107,9 @@ Re-running `chezmoi init`:
 
 Full machines are also asked which AI harnesses to configure: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi`, `antigravity` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs. Light machines are not asked and get none (even with the key set); a config without the key gets none. `.chezmoitemplates/harnesses` is the one reader of the selection.
 
-The selection is a machine fact: it becomes `harnesses` in the agents config, and everything else about the harnesses (settings, MCP servers, plugins, instructions, LSP) is written by `agents apply`, not by chezmoi. With no harness selected chezmoi deploys neither `~/.config/agents` nor the apply, doctor and plugin-update scripts. See [AI agent configuration](#ai-agent-configuration).
+The selection is a machine fact: it becomes `harnesses` in the agents config, and everything else about the harnesses (settings, MCP servers, plugins, instructions, LSP) is written by `agents apply`, not by chezmoi. With no harness selected chezmoi deploys neither `~/.config/agents` (`%APPDATA%\agents` on Windows) nor the apply, doctor and plugin-update scripts. See [AI agent configuration](#ai-agent-configuration).
 
-The one harness-related set of files chezmoi still owns is VS Code's: the static user settings and keybindings (`dot_config/Code/User/`, [Destination matrix](#destination-matrix)). `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI (a shared list plus a `work` block, PowerShell only on Windows, or a personal block). Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. VS Code's agent chat runs on the Copilot harness, so `agents apply` gives `vscode` the `~/.copilot` files too.
+The one harness-related set of files chezmoi still owns is VS Code's: the static user settings and keybindings (`dot_config/Code/User/`, [Destination matrix](#destination-matrix)), deployed only where `vscode` is a selected harness (never on light machines). `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI (a shared list plus a `work` block, PowerShell only on Windows, or a personal block). Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. VS Code's agent chat runs on the Copilot harness, so `agents apply` gives `vscode` the `~/.copilot` files too.
 
 Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops `agents` managing its keys; files already in the home directory stay.
 
@@ -337,8 +337,8 @@ Agent harness configuration lives in the standalone [`agents`](https://github.co
 | Piece | Owner | Where |
 |---|---|---|
 | The `agents` binary | chezmoi installs the pinned release | `[release.agents]` in `.chezmoidata/packages.toml` ([Packages](#packages)) |
-| The config (`~/.config/agents/config.toml`) | chezmoi renders it from one template | `.chezmoitemplates/agents-config.toml`, deployed by `dot_config/agents/private_config.toml.tmpl`; edit with `dots agents/config` |
-| The instruction layers (`~/.config/agents/instructions/`) | chezmoi deploys the files | `dot_config/agents/instructions/{core.md, env.md, personal, work}`; edit with `dots agents/<layer>` |
+| The config (`~/.config/agents/config.toml`, `%APPDATA%\agents\config.toml` on Windows) | chezmoi renders it from one template | `.chezmoitemplates/agents-config.toml`, deployed by `dot_config/agents/private_config.toml.tmpl` (Unix) and `AppData/Roaming/agents/private_config.toml.tmpl` (Windows); edit with `dots agents/config` |
+| The instruction layers (`~/.config/agents/instructions/`, `%APPDATA%\agents\instructions\` on Windows) | chezmoi deploys the files | `dot_config/agents/instructions/{core.md, env.md, personal, work}` (Windows: symlinks and `decrypt` templates under `AppData/Roaming/agents/instructions/` over the same sources); edit with `dots agents/<layer>` |
 | Every harness file (settings, MCP, rules, plugins, LSP, instructions) | `agents apply` | `~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, workspace folders |
 
 Reference, not repeated here: [config.md](https://github.com/giocaizzi/agents/blob/main/docs/config.md) (every key), [cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md) (commands and runbooks), [features.md](https://github.com/giocaizzi/agents/blob/main/docs/features.md) (what each harness supports and how each key is mapped). The procedures for this repo are in [Runbook: agent configuration](#runbook-agent-configuration).
@@ -351,7 +351,7 @@ Light machines, and machines with no harness selected, get none of it: no config
 
 Nothing private is in it: account names and client ids appear as `${VAR}` references that `agents apply` expands from the environment (Bitwarden secrets exported by `secrets.sh`, see [SHELL.md](./SHELL.md)). A client secret is never in the config; it is set once per machine and harness.
 
-`agents config show -origin` shows the resolved config on this machine and which layer set each key; `chezmoi cat ~/.config/agents/config.toml` shows the rendered file.
+`agents config show -origin` shows the resolved config on this machine and which layer set each key; `chezmoi cat ~/.config/agents/config.toml` (`%APPDATA%\agents\config.toml` on Windows) shows the rendered file.
 
 ### `agents apply`
 
@@ -371,7 +371,7 @@ The script never fails the chezmoi apply: a missing binary is skipped with a not
 
 Every harness reads the same global instructions, composed by `agents` from layers and written whole to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` and `~/.gemini/config/AGENTS.md`. Copilot CLI and VS Code (Copilot harness) both read `~/.copilot/copilot-instructions.md` natively, so VS Code needs no `chat.instructionsFilesLocations` entry: with `~/.copilot` listed there, VS Code offers to migrate the file into `~/.copilot/instructions/*.instructions.md`, and Copilot CLI then loads the instructions twice. Decline that migration.
 
-The layer files are deployed by chezmoi to `~/.config/agents/instructions/`; the config declares them (`[instructions.layers.*]`) and each profile lists the ones it uses, in order (`[profiles.<name>] instructions`):
+The layer files are deployed by chezmoi to `~/.config/agents/instructions/` (`%APPDATA%\agents\instructions\` on Windows); the config declares them (`[instructions.layers.*]`) and each profile lists the ones it uses, in order (`[profiles.<name>] instructions`):
 
 | Layer | Source (under `dot_config/agents/instructions/`) | Public | Profiles |
 |---|---|---|---|
