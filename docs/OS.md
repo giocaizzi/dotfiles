@@ -407,6 +407,7 @@ Plugins come from the `giocaizzi/harness` registry. `[plugins] registry` and `[p
 - **New plugin upstream:** add `<name> = [harnesses]` under `[plugins.enabled]` (`dots agents/config`), `chezmoi apply`.
 - **Plugin removed upstream:** delete its key, apply; disable or uninstall it by hand where the harness keeps it.
 - The Claude Code status line (`hud`) is set under `[harness.claude.settings.statusLine]`; it needs `node` 22+ and a Nerd Font.
+- Skill-description listing budget: `skillListingBudgetFraction` 0.03 under `[harness.claude.settings]` (default 1% of the context window, which drops the least-used skills' descriptions once many plugin skills are installed; Claude Code only, the other harnesses have no equivalent).
 
 ### MCP servers
 

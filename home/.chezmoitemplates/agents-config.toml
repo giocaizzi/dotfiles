@@ -327,6 +327,7 @@ theme = "dark"
 remoteControlAtStartup = false
 inputNeededNotifEnabled = true
 agentPushNotifEnabled = true
+skillListingBudgetFraction = 0.03
 
 [harness.claude.settings.env]
 CLAUDE_CODE_SUBAGENT_MODEL = "sonnet"
