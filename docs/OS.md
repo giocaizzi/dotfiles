@@ -42,7 +42,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `run_once_after_create-xdg-dirs.sh.tmpl` → `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.sh.tmpl` → the packages of [Packages](#packages) | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.ps1.tmpl` → the same, with winget | — | — | ✓ |
-| `run_onchange_after_zz-agents-apply.*` → [`agents apply`](#agents-apply); `run_after_update-agent-plugins.*` and `run_after_agents-doctor.*` → [plugins](#agent-plugins-giocaizzi-harness), [doctor](#doctor-agents-doctor); `run_onchange_after_sync-vscode-extensions.*` | per [AI harnesses](#ai-harnesses) | | |
+| `run_after_zz-agents-apply.*` → [`agents apply`](#agents-apply); `run_after_update-agent-plugins.*` and `run_after_agents-doctor.*` → [plugins](#agent-plugins-giocaizzi-harness), [doctor](#doctor-agents-doctor); `run_onchange_after_sync-vscode-extensions.*` | per [AI harnesses](#ai-harnesses) | | |
 | `run_after_link-pwsh-profile.ps1.tmpl` → resolves the real Documents folder (OneDrive/locale) and links the profile | — | — | ✓ |
 
 Each script states where it runs: its body is wrapped in a condition (OS; harness for the harness scripts), and elsewhere it renders empty, which chezmoi skips. No script is listed in `.chezmoiignore`. The `run_onchange_` scripts re-run when their rendered text changes, so each embeds what it depends on (the package lists, the harness checkout's commit, the extension list).
@@ -355,11 +355,11 @@ Nothing private is in it: account names and client ids appear as `${VAR}` refere
 
 ### `agents apply`
 
-`run_onchange_after_zz-agents-apply.{sh,ps1}.tmpl` runs `agents apply` after a `chezmoi apply` in which its inputs changed. It runs last (`zz`), after the package install has put the `agents` binary in place. The script embeds a hash of the rendered config, of each instruction layer file and of the pinned `agents` release, so it re-runs on a change to any of them and on an `agents` bump. Machines with no harness selected render it empty, as does the other OS's variant.
+`run_after_zz-agents-apply.{sh,ps1}.tmpl` runs after every `chezmoi apply`, last (`zz`), after the package install has put the `agents` binary in place: first `agents check` on the deployed config, then `agents apply`. It is idempotent (an unchanged target is not rewritten), so it carries no change hash. Machines with no harness selected render it empty, as does the other OS's variant.
 
 `agents apply` writes the native files of every selected harness. Files the apps also write (Claude Code and Copilot CLI settings, Codex `config.toml`, opencode, pi) are merged, not replaced: only the keys `agents` manages are written, in the live key order, nothing unchanged is rewritten, and a key that left the config is removed. Keys the app writes itself (a chosen model, hook trust, local plugins, authentication) stay local and never reach this public repo. The VS Code `settings.json` is check-only (`agents` reports drift and never writes it). Each target is `create`, `update`, `unchanged`, `drift`, `refused` (a symlink: it never writes through one) or `error`; the full semantics are in [cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#apply).
 
-The script never fails the chezmoi apply: a missing binary is skipped with a note (run `chezmoi apply` again once the package install has run), and a failed `agents apply` is a warning.
+The script never fails the chezmoi apply: a missing binary is skipped with a note (the first apply after a fresh install may skip it if the package install has not put `agents` in place yet; the next `chezmoi apply` runs it), a failed `agents check` prints its findings, warns and skips `agents apply`, and a failed `agents apply` is a warning.
 
 - **Preview:** `agents apply -n` prints the diff of each target and writes nothing; `agents render -harness claude` lists the managed keys of one harness.
 - **Run by hand:** `agents apply`. The script re-runs on its own only when an input changes.
@@ -489,9 +489,9 @@ Every change to the agent setup is an edit of the config or of a layer, then a c
 
 ### Change the agents config
 
-1. `dots agents/config` opens `.chezmoitemplates/agents-config.toml`, shows what the edit changes on every OS and role, and offers to apply. The entry has no check (a template cannot be piped to `agents check` without a shell on every OS): `make lint` renders it and runs `agents check`, and the apply script checks the rendered file before `agents apply`. By hand: edit the file, then `make check`.
+1. `dots agents/config` opens `.chezmoitemplates/agents-config.toml`, shows what the edit changes on every OS and role, and offers to apply. The entry has no check (a template cannot be piped to `agents check` without a shell on every OS): `make lint` renders it and runs `agents check`, and the apply script runs `agents check` on the deployed file before `agents apply`. By hand: edit the file, then `make check`.
 2. Preview on this machine: `chezmoi apply --exclude=scripts` deploys the config only; `agents apply -n` prints the diff each harness file would get.
-3. `chezmoi apply`: deploys the config, then the script runs `agents apply` because the config hash changed.
+3. `chezmoi apply`: deploys the config, then the script runs `agents check` and `agents apply`.
 
 **Verify:** `agents check -live` prints `config ok`; open a new session of the harness and inspect its effective settings (an open session keeps its launch settings).
 **Rollback:** `git revert` the change and apply again; keys that leave the config are removed from the live files.
@@ -499,7 +499,7 @@ Every change to the agent setup is an edit of the config or of a layer, then a c
 ### Add or change an instruction layer
 
 1. Change a layer: `dots agents/<core|env|personal|work>`.
-2. Add a layer: create `home/dot_config/agents/instructions/<name>.md`, declare it with `[instructions.layers.<name>]` and list it in the `instructions` of the profiles that use it (`dots agents/config`); add the file to the hash list of both `run_onchange_after_zz-agents-apply.*` scripts and an entry for it in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one). A private layer is committed age-encrypted (`chezmoi add --encrypt`), and `.chezmoiignore` must skip it on the other role.
+2. Add a layer: create `home/dot_config/agents/instructions/<name>.md`, declare it with `[instructions.layers.<name>]` and list it in the `instructions` of the profiles that use it (`dots agents/config`); add the file to the hash list of both `run_after_zz-agents-apply.*` scripts and an entry for it in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one). A private layer is committed age-encrypted (`chezmoi add --encrypt`), and `.chezmoiignore` must skip it on the other role.
 3. `agents prompt matrix` and `agents prompt check`, then `agents prompt show -profile <p> -harness <h>` for the composed text.
 4. `chezmoi apply`.
 
@@ -532,7 +532,8 @@ Every change to the agent setup is an edit of the config or of a layer, then a c
 |---|---|
 | A harness does not show a change | `agents check -live`, then `agents apply -n`; an open session keeps its launch settings: start a new one |
 | `refused <path>` | the target is a symlink; replace it with a regular file, then `agents apply` ([cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#recover-from-drift-or-a-refused-symlink)) |
-| `agents apply: ... not installed yet, skipped` | the package install has not run; `chezmoi apply` again |
+| `agents apply: ... not installed yet, skipped` | the package install has not run yet (first apply after a fresh install); the next `chezmoi apply` runs it |
+| `agents check failed` warning (apply skipped) | the config has errors: run `agents check` for the findings, fix, `chezmoi apply` |
 | `agents apply failed` warning | run `agents apply` by hand to see the cause; `agents check` for config errors |
 | A `${VAR}` or server skipped with a warning | the secret is not exported yet: open a new shell and apply again |
 | A language server missing | its command is not on `PATH`; install it or open a new shell |

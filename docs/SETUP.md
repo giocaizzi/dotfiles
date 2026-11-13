@@ -56,7 +56,7 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    Open a new shell (Windows: a new PowerShell window). Light machines are done after step 5.
 
-   On machines with a harness selected, the first apply installs the `agents` binary and then runs `agents apply` to write the harness files; a server that needs a secret is skipped until that secret is exported, so after opening the new shell run `chezmoi apply` once more (see [AI agent configuration](./OS.md#agents-apply)).
+   On machines with a harness selected, the first apply installs the `agents` binary and then runs `agents apply` to write the harness files; a server that needs a secret is skipped until that secret is exported, so after opening the new shell run `chezmoi apply` once more; the script runs on every apply, and the first apply after a fresh install may skip it if `agents` is not installed yet (see [AI agent configuration](./OS.md#agents-apply)).
 
 ## Secrets
 
