@@ -7,14 +7,10 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | Canonical source (in repo)                          | macOS                                                       | Linux                                          | Windows                                                                            |
 | ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
-| `.chezmoitemplates/agents-instructions.md` (layers, [Agent instructions](#agent-instructions)) | `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md`, `~/.gemini/config/AGENTS.md` (rendered) | same | same |
+| `dot_config/agents/instructions/` (layers) and `.chezmoitemplates/agents-config.toml` (the config) | `~/.config/agents/instructions/`, `~/.config/agents/config.toml` (rendered, owner-only); [`agents apply`](#agents-apply) then writes every harness file from them (`~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, `~/ops`; [AI agent configuration](#ai-agent-configuration)) | same | same |
 | `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
-| `dot_copilot/modify_private_settings.json` (merge)   | `~/.copilot/settings.json`                                  | `~/.copilot/settings.json`                     | `~/.copilot/settings.json`                                                         |
-| `dot_copilot/modify_private_lsp-config.json` (merge) | `~/.copilot/lsp-config.json`                                | `~/.copilot/lsp-config.json`                   | `~/.copilot/lsp-config.json`                                                       |
-| `dot_claude/dotfiles-plugins/` (`.lsp.json` rendered from the policy) | `~/.claude/dotfiles-plugins/` | same | same |
-| `.chezmoitemplates/{claude,copilot}-settings.json` → `giocaizzi-harness` plugins | — | — | enabled only (`enabledPlugins` + `extraKnownMarketplaces`, repo `giocaizzi/harness`); each harness installs and updates them from the marketplace. `guard` holds the agent hooks (pip deny, `make check` on stop, post-edit lint, skill/title/host/risky guards, keep-awake) for Claude Code and Copilot CLI on every OS; `hud` the Claude status line, band and pane; `sounds` the Claude toasts, sounds and turn-end bell (`pluginConfigs` in `claude-settings.json`, see [tmux](SHELL.md#tmux)); full machines only |
 | `.chezmoidata/aliases.toml` (+ `.aliases.private.toml.age`) | `~/.config/shell/aliases.sh`, `~/.config/shell/omz-aliases.zsh` | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
 | `dot_config/git/config.tmpl`                         | `~/.config/git/config`                                      | `~/.config/git/config`                         | `~/.config/git/config`                                                             |
 | `dot_config/oh-my-posh/theme.omp.json`               | `~/.config/oh-my-posh/theme.omp.json`                       | same                                           | same                                                                               |
@@ -23,8 +19,6 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `dot_config/git/{ignore,commit-template}`            | `~/.config/git/`                                            | same                                           | same                                                                               |
 | `dot_profile`, `dot_bashrc`, `dot_bash_profile`      | `~/.profile`, `~/.bashrc`, `~/.bash_profile`                | same                                           | same (used by Git Bash / WSL)                                                      |
 | `dot_zshrc`, `dot_zprofile`                          | `~/.zshrc`, `~/.zprofile`                                   | — (ignored)                                    | — (ignored)                                                                        |
-| `dot_claude/modify_settings.json` (merge)            | `~/.claude/settings.json`                                   | same                                           | same                                                                               |
-| `dot_gemini/antigravity-cli/modify_private_settings.json` (merge) | `~/.gemini/antigravity-cli/settings.json`      | same                                           | same                                                                               |
 | `dot_config/git/personal.tmpl` (work machines only)  | `~/.config/git/personal`                                    | same                                           | same                                                                               |
 | `dot_config/readline/inputrc`                        | `~/.config/readline/inputrc` (via `$INPUTRC`)               | same                                           | same (Git Bash)                                                                    |
 | `dot_config/tmux/tmux.conf.tmpl`                     | `~/.config/tmux/tmux.conf`                                  | same                                           | `~/.config/tmux/tmux.conf` (deployed); `~/.psmux.conf` symlinks to that deployed file for PSMux |
@@ -48,7 +42,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | `run_once_after_create-xdg-dirs.sh.tmpl` → `$XDG_STATE_HOME/{zsh,bash,vim}`, `$XDG_CACHE_HOME/zsh` | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.sh.tmpl` → the packages of [Packages](#packages) | ✓ | ✓ | — |
 | `run_onchange_after_install-pkgs.ps1.tmpl` → the same, with winget | — | — | ✓ |
-| `run_onchange_after_install-harness.*`, `run_onchange_after_claude-mcp-user.*`, `run_onchange_after_sync-vscode-extensions.*`, `run_after_agents-doctor.*` | per [AI harnesses](#ai-harnesses) | | |
+| `run_onchange_after_zz-agents-apply.*` → [`agents apply`](#agents-apply); `run_after_update-agent-plugins.*` and `run_after_agents-doctor.*` → [plugins](#agent-plugins-giocaizzi-harness), [doctor](#doctor-agents-doctor); `run_onchange_after_sync-vscode-extensions.*` | per [AI harnesses](#ai-harnesses) | | |
 | `run_after_link-pwsh-profile.ps1.tmpl` → resolves the real Documents folder (OneDrive/locale) and links the profile | — | — | ✓ |
 
 Each script states where it runs: its body is wrapped in a condition (OS; harness for the harness scripts), and elsewhere it renders empty, which chezmoi skips. No script is listed in `.chezmoiignore`. The `run_onchange_` scripts re-run when their rendered text changes, so each embeds what it depends on (the package lists, the harness checkout's commit, the extension list).
@@ -92,13 +86,13 @@ Three independent yes/no answers (`light`, `work`, `terraform`), asked once per 
 
 | Flag | Prompt | When true |
 |---|---|---|
-| `light` | Light install (yes/no) — shell, git, vim, prompt only | `.chezmoiignore` skips VS Code, Ghostty, Claude Code, Copilot, Codex, opencode, pi, the agent instructions ([no agents on light machines](#agent-instructions)) and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux (Unix) / PSMux (Windows) jq shellcheck shfmt` + oh-my-posh (no uv/Python, Node, language servers, linters or forge CLIs). |
-| `work` | Work computer (yes/no) — work git identity, no personal telemetry | Asks the work email, which becomes the default `user.email` (`gitEmail` stays the personal one), the **personal GitHub username** (`githubUser`) and optional **extra personal remotes** (`personalGitRemote`: github.com org names or URL globs, comma-separated; blank = none). The username and each org name (an entry of letters, digits and `-`) expand to the four github.com URL forms (`git@github.com:<owner>/**`, `ssh://git@github.com/<owner>/**`, `https://github.com/<owner>/**`, `https://*@github.com/<owner>/**`); each of those and each extra glob becomes `includeIf "hasconfig:remote.*.url:<glob>"` (git ≥ 2.36) → `~/.config/git/personal`, so repos in any folder with a matching remote commit with the personal email. Everything else, including repos with no remote, uses the work email. In an extra glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. To add more later see [Adding personal remotes](#adding-personal-remotes). Keep the SSH key consistent with the identity through `~/.ssh/config.d/*` (e.g. `Host github.com` → personal key, a work alias → work key). Claude Code sends no telemetry to the OTel endpoint (the keys are left out and stripped from the live file). No Go stack (`go`, `gopls`, `goreleaser`, `syft`, `golangci-lint`, the `gopls` server) and the personal-only harness plugins are disabled ([Agent plugins](#agent-plugins-giocaizzi-harness)). The install scripts add the GitLab and Azure DevOps CLIs: `glab` and Azure CLI (`az`, brew `azure-cli`, winget `Microsoft.AzureCLI` machine-scope MSI) plus its `azure-devops` extension. |
-| `terraform` | Install Terraform tooling (yes/no; not asked on light machines, where it is no) | Installs `terraform`, `terraform-ls` and `tflint` (their packages and linux releases carry `requires = "terraform"`), enables the `terraform` and `tflint` language servers ([Language servers](#language-servers)) and the `hashicorp.terraform` VS Code extension. The configuration matrix seeds it true on personal and work, false on light. |
+| `light` | Light install (yes/no) — shell, git, vim, prompt only | `.chezmoiignore` skips VS Code, Ghostty and the agents config and instruction layers ([no agents on light machines](#ai-agent-configuration)) and the encrypted SSH config (so light machines need **no age key**); no Nerd Font download; the install script installs only `fzf git vim fd tmux (Unix) / PSMux (Windows) jq shellcheck shfmt` + oh-my-posh (no uv/Python, Node, language servers, linters or forge CLIs). |
+| `work` | Work computer (yes/no) — work git identity, no personal telemetry | Asks the work email, which becomes the default `user.email` (`gitEmail` stays the personal one), the **personal GitHub username** (`githubUser`) and optional **extra personal remotes** (`personalGitRemote`: github.com org names or URL globs, comma-separated; blank = none). The username and each org name (an entry of letters, digits and `-`) expand to the four github.com URL forms (`git@github.com:<owner>/**`, `ssh://git@github.com/<owner>/**`, `https://github.com/<owner>/**`, `https://*@github.com/<owner>/**`); each of those and each extra glob becomes `includeIf "hasconfig:remote.*.url:<glob>"` (git ≥ 2.36) → `~/.config/git/personal`, so repos in any folder with a matching remote commit with the personal email. Everything else, including repos with no remote, uses the work email. In an extra glob `*` stays within one path segment: write `https://git.example.com/**`, `https://*@git.example.com/**` (URL with user), `git@git.example.com:*/**` (scp-like) and `git@<ssh-alias>:*/**` for an SSH `Host` alias. To add more later see [Adding personal remotes](#adding-personal-remotes). Keep the SSH key consistent with the identity through `~/.ssh/config.d/*` (e.g. `Host github.com` → personal key, a work alias → work key). No agent telemetry goes to the OTel endpoint (the personal profile alone enables it). No Go stack (`go`, `gopls`, `goreleaser`, `syft`, `golangci-lint`, the `gopls` server) and the personal-only harness plugins are disabled (`[profiles.work]`, [Agent plugins](#agent-plugins-giocaizzi-harness)). The install scripts add the GitLab and Azure DevOps CLIs: `glab` and Azure CLI (`az`, brew `azure-cli`, winget `Microsoft.AzureCLI` machine-scope MSI) plus its `azure-devops` extension. |
+| `terraform` | Install Terraform tooling (yes/no; not asked on light machines, where it is no) | Installs `terraform`, `terraform-ls` and `tflint` (their packages and linux releases carry `requires = "terraform"`), makes the `terraform` and `tflint` language servers available ([Language servers](#language-servers)) and the `hashicorp.terraform` VS Code extension. The configuration matrix seeds it true on personal and work, false on light. |
 
 Full personal machines are also asked for the Claude Code OTLP endpoint (`otelEndpoint`, local config only); blank omits the telemetry keys.
 
-Private agent instructions and personal shell aliases are not in this public repo: they are age-encrypted layers of the global agent instructions (`personal.md.age` on personal machines, `work.md.age` on work ones, see [Agent instructions](#agent-instructions)) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
+Private agent instructions and personal shell aliases are not in this public repo: they are age-encrypted layers of the global agent instructions (`personal` on personal machines, `work` on work ones, see [Agent instructions](#agent-instructions)) and personal aliases in `.aliases.private.toml.age`, merged into the alias registry at render time (see [SHELL.md → Personal aliases](./SHELL.md#personal-aliases)). Light machines skip both. VS Code trusted domains for private hosts are set per machine in the local user settings, not in the shared file.
 
 Current machines: Mac = full/personal, Raspberry Pi = light/personal, Windows PC = full/work.
 
@@ -111,23 +105,13 @@ Re-running `chezmoi init`:
 
 ### AI harnesses
 
-Full machines are also asked which AI harnesses chezmoi writes configs for: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi`, `antigravity` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs; it only writes their configs. Light machines are not asked and get none (even with the key set). A config without the key gets none: select a harness to get its config; the selection lives in `.chezmoitemplates/harnesses`, which every consumer reads. Each harness's targets are listed once, in `[harnessTargets]` (`.chezmoidata/harness.toml`): `.chezmoiignore` skips the targets of every harness not selected.
+Full machines are also asked which AI harnesses to configure: a multiple choice of `claude`, `copilot`, `vscode`, `codex`, `opencode`, `pi`, `antigravity` (arrow keys to move, space to toggle, Enter to confirm; none preselected), stored as `data.harnesses`. chezmoi never installs the CLIs. Light machines are not asked and get none (even with the key set); a config without the key gets none. `.chezmoitemplates/harnesses` is the one reader of the selection.
 
-| Harness | Managed only when selected |
-|---|---|
-| `claude` | `~/.claude` (`settings.json` merge, `CLAUDE.md`); user-scope MCP servers (`run_onchange_after_claude-mcp-user.*`, [MCP servers](#mcp-servers)) |
-| `copilot` | `~/.copilot` (`settings.json`, `mcp-config.json` and `lsp-config.json` merge, `copilot-instructions.md`); also deployed for `vscode` |
-| `vscode` | VS Code user settings and keybindings (`~/.config/Code` on Linux, `~/Library/Application Support/Code` on macOS, `%APPDATA%\Code` on Windows). The whole files, not only the Copilot keys. VS Code's agent chat runs on the Copilot harness (the Agent Host, Copilot CLI's runtime), which reads `~/.copilot`, so `vscode` also gets the `copilot` row's `~/.copilot` files (configs only, no CLI), and its agent behaviour follows Copilot CLI everywhere in this document. `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI: a shared list plus a `work` block (PowerShell only on Windows) or a personal block. Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. |
-| `codex` | `~/.codex/AGENTS.md`, `~/.codex/config.toml` (merge: `[tui]` bell keys, user MCP servers, `~/ops` trust); Codex wiring in `run_onchange_after_install-harness.*` |
-| `opencode` | `~/.config/opencode/AGENTS.md`, `opencode.jsonc` (merge: user MCP servers, LSP, subagent depth and shared permissions); opencode wiring in `run_onchange_after_install-harness.*` |
-| `pi` | `~/.pi/agent/AGENTS.md`, `settings.json` (merge: `defaultProvider`, `defaultModel`, `defaultThinkingLevel`, `packages`), `mcp.json` (merge: user MCP servers); pi wiring in `run_onchange_after_install-harness.*` |
-| `antigravity` | `~/.gemini/config/AGENTS.md`, `~/.gemini/config/mcp_config.json` (merge: user MCP servers), `~/.gemini/antigravity-cli/settings.json` (merge: `agentMode: "auto"`, `toolPermission: "always-proceed"`, `enableTerminalSandbox: false`, `allowNonWorkspaceAccess: true`, `permissions`); Antigravity wiring in `run_onchange_after_install-harness.*` |
+The selection is a machine fact: it becomes `harnesses` in the agents config, and everything else about the harnesses (settings, MCP servers, plugins, instructions, LSP) is written by `agents apply`, not by chezmoi. With no harness selected chezmoi deploys neither `~/.config/agents` nor the apply, doctor and plugin-update scripts. See [AI agent configuration](#ai-agent-configuration).
 
-The doctor hook (`run_after_agents-doctor.*`, [Doctor](#doctor-agents-doctor)) runs while any harness is selected.
+The one harness-related set of files chezmoi still owns is VS Code's: the static user settings and keybindings (`dot_config/Code/User/`, [Destination matrix](#destination-matrix)). `chezmoi apply` also installs the missing extensions listed in `.chezmoitemplates/vscode-extensions` through the `code` CLI (a shared list plus a `work` block, PowerShell only on Windows, or a personal block). Names only, so VS Code auto-updates them; add-only, so uninstall a dropped extension by hand. It warns and skips when the `code` CLI is unavailable. VS Code's agent chat runs on the Copilot harness, so `agents apply` gives `vscode` the `~/.copilot` files too.
 
-Shared: the `giocaizzi-harness` external and the `run_onchange_after_install-harness.*` scripts while any of `codex`, `opencode`, `pi`, `antigravity` is.
-
-Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops chezmoi managing its files: the files already in the home directory stay; delete them by hand if they are unwanted.
+Add or remove a harness later: `chezmoi edit-config` and edit the list under `[data]`, e.g. `harnesses = ["claude", "copilot", "vscode"]` (or re-answer every prompt with `chezmoi init --prompt`), then `chezmoi apply`. Removing a harness only stops `agents` managing its keys; files already in the home directory stay.
 
 Simulate the prompts without touching the real config (prompt flags are keyed by the prompt text, as printed by `chezmoi init`):
 
@@ -139,107 +123,6 @@ chezmoi execute-template --init \
 ```
 
 `execute-template` keeps the answer already in your config for a key it finds there (and, unlike `chezmoi init`, re-asks a stored `harnesses` list); point `--config` at an empty `.toml` file to simulate a new machine.
-
-### Shared harness policy
-
-`.chezmoidata/agents.toml` holds declarative cross-harness configurations across 9 canonical dimensions: autonomy & execution mode, permission rules (allowed commands, denied patterns, sensitive ask prefixes, allowed URLs), model tiers (`scout`, `worker`, `driver`, `escalate`), context compaction, UI/TUI/bell styling (Catppuccin Mocha/Latte), dual-tier OpenTelemetry (`otelEndpoint` collector + Loki bridge), LSP configuration, voice input (dictation), and client-native escapes. The existing registries remain the source for plugins (`harness.toml`), MCP servers (`mcp.toml`) and layered agent instructions (`.chezmoitemplates/agents/`).
-
-| Harness | Shared policy adapter | Native settings and limits |
-|---|---|---|
-| Claude Code | Protected paths, allowed and restricted commands/URLs → `permissions` rules; bell → `preferredNotifChannel`; theme → Catppuccin Mocha; voice → `voice` (`enabled`, `mode`, `autoSubmit`; not `language`); LSP → the local `lsp@dotfiles` plugin (`~/.claude/dotfiles-plugins`, rendered from the policy; the official LSP plugins are off) | `native.claude` keeps `defaultMode`, `skipAutoPermissionPrompt`, `attribution`; telemetry env injected via `.chezmoitemplates/telemetry-env.json`. |
-| Copilot CLI | Bell → `beep`; telemetry env injected; voice → `voice.enabled` (only `enabled`: the other documented voice keys pick the model and microphone and stay local); LSP servers → `~/.copilot/lsp-config.json` (`modify_private_lsp-config.json`; merged per policy-named server, other entries and keys stay) | `native.copilot.agents` keeps per-agent model/effort bindings; `agents check` fails if the template stops reading `voice.enabled` from the configuration. |
-| Codex | Bell → `[tui] notifications` and `notification_method`; approval policy; telemetry env; voice: none (no dictation; `/voice` is a realtime conversation, see [Voice input](#voice-input)) | Managed via `modify_private_config.toml`. Native `sandbox_mode` and local overrides preserved. |
-| opencode | Hard `tool.use` policies, allowed URLs, ordered `shell` asks, bell, Catppuccin theme; telemetry env; voice: none (no dictation found) | LSP servers from the policy (merged per policy-named server: override the built-ins of the same name, other keys and entries stay; `lsp` is false when LSP is off), `experimental.subagent_depth` configured. Managed via `modify_opencode.jsonc`. |
-| pi | Shared instructions, MCP and plugin wiring; telemetry env; voice: not implemented | Bell via `sounds` plugin, native model and extension settings. |
-| Antigravity | Protected paths, allowed commands and URLs → `rules`; agentMode and toolPermission; voice: not managed (native `/voice` dictation, no documented settings key) | Managed via `antigravity-settings.json`. |
-
-VS Code: its agent chat runs on the Copilot harness and reads `~/.copilot`, so it follows the Copilot CLI row. VS Code-specific, in the static `home/dot_config/Code/User/settings.json`: terminal and URL auto-approve (`chat.tools.terminal.autoApprove`, `chat.tools.urls.autoApprove`, which the harness also writes on *Always Allow*), the Catppuccin theme, and the voice keys (`dictation.enabled`, `agents.voice.language`) that `agents check` compares with the policy.
-
-These adapters preserve each client's matching rules; a shared pattern is not a guarantee of equivalent enforcement. Native execution modes are separate preferences, not interchangeable values of a universal auto mode. Launch, project and session settings can override user defaults, including in Codex's VS Code integration. Runtime state (model choices without a managed override, hook trust, plugins, authentication and trusted-workspace history) stays local under the existing merge rules.
-
-#### Command patterns
-
-`[agents.permissions]` keeps command rules as lists: `allowCommands` (VS Code auto-approve), `allowCommandPatterns` (allow), `denyCommandPatterns`, `denyCommandExact`, `denyCommandPrefixes` (deny) and `askCommandPrefixes` (ask). The lease-push rule is `allowCommandPatterns = ["git push --force-with-lease origin *"]` plus `denyCommandPatterns` for `main` and `master` (`git push --force-with-lease origin main`, `… master`, `git push * HEAD:main`, `… HEAD:master`, each also with trailing arguments): lease pushes are allowed only to feature branches. The guard hook and the server ruleset stay the real protection: no pattern sees `git -C <dir> push`, a refspec such as `feat/x:main` or reordered arguments.
-
-| Harness | Rendering of `allowCommandPatterns` and the new deny patterns | Cannot express |
-|---|---|---|
-| Claude Code | `Bash(<pattern>)` in `allow` and `deny` (deny, then ask, then allow) | Forms the pattern does not match |
-| Antigravity | `command(<pattern>)` matches an exact token prefix and `*` is literal, so a `git push` pattern drops a trailing ` *` and renders as that prefix | Patterns with an inner `*` (`HEAD:main`, `HEAD:master`) are skipped; `command(*)` already allows everything, so the allow entry is for parity |
-| opencode | `shell` permission allow (last match wins, placed before the ask entries); the denies are hard `tool.use` policies, which only deny | Forms the pattern does not match |
-| Codex | `~/.codex/rules/agents.rules` (`dot_codex/rules/agents.rules.tmpl`, Starlark `prefix_rule`; allow → `allow`, deny → `forbidden`; most restrictive wins). `default.rules`, where the TUI saves its approvals, is not managed. Only these patterns are rendered, not the other deny lists | No wildcards: a trailing ` *` is dropped, patterns with an inner `*` are skipped |
-| Copilot CLI (and VS Code, which follows it), pi | None: no command-permission rendering, so these lists do not reach them and the guard hook is their protection. VS Code's own `allowCommands` list in `settings.json` is static, edited by hand | Everything |
-
-#### Voice input
-
-`[agents.voice]` (`enabled`, `mode` = `hold` or `tap`, `autoSubmit`, `language`) is one dictation preference for all harnesses, the same on every role. Only documented keys are mapped: Claude Code gets `voice` (`enabled`, `mode`, `autoSubmit`), Copilot CLI `voice.enabled` (the only field it honors), VS Code's `settings.json` is static: it is edited by hand to match the configuration (`dictation.enabled`; `agents.voice.language` only when `language` is set, else absent = VS Code's `auto`), and `agents check` (part of `make check`) fails on drift. The Claude and Copilot templates read the configuration, and the check fails if either stops doing so. `language` is not written for Claude because that setting also changes Claude's reply language, so Claude dictation stays English. The managed Claude `voice` and Copilot `voice.enabled` win on every apply: turning voice off inside the CLI lasts until the next `chezmoi apply`; change the configuration instead. Where audio goes: Copilot CLI and VS Code transcribe on the machine; Claude Code and Antigravity send audio to their vendor.
-
-| Harness | One-time steps and use | Limits |
-|---|---|---|
-| Claude Code | `/voice` or the managed setting; hold Space to record, Esc cancels | claude.ai sign-in only (no API key or Bedrock); audio goes to Anthropic; no SSH sessions. macOS: mic prompt for the terminal app, reset with `tccutil reset Microphone com.mitchellh.ghostty`. Linux: falls back to `arecord` or SoX. WSL: needs WSLg and `sox libsox-fmt-pulse` |
-| Copilot CLI | Enabled by the managed `voice.enabled`; run `/voice` once per machine to download the speech runtime and model (multilingual by default, English and Spanish models too; it runs on ONNX Runtime through Foundry Local); hold Space to talk, or Ctrl+X V to toggle | Local transcription: audio does not leave the machine; macOS Apple Silicon, Linux x64, Windows x64/ARM64 (no Intel Mac); no mode or auto-submit setting |
-| VS Code | Cmd/Ctrl+I in chat; hold for push-to-talk | Local on desktop |
-| Antigravity | `/logout` and sign in once (dictation needs a newer sign-in permission), then F5, `/voice dictate` or `/record`; Enter or F5 inserts the transcript, Esc discards it. `/voice live` or F6 is a spoken conversation. Over SSH run `agy mic-serve` locally and set `ANTIGRAVITY_MIC` on the remote | Cloud: audio goes to Google's transcription service; no speech model is kept on disk, only an audio encoder (`~/.gemini/antigravity-cli/bin/webm_encoder`). Voice mode streams to Gemini Live. Not for business or enterprise accounts; interactive sessions only. No documented settings key, so not managed |
-| Codex | None in the CLI: use the OS dictation. The Codex desktop app has its own dictation | `/voice` in the CLI is a realtime spoken conversation (cloud), not dictation into the prompt |
-| opencode | None: use the OS dictation | No dictation in opencode 2.2.5 |
-| pi | Not implemented; manual fallback: the OS dictation | — |
-
-OS dictation fallback (types into the focused terminal):
-
-| OS | Fallback |
-|---|---|
-| macOS | Dictation: Microphone key, or the shortcut in System Settings → Keyboard → Dictation |
-| Windows | Voice typing, Win+H (online) |
-| Linux | None built in (gap) |
-
-Which policy fields each harness honors, where its audio goes, which speech model it uses (none is shared across harnesses) and what `agents check` verifies: [agents voice parity](https://github.com/giocaizzi/agents/blob/main/docs/voice.md); every other dimension: [agents parity matrix](https://github.com/giocaizzi/agents/blob/main/docs/parity.md).
-
-Gaps are tracked in [issue #163](https://github.com/giocaizzi/dotfiles/issues/163). Docs checked 2026-11-11.
-
-Change the voice preference:
-
-- When: dictation should be on or off, or switch between hold and tap, or auto-submit.
-- Steps: run `dots agents/config` and edit `[agents.voice]` (Claude Code and Copilot CLI follow it on apply); edit `home/dot_config/Code/User/settings.json` to match (`dots dot_config/Code/User/settings.json`); run `make check` (fails until both agree); run `chezmoi apply`.
-- Verify: in a new Claude session check `/voice` or the `voice` key in `~/.claude/settings.json`; `voice.enabled` in `~/.copilot/settings.json`; the VS Code settings show the keys; `chezmoi agents check` passes.
-- Rollback: `git restore` both files and apply again.
-
-#### Language servers
-
-Each server is a `[agents.lsp.server.<name>]` entry in the configuration: `package` (its row in `packages.toml`), `command` (argv), `extensions` (`".ext"` → language id), `filetypes` (Vim filetypes, only where they differ from the language ids) and `format` (the editor formats on save with it). Servers: `pyright`, `ruff` (format), `typescript` (TypeScript 7's own `tsc --lsp --stdio`; format), `gopls` (format), `bash` (`bash-language-server start`, which runs shellcheck and shfmt when on `PATH`; format), `yaml-ls`, `json` (`vscode-json-language-server`), `terraform` (`terraform-ls serve`; format) and `tflint` (`tflint --langserver`). `[agents.lsp] enabled = false` turns LSP off everywhere: opencode `"lsp": false`, Copilot CLI loses the configuration-named entries, Claude Code gets `lsp@dotfiles` false and an empty `.lsp.json`, Vim registers nothing.
-
-`.chezmoitemplates/lsp-servers` returns the servers that apply to this machine: its package is selected for the role and the `requires` answer, and installs on this OS (a package manager entry, or a [release] with a target for this platform); `{}` when LSP is off. It also gives each server's `bin` (for presence checks) and, on Windows, wraps npm servers in `cmd /c` (their `.cmd` shims need a shell, per the Node docs). Every consumer reads it:
-
-| Consumer | Where |
-|---|---|
-| Claude Code | A local directory marketplace `dotfiles` at `~/.claude/dotfiles-plugins` (`dot_claude/dotfiles-plugins/`) holds the plugin `lsp`, whose `.lsp.json` is rendered from the policy. A local-path plugin loads in place, so a change applies at the next session or `/reload-plugins`. `claude-settings.json` sets `extraKnownMarketplaces.dotfiles` and `enabledPlugins."lsp@dotfiles"`; the official `pyright-lsp`, `typescript-lsp` and `gopls-lsp` are set false |
-| Copilot CLI | `~/.copilot/lsp-config.json` `lspServers` (`modify_private_lsp-config.json`). For each policy-named server selected here, `command`, `args` and `fileExtensions` are set and the entry's other keys (`env`, `initializationOptions`, `disabled`, …) stay; a policy-named server not selected here is removed; other names stay |
-| opencode | `lsp` in `opencode.jsonc` (`modify_opencode.jsonc`), same merge: `command` and `extensions` are managed, other keys of the entry stay, a policy-named server not selected here is removed, other names stay. A name equal to a built-in replaces it; the other built-ins stay on |
-| Vim | `.chezmoitemplates/vim-lsp.vim` → `~/.config/vim/plugin/lsp.vim` (Unix), `~/vimfiles/plugin/lsp.vim` (Windows). Client `yegappan/lsp`, a pinned external (see [Externals](#externals-chezmoiexternaltomltmpl)); servers register on `User LspSetup`, `features.documentFormatting` is on only for `format` servers, which also format on save. `vimrc` sets `g:filetype_tf = 'terraform'` (Vim sniffs `*.tf` as TinyFugue) |
-| VS Code | Static settings, set by hand to match: formatters on save for Python (Ruff), TypeScript/JavaScript (`TypeScriptTeam.native-preview`), Go, shell (`bash-ide`) and Terraform; `js/ts.experimental.useTsgo` (TypeScript 7); `go.lintTool` = `golangci-lint-v2`; `terraform.languageServer.path` = `terraform-ls`. Extensions come from `.chezmoitemplates/vscode-extensions`: `golang.go` (personal, not Windows), `mads-hartmann.bash-ide-vscode`, `hashicorp.terraform` (`terraform` answer) |
-| Codex, pi, Antigravity | None: no native LSP config |
-
-Inventory (what serves each language per consumer):
-
-| Language | VS Code | Vim | Claude Code | opencode | Copilot CLI | Codex | pi | Antigravity |
-|---|---|---|---|---|---|---|---|---|
-| Python | Python + Ruff extensions | `pyright`, `ruff` | `pyright` | `pyright`, `ruff` | `pyright`, `ruff` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| TypeScript/JavaScript | TypeScript 7 (`native-preview`) | `typescript` | `typescript` | `typescript` | `typescript` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| Go | `golang.go` (gopls) | `gopls` | `gopls` | `gopls` | `gopls` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| Shell | `bash-ide` | `bash` | `bash` | `bash` | `bash` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| Terraform | `hashicorp.terraform` (`terraform-ls`) | `terraform`, `tflint` | `terraform` | `terraform`, `tflint` | `terraform`, `tflint` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| YAML | `redhat.vscode-yaml` | `yaml-ls` | `yaml-ls` | `yaml-ls` | `yaml-ls` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-| JSON | VS Code built-in | `json` | `json` | `json` | `json` | n/a (no native LSP) | n/a (no native LSP) | n/a (no native LSP) |
-
-Gating: policy-named servers only where their package installs. Go (`gopls`, `golangci-lint`, `golang.go`) is personal-only; Terraform needs the `terraform` answer; light machines have no editors or agents and no Vim LSP client (the external is skipped there and the server list renders `{}`; see [Machine roles](#machine-roles)). Claude Code gives each file extension to one server (the first registered), so the Claude plugin leaves out a server whose extensions an earlier one (by name order) already covers: `ruff` and `tflint` run in the other consumers only. To add a server: a policy entry plus its package row.
-
-To change the shared setup:
-
-1. Run `dots agents/policy` and edit the common preference or the named native override. Use the existing `dots mcp`, `dots plugins` and `dots agents/<layer>` entries for those registries.
-2. The editor's `lint templates` check renders the policy adapters across OSes and roles before applying. Review the configuration diffs; unsupported mappings in the table above require a native setting, not an assumed translation.
-3. Start a new client session and inspect its effective settings. An existing session can retain launch/session overrides. Do not use a successful file render as evidence that every native permission is enforced.
-
-Verify a source change with `make check`: policy regression tests preserve the pre-refactor native settings, exercise shared preference changes, optional Codex overrides and runtime-state merges. The template matrix validates the containing settings templates, which include the permission partials. PowerShell execution remains a Windows CI check.
-
-Rollback: restore the previous policy file through git and run `dots agents/policy` to review and apply it. Removing an optional Codex override stops managing that key; it does not delete a value already written to the live config. Restore that local preference explicitly if needed.
 
 ### Adding personal remotes
 
@@ -278,15 +161,15 @@ Two Bitwarden CLIs, used per machine role:
 
 ## Editing your dotfiles
 
-Many targets are composed: `~/.claude/CLAUDE.md` is a one-line stub over a partial over four layers, an `mcp.json` is rendered from `.chezmoidata/mcp.toml` through two partials, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `chezmoi dots` opens the part you mean and shows what the edit changes on every machine type. `dots` is an alias for `chezmoi dots` on full machines; `chezmoi dots help` prints the full usage. It is [a chezmoi plugin](#the-chezmoi-dots-plugin) (Go, [giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)), the same on macOS, Linux and Windows. On a terminal the output uses the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
+Many targets are composed: `~/.config/agents/config.toml` is a one-line stub over a shared template, an alias file is rendered from the alias registry, VS Code settings are symlinks into `dot_config/`. `chezmoi edit <target>` opens the stub; `chezmoi dots` opens the part you mean and shows what the edit changes on every machine type. `dots` is an alias for `chezmoi dots` on full machines; `chezmoi dots help` prints the full usage. It is [a chezmoi plugin](#the-chezmoi-dots-plugin) (Go, [giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)), the same on macOS, Linux and Windows. On a terminal the output uses the basic ANSI colours, which the terminal's Catppuccin theme maps (headings blue, configurations and entries mauve, failures red, success green, prompts yellow), and the composition tree is drawn with `├─`/`└─`; a pipe, `NO_COLOR` or `TERM=dumb` gives plain text.
 
 ### Edit
 
 | Command | Edits |
 |---|---|
 | `dots` | a registry entry, picked with fzf (a numbered prompt without fzf) |
-| `dots <entry>` (also `dots edit <entry>`) | that entry, e.g. `dots mcp`, `dots agents/work`, `dots aliases/private`, `dots ssh/config`; `dots list` shows them all |
-| `dots <target>` | what a target is made of: a picker over the nodes of its composition tree (`dots ~/.claude/CLAUDE.md` → the stub, the partial, each layer); a target made of one file opens it directly |
+| `dots <entry>` (also `dots edit <entry>`) | that entry, e.g. `dots agents/config`, `dots agents/work`, `dots aliases/private`, `dots ssh/config`; `dots list` shows them all |
+| `dots <target>` | what a target is made of: a picker over the nodes of its composition tree (`dots ~/.config/agents/config.toml` → the stub, the template); a target made of one file opens it directly |
 | `dots <source file>` | a source file by its source-relative path, e.g. `dots dot_config/git/config.tmpl` |
 | `dots <home>/<local>/<name>` | a file of a `local` entry's folder, e.g. `dots ~/.ssh/config.d/pi` (`ssh/local`: this machine only, unmanaged; a new name creates it): the entry's check parses a private temp copy, which replaces the live file only when it passes (else edit again, or keep the live file); no render, diff, apply or PR. `dots ssh/local` picks an existing file |
 
@@ -314,7 +197,7 @@ A failed check or render applies nothing; the source keeps the edit, so run the 
 
 The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever role takes it; `--matrix` shows which configuration takes which.
 
-Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. `modify_` targets (Claude, Copilot settings) merge into this machine's live file. Previews render with `dotsRender` set, so no external is downloaded for them. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
+Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. Previews render with `dotsRender` set, so no external is downloaded for them. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
 
 Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`); edit through `dots`, not `chezmoi edit`.
 
@@ -431,13 +314,9 @@ chezmoi target paths are literal (they can't be templated), so a few values stay
 - **Homebrew prefixes** `/opt/homebrew` (Apple Silicon) and `/usr/local` (Intel) — fixed by Homebrew.
 - **Vendor paths** — `Library/Application Support/…`, `AppData/…`, the Windows Terminal package family name.
 - **`{{ .chezmoi.homeDir }}`** in templates — rendered per machine.
-- **Personal data** — plugin marketplaces, the OTel endpoint (personal machines only), project aliases. Git identity is prompted at `chezmoi init`.
+- **Personal data** — the OTel endpoint (personal machines only), project aliases. Git identity is prompted at `chezmoi init`.
 
 Anything that genuinely differs per machine and can't be templated (e.g. a redirected Documents folder) is resolved at runtime by a script.
-
-## Files merged, not replaced
-
-`~/.claude/settings.json` and `~/.copilot/settings.json` are also written by the apps themselves, so chezmoi doesn't own them whole. `modify_` templates overlay `.chezmoitemplates/{claude,copilot}-settings.json` onto the live file: managed keys win (Claude: merged with jq when installed, so the live file's key order survives and `chezmoi diff` stays quiet), keys the app writes stay local and never reach this public repo (Claude `autoMode`, Copilot `model`; Copilot `allowedUrls` is the union of both). Removing a managed key from a template doesn't delete it from the live file; delete it there once (except the telemetry keys on work machines, which are stripped automatically).
 
 ## Managed (corporate) Windows PCs
 
@@ -451,317 +330,213 @@ Endpoint policies on the work PC block several defaults; the workarounds apply t
 | `New-Item -ItemType SymbolicLink` in Windows PowerShell 5.1 without admin | `mklink` (honours Developer Mode) in `run_after_link-pwsh-profile.ps1` |
 | Documents redirected to OneDrive and localised | profile link target resolved at runtime with `GetFolderPath('MyDocuments')` |
 
-## MCP servers
+## AI agent configuration
 
-Rule: harness `repo-standard`, "MCP servers, least privilege". One list, `.chezmoidata/mcp.toml`, feeds every selected harness:
+Agent harness configuration lives in the standalone [`agents`](https://github.com/giocaizzi/agents) CLI; chezmoi supplies its inputs and runs it. The split:
 
-| Layer | Data | Claude Code | Copilot CLI | Codex | opencode | pi |
-|---|---|---|---|---|---|---|
-| User | `[mcp.user]` (every machine) + `[mcp.personal]` (not work), merged by `.chezmoitemplates/mcp-user.json` | `~/.claude.json` via `run_onchange_after_claude-mcp-user.*` (add-only) | `~/.copilot/mcp-config.json` (merge) | `~/.codex/config.toml` `[mcp_servers]` (merge) | `~/.config/opencode/opencode.jsonc` `mcp` (merge) | `~/.pi/agent/mcp.json` (merge) |
-| Workspace `~/ops` | `[mcp.ops]` | `~/ops/.mcp.json` | same file | `~/ops/.codex/config.toml`, trusted in the user config | `~/ops/opencode.json` | `~/ops/.pi/mcp.json` |
+| Piece | Owner | Where |
+|---|---|---|
+| The `agents` binary | chezmoi installs the pinned release | `[release.agents]` in `.chezmoidata/packages.toml` ([Packages](#packages)) |
+| The config (`~/.config/agents/config.toml`) | chezmoi renders it from one template | `.chezmoitemplates/agents-config.toml`, deployed by `dot_config/agents/private_config.toml.tmpl`; edit with `dots agents/config` |
+| The instruction layers (`~/.config/agents/instructions/`) | chezmoi deploys the files | `dot_config/agents/instructions/{core.md, env.md, personal, work}`; edit with `dots agents/<layer>` |
+| Every harness file (settings, MCP, rules, plugins, LSP, instructions) | `agents apply` | `~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, workspace folders |
 
-VS Code follows the Copilot CLI column and has no file of its own: its Copilot harness reads `~/.copilot/mcp-config.json` and the workspace-root `~/ops/.mcp.json`, and runs OAuth sign-in itself (redirect URIs `http://127.0.0.1:33418` and `https://vscode.dev/redirect`).
+Reference, not repeated here: [config.md](https://github.com/giocaizzi/agents/blob/main/docs/config.md) (every key), [cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md) (commands and runbooks), [features.md](https://github.com/giocaizzi/agents/blob/main/docs/features.md) (what each harness supports and how each key is mapped). The procedures for this repo are in [Runbook: agent configuration](#runbook-agent-configuration).
 
-- **Connectors off:** `disableClaudeAiConnectors: true` in `.chezmoitemplates/claude-settings.json`.
-- **Private URL parts:** `${VAR}` in a `mcp.toml` URL or `client_id` (e.g. `${MCP_CONNECTOR_ACCOUNT}`), a Bitwarden secret of the same name exported by `secrets.sh`. `.chezmoitemplates/mcp-servers.json` fills it from the environment at `chezmoi apply`, so the rendered files (never committed) hold the value and this public repo does not. Unset (first apply on a new machine, before a new shell), it stays a reference: open a new shell and apply again.
-- **`~/ops` is personal:** ignored on light and work machines. Never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
-- **Repo servers** live in each repo, not here.
+Light machines, and machines with no harness selected, get none of it: no config, no layers, no scripts, and no age key is needed for them.
 
-Procedures:
+### The agents config
 
-- **Add a server:** add `name = "url"` under `[mcp.user]` (every machine), `[mcp.personal]` (personal machines) or `[mcp.ops]`, `chezmoi apply`. VS Code's Copilot harness reads `~/.copilot/mcp-config.json`, so chezmoi leaves VS Code's own user `mcp.json` alone: VS Code forwards the servers in it to Copilot sessions too, so keep it empty to avoid duplicates (decline or finish VS Code's offer to migrate it).
-- **Work PC set up before `[mcp.personal]`** (once): `chezmoi apply`, then remove the personal server from the clients whose merge keeps it, for each CLI installed there: `claude mcp remove -s user notion`, `copilot mcp remove notion`, `codex mcp remove notion`, delete `notion` from the `mcp` key of `~/.config/opencode/opencode.jsonc`, `pi mcp remove notion`. VS Code reads the same `~/.copilot/mcp-config.json`, so `copilot mcp remove` covers it; also delete it from VS Code's user `mcp.json` if it is still there. Check: `claude mcp list` (and the other `mcp list` commands) shows no `notion`.
-- **Add a server with a pre-registered OAuth client** (`[mcp.ops]` only; for authorization servers without dynamic client registration, e.g. the Google Workspace MCP servers `google-calendar`, `google-docs`, `google-drive`, `google-gmail`, `google-sheets`, `google-slides`, which share one OAuth client and callback port 8765):
-  1. Register the redirect URIs on the OAuth client: `http://localhost:<port>/callback` (Claude Code), `http://127.0.0.1:<port>/callback` (Copilot CLI) and, for VS Code, `http://127.0.0.1:33418` and `https://vscode.dev/redirect`. Servers that share a client and port share these URIs. A Desktop-type Google client accepts any loopback redirect.
-  2. Put the client ID in Bitwarden Secrets Manager under a `MCP_<NAME>_CLIENT_ID` secret (Google: `MCP_GOOGLE_CLIENT_ID`), open a new shell (so `secrets.sh` exports it).
-  3. Add `name = { url = "…", client_id = "${MCP_<NAME>_CLIENT_ID}", callback_port = <port> }` under `[mcp.ops]`, `chezmoi apply`. `~/ops/.mcp.json` gets both key styles: Claude Code reads `oauth.clientId` + `oauth.callbackPort`; Copilot CLI and VS Code read `oauthClientId` + `auth.redirectPort` + `oauthPublicClient: false`. Each ignores the other's keys; Copilot shows a "Nested "oauth" key is deprecated" warning for each such server, which is expected. Unset, the client ID stays a reference and sign-in fails: open a new shell and apply again.
-  4. Client secret, once per machine, harness and server (never in `mcp.toml`, the rendered files or Secrets Manager; keep it in the password vault). Claude Code keeps it in the OS keychain per server, keyed by the server's name and URL, so each server needs its own `claude mcp add --client-secret`; a new client ID keeps it, a renamed server or new URL needs it again. In `~/ops`, for each server: `claude mcp remove -s project <name>`, then `MCP_CLIENT_SECRET="$(bw get password <item>)" claude mcp add -s project --transport http --client-id "$MCP_<NAME>_CLIENT_ID" --client-secret --callback-port <port> <name> <url>` (PowerShell: `$env:MCP_CLIENT_SECRET = bw get password <item>`, the same `claude mcp add`, then `Remove-Item Env:MCP_CLIENT_SECRET`). Then `chezmoi apply` to put the rendered `.mcp.json` back. Copilot CLI: in `~/ops`, `/mcp`, edit the server and enter its Client Secret; Copilot keeps it per URL and client ID (OS keychain, or `~/.copilot/mcp-oauth-config/` without one). VS Code: it asks on first connect and keeps it in its own secret storage.
-  5. Sign in to one server at a time (they share the callback port): `/mcp` in Claude Code, `/mcp auth <name>` in Copilot CLI, first connect in VS Code. Check: `claude mcp get <name>` shows `OAuth: client_id configured, callback_port <port>`; `claude mcp list` shows it connected; `copilot mcp list --json` shows the server with `oauthClientId` and `auth.redirectPort`.
-  6. Changing the client ID's variable name (once, e.g. `MCP_GOOGLE_DOCS_CLIENT_ID` to `MCP_GOOGLE_CLIENT_ID`): create the new secret, new shell, `chezmoi apply`, check `claude mcp list`, then delete the old secret.
+`.chezmoitemplates/agents-config.toml` is plain agents config except for a few machine facts that are template output: `profile` (`personal` or `work`, from the `work` answer), `harnesses` (the selection, [AI harnesses](#ai-harnesses)), the telemetry endpoint (`otelEndpoint`, personal machines only; blank omits it), and the instruction variables (`instructions.vars`: the tools of the package registry marked `agents = true` that this OS and role install, plus the package manager and install command). Everything else is edited in that file as written: autonomy and permissions, model tiers, context, UI, voice, telemetry, language servers, instruction layers, plugins, MCP servers, per-harness settings (`[harness.<name>]`, with raw native keys under `[harness.<name>.settings]`), Windows-only overrides (`[os.windows...]`) and the per-profile differences (`[profiles.personal]`, `[profiles.work]`).
 
-  Not yet supported, so their templates skip the entry: Codex ([#126](https://github.com/giocaizzi/dotfiles/issues/126), the secret is only stored in plaintext config), pi ([#127](https://github.com/giocaizzi/dotfiles/issues/127), the secret comes only from config, an environment variable or a command) and opencode ([#128](https://github.com/giocaizzi/dotfiles/issues/128), the secret comes only from config or an environment variable). `agents mcp sync` rejects any OAuth key in `.mcp.json`; chezmoi renders the `~/ops` files itself, so do not run it there. A table under `[mcp.user]` or `[mcp.personal]` fails the render.
-- **Try a server first:** `claude mcp add -s local --transport http <name> <url>` in that folder (this machine only), then move it to the repo, `mcp.toml`, and `claude mcp remove -s local <name>`.
-- **Remove a server:** delete it from `mcp.toml`, `chezmoi apply`, then remove it by hand where the merge keeps it: `claude mcp remove -s user <name>`, `copilot mcp remove <name>`, `codex mcp remove <name>`, the `mcp` key of opencode, `pi mcp remove <name>`.
-- **First run in `~/ops`:** Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder. Codex is trusted by the config.
-- **Sign in:** OAuth servers ask once per machine and harness: Claude Code `/mcp`, Copilot CLI `/mcp`, VS Code on first connect, `codex mcp login <name>`, `opencode mcp auth <name>`, `pi mcp login <name>`.
+Nothing private is in it: account names and client ids appear as `${VAR}` references that `agents apply` expands from the environment (Bitwarden secrets exported by `secrets.sh`, see [SHELL.md](./SHELL.md)). A client secret is never in the config; it is set once per machine and harness.
+
+`agents config show -origin` shows the resolved config on this machine and which layer set each key; `chezmoi cat ~/.config/agents/config.toml` shows the rendered file.
+
+### `agents apply`
+
+`run_onchange_after_zz-agents-apply.{sh,ps1}.tmpl` runs `agents apply` after a `chezmoi apply` in which its inputs changed. It runs last (`zz`), after the package install has put the `agents` binary in place. The script embeds a hash of the rendered config, of each instruction layer file and of the pinned `agents` release, so it re-runs on a change to any of them and on an `agents` bump. Machines with no harness selected render it empty, as does the other OS's variant.
+
+`agents apply` writes the native files of every selected harness. Files the apps also write (Claude Code and Copilot CLI settings, Codex `config.toml`, opencode, pi) are merged, not replaced: only the keys `agents` manages are written, in the live key order, nothing unchanged is rewritten, and a key that left the config is removed. Keys the app writes itself (a chosen model, hook trust, local plugins, authentication) stay local and never reach this public repo. The VS Code `settings.json` is check-only (`agents` reports drift and never writes it). Each target is `create`, `update`, `unchanged`, `drift`, `refused` (a symlink: it never writes through one) or `error`; the full semantics are in [cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#apply).
+
+The script never fails the chezmoi apply: a missing binary is skipped with a note (run `chezmoi apply` again once the package install has run), and a failed `agents apply` is a warning.
+
+- **Preview:** `agents apply -n` prints the diff of each target and writes nothing; `agents render -harness claude` lists the managed keys of one harness.
+- **Run by hand:** `agents apply`. The script re-runs on its own only when an input changes.
+- **Check:** `agents check` validates the config; `agents check -live` also reports native files that differ from what apply would write.
+- **Skip for one run:** `chezmoi apply --exclude=scripts` (skips every script; the apply script runs at the next `chezmoi apply`).
+- **Roll back:** there is no automatic undo. Revert the config change in git and apply again; a key that leaves the config is removed from the live file.
+
+### Agent instructions
+
+Every harness reads the same global instructions, composed by `agents` from layers and written whole to `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md` and `~/.gemini/config/AGENTS.md`. Copilot CLI and VS Code (Copilot harness) both read `~/.copilot/copilot-instructions.md` natively, so VS Code needs no `chat.instructionsFilesLocations` entry: with `~/.copilot` listed there, VS Code offers to migrate the file into `~/.copilot/instructions/*.instructions.md`, and Copilot CLI then loads the instructions twice. Decline that migration.
+
+The layer files are deployed by chezmoi to `~/.config/agents/instructions/`; the config declares them (`[instructions.layers.*]`) and each profile lists the ones it uses, in order (`[profiles.<name>] instructions`):
+
+| Layer | Source (under `dot_config/agents/instructions/`) | Public | Profiles |
+|---|---|---|---|
+| core | `core.md` | yes | personal, work |
+| env | `env.md` (an agents template: `.profile`, `.os`, `.vars.*`) | yes | personal, work |
+| personal | `encrypted_private_personal.md.age` | no (age) | personal |
+| work | `encrypted_private_work.md.age` | no (age) | work |
+
+`.chezmoiignore` skips the other role's private layer, so a work machine never receives the personal one.
+
+Core holds how to work on any machine, in any harness: it names no harness-only tool (skills carry the per-harness detail), except that the plan-first routing line uses Claude Code's plugin-namespaced agent names, which the other harnesses know by the plain names, kept verbatim because evals validated that wording. Env holds what depends on the machine: how its CLI environment is managed, the tool-install rule (brew, apt or winget, from `instructions.vars`), the tools it has and, on personal machines only, the own-org rules. The private layers hold what must not be public: on personal machines the side projects and the boundary list; on work machines the employer context and the boundary rule seen from the work side. They are inlined into one text rather than imported with `@file`, which only Claude Code expands.
+
+- **Edit a layer:** `dots agents/<core|env|personal|work>` ([Editing your dotfiles](#editing-your-dotfiles)); a private layer goes through a private temp file and is checked before saving.
+- **Check:** `agents prompt matrix` (layers per profile and harness), `agents prompt check` (renders every cell; the other role's missing layer is "skipped (not on this machine)") and `agents prompt show -profile <personal|work> -harness <name>` (the composed text of one cell).
+- **Edit a private layer by hand:** `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
+
+### Model tiers
+
+Models are grouped in free-named tiers in the config, and agents are assigned to a tier; nothing else joins them.
+
+- `[models.tiers.<name>]` sets, per harness, a native model id (`claude`, `copilot`, `codex`, ...) and a reasoning `effort`. A harness with no id keeps its plugin or session default. This repo defines `light`, `standard`, `strong` and `frontier`.
+- `[models.assign]` maps an agent id (`<plugin>:<agent>`, globs allowed, an exact key wins) to a tier. `models.default` would set the tier of the main session model.
+- `[models.catalog]` holds the preferences of the benchmark catalog (`providers`, `since`, `pins`, `ignore`, `aliases`). The catalog itself is cached locally (`models.json` in the agents cache directory), refreshed by `agents models sync`, shown by `agents models`, and never committed.
+
+`agents models tiers` shows what each tier gets per harness and each assigned agent's effective model. How a tier reaches each harness, and where a harness cannot set a per-agent model: [features.md](https://github.com/giocaizzi/agents/blob/main/docs/features.md). To change a tier: [Runbook](#change-a-model-tier-or-an-assignment).
+
+### Agent plugins (`giocaizzi-harness`)
+
+Plugins come from the `giocaizzi/harness` registry. `[plugins] registry` and `[plugins.enabled]` in the config list, per plugin directory of that repo, the harnesses that enable it; `[profiles.work] plugins.disabled` keeps the personal-only plugins off work machines. `agents apply` writes the enablement into each harness's settings, and `agents plugins` installs and updates the plugins through each harness's own CLI (the Claude Code and Copilot CLI marketplaces, Codex, Antigravity) from the registry checkout `agents` keeps; opencode gets copies made by the checkout's installer, pi gets the checkout as a package. chezmoi no longer clones the registry or wires plugins itself. Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in the `guard` plugin: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md); install detail: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version.
+
+`run_after_update-agent-plugins.{sh,ps1}.tmpl` runs `agents plugins update` after every chezmoi apply and update (it pulls the registry at most once every 24 hours; a failure only warns). Inspect by hand: `agents plugins list` (installed against upstream per harness), `agents plugins update -n` then `agents plugins update`, `agents plugins prune`; [cli.md → plugins](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#plugins).
+
+- **New plugin upstream:** add `<name> = [harnesses]` under `[plugins.enabled]` (`dots agents/config`), `chezmoi apply`.
+- **Plugin removed upstream:** delete its key, apply; disable or uninstall it by hand where the harness keeps it.
+- The Claude Code status line (`hud`) is set under `[harness.claude.settings.statusLine]`; it needs `node` 22+ and a Nerd Font.
+
+### MCP servers
+
+Rule: harness `repo-standard`, "MCP servers, least privilege". Two layers, both in the config:
+
+| Layer | Config | Reaches |
+|---|---|---|
+| User | `[mcp.servers]` (every machine; none today) and `[profiles.personal.mcp.servers]` (personal machines) | the user-scope MCP file of every selected harness |
+| Workspace | `[profiles.personal.mcp.workspaces.ops]` (folder `~/ops`, personal machines) | the native project files of that folder (`.mcp.json` and each harness's equivalent) |
+
+VS Code follows the Copilot CLI files: its Copilot harness reads `~/.copilot/mcp-config.json` and the workspace-root `.mcp.json`, and runs OAuth sign-in itself.
+
+- **Connectors off:** `disable_claude_ai_connectors = true` under `[harness.claude]`.
+- **Private URL parts:** `${VAR}` in a server `url` or `oauth.client_id` (e.g. `${MCP_CONNECTOR_ACCOUNT}`), a Bitwarden secret of the same name exported by `secrets.sh`; `agents apply` expands it from the environment, so the written files (never committed) hold the value and this public repo does not. Unset (first apply on a new machine, before a new shell), the server is skipped with a warning: open a new shell and apply again.
+- **`~/ops` is personal:** the workspace is declared in the personal profile only. Never put a `.mcp.json` in `~` (Claude Code merges it into every repo below).
+- **Repo servers** live in each repo, not here; `agents mcp add` and `agents mcp sync <dir>` write a repo's native files from its `.mcp.json`.
+- **Sign in:** OAuth servers ask once per machine and harness: Claude Code `/mcp`, Copilot CLI `/mcp`, VS Code on first connect, `codex mcp login <name>`, `opencode mcp auth <name>`, `pi mcp login <name>`. First run in a workspace folder: Claude Code asks to approve the project servers; Copilot CLI and pi ask to trust the folder.
 - **Check:** `claude mcp list`, `copilot mcp list`, `codex mcp list`, `opencode mcp list`, `pi mcp list` from `~`, `~/ops` and a repo: only that layer's servers.
 
-## Agent instructions
+A server whose authorization server has no dynamic client registration takes a pre-registered OAuth client, `oauth = { client_id = "${MCP_<NAME>_CLIENT_ID}", callback_port = <port> }`. Which redirect URI each harness sends (register both the `localhost` and the `127.0.0.1` form for a client shared across harnesses) and which harnesses cannot take one: [cli.md → OAuth redirect hosts](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#oauth-redirect-hosts). The client secret is set once per machine, harness and server, never in the config or Secrets Manager; keep it in the password vault. Procedure: [Runbook](#add-a-plugin-an-mcp-server-or-a-language-server).
 
-Every harness reads the same global instructions, rendered (not symlinked) by `.chezmoitemplates/agents-instructions.md` into `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.codex/AGENTS.md`, `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. Copilot CLI and VS Code (Copilot harness) both read `~/.copilot/copilot-instructions.md` natively, so VS Code needs no `chat.instructionsFilesLocations` entry: with `~/.copilot` listed there, VS Code offers to migrate the file into `~/.copilot/instructions/*.instructions.md`, and Copilot CLI then loads the instructions twice. Decline that migration. The text is composed of layers, in this order:
+### Language servers
 
-| Layer | Source | Public | Machines |
-|---|---|---|---|
-| core | `.chezmoitemplates/agents/core.md` | yes | every machine with a harness |
-| env | `.chezmoitemplates/agents/env.md` (template: role and OS conditionals) | yes | every machine with a harness |
-| private, personal | `.chezmoitemplates/agents/personal.md.age` | no (age) | personal (`work` false) |
-| private, work | `.chezmoitemplates/agents/work.md.age` | no (age) | work |
+`[lsp.servers.<name>]` entries in the config give each server's `command` (argv), `extensions` (`".ext"` to language id), optional `filetypes` (Vim filetypes, where they differ) and `format` (the editor formats on save with it). A server is configured only where its command is on `PATH`, so it follows the packages the machine installs (Go servers on personal machines, Terraform ones with the `terraform` answer, none on light machines); `[lsp] enabled = false` turns LSP off everywhere. Servers today: `pyright`, `ruff`, `typescript` (TypeScript 7's own `tsc --lsp --stdio`), `gopls`, `bash` (`bash-language-server`, which runs shellcheck and shfmt when present), `yaml-ls`, `json`, `terraform` and `tflint`.
 
-Core holds how to work on any machine, in any harness: it names no harness-only tool (skills carry the per-harness detail, e.g. `subagent-orchestration`, `host-hygiene`), except that the plan-first routing line uses Claude Code's plugin-namespaced agent names (`dev-tools:driver`, `dev-tools:worker`, `dev-tools:scout`), which the other harnesses know by the plain names, kept verbatim because evals validated that wording. Env holds what depends on the machine: how its CLI environment is managed and the tool-install rule (brew, apt or winget by OS), which tools it has (by OS and role) and, on personal machines only, the own-org (`giocaizzi`) rules; work machines follow their org's standard. The private layer holds what must not be public: on personal machines the side projects, personal infrastructure and the boundary list; on work machines the employer context, its SSH hosts and the boundary rule seen from the work side. The private layer is inlined rather than imported with `@file`, which only Claude Code expands. The layers are templates only: no file is deployed for them (`~/.config/agents/` is gone, see below).
+| Consumer | How it gets the servers |
+|---|---|
+| Claude Code, Copilot CLI, opencode | `agents apply` (Claude Code through a plugin it generates, the other two in their LSP config); how a file extension claimed by two servers is resolved is in [features.md](https://github.com/giocaizzi/agents/blob/main/docs/features.md) |
+| Vim | `.chezmoitemplates/vim-lsp.vim` reads the same rendered `~/.config/agents/config.toml` through `fromToml` → `~/.config/vim/plugin/lsp.vim` (Unix), `~/vimfiles/plugin/lsp.vim` (Windows). Client `yegappan/lsp`, a pinned external ([Externals](#externals-chezmoiexternaltomltmpl)); `features.documentFormatting` is on only for `format` servers. `vimrc` sets `g:filetype_tf = 'terraform'` (Vim sniffs `*.tf` as TinyFugue) |
+| VS Code | Static settings, set by hand: formatters on save for Python (Ruff), TypeScript/JavaScript (`TypeScriptTeam.native-preview`), Go, shell (`bash-ide`) and Terraform; `js/ts.experimental.useTsgo`; `go.lintTool` = `golangci-lint-v2`; `terraform.languageServer.path` = `terraform-ls`. Extensions come from `.chezmoitemplates/vscode-extensions` |
+| Codex, pi, Antigravity | None: no native LSP config |
 
-Light machines (the Raspberry Pi) render none of it, nor any harness config: agents never run there, by design, and they need no age key. Work agents run on the work PC, with the work layer.
+To add a server: a `[lsp.servers.<name>]` entry plus, when chezmoi installs the binary, its row in `packages.toml`.
 
-- **Edit a layer:** `dots agents/<core|env|personal|work>` (or `dots ~/.claude/CLAUDE.md` and pick the layer), the flow in [Editing your dotfiles](#editing-your-dotfiles). A private layer goes through a private temp file and is validated via `agents prompt -profile <profile> -check -file {file}` before saving. The diff shows only the first changed instruction file (they all render the same text); apply writes all of them. `dots view ~/.claude/CLAUDE.md --matrix` shows the composed text per OS and role; `agents prompt -profile <personal|work>` outputs the full composed instructions for a profile directly.
-- **Edit by hand:** public layers are plain files; for a private one, `chezmoi decrypt` it into a `umask 077` temp file, edit, `chezmoi encrypt` it back, delete the temp file, `chezmoi apply`.
-- **Check a role:** `chezmoi cat ~/.claude/CLAUDE.md --override-data '{"work":true}'` renders it as the work PC would.
-- **`~/.config/agents/` removal:** it once held a rendered copy and the private layer as the `chezmoi edit` handle; no harness read it. `.chezmoiremove` deletes it on the next `chezmoi apply` (chezmoi may ask to confirm). Elsewhere, once: `rm -r ~/.config/agents`.
-- **First apply after the switch from symlinks:** `~/.claude/CLAUDE.md` and `~/.copilot/copilot-instructions.md` become regular files; chezmoi replaces the old symlinks.
+### Permissions, autonomy, voice and telemetry
 
-## Agent plugins (`giocaizzi-harness`)
+These are the shared preferences in the config (`[autonomy]`, `[permissions]`, `[voice]`, `[telemetry]`, `[context]`, `[ui]`, `[notifications]`), written by `agents apply` in each client's own syntax. A shared pattern is not a guarantee of equivalent enforcement: harnesses differ in what they can express (wildcards, ask rules, execution modes), and launch, project and session settings can override user defaults. The per-harness mapping and the gaps are in [features.md](https://github.com/giocaizzi/agents/blob/main/docs/features.md); voice input per harness (where audio goes, which speech model): [voice.md](https://github.com/giocaizzi/agents/blob/main/docs/voice.md); parity: [parity.md](https://github.com/giocaizzi/agents/blob/main/docs/parity.md).
 
-Plugins come from the `giocaizzi/harness` marketplace, not from chezmoi files: the settings templates only declare the marketplace and enable the plugins, and Claude Code / Copilot CLI fetch them. Codex, opencode, pi and Antigravity have no settings that do this, so `run_onchange_after_install-harness.{sh,ps1}.tmpl` (full machines with any of them selected, see [AI harnesses](#ai-harnesses); every apply, idempotent) wires them from a checkout kept by the `.local/share/giocaizzi-harness` external: Codex adds the marketplace and plugins (`codex plugin add`) and gets the agents from `scripts/install.mjs codex`; opencode gets every plugin's skills and agents as copies, the guard and sounds plugin stubs and hud's TUI plugin from `scripts/install.mjs opencode` (copies go stale after the external's pull until the script runs again: `agents plugins update` re-runs it when `agents plugins` shows opencode behind); pi installs the checkout as a package, so the external's daily pull updates it; Antigravity installs each enabled plugin from the checkout (`agy plugin install`) and gets its agents and guard hooks from `scripts/install.mjs antigravity`. chezmoi does not install the CLIs: the script wires up only those already on PATH. Codex skips plugin hooks until trusted: run `/hooks` once per `guard` version. Runbook: [install.md](https://github.com/giocaizzi/harness/blob/main/docs/install.md). Hooks (guards, `make check` on stop, post-edit lint, keep-awake) ship in its `guard` plugin; runbook: [guard.md](https://github.com/giocaizzi/harness/blob/main/docs/guard.md).
-
-```sh
-claude plugin marketplace add giocaizzi/harness
-claude plugin install guard@giocaizzi-harness   # likewise hud, sounds, python, go, foundations, infra, javascript, dev-tools
-copilot plugin marketplace add giocaizzi/harness
-copilot plugin install guard@giocaizzi-harness  # likewise python, go, foundations, infra, javascript, dev-tools
-```
-
-Which harness enables which plugin is one list, `.chezmoidata/harness.toml` (`[harnessPlugins]`: plugin → harnesses); the Claude and Copilot settings and the Codex step of `run_onchange_after_install-harness.*` are generated from it. `harnessPersonalPlugins` names the plugins for personal work only: work machines get them disabled (`false` in the Claude and Copilot settings, left out of the Codex step); opencode (`scripts/install.mjs` copies every plugin) and pi (the checkout as a package) take the whole checkout, so they still get them; both are listed under every plugin so `agents plugins` shows their real state. `agents check` (part of `make check` and CI) fails when its keys differ from the `plugins/` directories of `giocaizzi/harness`, or when `harnessPersonalPlugins` names a plugin not in the list.
-
-- **New plugin upstream:** add `<name> = ["claude", ...]` to `.chezmoidata/harness.toml`, `chezmoi apply`.
-- **Plugin removed upstream:** delete its key, `chezmoi apply`; disable or uninstall it by hand where the harness keeps it.
-
-Managed settings per harness:
-
-- Claude Code: marketplace and `enabledPlugins` (`.chezmoitemplates/claude-settings.json`).
-- Claude Code status line: `hud`'s `hooks/statusline.mjs claude`, run from the marketplace clone (`~/.claude/plugins/marketplaces/giocaizzi-harness`, a path that does not change with the plugin version); `node` 22+ and a Nerd Font are required. The agent-panel rows (`subagentStatusLine`) run the same script with `subagent`: each subagent's model and effort. It replaces the old `statusline-command.sh`; delete `~/.claude/statusline-command.sh` once on each machine.
-- Copilot CLI: marketplace and `enabledPlugins` (`.chezmoitemplates/copilot-settings.json`). No `statusLine`: Copilot's own footer already shows the context and usage `hud` would repeat. Copilot CLI has no prompt-cache TTL or auto-compact setting. `subagents.agents` pins the harness agents to their tiers, keyed `<plugin>:<agent>`: `dev-tools:scout` GPT-6 Luna at `low` (tier 1), `foundations:api-reviewer` GPT-6.1 Sol at `medium` (tier 3, driver), `dev-tools:escalate` GPT-6 Astra at `medium` (tier 4), `dev-tools:reviewer` and `dev-tools:worker` GPT-6 Luna at `medium` (routine tier; a safety-path reviewer cannot be raised per spawn on Copilot) (as Claude's `effort`). A model the account lacks falls back to an available one, so Astra runs as Luna until the account gets it.
-- Global instructions: one composed text for every harness, see [Agent instructions](#agent-instructions).
-- Pi: Pi consumes the shared checkout, which chezmoi owns and pulls as an external, as its managed package. `.chezmoidata/harness.toml` declares its registry; the post-apply updater explicitly supplies the resolved managed checkout to `agents plugins update` before it considers implicit developer checkouts. Its package-list merge preserves manually installed packages; remove a stale duplicate developer package with `pi remove <absolute-package-path>` instead of editing `settings.json`.
-- VS Code: follows Copilot CLI (its Copilot harness uses Copilot CLI's installed plugins, `~/.copilot/installed-plugins/`, and runs their hooks). `settings.json` keeps `chat.plugins.enabled` and `chat.plugins.marketplaces` (`giocaizzi/harness`) for VS Code's own plugin view.
-
-### Harness plugin management (`agents plugins`)
-
-`agents plugins` provides a centralized command to inspect, update, and prune plugins across all enabled harnesses:
-
-- **List status:** `agents plugins [list]` prints an aligned Catppuccin matrix of upstream vs installed plugin versions across harnesses.
-- **Update plugins:** `agents plugins update [-n] [-f] [-harness <name>] [-harness-dir <path>]` pulls upstream changes, updates or installs missing plugins for each available harness CLI, and prunes superseded cache directories. Also runs automatically after `chezmoi apply` via `run_after_update-agent-plugins.*`, which explicitly supplies the resolved managed checkout (throttled to at most once every 24 hours).
-- **Prune caches:** `agents plugins prune [-n]` removes superseded plugin version directories (Claude, Codex cache) and obsolete plugins.
-
-### Workspace MCP management (`agents mcp`)
-
-Workspace MCP servers are canonically configured in `.mcp.json` at the root of a project. `agents mcp` generates deterministic downstream configuration files for Codex (`.codex/config.toml`), Pi (`.pi/mcp.json`), and Antigravity (`.agents/mcp_config.json`):
-
-- **Sync downstream harnesses:** `agents mcp sync [path] [-check] [-account <id>]`
-- **Add or update an MCP server:** `agents mcp add [-type stdio|http] [-env KEY=val] [-header "H: V"] [-dir <path>] [-no-sync] <name> <commandOrUrl> [args...]`
-- Auto-detects transport (`http` when `<commandOrUrl>` starts with `http://` or `https://`, otherwise `stdio`), rejects namespace collisions, ensures symlink safety, and writes with mode `0600`.
-
+- Lease pushes (`git push --force-with-lease origin *`) are allowed only to feature branches: deny patterns take `main` and `master` back. The `guard` hook and the server ruleset stay the real protection: no pattern sees `git -C <dir> push`, a refspec such as `feat/x:main` or reordered arguments.
+- Telemetry is on in the personal profile only when an `otelEndpoint` was given at `chezmoi init`; work machines send nothing.
+- The VS Code voice keys in `dot_config/Code/User/settings.json` (`dictation.enabled`, `agents.voice.language`) are static: keep them in step with `[voice]` by hand; `agents check -live` reports drift.
+- OS dictation fallback for harnesses without their own (types into the focused terminal): macOS Dictation (Microphone key), Windows voice typing (Win+H); Linux has none built in.
 
 ## Models and subscriptions
 
-Which model fits which job is kept here as tiers, with synced costs and ranks beside them. Subscription usage shows how much of each plan is left, and the doctor warns when a newer or better model or config is available for what you have.
-
-### Model tiers (`agents models`)
-
-Models are grouped into four tiers (lightweight, versatile, powerful, extra). Sync computes the tiers; nobody assigns them by hand. It also adds costs from [models.dev](https://models.dev) for the first-party providers listed in `providers`, ranks from the LMArena leaderboard dataset (board `text_style_control`) and Epoch AI benchmarks. The benchmark dataset is cached locally in `~/.cache/agents/models.json` (untracked, git-ignored), while manual sync preferences (`providers`, `since`, `pins`, `ignore`, `aliases`) are configured in `.chezmoidata/agents.toml` (`[agents.models.catalog]`). Nothing is committed: `chezmoi agents models` shows the tiers in the terminal, with the canonical id `<provider>/<id>` that `pins` and `ignore` use. Rankings: LMArena leaderboard dataset; benchmarks: Epoch AI (CC-BY). Command reference: [agents CLI reference](https://github.com/giocaizzi/agents/blob/main/docs/cli.md).
-
-- `chezmoi agents models [-file]`: show the tiers, costs and rankings as terminal tables.
-- `chezmoi agents models sync [-file]`: fetch every source (Epoch AI always, since its Epoch Capabilities Index, ECI, drives the rule), recompute the tiers and rewrite the benchmark cache (`~/.cache/agents/models.json`) only; all-or-nothing, nothing is written when a source fails.
-
-Manual keys: `providers`, `since`, `ignore`, `pins`, `aliases` (in `.chezmoidata/agents.toml` under `[agents.models.catalog]`). Synced keys: `models`, `tiers`, `sources`, `syncedAt` (saved to local cache `models.json`).
-
-`providers` are models.dev provider keys (today `anthropic`, `google`, `moonshotai`, `openai`, `xai`), the same ids as the usage tool. Every price is the first-party provider's API price per million tokens (input, output, cache read; cache write is stored), whichever harness runs the model; a model with no first-party price shows `n/a`. Each model records `provider`, `id` (the provider's API id; the canonical id `<provider>/<id>` is built from it), `name`, `releaseDate`, `context`, `api`.
-
-**Tier rule.** The rule is deterministic; its constants live in the `giocaizzi/agents` catalog.
-
-1. Blended price `p = (3·in + out) / 4`, in $ per million tokens (first-party API price).
-2. Price bands: lightweight `p < 2.5`, versatile `p < 7`, powerful `p < 15`, extra `p >= 15`.
-3. Promotion: a model whose ECI is in the catalog's top quartile (at or above the k-th highest ECI, `k = max(1, n/4)`, `n` = models with an ECI) moves up one tier, never into extra.
-4. Untiered: no first-party API price, or no arena rank and no ECI.
-5. Rows in a tier are ordered by release date, newest first.
-
-`pins` maps `"<provider>/<id>"` to a tier and wins over the rule. A pinned id no provider lists any more is kept as stale; a pin of an ignored id is invalid. Pins and `ignore` take effect at the next sync.
-
-Untiered models are those the rule leaves out (above). The catalog holds the models listed by their first-party provider (the provider key is the prefix of the canonical id `<provider>/<id>`) released on or after `since` that output text, support tool calls and are not deprecated, minus `ignore`.
-
-Agent roles pin an explicit model per role in `agents.models.tiers` (`.chezmoidata/agents.toml`), chosen to match the tiers (scout and worker lightweight, driver powerful, escalate extra). `agents doctor` ([Doctor](#doctor-agents-doctor)) checks them against the catalog and flags drift after a re-tier.
-
-Pins and `ignore` take effect at the next sync.
-
-**Refresh the data**
-
-**When:** the doctor warns that the catalog is stale (older than 30 days), or before choosing models. Run it on each machine; the cache is local.
-
-1. `chezmoi agents models sync` (network).
-2. `chezmoi agents models` and review the tiers, including tier moves. The sync warns `unmatched source names:`; an `arena: <name> (ambiguous: …)` or `epoch: <name> (ambiguous: …)` entry is a source name shared by several models, which then gets no rank or benchmark: map it to one canonical id in `aliases.arena` or `aliases.epoch` in `.chezmoidata/agents.toml`.
-3. If you changed `aliases`: `make check`, commit.
-
-**Verify:** `chezmoi agents models` shows the new `syncedAt`, and `chezmoi agents doctor` no longer warns about a stale catalog.
-
-**Rollback:** nothing is committed; fix the configuration and sync again.
-
-**Track a new provider**
-
-**When:** a provider whose models should appear in the catalog.
-
-1. `dots agents/config`: add its models.dev key to `[agents.models.catalog.providers]`.
-2. `chezmoi agents models sync` (network); tiers are automatic.
-3. `make check`, commit the configuration change.
-
-**Verify:** the provider's models appear in `chezmoi agents models`.
-
-**Rollback:** revert the configuration change and sync again.
-
-**Pin or ignore a model**
-
-**When:** the rule puts a model in the wrong tier (pin it), or a model is noise (ignore it).
-
-1. `dots agents/config`: add `"<provider>/<id> = "<tier>"` to `[agents.models.catalog.pins]`, or the id to `ignore` (ids as in the table).
-2. `chezmoi agents models sync` (network): only a sync recomputes tiers.
-3. `make check`, commit the configuration change.
-
-**Verify:** `chezmoi agents models` shows the model in its tier (or no longer lists it).
-
-**Rollback:** revert the configuration change and sync again.
-
 ### Subscription usage (`agents usage`)
 
-`chezmoi agents usage [-provider <id>]` always queries every account live and shows, per provider account the machine is logged into, the plan and billing model, rolling windows (5 h, weekly), monthly allowances, spend and credits. Provider ids are the models.dev keys: `anthropic`, `openai`, `github-copilot`, `google`, plus API-key providers. The same account seen from several harnesses is shown once, with the harnesses listed.
-
-Accounts are found from the credentials the harnesses already store. On macOS, a Keychain service looked up without a known account (Claude Code, Codex) reads the current user's item first and only then any item of that service, since a stale item of another account can share the name:
-
-| Harness | Provider | Where the credential is read (macOS / Linux / Windows) |
-|---|---|---|
-| Claude Code | `anthropic` | Keychain item `Claude Code-credentials` (suffixed `-<sha256 of the config dir>[:8]` whenever `CLAUDE_CONFIG_DIR` is set, the default dir included, hashing the string exactly as set (Claude Code also NFC-normalises it); the current user's item first, another account's only when that one does not exist), else `<config dir>/.credentials.json` / `<config dir>/.credentials.json` / same file. Env or settings modes (Bedrock, Vertex, Foundry, gateway, API key) are detected, not queried |
-| Codex | `openai` | `~/.codex/auth.json` (`$CODEX_HOME`); when the API is unavailable, the newest rate-limit line of that profile's own `sessions/` logs, never another profile's; on macOS also the Keychain item of this `CODEX_HOME` (service `Codex Auth`, account `cli|<hash of the canonical CODEX_HOME>`) when Codex stores it there (keyring mode on Linux and Windows is not read) |
-| Copilot CLI | `github-copilot` | OS keyring service `copilot-cli`, account `<host>:<login>:github` (verified on macOS Keychain; the Secret Service and Credential Manager naming is unverified); `~/.copilot/config.json` lists the logins; env tokens `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`, `GITHUB_TOKEN`. Only `github.com` logins are queried: a GitHub Enterprise host shows "not queried" and its token is never sent elsewhere |
-| Antigravity | `google` | No credential read: asks `agy -p /usage --output-format json`; fallback is the quota-exhausted lines of its log |
-| opencode | any it holds a login for | `opencode.db` (table `credential`, opened read-only); legacy `auth.json` beside it |
-| pi | any it holds a login for | `~/.pi/agent/auth.json` (`PI_CODING_AGENT_DIR`); its ChatGPT logins count as `openai`: `openai-codex` is a Codex login; `openai` from Sign in with ChatGPT is a token-sharing login, shown as `ChatGPT sign-in (token sharing)` |
-
-Every stored login is found, not only the one the current shell points at. A harness keeps one login per profile directory; each directory below is a profile:
-
-| Harness | Profile directories | Holds a login when it has | Source of the pattern |
-|---|---|---|---|
-| Claude Code | `$CLAUDE_CONFIG_DIR`, `~/.claude`, `~/.claude-*` | `.credentials.json` or `.claude.json` | Documented: Claude Code's "Log in with multiple accounts" uses `CLAUDE_CONFIG_DIR=~/.claude-work` |
-| Codex | `$CODEX_HOME`, `~/.codex`, `~/.codex-*` | `auth.json` or `config.toml` | `CODEX_HOME` is documented; `~/.codex-*` is a convention |
-| pi | `$PI_CODING_AGENT_DIR`, `~/.pi/agent`, `~/.pi/agent-*` | `auth.json` | `PI_CODING_AGENT_DIR` is documented; `~/.pi/agent-*` is a convention |
-
-- **What is read:** a matched directory counts only when it holds one of the files above, and only these files are read in it: Claude Code `.credentials.json`, `.claude.json`, `settings.json`; Codex `auth.json`; pi `auth.json`. For the offline fallback, the `sessions/` rollout logs (`rollout-*.jsonl`) of each Codex profile are read too. Only regular files up to 64 MiB are read (a FIFO or device is never read: it is opened non-blocking and rejected; a larger file counts as unreadable, and a `.claude.json` over the cap leaves the account's identity unknown, with a note). Directories are listed in the home directory and in `~/.pi` only, never searched deeper.
-- **Matches are guesses:** at most 8 per harness, deduplicated by real path (and by `os.SameFile`, which also sees through case-insensitive file systems). Symlinked directories are followed, but a matched directory that resolves to the home directory or above (`~/.claude-home -> ~`, a link to `/`) is skipped. A match without the files, or with credentials that cannot be read, is skipped silently; the env and default directories still show "credentials unreadable".
-- **Names:** a profile is named from its directory without the dot and the harness prefix (`~/.claude-work` is `claude:work`); the default is plain `claude`. Names show only when a harness has more than one profile with a login. Two different directories with the same name stay two rows: ids and merge keys carry `<name>@<first 8 hex of the sha256 of the real path>`, and both labels get the parent directory's base name (`claude:proj/work`, `claude:alice/work`), plus `@<first 4 hex of the path hash>` if that still collides.
-- **Expiry note:** an expired token says how to open the harness on that profile, under the row's final label: `token expired, open claude (CLAUDE_CONFIG_DIR=~/.claude-work) to refresh`. The variable is `CODEX_HOME` for Codex and `PI_CODING_AGENT_DIR` for pi; paths under the home directory are written with `~`. A path with spaces or shell characters is single-quoted (`CLAUDE_CONFIG_DIR=~/'My Dir'`). The default profile says `open claude to refresh`, or `open claude with CLAUDE_CONFIG_DIR unset to refresh` when the variable points at another profile.
-- **Env modes** (Bedrock, Vertex, Foundry, gateway, API-key variables) belong to the active profile only: `$CLAUDE_CONFIG_DIR` when set, else the default. Other profiles use their own `settings.json`.
-- opencode (every row of its credential table) and Copilot CLI (every login in `config.json`) already hold several logins in one place.
-
-Account identity is resolved per credential, whichever harness holds it, so one account seen through several harnesses is one row, and a login held by a single harness (only pi, say) gets its plan and limits on its own:
-
-| Provider | Identity | From |
-|---|---|---|
-| `openai` | ChatGPT account (workspace) id + user id (`chatgpt_user_id` or `user_id`), email; a workspace id alone is not an identity, and neither is `sub` (pi salts it per client) | The login's own token claims (decoded locally, also when expired); otherwise the live query reads `account_id` and `user_id` from the answer of `chatgpt.com/backend-api/wham/usage` for that token (the usage request itself, no other host), so the row merges with the Codex login of the same account or shows its own plan and limits. That answer has no email: a login proven only this way shows its plan without an address. Every harness's login is queried like Codex's, except a token-sharing login (Sign in with ChatGPT for the API, scope `chatgpt.tokens.use.direct`, e.g. pi's `openai`): chatgpt.com's usage API rejects it and its token names no account, so it is never sent there and never merged; it shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type` |
-| `github-copilot` | GitHub login on its host | Copilot CLI's `config.json`; for opencode and pi, the live lookup asks `api.github.com/user` with that token (`github.com` logins only) |
-| `anthropic` | Account + organization uuid, email | Claude Code's `oauthAccount` in `~/.claude.json` (`$CLAUDE_CONFIG_DIR/.claude.json`); otherwise the live lookup asks `api.anthropic.com/api/oauth/profile` with that token |
-
-- **Not proven** (offline, expired, no claim, lookup failed): the row stays separate, labelled `same account? unknown` (or `identity unknown` when it is the provider's only subscription row). Rows never merge on a guess. An expired token is never sent, so it is proven only from claims or from the cache of an earlier run; its row says which harness to open.
-- **Inactive:** an opencode credential that is not its integration's active one is noted `(inactive)`, only when every credential of the row is inactive.
-- **Offline and expired:** a credential identified by an earlier run keeps its identity from the cache, matched by a fingerprint (a truncated hash, never the token). The cached identity is re-attached only to credentials that were not sent (expired, not queryable), never to one whose lookup was just sent and failed (401, 403, 429, 5xx, unusable answer, timeout). Trade-off: an unproven account reuses a cached snapshot only when its fingerprint matches, so a new or refreshed credential (Anthropic tokens rotate every few hours) shows no cached data until its own lookup succeeds.
-- A Copilot plan with no premium allowance shows `none included`, not a full bar.
-
-Plans and billing: every account is one generic model, so new plans need no code change.
-
-- **Plan:** Kind (`free`, `individual`, `team`, `enterprise`, `api`, `cloud`, `gateway`, `unknown`), Billing (`flat`, `metered`, `mixed`, `unknown`), Payer (`self`, `org`, `cloud`, `unknown`).
-- **Limits:** a window (5 h, weekly), a monthly allowance, a spend against a cap, or a credit balance; scoped to a seat, an organization pool or the account.
-- **Unmapped plan:** shown as `unknown (<raw>)`, never an error.
-- **Data a seat holder cannot see:** shown as "managed by org", never a guess.
-- **Cloud, gateway and API-key modes:** shown as "not visible" (usage lives in your cloud console or gateway) or "no usage API".
-
-Live and the cache:
-
-- Every run queries every account (10 s each, in parallel) and rewrites the cache, `<user cache dir>/agents/usage.json` (`$XDG_CACHE_HOME` honoured). A failed account keeps its cached snapshot, marked stale with the error and its age; the others still show. The cache holds usage numbers, plan names, account ids and labels, and credential fingerprints; no credentials. `agents doctor` only reads it.
-- `-provider <id>` limits the output to one provider; every provider is still queried, so the cache stays whole.
-
-Security:
-
-- Credentials are read into memory only: never printed, logged, cached or written back.
-- Expired tokens are not refreshed: open the harness once to refresh.
-- The endpoints are the vendors' own undocumented ones (the ones their CLIs call) and may change; that account then shows "unavailable" and the others still show.
+`agents usage [-provider <id>]` queries every provider account the machine is logged into (found from the credentials each harness already stores) and shows the plan, rolling windows, monthly allowances, spend and credits; one account seen through several harnesses is one row. Credentials are read into memory only, never printed, logged or cached; expired tokens are not refreshed (open the harness once to refresh). The usage cache (`usage.json` in the agents cache directory) holds numbers, plan names and labels, no credentials; `agents doctor` only reads it. How accounts are found per harness and profile directory: [cli.md → usage and doctor](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#usage-and-doctor).
 
 Runbook: check capacity before fanning out agents.
 
 - **When:** before starting several parallel agents or a long run.
-- **Steps:** `chezmoi agents usage`; read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
+- **Steps:** `agents usage`; read the bars (green below 70%, yellow from 70%, red from 90%) and the reset times; back off or pick another provider near 90%.
 - **Verify:** every account you use shows a bar and a reset time, with a fresh age.
-- **Troubleshooting:** every HTTP account shows "unavailable: timeout" while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) is blocking `agents`; allow it there (any version).
+- **Troubleshooting:** "token expired" or "unauthorized": open the harness named on that row once, then run `agents usage` again. "managed by org" or "not visible" is expected for a team seat or a cloud or gateway mode. "unavailable: timeout" on every HTTP account while `curl` reaches the same hosts: a per-app network filter (e.g. Little Snitch) blocks `agents`; allow it. One account twice or "same account? unknown": an unproven identity (expired or rejected token); open the harness named on the row, then run it again.
 - **Rollback:** nothing to undo; delete the cache file to forget old snapshots.
-
-Runbook: an account shows "token expired" or "unauthorized".
-
-- **When:** `usage` lists an account as expired, or 401 / 403.
-- **Steps:** open the harness named on that row once (it refreshes its own login; log in again if it asks), then `chezmoi agents usage`.
-- **Verify:** the account shows bars instead of the warning.
-- **Rollback:** none; nothing is written besides the cache.
-
-Runbook: an account shows "managed by org" or "not visible".
-
-- **When:** a seat in a team or enterprise plan, or a cloud (Bedrock, Vertex, Foundry) or gateway mode.
-- **Steps:** none is needed: this is expected, the numbers are not available to a seat holder or have no usage API. Check your organization's console, cloud billing or gateway.
-- **Verify:** the rows that are visible (windows, allowance) still show.
-- **Rollback:** none.
-
-Runbook: one account shows twice, or "same account? unknown".
-
-- **When:** two rows of one provider, one of them labelled `same account? unknown` or `identity unknown`.
-- **Steps:** run `chezmoi agents usage`: it resolves each credential's account and merges the rows. If a row stays unknown, its token is expired or rejected: open the harness named on it once (`token expired, open pi to refresh` names it), then run it again. A pi `openai` login (Sign in with ChatGPT, token sharing) shows as its own row `ChatGPT sign-in (token sharing)` with `usage not visible for this login type`; it never merges, because its token carries no account or user identity (the user id is salted per client) and chatgpt.com's usage API rejects it, so it is never sent there. Its plan and limits are those of the ChatGPT account you see in Codex.
-- **Verify:** one row per account, with its email or login and every harness that holds it.
-- **Rollback:** none; delete the cache file to drop remembered identities.
 
 ### Doctor (`agents doctor`)
 
-`chezmoi agents doctor [-q] [-json] [-harness <list>]` warns when a newer or better model or config is available for what you have. It never changes anything.
+`agents doctor [-q] [-json] [-harness <list>]` warns, offline and without changing anything, when a newer or better model or config is available for what you have. It reads the config, the model catalog cache and the usage cache; no network, no credentials. It checks the models of the assigned tiers against the catalog (retired, renamed or untracked models, tier drift), suggests a better, newer or cheaper model of the same tier that the harness can use (following the billing of the account that would pay for it), and warns on a stale catalog (older than 30 days), on capacity at 90% or more, and on a configured model whose provider has no logged-in account. Without a usage cache the account, capacity and suggestion checks are skipped. Exit 0 when it ran, 1 on an unexpected error, 2 on a flag error. Output markers: `!` warning, `↑` suggestion, `i` info.
 
-| Flag | Effect |
-|---|---|
-| (none) | Offline: reads the model catalog cache (`~/.cache/agents/models.json` or `.chezmoidata`), `.chezmoidata/agents.toml` and the usage cache `usage.json`, which only `chezmoi agents usage` writes. No network, no credential read, nothing written |
-| `-q` | Prints nothing when there is nothing to warn about or suggest; info lines alone stay quiet. Otherwise a short head: at most 5 lines (warnings first, then suggestions, no info lines), then `… N more: run chezmoi agents doctor` |
-| `-json` | Prints `{"findings":[...]}`; a finding has `level`, `kind`, `harness`, `role`, `text`, `fix`, `current`, `suggested`, `reason`, `billing` |
-| `-harness <list>` | Comma-separated harnesses to check; defaults to the harnesses in the usage cache |
-
-Budget: 2 s; on overrun it prints nothing and exits 0. Exit 0 when it ran, 1 on an unexpected error, 2 on a flag error.
-
-**Models it checks:** the role models in `agents.models.tiers` (scout, worker, driver, escalate) for every selected harness; Copilot's `native.copilot.agents."dev-tools:<role>"`, which overrides them for `copilot`; and the default model of Codex (`native.codex.model`), pi (`native.pi.defaultModel`, `defaultProvider`) and opencode (`native.opencode.defaultModel`). A role maps to a fixed tier: scout and worker lightweight, driver powerful, escalate extra. A default model is compared within its own tier.
-
-**Availability:** a model counts as available to a harness when its first-party provider serves it and the harness can use that provider with an account the usage tool found.
-
-| Harness | Providers it can use |
-|---|---|
-| Claude Code | `anthropic` |
-| Codex | `openai` |
-| Antigravity | `google` |
-| Copilot CLI | `anthropic`, `google`, `openai`, `xai`, through its `github-copilot` account |
-| opencode, pi | every provider they hold a login for, plus Copilot's providers when they hold a `github-copilot` login |
-
-Copilot's list is fixed in code (`doctor.CopilotProviders()`): an assumption about which vendors Copilot serves, since `github-copilot` is a billing account, not a catalog provider; update it when Copilot adds or drops a vendor. A model a harness cannot run at all (a GPT role model on Claude Code) is skipped for it.
-
-**Checks:**
-
-1. **Catalog:** a configured model not in the catalog (retired, renamed, untracked) warns; a role model outside its role's tier warns (tier drift), an untiered one is info.
-2. **Suggestion:** a model of the same tier, available to that harness, that is better ranked (at least 3 arena places, compared in the first of the agent, coding, text categories both are ranked in), newer (same provider) or cheaper (blended price at least 20% lower, ranked as well or better). One suggestion per role, with current and suggested model, $/Mtok in/out (first-party API prices, always) and the rank change. It follows the billing of the account that would pay for the suggested model (not the current model's account):
-    - paid by a flat plan you pay yourself, the stronger model may be suggested (`within your flat plan` when headroom is at least 10%);
-    - paid by metered billing or a seat paid by an organization (team, enterprise), only a cheaper model is suggested (blended price at least 20% lower, ranked as well or better), never a stronger and pricier one, so it stays quiet otherwise; the line says `metered billing` or `seat managed by org` (never a guess at the org's limits);
-    - paid by an unknown plan or with hidden data, the advice is ranking-only, with no capacity claims.
-3. **Stale catalog:** `syncedAt` older than 30 days or never synced warns, pointing to `chezmoi agents models sync`.
-4. **Capacity:** a visible limit at 90% or more with its reset still ahead warns (from the usage cache; run `chezmoi agents usage` for fresh numbers); an allowance used up with overage on is info; an info hint names another provider's account with at least 10% headroom and the harness that can use it.
-5. **Account:** no account found for the provider of a configured model warns: `log in to <harness>, then agents usage`.
-
-Without a usage cache the account, capacity and suggestion checks are skipped, with one info line.
-
-**Output** is in the Catppuccin style of `usage`: global lines first, then the suggestions (one line per role and current → suggested model, listing every harness it applies to), then one group per harness for the rest (harnesses with identical findings share a group). Markers: `!` warning, `↑` suggestion, `i` info. The hook uses `-q`, so an apply shows at most the short head; run the plain command for everything.
-
-**Hook:** `run_after_agents-doctor.sh.tmpl` / `.ps1.tmpl` run `agents doctor -q -harness <selection>` after every `chezmoi apply` and `chezmoi update`, on machines with a harness selected only (never light machines). The PowerShell hook switches the console to UTF-8 for the glyphs (unverified on a Windows machine so far). It never prompts, never fails or blocks the apply, and writes nothing. A binary older than the doctor (before the pin moves) is skipped silently. There is no per-check switch; skip it for one run with `chezmoi apply --exclude=scripts` (which skips every script).
+**Hook:** `run_after_agents-doctor.{sh,ps1}.tmpl` run `agents doctor -q` after every `chezmoi apply` and `chezmoi update` on machines with a harness selected (never light machines). `-q` prints nothing when there is nothing to report, otherwise at most a short head; run the plain command for everything. It never prompts, never fails or blocks the apply, and a binary older than the doctor is skipped silently. Skip it for one run with `chezmoi apply --exclude=scripts`.
 
 Runbook: a doctor warning.
 
-- **When:** `chezmoi agents doctor` (or the hook after an apply) prints a `!` warning or a `↑` suggestion.
+- **When:** `agents doctor` (or the hook after an apply) prints a `!` warning or a `↑` suggestion.
 - **Steps**, by kind:
-    - *Unknown or drifted model:* edit the key the line names (in parentheses, or after `edit`) in `agents.toml` (`dots` edit), picking a model of the role's tier from `chezmoi agents models`; `make check`, ship the PR.
-    - *Suggestion:* a suggestion names no key: decide whether the model is worth the change; if so, edit that role's model (`agents.models.tiers.<role>`, Copilot's `native.copilot.agents."dev-tools:<role>"`, or for `default` the harness's `native` default model), `make check`, ship the PR; if not, leave it (a suggestion is advice only).
-    - *Stale catalog:* run `chezmoi agents models sync` (see [Refresh the data](#model-tiers-agents-models)).
-    - *Capacity:* back off, or use the account the info hint names; check with `chezmoi agents usage`.
-    - *No account:* log in to the named harness, then `chezmoi agents usage`.
-- **Verify:** after `chezmoi agents usage`, `chezmoi agents doctor` no longer prints the warning.
-- **Rollback:** the doctor changes nothing; `git checkout -- home/.chezmoidata/agents.toml` undoes a policy edit.
+    - *Unknown or drifted model:* edit the tier the line names in `[models.tiers.<name>]` (`dots agents/config`), picking a model of the right tier from `agents models`; `chezmoi apply`.
+    - *Suggestion:* advice only. If the model is worth the change, edit the tier's model for that harness and apply; if not, leave it.
+    - *Stale catalog:* `agents models sync` (network), then `agents models` to review the tiers.
+    - *Capacity:* back off, or use the account the info hint names; check with `agents usage`.
+    - *No account:* log in to the named harness, then `agents usage`.
+- **Verify:** after `agents usage`, `agents doctor` no longer prints the warning.
+- **Rollback:** the doctor changes nothing; revert the config edit in git and apply again.
+
+## Runbook: agent configuration
+
+Every change to the agent setup is an edit of the config or of a layer, then a chezmoi apply, which runs [`agents apply`](#agents-apply). Preconditions: a machine with a harness selected, the `agents` binary installed (the first `chezmoi apply` installs it) and, for a private layer, the age key.
+
+### Change the agents config
+
+1. `dots agents/config` opens `.chezmoitemplates/agents-config.toml`, runs the entry's check before saving, shows what the edit changes on every OS and role, and offers to apply. By hand: edit the file, then `make check`.
+2. Preview on this machine: `chezmoi apply --exclude=scripts` deploys the config only; `agents apply -n` prints the diff each harness file would get.
+3. `chezmoi apply`: deploys the config, then the script runs `agents apply` because the config hash changed.
+
+**Verify:** `agents check -live` prints `config ok`; open a new session of the harness and inspect its effective settings (an open session keeps its launch settings).
+**Rollback:** `git revert` the change and apply again; keys that leave the config are removed from the live files.
+
+### Add or change an instruction layer
+
+1. Change a layer: `dots agents/<core|env|personal|work>`.
+2. Add a layer: create `home/dot_config/agents/instructions/<name>.md`, declare it with `[instructions.layers.<name>]` and list it in the `instructions` of the profiles that use it (`dots agents/config`); add the file to the hash list of both `run_onchange_after_zz-agents-apply.*` scripts and an entry for it in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one). A private layer is committed age-encrypted (`chezmoi add --encrypt`), and `.chezmoiignore` must skip it on the other role.
+3. `agents prompt matrix` and `agents prompt check`, then `agents prompt show -profile <p> -harness <h>` for the composed text.
+4. `chezmoi apply`.
+
+**Verify:** the head of `~/.claude/CLAUDE.md` (and the other instruction files) shows the change.
+**Rollback:** `git revert` and apply.
+
+### Change a model tier or an assignment
+
+1. `dots agents/config`: edit `[models.tiers.<name>]` (a harness's model id, or `effort`) or `[models.assign]` (agent id or glob to tier name; the tier must exist).
+2. `chezmoi apply`.
+3. `agents models tiers` shows the effective model per harness.
+
+**Verify:** `agents models tiers` as expected and `agents doctor` has no model warning.
+**Rollback:** `git revert` and apply.
+
+### Add a plugin, an MCP server or a language server
+
+- *Plugin:* a key under `[plugins.enabled]` listing its harnesses (it must be a directory of the `giocaizzi/harness` registry); `chezmoi apply`; `agents plugins list` shows it installed.
+- *MCP server, every machine:* an entry under `[mcp.servers]`; *personal machines:* `[profiles.personal.mcp.servers]`; *the `~/ops` folder:* `[profiles.personal.mcp.workspaces.ops.servers]`. A private part of a URL is a `${VAR}` reference to a secret exported by `secrets.sh`, never the value. `chezmoi apply`, then sign in once per machine and harness ([MCP servers](#mcp-servers)).
+- *MCP server with a pre-registered OAuth client:* register the redirect URIs on the OAuth client ([cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#oauth-redirect-hosts)); put the client id in Bitwarden Secrets Manager as `MCP_<NAME>_CLIENT_ID` and open a new shell; add `oauth = { client_id = "${MCP_<NAME>_CLIENT_ID}", callback_port = <port> }` to the server; `chezmoi apply`; set the client secret once per machine, harness and server from the password vault (never in the config); sign in to one server at a time (they share the callback port).
+- *Remove a server:* delete the entry and apply; `agents` removes the key it wrote. Check `claude mcp list` and the other `mcp list` commands.
+- *Language server:* a `[lsp.servers.<name>]` entry (command, extensions, optional `format`) and, if chezmoi installs the binary, its `packages.toml` row; it is configured only where the command is on `PATH`.
+
+**Verify:** `agents check -live` and the harness's own list command.
+**Rollback:** remove the entry and apply.
+
+### Troubleshoot
+
+| Symptom | Do |
+|---|---|
+| A harness does not show a change | `agents check -live`, then `agents apply -n`; an open session keeps its launch settings: start a new one |
+| `refused <path>` | the target is a symlink; replace it with a regular file, then `agents apply` ([cli.md](https://github.com/giocaizzi/agents/blob/main/docs/cli.md#recover-from-drift-or-a-refused-symlink)) |
+| `agents apply: ... not installed yet, skipped` | the package install has not run; `chezmoi apply` again |
+| `agents apply failed` warning | run `agents apply` by hand to see the cause; `agents check` for config errors |
+| A `${VAR}` or server skipped with a warning | the secret is not exported yet: open a new shell and apply again |
+| A language server missing | its command is not on `PATH`; install it or open a new shell |
+| Doctor warning or suggestion | [Doctor](#doctor-agents-doctor) |
+| Plugins stale | `agents plugins list`, then `agents plugins update` |
 
 ## Source layout (`.chezmoiroot`)
 

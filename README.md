@@ -20,7 +20,7 @@ My shell, editor, terminal and AI-agent setup for macOS, Linux and Windows, mana
 - **A consistent look.** [Catppuccin](https://github.com/catppuccin) Mocha/Latte across the terminal, prompt, tmux, vim, VS Code and the Claude Code status line, in JetBrainsMono Nerd Font.
 - **Declarative packages.** Every tool is a row in one registry: brew, apt and winget packages, uv and npm tools, and pinned, checksum-verified release binaries chezmoi fetches itself. `chezmoi dots upgrade` updates the lot; `chezmoi dots bump` moves the pins.
 - **One alias registry.** Each alias is defined once and rendered for bash, zsh and PowerShell, per OS and role, with a lint that rejects drift.
-- **AI harnesses, configured.** Claude Code, Copilot CLI, VS Code, Codex, opencode, pi and Antigravity get the same layered instructions, MCP servers and plugins from [`giocaizzi/harness`](https://github.com/giocaizzi/harness), for the ones you pick.
+- **AI harnesses, configured.** Claude Code, Copilot CLI, VS Code, Codex, opencode, pi and Antigravity get the same layered instructions, MCP servers, language servers and plugins from [`giocaizzi/harness`](https://github.com/giocaizzi/harness), for the ones you pick. chezmoi renders one [`agents`](https://github.com/giocaizzi/agents) config and `agents apply` writes each harness's files.
 - **Secrets that stay secret.** Files are age-encrypted in the repo; environment variables are generated from Bitwarden Secrets Manager into owner-only files; light machines get no key at all.
 - **`chezmoi dots`, a chezmoi plugin written in Go.** Edit the part of a composed config you mean, see what the change does on all nine OS × role combinations before it lands, then apply it here. It also lints every registry and rendered template, and keeps packages current.
 - **Checked like software.** `make check` renders every script and config for every OS and role, shellchecks and parses the output; CI runs it on Linux, macOS and Windows.
@@ -46,13 +46,16 @@ chezmoi init --apply giocaizzi/dotfiles
 | `chezmoi dots bump` | pin newer release binaries |
 | `chezmoi status` / `chezmoi diff` | what an apply would change |
 | `chezmoi add <file>` | start managing a file (`--encrypt` for secrets) |
+| `dots agents/config` | edit the agent config (models, plugins, MCP and language servers, permissions); `dots agents/<layer>` edits an instruction layer |
+| `agents apply -n` | preview what the next apply writes to each harness (chezmoi runs `agents apply` itself) |
+| `agents check` / `agents doctor` | validate the agent config / warn about model or config drift |
 
 See [Editing your dotfiles](./docs/OS.md#editing-your-dotfiles) for how edits are validated, applied, and pushed.
 
 ## Documentation
 
 - [docs/SETUP.md](./docs/SETUP.md): set up a new machine, secrets.
-- [docs/OS.md](./docs/OS.md): what deploys where, machine roles, packages, editing, the `dots` plugin, encryption, Windows notes.
+- [docs/OS.md](./docs/OS.md): what deploys where, machine roles, packages, editing, the `dots` plugin, encryption, Windows notes, and the [AI agent configuration](./docs/OS.md#ai-agent-configuration) with its [runbook](./docs/OS.md#runbook-agent-configuration).
 - [docs/SHELL.md](./docs/SHELL.md): shell architecture, aliases, tools.
 - [docs/CI.md](./docs/CI.md): `make check` and the workflows.
 - [AGENTS.md](./AGENTS.md): conventions for AI coding agents.
