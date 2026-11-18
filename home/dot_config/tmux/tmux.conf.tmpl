@@ -32,6 +32,9 @@ bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
+# Shared vi copy mode; g avoids PSMux's prefix+Space layout binding.
+setw -g mode-keys vi
+bind g copy-mode
 bind '"' split-window -v -c "#{pane_current_path}"
 bind % split-window -h -c "#{pane_current_path}"
 bind r source-file ~/.config/tmux/tmux.conf \; display "reloaded"

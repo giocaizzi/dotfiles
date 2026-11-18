@@ -126,14 +126,14 @@ the file.
 | `Oh My Zsh`   |  —   |  ✓  |     —      | `.zshrc` (plugins: `docker gh`; alias sets per `[aliasExternal.zsh]`; no `git` plugin, the registry covers git) |
 | readline      |  ✓   |  —  |     —      | `~/.config/readline/inputrc` via `$INPUTRC`: ↑/↓ prefix history search, case-insensitive completion |
 | `less`        |  ✓   |  ✓  |     —      | `PAGER`/`LESS`/`MANPAGER` in `.profile` (colour, quit if one screen, smart-case search) |
-| `tmux`        |  ✓   |  ✓  |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves |
-| `PSMux`       |  —   |  —  |     ✓      | `~/.psmux.conf` symlinks to the deployed `~/.config/tmux/tmux.conf` (rendered from `dot_config/tmux/tmux.conf.tmpl`); run `psmux` to load it |
+| `tmux`        |  ✓   |  ✓  |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves, `g` enters vi copy mode |
+| `PSMux`       |  —   |  —  |     ✓      | `~/.psmux.conf` symlinks to the deployed `~/.config/tmux/tmux.conf` (rendered from `dot_config/tmux/tmux.conf.tmpl`); same vi copy-mode keys |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
 | `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
 
 ## tmux
 
-Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.psmux.conf`). Reload with `prefix r`; the status script re-runs by itself. Options that apply only to new panes (`default-terminal`, `set-environment`) need a new pane, and Claude Code or Copilot must be restarted to pick up changes.
+Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.psmux.conf`). Prefix is `C-b`; `prefix g` enters vi copy mode (`h/j/k/l` to move, `Space` to select, `y` to copy, `prefix ]` to paste). Reload with `prefix r`; the status script re-runs by itself. Options that apply only to new panes (`default-terminal`, `set-environment`) need a new pane, and Claude Code or Copilot must be restarted to pick up changes.
 
 | Choice | Why | OS |
 |---|---|---|
