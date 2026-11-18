@@ -133,7 +133,7 @@ the file.
 
 ## tmux
 
-Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.psmux.conf`). Prefix is `C-b`; `prefix g` enters vi copy mode (`h/j/k/l` to move, `Space` to select, `y` to copy, `prefix ]` to paste). Reload with `prefix r`; the status script re-runs by itself. Options that apply only to new panes (`default-terminal`, `set-environment`) need a new pane, and Claude Code or Copilot must be restarted to pick up changes.
+Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.psmux.conf`). Prefix is `C-b`; `prefix g` enters vi copy mode (`h/j/k/l` to move, `Space` to select, `y` to copy and exit, `prefix ]` to paste). Reload with `prefix r`; the status script re-runs by itself. Options that apply only to new panes (`default-terminal`, `set-environment`) need a new pane, and Claude Code or Copilot must be restarted to pick up changes.
 
 | Choice | Why | OS |
 |---|---|---|
