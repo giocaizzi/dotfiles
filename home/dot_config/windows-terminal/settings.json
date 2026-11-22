@@ -61,8 +61,7 @@
             "unfocusedAppearance": 
             {
                 "cursorShape": "emptyBox",
-                "foreground": "#6C7086",
-                "opacity": 65
+                "opacity": 75
             },
             "useAcrylic": true
         },
