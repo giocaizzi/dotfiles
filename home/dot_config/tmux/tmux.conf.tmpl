@@ -32,6 +32,9 @@ bind h select-pane -L
 bind j select-pane -D
 bind k select-pane -U
 bind l select-pane -R
+# Move panes between windows
+bind J command-prompt -p "join pane from:" "join-pane -s '%%'"
+bind S command-prompt -p "send pane to:" "join-pane -t '%%'"
 # Shared vi copy mode; g avoids PSMux's prefix+Space layout binding.
 setw -g mode-keys vi
 bind g copy-mode
