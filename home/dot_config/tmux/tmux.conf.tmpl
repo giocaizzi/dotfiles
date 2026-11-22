@@ -55,8 +55,14 @@ set -g status-right "#[fg=colour8][#[fg=default]󰆍 #h#[fg=colour8]] #[fg=colou
 {{- end }}
 setw -g window-status-format "#[fg=colour8] #I:#W#{?window_bell_flag,#[fg=colour1#,bold]!,}#[fg=colour8] "
 setw -g window-status-current-format "#[fg=colour8] #[fg=colour5,bold]#I:#W#{?window_bell_flag,#[fg=colour1#,bold]!,}#[fg=colour8] "
+set -g pane-border-lines heavy
+set -g pane-border-indicators both
 set -g pane-border-style "fg=colour8"
-set -g pane-active-border-style "fg=colour4"
+set -g pane-active-border-style "fg=colour5"
+# Dim inactive panes to match Ghostty's unfocused-split-opacity (0.7) without
+# painting an opaque background over transparency (tmux 3.8 / PSMux dim=N).
+set -g window-style "dim=30"
+set -g window-active-style "default"
 set -g message-style "bg=default,fg=colour3"
 set -g mode-style "bg=colour0,fg=colour15"
 

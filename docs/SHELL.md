@@ -149,12 +149,13 @@ Config: `dot_config/tmux/tmux.conf.tmpl` (PSMux reads the same file through `~/.
 | `window-status-bell-style` left at the default `reverse` | the belling tab is highlighted as well as marked; the same default in tmux and PSMux | all |
 | No custom mouse bindings | `copy-selection-no-clear` keeps the pane in copy mode and the keyboard stops reaching the app; use Shift (Option in Ghostty) while dragging for a selection that stays | all |
 | Commas inside `#{?...}` escaped as `#,` (`#[fg=colour1#,bold]`) | the tmux manual requires it; an unescaped comma split the conditional and the marker vanished. PSMux uses the same escape in its own defaults | all |
+| Active pane: `window-style "dim=30"`, `window-active-style "default"`, `pane-border-lines heavy`, `pane-border-indicators both`, mauve active border | dims inactive panes to match Ghostty's `unfocused-split-opacity` without painting an opaque background; heavy mauve border and arrows mark the active pane | all |
 
 Status bar (`status-right.sh`, macOS): RAM is Activity Monitor's "Memory Used" (anonymous minus purgeable, wired, compressed), disk reads `/System/Volumes/Data` (`/` is the read-only system volume).
 
 Claude Code `tui` is `fullscreen`. If clicks and flicker-free redraws disappear in tmux, the renderer fell back to classic after failed starts (a start counts as failed if the session ends within 10 seconds without `/exit` or Ctrl+C); run `/tui fullscreen` in the session to reset it. The failure count is local state and not part of the dotfiles.
 
-Not verified on Windows: PSMux accepting the indexed `terminal-features` and the `#[bold]` styles, and a forwarded bell flashing the Windows Terminal taskbar.
+Not verified on Windows: PSMux accepting the indexed `terminal-features`, the `#[bold]` styles, active-pane dimming (`window-style "dim=30"`), heavy borders and border arrows, and a forwarded bell flashing the Windows Terminal taskbar.
 
 ## Secrets
 
