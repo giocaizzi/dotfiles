@@ -76,7 +76,7 @@ Previews are created under the user's cache directory (`%LOCALAPPDATA%\vim\previ
 
 ## Asymmetries (by design)
 
-- **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font and `unfocusedAppearance` for inactive-pane dimming; Ghostty's cursor-jump/focus shader (`cursor-jump.glsl`) has no Windows Terminal equivalent because Windows Terminal HLSL shaders do not expose cursor coordinates.
+- **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font; Ghostty's cursor-jump/focus shader (`cursor-jump.glsl`) has no Windows Terminal equivalent because Windows Terminal HLSL shaders do not expose cursor coordinates.
 - **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
 - **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
 
