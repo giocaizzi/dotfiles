@@ -58,6 +58,12 @@
             "opacity": 85,
             "padding": "6, 4",
             "scrollbarState": "hidden",
+            "unfocusedAppearance": 
+            {
+                "cursorShape": "emptyBox",
+                "foreground": "#6C7086",
+                "opacity": 65
+            },
             "useAcrylic": true
         },
         "list": 

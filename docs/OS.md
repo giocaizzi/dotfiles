@@ -8,7 +8,7 @@ How each managed file maps to its destination per OS. Canonical sources live und
 | ---------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dot_config/Code/User/{settings,keybindings}.json` | `~/Library/Application Support/Code/User/` (symlinks)      | `~/.config/Code/User/` (direct)                | `%APPDATA%\Code\User\` (symlinks)                                                |
 | `dot_config/agents/instructions/` (layers) and `.chezmoitemplates/agents-config.toml` (the config) | `~/.config/agents/instructions/`, `~/.config/agents/config.toml` (rendered, owner-only); [`agents apply`](#agents-apply) then writes every harness file from them (`~/.claude`, `~/.copilot`, `~/.codex`, `~/.config/opencode`, `~/.pi`, `~/.gemini`, `~/ops`; [AI agent configuration](#ai-agent-configuration)) | same | `%APPDATA%\agents\instructions\` and `%APPDATA%\agents\config.toml` (`AppData/Roaming/agents/`, where `agents` reads them on Windows; the same sources, and `dot_config/agents` is not deployed there) |
-| `dot_config/ghostty/config`                          | `~/Library/.../com.mitchellh.ghostty/` (symlink)            | `~/.config/ghostty/config` (direct)            | — (no Windows build)                                                               |
+| `dot_config/ghostty/{config, shaders/cursor-jump.glsl}` | `~/Library/.../com.mitchellh.ghostty/` (symlinks)           | `~/.config/ghostty/` (direct)                  | — (no Windows build)                                                               |
 | `dot_config/windows-terminal/settings.json` *        | —                                                           | —                                              | `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` (symlink) |
 | `dot_config/powershell/profile.ps1` *                | —                                                           | —                                              | `<Documents>/{PowerShell,WindowsPowerShell}/profile.ps1` (symlinks, created by `run_after_link-pwsh-profile.ps1`) |
 | `.chezmoidata/aliases.toml` (+ `.aliases.private.toml.age`) | `~/.config/shell/aliases.sh`, `~/.config/shell/omz-aliases.zsh` | `~/.config/shell/aliases.sh`                   | `~/.config/powershell/aliases.ps1` (+ `~/.config/shell/aliases.sh` for Git Bash)   |
@@ -76,7 +76,7 @@ Previews are created under the user's cache directory (`%LOCALAPPDATA%\vim\previ
 
 ## Asymmetries (by design)
 
-- **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font.
+- **Ghostty** has no Windows build → Windows Terminal fills the gap with matching theme/font and `unfocusedAppearance` for inactive-pane dimming; Ghostty's cursor-jump/focus shader (`cursor-jump.glsl`) has no Windows Terminal equivalent because Windows Terminal HLSL shaders do not expose cursor coordinates.
 - **zsh** is ignored on Linux and Windows (bash is the Unix default; PowerShell is the Windows default).
 - **PowerShell profile** is Windows-only; trivially extendable to Unix by mirroring the `dot_config/powershell/` snippet pattern.
 

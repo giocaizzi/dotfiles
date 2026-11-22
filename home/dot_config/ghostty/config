@@ -72,6 +72,10 @@ cursor-text = #cdd6f4
 # integration; translates the click into arrow keys). Edge cases possible
 # on multi-line prompts.
 cursor-click-to-move = true
+# Animated trail on cursor jumps (>3 cells, e.g. tmux pane switches) and brief
+# inner-edge pulse when a Ghostty split gains focus.
+custom-shader = shaders/cursor-jump.glsl
+custom-shader-animation = true
 
 # --- Shell ---
 # Auto-inject shell integration for bash/zsh/fish/etc. (prompt marks for

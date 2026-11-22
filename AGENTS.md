@@ -17,9 +17,9 @@ dot_config/Code/User/{settings,keybindings}.json
     → AppData/Roaming/Code/User/    (Windows, symlinks)
     (VS Code's agent chat reads ~/.copilot, so the vscode harness also gets the ~/.copilot files)
 
-dot_config/ghostty/config
+dot_config/ghostty/{config,shaders/cursor-jump.glsl}
     → ~/.config/ghostty/   (Linux, direct)
-    → Library/.../com.mitchellh.ghostty/   (macOS, symlink)
+    → Library/.../com.mitchellh.ghostty/   (macOS, symlinks)
 
 dot_config/windows-terminal/settings.json   (symlink-target-only, ignored)
     → AppData/Local/Packages/Microsoft.WindowsTerminal_*/LocalState/ (Windows)
