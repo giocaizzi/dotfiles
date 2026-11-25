@@ -74,6 +74,13 @@ command -v node >/dev/null 2>&1 || {
 	curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 	sudo apt-get install -y nodejs
 }
+{{-     else if eq .name "pnpm" }}
+
+command -v pnpm >/dev/null 2>&1 || {
+	step "pnpm (npm)"
+	# pnpm's documented npm route; ~/.local/bin is already on PATH, no PNPM_HOME wiring.
+	npm install -g --prefix "$HOME/.local" pnpm
+}
 {{-     else if eq .name "az" }}
 
 command -v az >/dev/null 2>&1 || {

@@ -173,6 +173,14 @@ brew = true
 script = ["linux"] # NodeSource LTS: apt's nodejs is too old for the language servers
 winget = "OpenJS.NodeJS.LTS"
 
+# Node 25+ ships no corepack: pnpm itself runs the version a project pins in
+# packageManager (downloads it on mismatch, pmOnFail's default).
+[package.pnpm]
+agents = true
+brew = true
+script = ["linux"] # npm -g into ~/.local after node: no apt package
+winget = "pnpm.pnpm"
+
 [package.gitleaks]
 agents = true
 brew = true
