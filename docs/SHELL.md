@@ -25,11 +25,11 @@ History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump i
 
 | File                                     | Role                                                                    | OS scope            |
 | ---------------------------------------- | ----------------------------------------------------------------------- | ------------------- |
-| `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `JAVA_HOME`; sources `secrets.sh` | Unix + Git Bash |
+| `dot_profile`                            | POSIX environment only (inherited): `XDG_*`, PATH, `EDITOR`, `PAGER`/`LESS`/`MANPAGER`, `INPUTRC`, `POSH_THEME`, `HOST_METRICS_FILE`, `JAVA_HOME`; sources `secrets.sh` | Unix + Git Bash |
 | `dot_bash_profile`                       | Login-shell wrapper → sources `.bashrc` (which sources `.profile` once) | Unix                |
 | `dot_bashrc`                             | Bash: loads `.profile` once, then **returns for non-interactive shells** (`ssh host cmd`, scp, rsync); snippets, history (timestamped), completion, FZF bindings, oh-my-posh | Unix + Git Bash |
 | `dot_zshrc` / `dot_zprofile`             | Zsh: `.zprofile` loads `.profile`; `.zshrc` sets the Oh My Zsh alias sets, loads Oh My Zsh, then the snippets (so registry aliases win), history, FZF bindings, oh-my-posh | macOS only |
-| `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → PATH, PSReadLine, sources snippets            | Windows             |
+| `dot_config/powershell/profile.ps1`      | PowerShell orchestrator → env (`EDITOR`, `POSH_THEME`, `HOST_METRICS_FILE`), PATH, PSReadLine, sources snippets | Windows             |
 | `dot_config/shell/aliases.sh.tmpl`       | POSIX aliases and refused commands (rendered from the registry), `ls` colours, `python` fallback, the edit commands (full machines), `rp5-secrets` (personal Mac) | Unix + Git Bash |
 | `dot_config/shell/omz-aliases.zsh.tmpl`  | `zstyle ':omz:…' aliases` per Oh My Zsh lib/plugin (from `[aliasExternal.zsh]`) | macOS (zsh) |
 | `dot_config/shell/fzf.sh`                | `FZF_*` env vars + `h()` history function                               | Unix + Git Bash     |

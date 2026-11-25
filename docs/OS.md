@@ -408,6 +408,7 @@ Plugins come from the `giocaizzi/harness` registry. `[plugins] registry` and `[p
 
 - **New plugin upstream:** add `<name> = [harnesses]` under `[plugins.enabled]` (`dots agents/config`), `chezmoi apply`.
 - **Plugin removed upstream:** delete its key, apply; disable or uninstall it by hand where the harness keeps it.
+- Host-hygiene metrics: `HOST_METRICS_FILE`, set in `.profile` and the PowerShell profile, makes `dev-tools`' `heavy.sh`/`heavy.ps1` append one logfmt line per call (class, wait, run time, exit, command) to `$XDG_STATE_HOME/host-hygiene/heavy.log` (`%LOCALAPPDATA%\host-hygiene\heavy.log` on Windows); the script creates the directory. Every harness started from a shell inherits it. The file is never rotated: delete it to start over; unset the variable to stop logging.
 - The Claude Code status line (`hud`) is set under `[harness.claude.settings.statusLine]`; it needs `node` 22+ and a Nerd Font.
 - Skill-description listing budget: `skillListingBudgetFraction` 0.03 under `[harness.claude.settings]` (default 1% of the context window, which drops the least-used skills' descriptions once many plugin skills are installed; Claude Code only, the other harnesses have no equivalent).
 
