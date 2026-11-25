@@ -20,6 +20,10 @@ $env:EDITOR     = 'vim'
 $env:VISUAL     = 'vim'
 $env:POSH_THEME = Join-Path $HOME '.config\oh-my-posh\theme.omp.json'
 
+# host-hygiene heavy.ps1: one logfmt line per call (wait, run time, exit);
+# the script creates the directory
+$env:HOST_METRICS_FILE = Join-Path $env:LOCALAPPDATA 'host-hygiene\heavy.log'
+
 # ----------------------------------------------------------------------------
 # 2. PATH
 # ----------------------------------------------------------------------------

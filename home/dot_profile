@@ -41,6 +41,10 @@ export INPUTRC="$XDG_CONFIG_HOME/readline/inputrc"
 # Oh-My-Posh theme (single source for all shells)
 export POSH_THEME="$XDG_CONFIG_HOME/oh-my-posh/theme.omp.json"
 
+# host-hygiene heavy.sh: one logfmt line per call (wait, run time, exit);
+# the script creates the directory
+export HOST_METRICS_FILE="$XDG_STATE_HOME/host-hygiene/heavy.log"
+
 # ----------------------------------------------------------------------------
 # 2. PATH
 # ----------------------------------------------------------------------------
