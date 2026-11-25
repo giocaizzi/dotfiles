@@ -338,7 +338,7 @@ target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
 [release.go]
 # Official toolchain (apt's golang-go lags), per user.
 roles = ["personal"]
-version = "1.27.3"
+version = "1.27.4"
 versionCmd = ["{dest}/bin/go", "version"]
 url = "https://go.dev/dl/go{version}.linux-{target}.tar.gz"
 type = "archive"
@@ -347,39 +347,39 @@ stripComponents = 1
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.go.sha256]
-"linux/amd64" = "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
-"linux/arm64" = "a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49"
+"linux/amd64" = "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840"
+"linux/arm64" = "3392582988a273a87ab5043ee1b2c9c17a2c3c00580bf9326c47a2e0aaaeac92"
 
 [release.goreleaser]
 roles = ["personal"]
-version = "2.20.0"
+version = "2.20.3"
 url = "https://github.com/goreleaser/goreleaser/releases/download/v{version}/goreleaser_Linux_{target}.tar.gz"
 target = { "linux/amd64" = "x86_64", "linux/arm64" = "arm64" }
 
 [release.goreleaser.sha256]
-"linux/amd64" = "d2483159e6007f814132cb56635ad30a70013dbeb813d6033a7e01adf6ae108c"
-"linux/arm64" = "2dada0a6bbcd10f3a05228d98e77d25fb362efb9e5bab6362cf37e64c8a26cb9"
+"linux/amd64" = "a36d5d7d07a5e538e052cef2a9f93f1cd4af493cf5a3712b9177c1ebe360f0e7"
+"linux/arm64" = "cfce0afc7bcc14447df211cc10c0012cfc395646070bcf23e840b16cbce6d204"
 
 [release.syft]
 roles = ["personal"]
-version = "1.57.0"
+version = "1.57.2"
 url = "https://github.com/anchore/syft/releases/download/v{version}/syft_{version}_linux_{target}.tar.gz"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.syft.sha256]
-"linux/amd64" = "9c077a7d43029b3b13e98a8db720661e700c4d58db6352153a06395ae4a2a704"
-"linux/arm64" = "410cbfa0ae0f63246bc0057843760b1de2833cd23919e025e368fd7681308cdb"
+"linux/amd64" = "ad92bd3ec1b94a3df01d4d0aec199afa9c42b72e86da436ff5f837914d32706b"
+"linux/arm64" = "8efe605309c98798e1ee0cffdcf8c05ca26819b4cd44c0b03650f1e963e9bdb6"
 
 [release.glab]
 roles = ["work"]
-version = "1.128.0"
+version = "1.133.0"
 url = "https://gitlab.com/gitlab-org/cli/-/releases/v{version}/downloads/glab_{version}_linux_{target}.tar.gz"
 path = "bin/glab"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.glab.sha256]
-"linux/amd64" = "bc024819e7598b19429a199cd87f640d98b2b67416d8ad796f19e4260b57a7c7"
-"linux/arm64" = "60d0512085a8c1be7c5ef51aa7e4ee28213444cea0376b3260707d90489199ea"
+"linux/amd64" = "b17f858b8d700f1607f8ec02fe092a455da6a8dd18dac3eb6ccb09db1befd4bf"
+"linux/arm64" = "a529fd254824b0f3f8d2350080c9b46633b67ff3e2b11455836d7a680c498b09"
 
 [release.chezmoi-dots]
 # The `chezmoi dots` companion plugin, released by github.com/giocaizzi/chezmoi-dots
@@ -438,13 +438,13 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.terraform]
 requires = "terraform"
-version = "1.17.1"
+version = "1.17.2"
 url = "https://releases.hashicorp.com/terraform/{version}/terraform_{version}_linux_{target}.zip"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.terraform.sha256]
-"linux/amd64" = "4638628058e71a55212b1c563712eac03b902128f40740f3dc8174df12135061"
-"linux/arm64" = "988e950a1c23058093b0e66ab2d5fb53fc18345ecfbd5871acf51dbac9325edd"
+"linux/amd64" = "e6f16b2f0b137ee5729caa8c4e79a3bae4ee261acd198a1fcfa8584a6296605b"
+"linux/arm64" = "858e08c181a76b6b223e8c767a8e983922eebe2d062db949a2de66ce040c368c"
 
 [release.terraform-ls]
 requires = "terraform"
@@ -459,10 +459,10 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.tflint]
 requires = "terraform"
-version = "0.65.0"
+version = "0.66.0"
 url = "https://github.com/terraform-linters/tflint/releases/download/v{version}/tflint_linux_{target}.zip"
 target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 
 [release.tflint.sha256]
-"linux/amd64" = "d4c545ed2e29d6338604b586f34f544f380f70f243aa72f7b484713835eaec61"
-"linux/arm64" = "843017c47a98be1de4d88fa038daa293770fe25cd01656c4f08b2e30d1d3b3a0"
+"linux/amd64" = "22be11cadc25cd02401e94c0ccc91aa63467debb8485c2a755d98f4c0a9d1e2e"
+"linux/arm64" = "1105a0a5ddee7cdac7957a3475571a946b839192ea1bc0c722c6c4686001067e"
