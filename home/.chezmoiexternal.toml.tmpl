@@ -56,9 +56,9 @@
     pull.args = ["--ff-only"]
 
 # yegappan/lsp: Vim9 language-server client (never installs servers; they come from
-# the package registry, see [agents.lsp.server.*]). Pinned commit: bump by
-# changing the SHA in the URL and the checksum (`chezmoi dots outdated` does not
-# see externals).
+# the package registry, see [agents.lsp.server.*]). Pinned commit: `chezmoi dots pkg status`
+# lists it under "Pinned archives" and `chezmoi dots pkg bump yegappan/lsp` moves the
+# SHA in the URL and the checksum.
 # Not on light machines: .chezmoiignore doesn't stop an external's download.
 {{- if ne (includeTemplate "role" .) "light" }}
 {{- if eq .chezmoi.os "windows" }}

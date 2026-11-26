@@ -198,13 +198,14 @@ Many targets are composed (a one-line stub over a partial over layers or `.chezm
 ```bash
 chezmoi dots list                                # registry entries (.chezmoidata/edit.toml)
 chezmoi dots view <target>                       # composition tree: which source file to edit
-chezmoi dots view <target> --matrix              # render on darwin/linux/windows x personal/work/light
+chezmoi dots view <target> --matrix              # render on darwin/linux/windows x every profile in .chezmoidata/matrix.toml
 chezmoi dots view <entry> --matrix               # which targets an entry reaches, per configuration
 chezmoi dots view <target> --as windows,work
 ```
 
 - The edit flow (`chezmoi dots <entry|target>`) opens `$EDITOR` and asks `apply now?`: it is for the user. As an agent, edit the source file the tree names, then check every configuration with `chezmoi dots view ... --matrix` and run `make check`.
 - `--matrix` on agent instructions or other encrypted layers prints decrypted text: don't paste it into chat.
+- Profiles (personal, work, light) are declared in `.chezmoidata/matrix.toml`; `--as <os>,<profile>` picks one.
 - A new `.chezmoidata` file or encrypted file needs an entry in `.chezmoidata/edit.toml` (`chezmoi dots lint registry` fails without one).
 
 ## Common Workflows

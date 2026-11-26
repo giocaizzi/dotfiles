@@ -13,9 +13,12 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    ```shell
    brew install chezmoi bitwarden-cli                          # macOS
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # Linux (bw: see bitwarden.com/help/cli)
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # Linux
    winget install twpayne.chezmoi                              # Windows
+   winget install Bitwarden.CLI                                # Windows, personal machines
    ```
+
+   Personal Linux: unzip the `bw-oss-linux` (or `bw-oss-linux-arm64`) zip of the latest `cli-v*` release from [github.com/bitwarden/clients/releases](https://github.com/bitwarden/clients/releases) into `~/.local/bin`; later applies replace it with the pinned release.
 
 3. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only) — personal and work only, or `apply` stops at the first encrypted file ([why](./OS.md#encrypted-files-age)). **Light machines skip this step:** they get no encrypted files, so a compromised box can't decrypt your secrets.
    - **Personal:** from the vault (secure note `chezmoi age key`):
@@ -48,7 +51,7 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    The token is not an init answer: it sits in the OS keyring (step 4). To change answers later, `chezmoi init --prompt` (asks everything again).
 
-6. **Apply once more** — the first apply downloads `bws`, the second renders the env secrets from Bitwarden:
+6. **Apply once more** — the first apply downloads `bws` and the `chezmoi-dots` plugin, the second renders the env secrets from Bitwarden:
 
    ```shell
    chezmoi apply && chezmoi status   # status prints nothing when done

@@ -33,8 +33,9 @@ files remain LF through `.gitattributes`.
 | `registry` | the edit registry: every entry has a `desc`, an existing `source` or a home-relative `local` folder, a `check` that is a command list, and only known keys; every `.chezmoidata` file and every encrypted file has an entry |
 | `aliases` | the alias registry (the encrypted part too where the age key exists): known keys, every alias names its shells, a one-shell alias says why, known OS and role values |
 | `packages` | the package and release tables, including a sha256 for every release target and a well-formed `versionCmd` |
-| `matrix` | the configuration matrix built from `.chezmoi.toml.tmpl` lists the harnesses it offers |
-| `templates` | renders every script template, `aliases.sh`, `omz-aliases.zsh`, and `aliases.ps1` per OS × role × harness selection; `shellcheck` the shell output, `zsh -n`, parse `aliases.ps1` with `pwsh` (and Windows PowerShell 5.1 on Windows), `jq empty` the JSON (each where installed) |
+| `secrets` | `.chezmoidata/secrets.toml`: known keys and kinds, a project source for each secret manager ([OS.md](./OS.md#bitwarden)) |
+| `matrix` | `.chezmoidata/matrix.toml`: the declared profiles, seed answers and variants are well formed and name known harnesses ([OS.md](./OS.md#the-configuration-matrix)) |
+| `templates` | renders every script template, `aliases.sh`, `omz-aliases.zsh`, and `aliases.ps1` for every OS × profile (plus the matrix variants); `shellcheck` the shell output, `zsh -n`, parse `aliases.ps1` with `pwsh` (and Windows PowerShell 5.1 on Windows), `jq empty` the JSON (each where installed) |
 
 Skipped by the JSON check: JSON containing `{{` (rendered by `templates`) and `dot_config/Code/User/settings.json` (JSONC). No `shfmt`: existing scripts mix tab and space indents.
 
@@ -49,11 +50,11 @@ On every PR and push to `main`:
 
 `make tools` installs exactly the pinned versions, so CI never follows `latest`:
 
-- `agents` and `chezmoi-dots`: version, URL and linux/amd64 sha256 from `[release.*]` in `home/.chezmoidata/packages.toml` (the same rows machines install; `chezmoi dots bump` moves them). The download is checked against the sha256 and fails on a mismatch.
+- `agents` and `chezmoi-dots`: version, URL and linux/amd64 sha256 from `[release.*]` in `home/.chezmoidata/packages.toml` (the same rows machines install; `chezmoi dots pkg bump` moves them). The download is checked against the sha256 and fails on a mismatch.
 - `chezmoi`: machines get it from their bootstrap, so the registry has no row. Its CI version is `[tools] chezmoi` in `.github/tools.toml`, installed with the official installer (which verifies its own checksum). Bump it by hand.
 
 `chezmoi dots` is run as `chezmoi-dots` with `CHEZMOI_SOURCE_DIR` set (the `DOTS` variable in the `Makefile`): chezmoi's plugin dispatch ignores `--source` placed before `dots` and always uses the default source directory, so it cannot target a CI checkout or a worktree.
 
 A red `check`: open the run, read the failing step, reproduce with `make check`, fix, push. A gitleaks hit: rotate the secret first, then remove it from the change (encrypted file or `bws`, see [OS.md](./OS.md)).
 
-Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries ([OS.md](./OS.md#packages)); it needs a `BUMP_TOKEN` secret for CI to run on its PR. Its checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.
+Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries and archive commits (`chezmoi dots pkg bump`; [OS.md](./OS.md#packages)); it needs a `BUMP_TOKEN` secret for CI to run on its PR. Its checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.

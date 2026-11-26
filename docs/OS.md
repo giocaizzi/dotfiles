@@ -64,7 +64,7 @@ Declarative upstream sources cloned/fetched by chezmoi on `apply`, refreshed per
 
 Release binaries (`bws`, `gitleaks`, `actionlint`, `hadolint`, the Go toolchain, `goreleaser`, `syft`, `glab`, `golangci-lint` (personal), `terraform`, `terraform-ls` and `tflint` (`terraform` answer), the `chezmoi-dots` plugin) are externals too, generated from the `[release.*]` tables of the [package registry](#packages) for this OS, architecture and role, each pinned and checksum-verified. `dotsRender` (an override-data flag set by `chezmoi dots` for previews) makes the file render empty, so previewing another OS or role never downloads its binaries.
 
-The Vim LSP client is pinned by commit SHA and checksum in the URL: bump it by hand (new SHA and checksum), since `chezmoi dots outdated` does not see externals (tracked in [issue #185](https://github.com/giocaizzi/dotfiles/issues/185)).
+The Vim LSP client is pinned by commit SHA and checksum in the URL: `chezmoi dots pkg status` lists it under "Pinned archives" and `chezmoi dots pkg bump yegappan/lsp` moves the commit in the URL and the checksum.
 
 **When NOT to use externals:** anything needing `chmod +x` on a downloaded binary with arch detection (oh-my-posh), official installer scripts (uv), or package-manager registration (brew/apt/winget). Those stay in `.chezmoiscripts/`.
 
@@ -144,13 +144,14 @@ Two Bitwarden CLIs, used per machine role:
 
 | Role | `bw` (password vault) | `bws` (Secrets Manager) |
 |---|---|---|
-| full + personal (Mac) | Homebrew `bitwarden-cli`; fetches the age key at setup | own machine-account token → **personal** project |
+| full + personal | `bitwarden-cli` (Homebrew on macOS, winget `Bitwarden.CLI` on Windows) or, on Linux, the pinned OSS `bw` release (`[release.bw]`, `~/.local/bin`); fetches the age key at setup | own machine-account token → **personal** project |
 | light (Pi) | — | — (`secrets.sh` by hand) |
 | work (Windows PC) | — (personal vault stays off the work PC; age key copied by hand) | own machine-account token → **work** project |
 
 - **Env secrets** (`~/.config/shell/secrets.sh`, `~/.config/powershell/secrets.ps1`) are rendered by chezmoi from the machine's project (`bws secret list <project> --output json`, via `.chezmoitemplates/bws-secrets.json`): each secret's name becomes the variable name. Edit secrets in Bitwarden, then `chezmoi apply`. Names that aren't valid variable names are skipped.
-- **One token per machine**, created as a Bitwarden machine account with read access to the machine's project (the personal Mac's token can also read `rp5-homeserver`, for the home-server functions below), stored only in that machine's OS keyring (Windows Credential Manager, macOS Keychain, Linux Secret Service), never in `chezmoi.toml`: `chezmoi secret keyring set --service=bws --user=access-token`. `chezmoi.toml` keeps only the project ID, which switches the feature on. Give the token an expiry date, and revoke a single machine's token in Bitwarden if it's lost. The token never goes on a command line (chezmoi echoes failed commands, which would print it): the template runs `bws` through `powershell -Command` / `sh -c`, which reads it with `chezmoi secret keyring get` and passes it as `BWS_ACCESS_TOKEN`. A project ID without a stored token fails with `secret not found in keyring`; headless Linux without a Secret Service keyring can't use this, so leave the project ID blank and edit the secrets file by hand.
-- **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (`[release.bws]` in `.chezmoidata/packages.toml`, pinned and checksummed; `chezmoi dots bump` updates it). The first apply on a new machine fetches it; the next apply renders the secrets.
+- **One token per machine**, created as a Bitwarden machine account with read access to the machine's project (the personal Mac's token can also read `rp5-homeserver`, for the home-server functions below), stored only in that machine's OS keyring (Windows Credential Manager, macOS Keychain, Linux Secret Service), never in `chezmoi.toml`: `chezmoi secret keyring set --service=bws --user=access-token`. `chezmoi.toml` keeps only the project ID, which switches the feature on. Give the token an expiry date, and revoke a single machine's token in Bitwarden if it's lost. The token never goes on a command line (chezmoi echoes failed commands, which would print it): the template runs `~/.local/bin/chezmoi-dots secrets run bws -- secret list <projectId> --output json --color no` (the plugin by absolute path, the same call on every OS, no shell). The plugin reads the token with `chezmoi secret keyring get`, hands it to `bws` only as `BWS_ACCESS_TOKEN`, and finds the source and config through the `CHEZMOI_*` variables chezmoi sets for template commands. A project ID without a stored token fails with `secret not found in keyring`; headless Linux without a Secret Service keyring can't use this, so leave the project ID blank and edit the secrets file by hand.
+- **`bws` is fetched** by `.chezmoiexternal.toml.tmpl` into `~/.local/bin` (`[release.bws]` in `.chezmoidata/packages.toml`, pinned and checksummed, with an explicit `versionCmd`; `chezmoi dots pkg bump` updates it). `.chezmoiignore` renders the secrets files only where `bwsProjectId` is set and both `~/.local/bin/bws` and `~/.local/bin/chezmoi-dots` exist, so on a new machine the first apply fetches both and the second renders the secrets.
+- **Secrets registry:** `.chezmoidata/secrets.toml` declares the secret manager: `[secret.bws]` (kind `bws`, `projectFrom = "bwsProjectId"`, keyring service `bws` and user `access-token`, command `~/.local/bin/bws`). Edit it with `dots secrets`; the global gitignore `*secret*` means a new file needs `git add -f`. `chezmoi dots lint secrets` validates it; `chezmoi dots audit secrets` probes read-only that the token is in the keyring and the project is reachable (a blank `bwsProjectId` is `ok`, "not configured"). Reference: [secrets.md](https://github.com/giocaizzi/chezmoi-dots/blob/main/docs/secrets.md).
 - **Home-server functions (personal Mac):** `rp5-secrets <stack>` (Swarm secrets, `create_secrets.sh`) and `rp5-sync-infra` (infra deploy with its file secrets, `sync_infra.sh`; needs `DOMAIN`) read that token from the keyring when they run and pass it only to the script, so it never sits in the shell environment. They are why `BWS_ACCESS_TOKEN` is empty in an interactive shell even though the machine can read the project.
 - **Online needed:** on machines with a project ID, every `chezmoi status`/`diff`/`apply` calls `bws` once and fails offline.
 - No Bitwarden MCP server: it has no read-only mode and would give an AI agent full vault access.
@@ -175,7 +176,7 @@ Many targets are composed: `~/.config/agents/config.toml` is a one-line stub ove
 
 Every source edit, in order:
 
-1. **Render before:** the target state (`chezmoi dump`) of this machine and of 9 configurations — darwin, linux, windows × personal, work, light — each with every harness selected (light: none), rendered in parallel. The configurations come from the real `.chezmoi.toml.tmpl`, rendered per role with seeded answers, so there is no second copy of the init prompts to keep in step.
+1. **Render before:** the target state (`chezmoi dump`) of this machine and of every configuration (darwin, linux, windows × the profiles declared in `.chezmoidata/matrix.toml`, [below](#the-configuration-matrix)), rendered in parallel. Each configuration is the real `.chezmoi.toml.tmpl` rendered with that profile's answers.
 2. **Edit** in `$EDITOR` (then `$VISUAL`, then `vi`; on Windows `notepad`). An encrypted file is decrypted into a private temp file (owner-only), re-encrypted (armored) only when its content changed, and the temp file is always removed. Inside tmux or, on Windows, Windows Terminal, a side pane (`chezmoi dots live`) re-renders this machine from a private copy of the source on every save and shows the diff of each target the edit changes so far; it closes with the editor.
 3. **Check:** the entry's check, when it has one (`chezmoi dots lint aliases templates`, `ssh -G`, ...).
 4. **Render after** and report the changed targets per configuration: a list, `same as <configuration>` for an identical list, or `nothing`. A configuration that no longer renders fails the edit; one that already failed before is only reported.
@@ -191,15 +192,25 @@ A failed check or render applies nothing; the source keeps the edit, so run the 
 |---|---|
 | `dots view <target>` | the composition tree (each node with its registry entry, encrypted nodes marked) and the rendered content on this machine |
 | `dots view <entry>` | the entry's tree and the targets it reaches on this machine |
-| `... --as <os>[,<role>]` | the same for one configuration: os `darwin`, `linux` or `windows`; role `personal` (default), `work` or `light`. A preview, never applied |
-| `... --matrix` | every configuration: 3×3 Catppuccin matrix grid (`darwin`, `linux`, `windows` × `personal`, `work`, `light`) showing reachability and distinct variant paths/renders, followed by a color-coded legend |
-| `dots view [--matrix] [--all]` | whole-setup matrix overview across all registry entries and configurations, with a compact visual combo strip |
+| `... --as <os>,<profile>` (or `<os>/<profile>`) | the same for one configuration: os `darwin`, `linux` or `windows`; profile one declared in `matrix.toml`. The profile can only be left out when a single one is declared, so with several, `dots view git --as linux,work`. A preview, never applied |
+| `... --matrix` | every configuration (3 × the number of profiles) as a grid showing reachability and distinct variant paths/renders, followed by a legend |
+| `dots view --matrix` | with no selector, the whole-setup overview across all registry entries and configurations |
 
-The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever role takes it; `--matrix` shows which configuration takes which.
+The composition tree is read from the source: `template`/`includeTemplate` names, `include` paths (a `printf` pattern is globbed, so both private layers show), the file a `symlink_` template points at, and the `.chezmoidata` files whose top-level keys a template reads. It lists every branch, whichever profile takes it; `--matrix` shows which configuration takes which.
 
-Limits of the simulation: identity answers this machine lacks render as placeholders (`<workEmail>`), the others blank, as at init. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. Previews render with `dotsRender` set, so no external is downloaded for them. The 9 configurations render without a Bitwarden project, so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
+Limits of the simulation: the answers come from `matrix.toml` (placeholder identities, an example telemetry endpoint), not from this machine. Paths come from this machine (`.chezmoi.homeDir`, `.chezmoi.sourceDir`), so a windows render shows Mac paths. Previews render with `dotsRender` set, so no external is downloaded for them. The configurations render with an empty `bwsProjectId` (the seed), so secrets stay this machine's and parallel renders stay under the Secrets Manager rate limit; this machine's render still calls `bws` and needs to be online.
 
 Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`); edit through `dots`, not `chezmoi edit`.
+
+### The configuration matrix
+
+The configurations a change is checked against are OS (`darwin`, `linux`, `windows`) × the profiles declared in `.chezmoidata/matrix.toml` (edit it with `dots matrix`). The file holds:
+
+- `[matrix.seed]`: answers shared by every profile (placeholder `gitUser` and `gitEmail`, and `bwsProjectId = ""` so renders never reach Secrets Manager).
+- One table per profile: `personal` (every harness, Terraform on, an example `otelEndpoint`), `work` (work on, Terraform on, every harness, placeholder `workEmail`, `githubUser` `octocat`, an example `personalGitRemote`) and `light` (light on).
+- One variant, "first harness only" (personal and work with `harnesses = ["claude"]`), rendered only by `chezmoi dots lint templates`.
+
+Each configuration is still rendered by the real `.chezmoi.toml.tmpl` from those answers, so the init prompts are not copied, only their answers. A new harness goes into `$all` in `.chezmoi.toml.tmpl`, both harness lists in `matrix.toml` and `HARNESSES` in the `Makefile`; a new init answer that switches a feature on must be declared in a profile so its templates are covered. `chezmoi dots lint matrix` validates the declaration. Reference: [matrix.md](https://github.com/giocaizzi/chezmoi-dots/blob/main/docs/matrix.md).
 
 ### Edit registry
 
@@ -209,7 +220,7 @@ Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`)
 
 **When:** a new file under `.chezmoidata/` or a new encrypted file (`chezmoi dots lint registry` fails without an entry), or any component worth a name or a check.
 
-1. `dots registry` and add the entry (or, for a folder of unmanaged files, `local = "<home-relative folder>"` instead of `source`):
+1. `dots registry` and add the entry (or `chezmoi dots add <path>`, which manages a file and registers it in one step) (or, for a folder of unmanaged files, `local = "<home-relative folder>"` instead of `source`):
    ```toml
    [edit."<name>"]
    desc = "<what it is>"
@@ -227,29 +238,31 @@ Short aliases: `cz` (`chezmoi`), `czd` (`chezmoi diff`), `cza` (`chezmoi apply`)
 Every tool a machine installs is declared once, in `.chezmoidata/packages.toml`; the install scripts and the release externals render from it, so there is no second list. The file header documents the schema.
 
 - `[package.<name>]`: installed by the install scripts with the platform's native manager (brew on macOS, apt on Linux, winget on Windows), plus uv, npm, an Azure CLI extension or a PowerShell module, per role (`light`, `work`, `personal`) and, with `requires = "<answer>"`, only where that boolean init answer is true (e.g. `terraform`). `agents = true` also names the tool to AI agents in the environment layer of the [agent instructions](#agent-instructions).
-- `[release.<name>]`: a binary from a release page, pinned by version and checksum and installed by chezmoi as an external into `~/.local/bin` (no sudo, no package manager). It takes `roles` and `requires` like a package; `url` and `path` expand `{version}` and `{target}`. Upstreams `bump` and `outdated` can read: GitHub and GitLab tags, go.dev and `releases.hashicorp.com` (resolved to the tags of the matching `hashicorp/<name>` repository). Tap-qualified brew ids (`hashicorp/tap/terraform`) match by their short name.
+- `[release.<name>]`: a binary from a release page, pinned by version and checksum and installed by chezmoi as an external into `~/.local/bin` (no sudo, no package manager). It takes `roles` and `requires` like a package; `url` and `path` expand `{version}` and `{target}`. Upstreams `pkg bump` and `pkg status` can read: GitHub and GitLab tags, go.dev and `releases.hashicorp.com` (resolved to the tags of the matching `hashicorp/<name>` repository). Tap-qualified brew ids (`hashicorp/tap/terraform`) match by their short name.
 
 **Node and pnpm.** Full machines get Node.js (brew `node` on macOS, NodeSource LTS on Linux, winget LTS on Windows) and pnpm (brew on macOS, `npm install -g --prefix ~/.local` on Linux, where apt has no package, and winget on Windows). Node 25 and later ship no corepack, so nothing else provides `pnpm`: a JS project pins its pnpm version in `package.json` `packageManager`, and the installed pnpm downloads and runs that version when it differs (`pmOnFail`, default `download`). The installed pnpm itself moves with `chezmoi dots upgrade`, not `pnpm self-update`, which inside a project only rewrites the pin.
 
+To add a row without editing the file by hand, `chezmoi dots pkg add <name>` writes a `[package.*]` entry (`--brew`, `--winget`, ...) or a `[release.*]` entry (`--release`, or `--github owner/repo` to derive one); see [cli.md](https://github.com/giocaizzi/chezmoi-dots/blob/main/docs/cli.md#pkg-add).
+
 `chezmoi dots lint packages` (part of `make check`) validates both tables, including that every release target has a 64-hex sha256 and that an optional `versionCmd` is a non-empty list of strings.
 
-**What `chezmoi dots outdated` shows**
+**What `chezmoi dots pkg status` shows**
 
-`chezmoi dots outdated [--offline] [--fetch] [--check]` prints every tool the registry gives this machine (its OS and role), one table per source: pinned releases, then the OS's manager (Homebrew formulae and casks, apt, winget), uv tools, npm tools and official installers (entries with `script` for this OS and no native-manager key). Columns: `TOOL`, `INSTALLED`, `PINNED` (releases, and npm specs that pin a version), `LATEST`, `STATE`.
+`chezmoi dots pkg status [--offline] [--fetch] [--check]` prints every tool the registry gives this machine (its OS and role), one table per source: pinned releases, commit-pinned archive externals ("Pinned archives", e.g. the Vim LSP client), then the OS's manager (Homebrew formulae and casks, apt, winget), uv tools, npm tools and official installers (entries with `script` for this OS and no native-manager key). Columns: `TOOL`, `INSTALLED`, `PINNED` (releases, and npm specs that pin a version), `LATEST`, `STATE`.
 
 - States: `up to date`; `outdated` (upstream has a newer release than the pin, or the manager knows a newer package); `drifted` (installed differs from the pin, e.g. after a pull before `chezmoi apply`); `not installed`; `unknown`.
-- Footer: a `source` line (this checkout against its upstream from the last fetched refs: behind/ahead, local changes, when last fetched), a `summary` line and `next` hints per state (`chezmoi dots upgrade dotfiles`, `chezmoi dots bump <release>`, `chezmoi apply`, `chezmoi dots upgrade <brew|apt|winget|uv|npm>`).
+- Footer: a summary and `next` hints per state (update the dotfiles, bump a pin, apply, upgrade a manager's packages). The state of the checkout itself is `chezmoi dots status`.
 - Installed: the manager's local query, or, for releases and official installers, the tool's version command (`versionCmd`, run without a shell, with a timeout). Latest: releases from upstream tags; brew and apt from their local index as of the last `brew update` / `apt update`; uv and npm from their registries; winget and official installers are not looked up. Lookups run in parallel with timeouts and never print command output.
-- `--offline` skips every network lookup (LATEST shows `unknown`, never an error); `--fetch` runs `git fetch` on the dotfiles first; `--check` exits 1 when anything is outdated, drifted or not installed (the overview alone always exits 0).
+- `--offline` skips every network lookup (LATEST shows `unknown`, never an error); `--fetch` runs `git fetch` on the dotfiles first; `--check` exits 1 when anything is outdated (an archive pin included), drifted or not installed (the overview alone always exits 0).
 
 | Command | Moves | Reads |
 |---|---|---|
-| `chezmoi dots outdated` | nothing | remote (upstream releases, `origin/main`), source (`packages.toml` pins), installed |
-| `chezmoi dots bump` | remote → source (pins in `packages.toml`) | upstream releases |
+| `chezmoi dots pkg status` | nothing | remote (upstream releases, `origin/main`), source (`packages.toml` pins, archive pins), installed |
+| `chezmoi dots pkg bump` | remote → source (pins in `packages.toml` and the externals file) | upstream releases and archive HEADs |
 | `chezmoi apply` | source → installed (the pins) | this checkout |
 | `chezmoi dots upgrade` | remote → source → installed (`chezmoi update`), plus system packages, uv and npm tools | |
 
-Releases move only with a bump. `upgrade` still ends with the release-only check.
+Pinned releases and archives move only with a bump; `upgrade` does not check them.
 
 **Add a version command**
 
@@ -258,7 +271,7 @@ Releases move only with a bump. `upgrade` still ends with the release-only check
 1. Add `versionCmd = [...]` to its entry in `packages.toml` (argv; `{dest}` expands to a release's installed path). The first dotted number in the output is the version.
 2. `chezmoi dots lint packages`.
 
-**Verify:** `chezmoi dots outdated --offline` shows the tool's installed version.
+**Verify:** `chezmoi dots pkg status --offline` shows the tool's installed version.
 
 **Rollback:** remove the key; the default applies.
 
@@ -269,13 +282,13 @@ Releases move only with a bump. `upgrade` still ends with the release-only check
 1. `chezmoi dots upgrade`: updates the dotfiles (`chezmoi update --refresh-externals`), then the system packages (brew on macOS, apt on Linux, winget on Windows), uv tools, global npm tools and, on Windows, PowerShell modules. A step whose tool is missing is skipped; a failing step does not stop the others. `--dry-run` prints the plan, and naming steps (`chezmoi dots upgrade brew npm`) runs only those.
 2. Pinned release binaries do not move with it: they change when the pin changes (below), then `chezmoi apply` fetches the new version.
 
-**Verify:** `chezmoi dots outdated` shows every tool up to date; `chezmoi status` prints nothing.
+**Verify:** `chezmoi dots pkg status` shows every tool up to date; `chezmoi status` prints nothing.
 
-**Bump the pinned release binaries**
+**Bump the pinned release binaries and archives**
 
-**When:** `chezmoi dots outdated` marks a release outdated (the weekly `bump-releases` workflow opens a PR for this too).
+**When:** `chezmoi dots pkg status` marks a release or archive pin outdated (the weekly `bump-releases` workflow opens a PR for this too).
 
-1. `chezmoi dots bump` (or `chezmoi dots bump <release>...`; `--dry-run` previews): finds the newest tag of each release (git tags on GitHub/GitLab, go.dev for Go), downloads the assets for every target, and rewrites the version and sha256 lines in `packages.toml`, leaving comments and order alone.
+1. `chezmoi dots pkg bump` (or `chezmoi dots pkg bump <pin>...`, a pin being a release name or an archive repository path such as `yegappan/lsp`; `--dry-run` previews): finds the newest tag of each release (git tags on GitHub/GitLab, go.dev for Go), downloads the assets for every target, and rewrites the version and sha256 lines in `packages.toml`; for an archive pin it moves the commit in the URL and the sha256 in the externals file. Comments and order stay.
 2. Review the diff, `make check`, ship the PR; `chezmoi apply` installs the new versions.
 
 **Rollback:** revert the PR; the old pin and checksums come back together.
@@ -286,10 +299,13 @@ Releases move only with a bump. `upgrade` still ends with the release-only check
 
 | Command | Does |
 |---|---|
-| `chezmoi dots [edit] [<what>]`, `view`, `list`, `live` | [Editing your dotfiles](#editing-your-dotfiles) |
-| `chezmoi dots lint [check]...` | `registry`, `aliases` (the encrypted registry too where the age key exists), `packages`, `matrix`, `templates` (every script, alias file and settings template, rendered per configuration and shellchecked, zsh-checked or pwsh-parsed where those tools are installed) |
-| `chezmoi dots audit aliases` | lists aliases live in this machine's zsh and bash that the registry does not account for |
-| `chezmoi dots outdated`, `bump`, `upgrade` | [Packages](#packages) |
+| `chezmoi dots [edit] [<what>]`, `view`, `list` | [Editing your dotfiles](#editing-your-dotfiles) |
+| `chezmoi dots add <path>` | manages a file (`chezmoi add`) and registers it in `edit.toml` in one step |
+| `chezmoi dots status [--fetch] [--check]` | the dotfiles checkout (branch, ahead/behind, local changes) and what `chezmoi apply` would change |
+| `chezmoi dots lint [check]...` | `registry`, `aliases` (the encrypted registry too where the age key exists), `packages`, `secrets`, `matrix`, `templates` (every script, alias file and settings template, rendered per OS × profile and variant, and shellchecked, zsh-checked or pwsh-parsed where those tools are installed) |
+| `chezmoi dots audit [aliases\|secrets]` | `aliases` lists aliases live in this machine's zsh and bash that the registry does not account for; `secrets` probes read-only that the secret manager's token is in the keyring and its project is reachable ([Bitwarden](#bitwarden)) |
+| `chezmoi dots pkg status`, `pkg bump`, `pkg add`, `upgrade` | [Packages](#packages) |
+| `chezmoi dots secrets run <name> -- <args>` | runs a declared secret-manager CLI with its token ([Bitwarden](#bitwarden)) |
 
 **Install it**
 
