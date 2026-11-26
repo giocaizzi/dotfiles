@@ -59,6 +59,8 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    Open a new shell (Windows: a new PowerShell window). Light machines are done after step 5.
 
+   An existing machine that still has chezmoi-dots 0.3.0 behaves the same way after `chezmoi update`: that apply installs 0.4.0 and leaves the secrets files alone, the next one renders them. If an apply ever stops on `secrets.sh`, run `chezmoi apply ~/.local/bin/chezmoi-dots && chezmoi apply` ([Bitwarden](./OS.md#bitwarden)).
+
    On machines with a harness selected, the first apply installs the `agents` binary and then runs `agents apply` to write the harness files; a server that needs a secret is skipped until that secret is exported, so after opening the new shell run `chezmoi apply` once more; the script runs on every apply, and the first apply after a fresh install may skip it if `agents` is not installed yet (see [AI agent configuration](./OS.md#agents-apply)).
 
 ## Secrets
