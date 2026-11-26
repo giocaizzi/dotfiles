@@ -11,13 +11,25 @@
 *.stackdump
 
 # Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
-# bws project ID (token in the OS keyring) and both bws and chezmoi-dots, which runs
-# it, are installed (the first apply fetches them, the next one renders); otherwise
-# hand-edited and untracked (stub by run_once_init-untracked-env.*).
+# bws project ID (token in the OS keyring) and both bws and chezmoi-dots 0.4.0 or
+# later (`secrets run`, which runs bws) are installed; otherwise hand-edited and
+# untracked (stub by run_once_init-untracked-env.*). Skipping keeps the rest of the
+# apply going: a new machine's first apply fetches both, and an older chezmoi-dots
+# is replaced by its external; the next apply renders. A version that cannot be read
+# (command fails, no x.y.z, a devel build) also skips. Machines with no chezmoi-dots
+# release build (windows/arm64) are not supported for env secrets.
 {{ $exe := ternary ".exe" "" (eq .chezmoi.os "windows") }}
 {{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (print "bws" $exe) }}
 {{ $dots := joinPath .chezmoi.homeDir ".local" "bin" (print "chezmoi-dots" $exe) }}
-{{ if not (and (get . "bwsProjectId") (stat $bws) (stat $dots)) }}
+{{ $ready := and (get . "bwsProjectId") (stat $bws) (stat $dots) }}
+{{ if $ready }}
+{{   $ready = false }}
+{{   if exec $dots "version" }}
+{{     $v := output $dots "version" | trim | trimPrefix "chezmoi-dots " | regexFind "^[0-9]+\\.[0-9]+\\.[0-9]+" }}
+{{     $ready = and $v (semverCompare ">=0.4.0" $v) }}
+{{   end }}
+{{ end }}
+{{ if not $ready }}
 .config/shell/secrets.sh
 .config/powershell/secrets.ps1
 {{ end }}

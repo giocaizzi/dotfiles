@@ -24,8 +24,9 @@ trap 'rm -rf "$T"' EXIT
 
 pass=0 fail=0 xfail=0
 
-# managed <case> <bwsProjectId> <bws: yes|no> <chezmoi-dots version, or "none">:
-# prints yes when chezmoi manages .config/shell/secrets.sh for that machine state.
+# managed <case> <bwsProjectId> <bws: yes|no> <chezmoi-dots version, "fail" or "none">:
+# prints yes when chezmoi manages .config/shell/secrets.sh for that machine state, no when
+# it does not, error when chezmoi fails.
 managed() {
 	local home="$T/$1/home" cfg="$T/$1/chezmoi.toml"
 	mkdir -p "$home/.local/bin"
@@ -33,7 +34,11 @@ managed() {
 		printf '#!/bin/sh\necho "bws stub: must not run" >&2\nexit 9\n' > "$home/.local/bin/bws"
 		chmod +x "$home/.local/bin/bws"
 	fi
-	if [ "$4" != none ]; then
+	if [ "$4" = fail ]; then
+		# A chezmoi-dots whose version command fails.
+		printf '#!/bin/sh\necho "broken" >&2\nexit 1\n' > "$home/.local/bin/chezmoi-dots"
+		chmod +x "$home/.local/bin/chezmoi-dots"
+	elif [ "$4" != none ]; then
 		# Like chezmoi-dots 0.3.0, an unknown command is a usage error (exit 2).
 		# shellcheck disable=SC2016 # $1 belongs to the stub, not to this script
 		printf '#!/bin/sh\n[ "$1" = version ] && { echo "chezmoi-dots %s"; exit 0; }\nexit 2\n' "$4" \
@@ -55,9 +60,12 @@ managed() {
     harnesses = []
 EOF
 	# dotsRender: the release externals render empty, so nothing is downloaded.
-	if HOME="$home" XDG_CONFIG_HOME="$T/$1/xdg" XDG_CACHE_HOME="$T/$1/cache" XDG_STATE_HOME="$T/$1/state" \
+	# A render that fails (chezmoi exits non-zero) is "error", never a pass.
+	if ! HOME="$home" XDG_CONFIG_HOME="$T/$1/xdg" XDG_CACHE_HOME="$T/$1/cache" XDG_STATE_HOME="$T/$1/state" \
 		chezmoi --config "$cfg" --source "$SRC" --destination "$home" --override-data '{"dotsRender":true}' \
-		managed --include=files 2> "$T/$1.err" | grep -qx '.config/shell/secrets.sh'; then
+		managed --include=files > "$T/$1.out" 2> "$T/$1.err"; then
+		echo error
+	elif grep -qx '.config/shell/secrets.sh' "$T/$1.out"; then
 		echo yes
 	else
 		echo no
@@ -97,8 +105,12 @@ check dots-0.5.0 yes "$(managed dots-0.5.0 "$P" yes 0.5.0)"
 # A machine still on chezmoi-dots 0.3.0 (no `secrets run`) must keep the secrets file out
 # of the apply until the external brings 0.4.0: otherwise every render fails and chezmoi
 # apply stops at .config/shell/secrets.sh, before .local/bin/chezmoi-dots is updated.
-check dots-0.3.0 no "$(managed dots-0.3.0 "$P" yes 0.3.0)" \
-	xfail "gate checks only that chezmoi-dots exists, not that it has secrets run (>= 0.4.0)"
+check dots-0.3.0 no "$(managed dots-0.3.0 "$P" yes 0.3.0)"
+check dots-0.10.0 yes "$(managed dots-0.10.0 "$P" yes 0.10.0)"
+# A version that cannot be read skips the secrets file instead of failing the render.
+check dots-version-fails no "$(managed dots-version-fails "$P" yes fail)"
+check dots-garbage no "$(managed dots-garbage "$P" yes garbage)"
+check dots-devel no "$(managed dots-devel "$P" yes devel-0123abc)"
 
 echo "secrets-gate: $pass passed, $fail failed, $xfail xfail"
 [ "$fail" -eq 0 ]
