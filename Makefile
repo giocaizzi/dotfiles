@@ -29,7 +29,7 @@ HOOK_FILES := $(wildcard $(SRC)/dot_config/git/hooks/executable_*)
 # settings.json is VS Code JSONC (comments), not strict JSON.
 JSON := $(filter-out $(SRC)/dot_config/Code/User/settings.json,$(shell git ls-files '*.json' | xargs grep -L '{{'))
 
-.PHONY: help tools lint lint-agents test test-syntax test-git-hooks check check-fast aliases-audit
+.PHONY: help tools lint lint-agents test test-syntax test-git-hooks test-secrets-gate check check-fast aliases-audit
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "%-13s %s\n", $$1, $$2}'
@@ -61,7 +61,7 @@ tools: ## Install the pinned chezmoi, chezmoi-dots and agents into TOOLS_DIR (de
 lint: ## shellcheck, validate JSON, lint registries, templates, and agents config
 	shellcheck -s bash -e SC1090,SC1091 $(SHELLCHECK_EXCLUDES) $(RC)
 	shellcheck -s sh $(HOOK_FILES)
-	shellcheck -s bash tests/git-hooks.sh
+	shellcheck -s bash tests/git-hooks.sh tests/secrets-gate.sh
 	@for f in $(JSON); do jq empty "$$f" || { echo "invalid JSON: $$f"; exit 1; }; done
 	@$(MAKE) --no-print-directory lint-agents
 	$(DOTS) lint
@@ -98,10 +98,13 @@ lint-agents:
 aliases-audit: ## List live shell aliases the registry does not account for
 	$(DOTS) audit aliases
 
-test: test-syntax test-git-hooks ## Syntax-check bash and zsh files, test the global git hooks
+test: test-syntax test-git-hooks test-secrets-gate ## Syntax-check bash and zsh files, test the global git hooks and the env-secrets gate
 
 test-git-hooks: ## Test the global git hooks (stub gitleaks, throwaway repos)
 	bash tests/git-hooks.sh
+
+test-secrets-gate: ## Test when chezmoi manages the env secrets files (stub binaries, chezmoi managed)
+	bash tests/secrets-gate.sh
 
 test-syntax: ## Syntax-check bash and zsh files
 	@for f in $(SH); do bash -n "$$f" || exit 1; done

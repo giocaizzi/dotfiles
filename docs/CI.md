@@ -18,10 +18,11 @@ files remain LF through `.gitattributes`.
 | Target | Does |
 |---|---|
 | `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `~/.local/bin`), as CI does (below) |
-| `lint` | `shellcheck` on the bash rc files, the global git hooks and `tests/git-hooks.sh`; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` and `agents prompt check` on the rendered agents config (layers listed by `agents config show`; encrypted ones are empty stand-ins) |
+| `lint` | `shellcheck` on the bash rc files, the global git hooks and the `tests/` scripts; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` and `agents prompt check` on the rendered agents config (layers listed by `agents config show`; encrypted ones are empty stand-ins) |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |
-| `test` | `test-syntax` + `test-git-hooks` |
+| `test-secrets-gate` | `tests/secrets-gate.sh`: when `.chezmoiignore` lets chezmoi manage the env secrets files (project ID, `bws`, `chezmoi-dots` version), checked read-only with `chezmoi managed` and stub binaries; a case marked `xfail` is a known gap and fails the run once it passes (skipped on Windows) |
+| `test` | `test-syntax` + `test-git-hooks` + `test-secrets-gate` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
 | `check` | `lint` + `test` |
 | `check-fast` | `lint` + `test-syntax`: the agent stop hook (guard plugin) runs it instead of `check`; run `make check` before pushing |
