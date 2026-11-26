@@ -115,6 +115,10 @@ source = "dot_config/vim/vimrc"
 desc = "Package registry: tools per OS and role, pinned release binaries"
 source = ".chezmoidata/packages.toml"
 
+[edit.matrix]
+desc = "Configuration matrix: the profiles dots previews and lints"
+source = ".chezmoidata/matrix.toml"
+
 [edit.registry]
 desc = "This edit registry"
 source = ".chezmoidata/edit.toml"
