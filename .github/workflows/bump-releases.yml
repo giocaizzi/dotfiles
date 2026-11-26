@@ -1,7 +1,7 @@
 name: bump-releases
 
-# Weekly: pin newer versions of the release binaries in .chezmoidata/packages.toml
-# (`chezmoi dots bump`) and open a PR. Set the BUMP_TOKEN secret (a token that may open
+# Weekly: pin newer versions of the release binaries in .chezmoidata/packages.toml and of
+# the commit-pinned archive externals (`chezmoi dots pkg bump`) and open a PR. Set the BUMP_TOKEN secret (a token that may open
 # PRs) so CI runs on that PR; without it the PR is opened with GITHUB_TOKEN and its
 # checks must be started by hand.
 on:
@@ -20,14 +20,14 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      # Pinned chezmoi and chezmoi-dots (docs/CI.md); bump reads the release table with `chezmoi data`.
+      # Pinned chezmoi and chezmoi-dots (docs/CI.md); pkg bump reads the release table with `chezmoi data`.
       - run: make tools
       - name: Bump
         env:
           CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          chezmoi-dots bump
+          chezmoi-dots pkg bump
       - name: Open the PR
         env:
           GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
@@ -43,5 +43,5 @@ jobs:
           git commit -am "chore(deps): bump pinned release binaries"
           git push --force origin "$branch"
           gh pr create --base main --head "$branch" --title "chore(deps): bump pinned release binaries" \
-            --body "Versions and checksums from \`chezmoi dots bump\`. See docs/OS.md#packages." \
-            || gh pr edit "$branch" --body "Versions and checksums from \`chezmoi dots bump\`. See docs/OS.md#packages."
+            --body "Release versions, archive commits and checksums from \`chezmoi dots pkg bump\`. See docs/OS.md#packages." \
+            || gh pr edit "$branch" --body "Release versions, archive commits and checksums from \`chezmoi dots pkg bump\`. See docs/OS.md#packages."
