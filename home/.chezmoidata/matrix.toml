@@ -1,0 +1,47 @@
+# ----------------------------------------------------------------------------
+# Configuration matrix: the machine types `chezmoi dots` previews and lints (the edit
+# report, view --as, view --matrix, lint templates): darwin, linux, windows x the
+# profiles below. Each profile's answers (seed + profile) are given to
+# .chezmoi.toml.tmpl as chezmoi init would get them, so the prompts are not copied,
+# only the answers. Schema:
+# https://github.com/giocaizzi/chezmoi-dots/blob/main/docs/matrix.md
+# ----------------------------------------------------------------------------
+
+# Answers every profile gets. Identity answers are placeholders. bwsProjectId stays
+# empty so no render reaches Bitwarden Secrets Manager (.chezmoiignore then skips the
+# secrets files).
+[matrix.seed]
+gitUser = "<gitUser>"
+gitEmail = "<gitEmail>"
+bwsProjectId = ""
+
+# Full personal machine: every optional answer on, so the templates it gates render.
+[matrix.profile.personal]
+light = false
+work = false
+terraform = true
+# Every harness: keep in step with $all in .chezmoi.toml.tmpl.
+harnesses = ["claude", "copilot", "vscode", "codex", "opencode", "pi", "antigravity"]
+otelEndpoint = "https://otel.example.com"
+
+# Full work machine.
+[matrix.profile.work]
+light = false
+work = true
+terraform = true
+# Every harness: keep in step with $all in .chezmoi.toml.tmpl.
+harnesses = ["claude", "copilot", "vscode", "codex", "opencode", "pi", "antigravity"]
+workEmail = "<workEmail>"
+githubUser = "octocat"
+personalGitRemote = "example-org"
+
+# Light machine: shell, git, vim and prompt only; the other questions are not asked.
+[matrix.profile.light]
+light = true
+work = false
+
+# Rendered by lint templates only: a single harness selected.
+[[matrix.variant]]
+name = "first harness only"
+profiles = ["personal", "work"]
+set = { harnesses = ["claude"] }

@@ -13,9 +13,12 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    ```shell
    brew install chezmoi bitwarden-cli                          # macOS
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # Linux (bw: see bitwarden.com/help/cli)
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin   # Linux
    winget install twpayne.chezmoi                              # Windows
+   winget install Bitwarden.CLI                                # Windows, personal machines
    ```
+
+   Personal Linux: unzip the `bw-oss-linux` (or `bw-oss-linux-arm64`) zip of the latest `cli-v*` release from [github.com/bitwarden/clients/releases](https://github.com/bitwarden/clients/releases) into `~/.local/bin`; later applies replace it with the pinned release.
 
 3. **Put the age key** at `~/.config/chezmoi/key.txt` (owner-only) — personal and work only, or `apply` stops at the first encrypted file ([why](./OS.md#encrypted-files-age)). **Light machines skip this step:** they get no encrypted files, so a compromised box can't decrypt your secrets.
    - **Personal:** from the vault (secure note `chezmoi age key`):
@@ -48,13 +51,15 @@ First decide the machine's role ([details](./OS.md#machine-roles)): **personal**
 
    The token is not an init answer: it sits in the OS keyring (step 4). To change answers later, `chezmoi init --prompt` (asks everything again).
 
-6. **Apply once more** — the first apply downloads `bws`, the second renders the env secrets from Bitwarden:
+6. **Apply once more** — the first apply downloads `bws` and the `chezmoi-dots` plugin, the second renders the env secrets from Bitwarden:
 
    ```shell
    chezmoi apply && chezmoi status   # status prints nothing when done
    ```
 
    Open a new shell (Windows: a new PowerShell window). Light machines are done after step 5.
+
+   An existing machine that still has chezmoi-dots 0.3.0 behaves the same way after `chezmoi update`: that apply installs 0.4.0 and leaves the secrets files alone, the next one renders them. If an apply ever stops on `secrets.sh`, run `chezmoi apply ~/.local/bin/chezmoi-dots && chezmoi apply` ([Bitwarden](./OS.md#bitwarden)).
 
    On machines with a harness selected, the first apply installs the `agents` binary and then runs `agents apply` to write the harness files; a server that needs a secret is skipped until that secret is exported, so after opening the new shell run `chezmoi apply` once more; the script runs on every apply, and the first apply after a fresh install may skip it if `agents` is not installed yet (see [AI agent configuration](./OS.md#agents-apply)).
 
