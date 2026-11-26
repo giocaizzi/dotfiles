@@ -17,7 +17,7 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `~/.local/bin`), as CI does (below) |
+| `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `.tools/bin`, gitignored; CI and the bump workflow pass `TOOLS_DIR="$HOME/.local/bin"`) |
 | `lint` | `shellcheck` on the bash rc files, the global git hooks and the `tests/` scripts; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` and `agents prompt check` on the rendered agents config (layers listed by `agents config show`; encrypted ones are empty stand-ins) |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |

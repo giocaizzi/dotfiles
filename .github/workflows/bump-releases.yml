@@ -1,9 +1,9 @@
 name: bump-releases
 
 # Weekly: pin newer versions of the release binaries in .chezmoidata/packages.toml and of
-# the commit-pinned archive externals (`chezmoi dots pkg bump`) and open a PR. Set the BUMP_TOKEN secret (a token that may open
-# PRs) so CI runs on that PR; without it the PR is opened with GITHUB_TOKEN and its
-# checks must be started by hand.
+# the commit-pinned archive externals (`chezmoi dots pkg bump`) and open a PR. Set the
+# BUMP_TOKEN secret (a token that may open PRs) so CI runs on that PR; without it the PR
+# is opened with GITHUB_TOKEN and its checks must be started by hand.
 on:
   schedule:
     - cron: "17 5 * * 1"
@@ -21,7 +21,7 @@ jobs:
         with:
           persist-credentials: false
       # Pinned chezmoi and chezmoi-dots (docs/CI.md); pkg bump reads the release table with `chezmoi data`.
-      - run: make tools
+      - run: make tools TOOLS_DIR="$HOME/.local/bin"
       - name: Bump
         env:
           CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
