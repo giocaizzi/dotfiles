@@ -44,8 +44,9 @@ function h {
     Invoke-FzfHistory @args
 }
 
-# PSFzf — provides Ctrl-R (history) and Ctrl-T (files) bindings like bash/zsh
+# PSFzf - provides Ctrl-R (history), Ctrl-T (files), and Alt-C (directories).
 if (Get-Module -ListAvailable -Name PSFzf) {
     Import-Module PSFzf
-    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
+    # Both profile entrypoints run this: restore Alt-C after EditMode resets bindings.
+    Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -PSReadlineChordSetLocation 'Alt+c'
 }

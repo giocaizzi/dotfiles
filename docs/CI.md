@@ -9,7 +9,7 @@ make help    # list targets
 make check   # lint + test; run before pushing
 ```
 
-Needs `go`, `chezmoi`, `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS). `pwsh` is optional locally (the PowerShell alias parse is skipped without it) and present on CI runners. `make` runs `chezmoi dots lint` ([giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)) and `agents check` ([giocaizzi/agents](https://github.com/giocaizzi/agents)) against this checkout.
+Needs `go`, `chezmoi`, `shellcheck`, `jq`, `bash`, `zsh` (all in the chezmoi install list on macOS). `pwsh` is optional locally (PowerShell checks are skipped without it) and present on CI runners. `make` runs `chezmoi dots lint` ([giocaizzi/chezmoi-dots](https://github.com/giocaizzi/chezmoi-dots)) and `agents check` ([giocaizzi/agents](https://github.com/giocaizzi/agents)) against this checkout.
 On Windows, `make` uses Git for Windows' POSIX shell; zsh syntax checks run when
 zsh is installed and are otherwise skipped because zsh is not a Windows dependency.
 ShellCheck also ignores working-tree CRLF diagnostics on Windows; tracked shell
@@ -22,7 +22,8 @@ files remain LF through `.gitattributes`.
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |
 | `test-secrets-gate` | `tests/secrets-gate.sh`: when `.chezmoiignore` lets chezmoi manage the env secrets files (project ID, `bws`, `chezmoi-dots` version), checked read-only with `chezmoi managed` and stub binaries; a case marked `xfail` is a known gap and fails the run once it passes (skipped on Windows) |
-| `test` | `test-syntax` + `test-git-hooks` + `test-secrets-gate` |
+| `test-pwsh-profile` | `tests/pwsh-profile.ps1`: render the Windows profile-link script and test creation, idempotence, owned duplicate cleanup and preservation in an isolated Documents fixture (Windows only; skips on Unix) |
+| `test` | `test-syntax` + `test-git-hooks` + `test-secrets-gate` + `test-pwsh-profile` |
 | `aliases-audit` | not in `check`: lists aliases live in this machine's zsh and bash that the registry does not account for |
 | `check` | `lint` + `test` |
 | `check-fast` | `lint` + `test-syntax`: the agent stop hook (guard plugin) runs it instead of `check`; run `make check` before pushing |

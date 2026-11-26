@@ -19,6 +19,11 @@ Cross-shell setup for bash, zsh, and PowerShell. Aliases and FZF config live in 
 profile.ps1       sources →  ~/.config/powershell/{secrets.ps1, aliases.ps1, coreutils.ps1, fzf.ps1} + PSReadLine
 ```
 
+On Windows, `chezmoi apply` links the canonical `profile.ps1` into the real Documents
+folder for both PowerShell editions. The setup removes a legacy
+`Microsoft.PowerShell_profile.ps1` only when it is a symbolic link to that same
+canonical file; unrelated files and links are left alone.
+
 ## Files
 
 History lives in `$XDG_STATE_HOME/{bash,zsh}/history`; the zsh completion dump in `$XDG_CACHE_HOME/zsh/`.
@@ -129,7 +134,7 @@ the file.
 | `tmux`        |  ✓   |  ✓   |     —      | `~/.config/tmux/tmux.conf` (native XDG path); prefix `C-b`, `h/j/k/l` pane moves, `J/S` move panes between windows, `g` enters vi copy mode |
 | `PSMux`       |  —   |  —   |     ✓      | `~/.psmux.conf` symlinks to the deployed `~/.config/tmux/tmux.conf` (rendered from `dot_config/tmux/tmux.conf.tmpl`); same pane-move and vi copy-mode keys |
 | `PSReadLine`  |  —   |  —  |     ✓      | `profile.ps1` — history search, predictions                |
-| `PSFzf`       |  —   |  —  |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, `h`, and `history` via fzf     |
+| `PSFzf`       |  —   |  —   |     ✓      | `fzf.ps1` — Ctrl-R, Ctrl-T, Alt-C (directories), `h`, and `history` via fzf |
 
 ## tmux
 
