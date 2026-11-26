@@ -20,7 +20,7 @@
 #   agents   = true: named to AI agents as available (agent instructions, env layer)
 #   script   = OSes where the install script has its own step for it (an official
 #              installer or a repo to add); the step is named after <name>
-#   versionCmd = argv that prints the installed version, for `chezmoi dots outdated`
+#   versionCmd = argv that prints the installed version, for `chezmoi dots pkg status`
 #              (the first dotted number is the version; default ["<cmd or name>", "--version"])
 #
 # [release.<name>]  a binary from a release page, installed by chezmoi itself as an
@@ -37,9 +37,9 @@
 #   roles, requires = as above
 #   versionCmd = as above; {dest} expands to the installed path (default ["{dest}", "--version"])
 #
-# Update: `chezmoi dots outdated` shows every tool with its installed, pinned and latest
-# versions, `chezmoi dots bump` rewrites release versions and checksums here
-# (docs/OS.md#packages).
+# Update: `chezmoi dots pkg status` shows every tool with its installed, pinned and latest
+# versions, `chezmoi dots pkg bump` rewrites release versions and checksums here (and the
+# commit-pinned archive externals), `chezmoi dots pkg add` adds an entry (docs/OS.md#packages).
 # ----------------------------------------------------------------------------
 
 # --- Core: every machine ---
@@ -236,9 +236,12 @@ winget = "TerraformLinters.tflint"
 psmodule = "1.22.0"
 
 # --- Personal machines ---
+# Bitwarden password-manager CLI (bw). Linux has no package: it gets [release.bw].
 [package.bitwarden-cli]
 roles = ["personal"]
+cmd = "bw"
 brew = true
+winget = "Bitwarden.CLI"
 
 [package.go]
 roles = ["personal"]
@@ -290,6 +293,8 @@ az = true
 version = "2.1.0"
 url = "https://github.com/bitwarden/sdk-sm/releases/download/bws-v{version}/bws-{target}-{version}.zip"
 exe = true
+# bws --version prints "bws 2.1.0" (chezmoi doctor cannot parse it); pkg status takes the first dotted number.
+versionCmd = ["{dest}", "--version"]
 
 [release.bws.target]
 "darwin/amd64" = "x86_64-apple-darwin"
@@ -306,6 +311,21 @@ exe = true
 "linux/arm64" = "18253757286e119d450133a87eb463bf8c1ce418ce24c834f4f250d60cba6f9e"
 "windows/amd64" = "8d6f2b51beb6f992b5b1de8b85a98bdf18de74096b724d17fa06219fc23f2bd5"
 "windows/arm64" = "ba18adeb5d123481211c47c4e4d0ad6d81a6b0139150704785542fdee542e583"
+
+[release.bw]
+# Bitwarden password-manager CLI on Linux (macOS and Windows: [package.bitwarden-cli]).
+# The OSS build from the bitwarden/clients cli-v* releases; the zip holds the bare bw binary.
+version = "2026.11.1"
+url = "https://github.com/bitwarden/clients/releases/download/cli-v{version}/bw-oss-{target}-{version}.zip"
+roles = ["personal"]
+
+[release.bw.target]
+"linux/amd64" = "linux"
+"linux/arm64" = "linux-arm64"
+
+[release.bw.sha256]
+"linux/amd64" = "242d77fa741230cbc2f4972eecfc709c73e431cb46adfbd6dade1f367e5a5262"
+"linux/arm64" = "02682ca2198ebe10072e33e27964bf33a964c53910657a568ebcf419c3800f3f"
 
 [release.gitleaks]
 version = "8.30.1"
@@ -384,7 +404,7 @@ target = { "linux/amd64" = "amd64", "linux/arm64" = "arm64" }
 [release.chezmoi-dots]
 # The `chezmoi dots` companion plugin, released by github.com/giocaizzi/chezmoi-dots
 # A bare binary per platform.
-version = "0.3.0"
+version = "0.4.0"
 versionCmd = ["{dest}", "version"]
 url = "https://github.com/giocaizzi/chezmoi-dots/releases/download/v{version}/chezmoi-dots_{version}_{target}"
 type = "file"
@@ -398,11 +418,11 @@ exe = true
 "windows/amd64" = "windows_amd64.exe"
 
 [release.chezmoi-dots.sha256]
-"darwin/amd64" = "ffa09d6b8556263fbd7c99d79d08701103d050efa575064843efa91b1be33b9a"
-"darwin/arm64" = "0952f2063f117aab719896cc9495ed191502594d7215cdc16a3c986da480e46e"
-"linux/amd64" = "7dfe8eab323370d3accb69a84497cd2c889405d0b92c2e5942f3a407bfc7cd7e"
-"linux/arm64" = "a05a9202cd8aa18bab6b1aa297b00944bb5ae2a141363153a3c6470094f84604"
-"windows/amd64" = "05aaf032d6d728d97f273abad4a7917504539e1ba7275165de62f663e470d303"
+"darwin/amd64" = "861bc04ac2d8deb4b234f19e9e4c4c12848f4e5e76819fb601502b97142bf401"
+"darwin/arm64" = "32aea435730020e73afb72ccce80ed7dd48c470eb3087e26a5814bb4231cd7b4"
+"linux/amd64" = "2b11d3dea82cafbc71267c13aab391c664d91d428ea335d2a7c90cb4fa35ced0"
+"linux/arm64" = "f5aecba23f11a6be84644691b0412192e9d0ca77c4cd1bb208740a5a509301b3"
+"windows/amd64" = "c6c323b8d708aa9a829b65bc67dacd8e03645059d6fb1316e22a7015a5aae684"
 
 [release.agents]
 # Universal AI Agent Harness Manager standalone CLI, released by github.com/giocaizzi/agents

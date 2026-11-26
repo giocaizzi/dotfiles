@@ -35,7 +35,8 @@
 {{- end }}
 {{- /* AI harnesses whose configs chezmoi writes (it never installs the CLIs). Light
        machines have none, so they are not asked; nothing is preselected and a config
-       without the key gets none (.chezmoitemplates/harnesses). */ -}}
+       without the key gets none (.chezmoitemplates/harnesses). Keep $all in step with the
+       harness lists in .chezmoidata/matrix.toml and HARNESSES in the Makefile. */ -}}
 {{- $harnesses := list -}}
 {{- if not $light }}
 {{- $all := list "claude" "copilot" "vscode" "codex" "opencode" "pi" "antigravity" -}}
