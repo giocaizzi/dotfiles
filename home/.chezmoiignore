@@ -11,11 +11,13 @@
 *.stackdump
 
 # Env secrets: rendered from Bitwarden Secrets Manager where this machine has a
-# bws project ID (token in the OS keyring) and bws is installed (the first apply
-# fetches bws, the next one renders); otherwise hand-edited and untracked (stub by
-# run_once_init-untracked-env.*).
-{{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (ternary "bws.exe" "bws" (eq .chezmoi.os "windows")) }}
-{{ if not (and (get . "bwsProjectId") (stat $bws)) }}
+# bws project ID (token in the OS keyring) and both bws and chezmoi-dots, which runs
+# it, are installed (the first apply fetches them, the next one renders); otherwise
+# hand-edited and untracked (stub by run_once_init-untracked-env.*).
+{{ $exe := ternary ".exe" "" (eq .chezmoi.os "windows") }}
+{{ $bws := joinPath .chezmoi.homeDir ".local" "bin" (print "bws" $exe) }}
+{{ $dots := joinPath .chezmoi.homeDir ".local" "bin" (print "chezmoi-dots" $exe) }}
+{{ if not (and (get . "bwsProjectId") (stat $bws) (stat $dots)) }}
 .config/shell/secrets.sh
 .config/powershell/secrets.ps1
 {{ end }}
