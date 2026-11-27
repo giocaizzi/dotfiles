@@ -1,9 +1,11 @@
 name: bump-releases
 
 # Weekly: pin newer versions of the release binaries in .chezmoidata/packages.toml and of
-# the commit-pinned archive externals (`chezmoi dots pkg bump`) and open a PR. Set the
-# BUMP_TOKEN secret (a token that may open PRs) so CI runs on that PR; without it the PR
-# is opened with GITHUB_TOKEN and its checks must be started by hand.
+# the commit-pinned archive externals (`chezmoi dots pkg bump`) and open a PR, through the
+# chezmoi-dots pkg-bump action (docs/CI.md). Set the BUMP_TOKEN secret (a token that may
+# open PRs) so CI runs on that PR; without it the PR is opened with GITHUB_TOKEN and its
+# checks must be started by hand. Keep this job to the checkout and the action: only the
+# action's last step gets the token.
 on:
   schedule:
     - cron: "17 5 * * 1"
@@ -13,35 +15,21 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   bump:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      # Pinned chezmoi and chezmoi-dots (docs/CI.md); pkg bump reads the release table with `chezmoi data`.
-      - run: make tools TOOLS_DIR="$HOME/.local/bin"
-      - name: Bump
-        env:
-          CHEZMOI_SOURCE_DIR: ${{ github.workspace }}/home
-        run: |
-          export PATH="$HOME/.local/bin:$PATH"
-          chezmoi-dots pkg bump
-      - name: Open the PR
-        env:
-          GH_TOKEN: ${{ secrets.BUMP_TOKEN || github.token }}
-        run: |
-          set -eu
-          git diff --quiet && { echo "Everything is up to date."; exit 0; }
-          branch=chore/bump-releases
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Checkout keeps no credential; only this step gets the token, for git through gh.
-          gh auth setup-git
-          git switch -c "$branch"
-          git commit -am "chore(deps): bump pinned release binaries"
-          git push --force origin "$branch"
-          gh pr create --base main --head "$branch" --title "chore(deps): bump pinned release binaries" \
-            --body "Release versions, archive commits and checksums from \`chezmoi dots pkg bump\`. See docs/OS.md#packages." \
-            || gh pr edit "$branch" --body "Release versions, archive commits and checksums from \`chezmoi dots pkg bump\`. See docs/OS.md#packages."
+      # `version` must equal the release in the ref comment: move both together.
+      - uses: giocaizzi/chezmoi-dots/.github/actions/pkg-bump@85d96977094d4862d60b804b6b87627108637adc # v0.4.1
+        with:
+          version: 0.4.1
+          source-dir: home
+          token: ${{ secrets.BUMP_TOKEN || github.token }}

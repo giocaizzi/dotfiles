@@ -17,7 +17,7 @@ files remain LF through `.gitattributes`.
 
 | Target | Does |
 |---|---|
-| `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `.tools/bin`, gitignored; CI and the bump workflow pass `TOOLS_DIR="$HOME/.local/bin"`) |
+| `tools` | not in `check`: installs the pinned `chezmoi`, `chezmoi-dots` and `agents` (linux/amd64) into `TOOLS_DIR` (default `.tools/bin`, gitignored; CI passes `TOOLS_DIR="$HOME/.local/bin"`) |
 | `lint` | `shellcheck` on the bash rc files, the global git hooks and the `tests/` scripts; `jq empty` on tracked JSON; `chezmoi dots lint` (below); `agents check` and `agents prompt check` on the rendered agents config (layers listed by `agents config show`; encrypted ones are empty stand-ins) |
 | `test-syntax` | `bash -n` on the same shell files, `zsh -n` on `dot_zshrc`, `dot_zprofile` |
 | `test-git-hooks` | `tests/git-hooks.sh`: the global git hooks against throwaway repos, with a stub `gitleaks` |
@@ -59,4 +59,12 @@ On every PR and push to `main`:
 
 A red `check`: open the run, read the failing step, reproduce with `make check`, fix, push. A gitleaks hit: rotate the secret first, then remove it from the change (encrypted file or `bws`, see [OS.md](./OS.md)).
 
-Other workflows: `bump-releases` opens the weekly PR that pins newer release binaries and archive commits (`chezmoi dots pkg bump`; [OS.md](./OS.md#packages)); it needs a `BUMP_TOKEN` secret for CI to run on its PR. Its checkout keeps no credential (`persist-credentials: false`); only the final step that pushes and opens the PR gets the token.
+### Weekly pin bump
+
+`.github/workflows/bump-releases.yml`: every Monday (and on `workflow_dispatch`) it runs `chezmoi dots pkg bump` on `home/` and opens or updates a PR on `chore/bump-releases` titled `chore(deps): bump pinned releases` with the moved release versions, archive commits and checksums ([OS.md](./OS.md#packages)). The job is only the checkout (`persist-credentials: false`) and the [`pkg-bump` action](https://github.com/giocaizzi/chezmoi-dots/blob/main/docs/bump-action.md) of chezmoi-dots, which installs its own checksum-verified `chezmoi` and `chezmoi-dots`, runs the bump and opens the PR; only its last step gets the token. Inputs, token rules and troubleshooting are in the action's docs.
+
+- **Token:** a `BUMP_TOKEN` secret (contents and pull-requests write on this repo) lets CI run on the PR; without it the `GITHUB_TOKEN` fallback opens the PR but its checks must be started by hand.
+- **Versions:** the action does not use `make tools`. It runs the `chezmoi-dots` named by its `version` input and the `chezmoi` pinned inside the action release, which may differ from `[tools] chezmoi` above; `pkg bump` only reads the source with `chezmoi data`, so the difference does not matter there. `make tools` and its pins stay the CI story for `check`.
+- **Upgrading the action:** the `uses:` ref is pinned by commit SHA with the release as a comment, and `version:` must equal that release. Dependabot (`.github/dependabot.yml`, `github-actions`) may move the ref and its comment in its weekly `ci(deps)` PR, but not `version:`: edit it in the same PR before merging. The `[release.chezmoi-dots]` pin that machines install moves separately, through this workflow's own PR.
+
+A failed run: open it, read the failing step, and match its message in the action's troubleshooting table.
