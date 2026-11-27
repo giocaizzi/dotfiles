@@ -287,7 +287,7 @@ Pinned releases and archives move only with a bump; `upgrade` does not check the
 
 **Bump the pinned release binaries and archives**
 
-**When:** `chezmoi dots pkg status` marks a release or archive pin outdated (the weekly `bump-releases` workflow opens a PR for this too).
+**When:** `chezmoi dots pkg status` marks a release or archive pin outdated (the weekly `bump-releases` workflow opens a PR for this too; see [CI.md](./CI.md#weekly-pin-bump)).
 
 1. `chezmoi dots pkg bump` (or `chezmoi dots pkg bump <pin>...`, a pin being a release name or an archive repository path such as `yegappan/lsp`; `--dry-run` previews): finds the newest tag of each release (git tags on GitHub/GitLab, go.dev for Go), downloads the assets for every target, and rewrites the version and sha256 lines in `packages.toml`; for an archive pin it moves the commit in the URL and the sha256 in the externals file. Comments and order stay.
 2. Review the diff, `make check`, ship the PR; `chezmoi apply` installs the new versions.
